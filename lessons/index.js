@@ -11,22 +11,10 @@ window.PYLEARN_LESSON_INDEX = {
           "order": 1
         },
         {
-          "id": "login-screen",
-          "title": "Login Screen",
-          "file": "lessons/login-screen.json",
+          "id": "variables",
+          "title": "Variables & Output",
+          "file": "lessons/variables.json",
           "order": 2
-        },
-        {
-          "id": "python-loops",
-          "title": "Loops",
-          "file": "lessons/python-loops.json",
-          "order": 3
-        },
-        {
-          "id": "pybot-loops",
-          "title": "PyBot Loops",
-          "file": "lessons/pybot-loops.json",
-          "order": 4
         }
       ]
     },
