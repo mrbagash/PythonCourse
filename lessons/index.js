@@ -21,6 +21,12 @@ window.PYLEARN_LESSON_INDEX = {
           "title": "Input & Data Types",
           "file": "lessons/input-lesson.json",
           "order": 3
+        },
+        {
+          "id": "selection-lesson",
+          "title": "Selection",
+          "file": "lessons/selection-lesson.json",
+          "order": 4
         }
       ]
     },
