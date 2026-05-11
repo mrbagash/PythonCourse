@@ -1,4 +1,4 @@
-{
+window.PYLEARN_LESSON_INDEX = {
   "yearGroups": [
     {
       "id": "year8",
@@ -43,4 +43,4 @@
       ]
     }
   ]
-}
+};
