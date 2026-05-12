@@ -94,10 +94,10 @@
     {
       "id": "selection2-endless",
       "title": "Endless Practice",
-      "autoComplete": true,
+      "autoComplete": false,
       "css": "\n.ex-box{background:#1e1e2e;border:1px solid #313244;border-radius:10px;padding:16px 20px;margin-bottom:14px}\n.ex-prompt{font-family:sans-serif;font-size:0.85rem;color:#cdd6f4;margin-bottom:10px}\n.ex-code{color:#cdd6f4;font-size:0.95rem;line-height:1.7;letter-spacing:0.01em;font-family:'Courier New',monospace;display:block}\n.code-func{color:#cba6f7}\n.code-string{color:#a6e3a1}\n.code-comment{color:#94e2d5;font-style:italic}\n.code-error{color:#f38ba8}\n.green-keyword{color:#a6e3a1;font-weight:600}\n.ex-options{display:block;margin-top:10px}\n.ex-opt{display:block;width:100%;background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 14px;font-family:'Courier New',monospace;font-size:0.9rem;cursor:pointer;text-align:left;margin-bottom:6px;box-sizing:border-box;line-height:1.4}\n.ex-opt:last-child{margin-bottom:0}\n.ex-opt:hover:not([disabled]){background:#45475a;border-color:#94e2d5}\n.ex-opt.correct{background:#1a3328!important;border-color:#a6e3a1!important;color:#a6e3a1!important}\n.ex-opt.wrong{background:#351c1c!important;border-color:#f38ba8!important;color:#f38ba8!important}\n.ex-opt[disabled]{cursor:default}\n.ex-feedback{margin-top:10px;font-size:0.85rem;min-height:20px;font-family:sans-serif;line-height:1.4}\n.ex-feedback.ok{color:#a6e3a1}\n.ex-feedback.err{color:#f38ba8}\n.ex-feedback.hint{color:#f9e2af}\n.ex-progress{font-size:0.8rem;color:#585b70;margin-bottom:4px;font-family:sans-serif}\n.ex-score{font-size:0.85rem;font-weight:600;color:#cba6f7;margin-bottom:10px;font-family:sans-serif}\n.ex-label{font-family:sans-serif;font-size:0.82rem;color:#89b4fa;margin-bottom:10px;display:block}\n.ex-explanation{background:#252535;border-left:3px solid #89b4fa;padding:8px 12px;margin-top:10px;font-size:0.82rem;color:#bac2de;font-family:sans-serif;border-radius:0 6px 6px 0;line-height:1.5}\n\n.ex-input,.ex-textarea{width:100%;background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;font-size:0.9rem;box-sizing:border-box;line-height:1.45}\n.ex-input:focus,.ex-textarea:focus{outline:none;border-color:#89b4fa;box-shadow:0 0 0 2px rgba(137,180,250,0.25)}\n.ex-input.correct,.ex-textarea.correct{border-color:#a6e3a1;background:#14251d}\n.ex-input.wrong,.ex-textarea.wrong{border-color:#f38ba8;background:#281616}\n.ex-btn{display:inline-block;background:#2563eb;color:white;border:0;border-radius:6px;padding:8px 14px;font-family:sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer}\n.ex-btn:hover:not([disabled]){background:#1d4ed8}\n.ex-btn[disabled]{opacity:0.55;cursor:default}\n",
-      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across Selection Part 2. Keep going as long as you like.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"sel2-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"sel2-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"sel2-ep-q\"></div>",
-      "js": "(function(){ var mcqPool=[{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>?</span>\",\"correct\":\"if coins >= 5:\\n    print('You have enough!')\",\"options\":[\"if coins >= 5:\\n    print('You have enough!')\",\"if coins > 5:\\n    print('You have enough!')\",\"if coins <= 5:\\n    print('You have enough!')\",\"if coins == 5:\\n    print('You have enough!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>?</span>\",\"correct\":\"if lives != 0:\\n    print('Still alive!')\",\"options\":[\"if lives != 0:\\n    print('Still alive!')\",\"if lives == 0:\\n    print('Still alive!')\",\"if lives > 0:\\n    print('Still alive!')\",\"if lives < 0:\\n    print('Still alive!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>, otherwise prints a different message?</span>\",\"correct\":\"if coins >= 5:\\n    print('Enough!')\\nelse:\\n    print('Not enough!')\",\"options\":[\"if coins >= 5:\\n    print('Enough!')\\nelse:\\n    print('Not enough!')\",\"if coins >= 5:\\n    print('Enough!')\\nelse\\n    print('Not enough!')\",\"if coins >= 5:\\n    print('Enough!')\\nElse:\\n    print('Not enough!')\",\"if coins >= 5:\\nprint('Enough!')\\nelse:\\nprint('Not enough!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>, otherwise prints a different message?</span>\",\"correct\":\"if lives != 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"options\":[\"if lives != 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"if lives == 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"if lives != 0:\\n    print('Alive!')\\nelse:\\nprint('Game over!')\",\"if lives != 0:\\nprint('Alive!')\\nelse:\\n    print('Game over!')\"]}], textPool=[{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Print 'You have enough!' if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>.</span>\",\"pattern\":\"if\\\\s+coins\\\\s*>=\\\\s*5\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if coins >= 5:\\n    print('You have enough!')\",\"rows\":3},{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">If <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>, print 'You have enough!', otherwise print 'Not enough coins.'</span>\",\"pattern\":\"if\\\\s+coins\\\\s*>=\\\\s*5\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\nelse\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if coins >= 5:\\n    print('You have enough!')\\nelse:\\n    print('Not enough coins.')\",\"rows\":6},{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">If <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>, print 'Still alive!', otherwise print 'Game over.'</span>\",\"pattern\":\"if\\\\s+lives\\\\s*!=\\\\s*0\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\nelse\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if lives != 0:\\n    print('Still alive!')\\nelse:\\n    print('Game over.')\",\"rows\":6}]; var streak=0,best=parseInt(localStorage.getItem('pylearn_selection2_best')||'0',10); document.getElementById('sel2-ep-best').textContent=best; function rand(a){return a[Math.floor(Math.random()*a.length)];} function correct(){streak++; if(streak>best){best=streak; localStorage.setItem('pylearn_selection2_best',best); document.getElementById('sel2-ep-best').textContent=best;} document.getElementById('sel2-ep-streak').textContent=streak;} function wrong(){streak=0; document.getElementById('sel2-ep-streak').textContent=streak;} function next(){Math.random()<0.5?showMcq(rand(mcqPool)):showText(rand(textPool));} function showMcq(q){var wrap=document.getElementById('sel2-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"sel2-ep-opts\"></div><div class=\"ex-feedback\" id=\"sel2-ep-fb\"></div>'; q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o; btn.onclick=function(){document.querySelectorAll('#sel2-ep-opts .ex-opt').forEach(function(b){b.disabled=true;if(b.textContent===q.correct)b.classList.add('correct');}); var fb=document.getElementById('sel2-ep-fb'); if(o===q.correct){btn.classList.add('correct');correct();fb.className='ex-feedback ok';fb.textContent='Correct.';setTimeout(next,1000);}else{btn.classList.add('wrong');wrong();fb.className='ex-feedback err';fb.textContent='Incorrect. The answer is shown in green.';}}; document.getElementById('sel2-ep-opts').appendChild(btn);});} function showText(q){var wrap=document.getElementById('sel2-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><textarea id=\"sel2-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea><button id=\"sel2-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"sel2-ep-fb\"></div><div class=\"ex-explanation\" id=\"sel2-ep-hint\" style=\"display:none\"></div>'; document.getElementById('sel2-ep-check').onclick=function(){var input=document.getElementById('sel2-ep-answer'), val=input.value.trim(), fb=document.getElementById('sel2-ep-fb'), hint=document.getElementById('sel2-ep-hint'); if(!val){fb.className='ex-feedback hint';fb.textContent='Type your answer first.';hint.textContent=q.hint;hint.style.display='block';return;} if(new RegExp(q.pattern,'i').test(val)){input.classList.add('correct');correct();fb.className='ex-feedback ok';fb.textContent='Correct.';setTimeout(next,1000);}else{input.classList.add('wrong');wrong();fb.className='ex-feedback err';fb.textContent='Not quite. Check indentation and colons.';hint.textContent=q.hint;hint.style.display='block';}}; document.getElementById('sel2-ep-answer').focus();} next(); })();"
+      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across Selection Part 2. Answer 5 questions correctly in a row to complete this step.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"sel2-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"sel2-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"sel2-ep-q\"></div>",
+      "js": "(function(){ var mcqPool=[{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>?</span>\",\"correct\":\"if coins >= 5:\\n    print('You have enough!')\",\"options\":[\"if coins >= 5:\\n    print('You have enough!')\",\"if coins > 5:\\n    print('You have enough!')\",\"if coins <= 5:\\n    print('You have enough!')\",\"if coins == 5:\\n    print('You have enough!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>?</span>\",\"correct\":\"if lives != 0:\\n    print('Still alive!')\",\"options\":[\"if lives != 0:\\n    print('Still alive!')\",\"if lives == 0:\\n    print('Still alive!')\",\"if lives > 0:\\n    print('Still alive!')\",\"if lives < 0:\\n    print('Still alive!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>, otherwise prints a different message?</span>\",\"correct\":\"if coins >= 5:\\n    print('Enough!')\\nelse:\\n    print('Not enough!')\",\"options\":[\"if coins >= 5:\\n    print('Enough!')\\nelse:\\n    print('Not enough!')\",\"if coins >= 5:\\n    print('Enough!')\\nelse\\n    print('Not enough!')\",\"if coins >= 5:\\n    print('Enough!')\\nElse:\\n    print('Not enough!')\",\"if coins >= 5:\\nprint('Enough!')\\nelse:\\nprint('Not enough!')\"]},{\"prompt\":\"Choose the correct code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which correctly prints a message if <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>, otherwise prints a different message?</span>\",\"correct\":\"if lives != 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"options\":[\"if lives != 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"if lives == 0:\\n    print('Alive!')\\nelse:\\n    print('Game over!')\",\"if lives != 0:\\n    print('Alive!')\\nelse:\\nprint('Game over!')\",\"if lives != 0:\\nprint('Alive!')\\nelse:\\n    print('Game over!')\"]}], textPool=[{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Print 'You have enough!' if <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>.</span>\",\"pattern\":\"if\\\\s+coins\\\\s*>=\\\\s*5\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if coins >= 5:\\n    print('You have enough!')\",\"rows\":3},{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">If <span class=\\\"green-keyword\\\">coins</span> is greater than or equal to <span class=\\\"green-keyword\\\">5</span>, print 'You have enough!', otherwise print 'Not enough coins.'</span>\",\"pattern\":\"if\\\\s+coins\\\\s*>=\\\\s*5\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\nelse\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if coins >= 5:\\n    print('You have enough!')\\nelse:\\n    print('Not enough coins.')\",\"rows\":6},{\"label\":\"Write the code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">If <span class=\\\"green-keyword\\\">lives</span> is not equal to <span class=\\\"green-keyword\\\">0</span>, print 'Still alive!', otherwise print 'Game over.'</span>\",\"pattern\":\"if\\\\s+lives\\\\s*!=\\\\s*0\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\nelse\\\\s*:\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\",\"hint\":\"if lives != 0:\\n    print('Still alive!')\\nelse:\\n    print('Game over.')\",\"rows\":6}]; var streak=0,best=parseInt(localStorage.getItem('pylearn_selection2_best')||'0',10); document.getElementById('sel2-ep-best').textContent=best; function rand(a){return a[Math.floor(Math.random()*a.length)];} function correct(){streak++; if(streak>best){best=streak; localStorage.setItem('pylearn_selection2_best',best); document.getElementById('sel2-ep-best').textContent=best;} document.getElementById('sel2-ep-streak').textContent=streak; if(streak>=5)window.__markStepComplete&&window.__markStepComplete();} function wrong(){streak=0; document.getElementById('sel2-ep-streak').textContent=streak;} function next(){Math.random()<0.5?showMcq(rand(mcqPool)):showText(rand(textPool));} function showMcq(q){var wrap=document.getElementById('sel2-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"sel2-ep-opts\"></div><div class=\"ex-feedback\" id=\"sel2-ep-fb\"></div>'; q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o; btn.onclick=function(){document.querySelectorAll('#sel2-ep-opts .ex-opt').forEach(function(b){b.disabled=true;if(b.textContent===q.correct)b.classList.add('correct');}); var fb=document.getElementById('sel2-ep-fb'); if(o===q.correct){btn.classList.add('correct');correct();fb.className='ex-feedback ok';fb.textContent='Correct.';setTimeout(next,1000);}else{btn.classList.add('wrong');wrong();fb.className='ex-feedback err';fb.textContent='Incorrect. The answer is shown in green.';}}; document.getElementById('sel2-ep-opts').appendChild(btn);});} function showText(q){var wrap=document.getElementById('sel2-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><textarea id=\"sel2-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea><button id=\"sel2-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"sel2-ep-fb\"></div><div class=\"ex-explanation\" id=\"sel2-ep-hint\" style=\"display:none\"></div>'; document.getElementById('sel2-ep-check').onclick=function(){var input=document.getElementById('sel2-ep-answer'), val=input.value.trim(), fb=document.getElementById('sel2-ep-fb'), hint=document.getElementById('sel2-ep-hint'); if(!val){fb.className='ex-feedback hint';fb.textContent='Type your answer first.';hint.textContent=q.hint;hint.style.display='block';return;} if(new RegExp(q.pattern,'i').test(val)){input.classList.add('correct');correct();fb.className='ex-feedback ok';fb.textContent='Correct.';setTimeout(next,1000);}else{input.classList.add('wrong');wrong();fb.className='ex-feedback err';fb.textContent='Not quite. Check indentation and colons.';hint.textContent=q.hint;hint.style.display='block';}}; document.getElementById('sel2-ep-answer').focus();} next(); })();"
     }
   ],
   "quizQuestions": [
@@ -110,7 +110,8 @@
         "if coins = 5:\n    print(\"Enough\")"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nscore = 40\nif score >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Try again\")",
@@ -121,7 +122,8 @@
         "Nothing"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nlives = 0\nif lives != 0:\n    print(\"Alive\")\nelse:\n    print(\"Game over\")",
@@ -132,7 +134,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which if/else block has the correct structure?",
@@ -143,7 +146,8 @@
         "if score >= 50:\n    print(\"Pass\")\nElse:\n    print(\"Fail\")"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which keyword gives an alternative path when an if condition is False?",
@@ -154,7 +158,8 @@
         "not"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which block checks that role is exactly the text admin?",
@@ -165,7 +170,8 @@
         "if \"role\" == \"admin\":\n    print(\"OK\")"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\ntemperature = 30\nif temperature > 30:\n    print(\"Hot\")\nelse:\n    print(\"Not hot\")",
@@ -176,7 +182,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which comparison includes the boundary value 100?",
@@ -187,7 +194,8 @@
         "speed < 100"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nattempts = 3\nif attempts == 3:\n    print(\"Locked\")\nelse:\n    print(\"Try\")",
@@ -198,7 +206,8 @@
         "Nothing"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which mistake would cause a syntax error?",
@@ -209,40 +218,46 @@
         "Comparing a number with 50"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "type": "code_output",
       "q": "Store a score below 50. Write an if/else block that prints Pass for passing scores and Try again otherwise.",
       "inputs": [],
       "expectedOutput": "Try again",
-      "sampleAnswer": "score = 40\nif score >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Try again\")"
+      "sampleAnswer": "score = 40\nif score >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Try again\")",
+      "duration": 60
     },
     {
       "type": "code_output",
       "q": "Store lives as zero. Write an if/else block that prints Alive when lives is not zero and Game over otherwise.",
       "inputs": [],
       "expectedOutput": "Game over",
-      "sampleAnswer": "lives = 0\nif lives != 0:\n    print(\"Alive\")\nelse:\n    print(\"Game over\")"
+      "sampleAnswer": "lives = 0\nif lives != 0:\n    print(\"Alive\")\nelse:\n    print(\"Game over\")",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write a full if/else block that checks whether grade is at least 50 and prints one message in each branch.",
       "pattern": "^\\s*if\\s+grade\\s*>=\\s*50\\s*:\\s*\\n\\s+print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*\\n\\s*else\\s*:\\s*\\n\\s+print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*$",
-      "sampleAnswer": "if grade >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")"
+      "sampleAnswer": "if grade >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")",
+      "duration": 90
     },
     {
       "type": "code_output",
       "q": "Store game_over as False. Write an if/else block using not so the output is Continue.",
       "inputs": [],
       "expectedOutput": "Continue",
-      "sampleAnswer": "game_over = False\nif not game_over:\n    print(\"Continue\")\nelse:\n    print(\"Stop\")"
+      "sampleAnswer": "game_over = False\nif not game_over:\n    print(\"Continue\")\nelse:\n    print(\"Stop\")",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write a full if block that checks whether role is exactly the text admin and prints a message inside the block.",
       "pattern": "^\\s*if\\s+role\\s*==\\s*[\"']admin[\"']\\s*:\\s*\\n\\s+print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*$",
-      "sampleAnswer": "if role == \"admin\":\n    print(\"OK\")"
+      "sampleAnswer": "if role == \"admin\":\n    print(\"OK\")",
+      "duration": 90
     }
   ]
 }

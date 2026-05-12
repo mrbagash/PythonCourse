@@ -126,10 +126,10 @@
     {
       "id": "selection-endless",
       "title": "Endless Practice",
-      "autoComplete": true,
+      "autoComplete": false,
       "css": "\n.ex-box{background:#1e1e2e;border:1px solid #313244;border-radius:10px;padding:16px 20px;margin-bottom:14px}\n.ex-prompt{font-family:sans-serif;font-size:0.85rem;color:#cdd6f4;margin-bottom:10px}\n.ex-code{color:#cdd6f4;font-size:0.95rem;line-height:1.7;letter-spacing:0.01em;font-family:'Courier New',monospace;display:block}\n.code-func{color:#cba6f7}\n.code-string{color:#a6e3a1}\n.code-comment{color:#94e2d5;font-style:italic}\n.code-error{color:#f38ba8}\n.green-keyword{color:#a6e3a1;font-weight:600}\n.ex-options{display:block;margin-top:10px}\n.ex-opt{display:block;width:100%;background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 14px;font-family:'Courier New',monospace;font-size:0.9rem;cursor:pointer;text-align:left;margin-bottom:6px;box-sizing:border-box;line-height:1.4}\n.ex-opt:last-child{margin-bottom:0}\n.ex-opt:hover:not([disabled]){background:#45475a;border-color:#94e2d5}\n.ex-opt.correct{background:#1a3328!important;border-color:#a6e3a1!important;color:#a6e3a1!important}\n.ex-opt.wrong{background:#351c1c!important;border-color:#f38ba8!important;color:#f38ba8!important}\n.ex-opt[disabled]{cursor:default}\n.ex-feedback{margin-top:10px;font-size:0.85rem;min-height:20px;font-family:sans-serif;line-height:1.4}\n.ex-feedback.ok{color:#a6e3a1}\n.ex-feedback.err{color:#f38ba8}\n.ex-feedback.hint{color:#f9e2af}\n.ex-progress{font-size:0.8rem;color:#585b70;margin-bottom:4px;font-family:sans-serif}\n.ex-score{font-size:0.85rem;font-weight:600;color:#cba6f7;margin-bottom:10px;font-family:sans-serif}\n.ex-label{font-family:sans-serif;font-size:0.82rem;color:#89b4fa;margin-bottom:10px;display:block}\n.ex-explanation{background:#252535;border-left:3px solid #89b4fa;padding:8px 12px;margin-top:10px;font-size:0.82rem;color:#bac2de;font-family:sans-serif;border-radius:0 6px 6px 0;line-height:1.5}\n\n.ex-input,.ex-textarea{width:100%;background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;font-size:0.9rem;box-sizing:border-box;line-height:1.45}\n.ex-input:focus,.ex-textarea:focus{outline:none;border-color:#89b4fa;box-shadow:0 0 0 2px rgba(137,180,250,0.25)}\n.ex-input.correct,.ex-textarea.correct{border-color:#a6e3a1;background:#14251d}\n.ex-input.wrong,.ex-textarea.wrong{border-color:#f38ba8;background:#281616}\n.ex-btn{display:inline-block;background:#2563eb;color:white;border:0;border-radius:6px;padding:8px 14px;font-family:sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer}\n.ex-btn:hover:not([disabled]){background:#1d4ed8}\n.ex-btn[disabled]{opacity:0.55;cursor:default}\n",
-      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Selection lesson. Keep going as long as you like.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"sel-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"sel-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"sel-ep-q\"></div>",
-      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the comparison operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Greater than or equal to</span>\",\"correct\":\">=\",\"options\":[\">=\",\">\",\"<=\",\"=>\"]},{\"prompt\":\"Choose the comparison operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Not equal to</span>\",\"correct\":\"!=\",\"options\":[\"!=\",\"==\",\"<>\",\"not=\"]},{\"prompt\":\"Choose the logical operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Both sides must be True</span>\",\"correct\":\"and\",\"options\":[\"and\",\"or\",\"not\",\"&&\"]},{\"prompt\":\"Choose the full if block:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Check if score is at least 50, then print a message.</span>\",\"correct\":\"if score >= 50:\\n    print('Passed!')\",\"options\":[\"if score >= 50:\\n    print('Passed!')\",\"if score => 50:\\n    print('Passed!')\",\"if score >= 50\\n    print('Passed!')\",\"if score >= 50;\\n    print('Passed!')\"]}];\n  var textPool = [{\"label\":\"Type the operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Less than or equal to</span>\",\"pattern\":\"^\\\\s*<=\\\\s*$\",\"hint\":\"<=\"},{\"label\":\"Type the operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Equal to</span>\",\"pattern\":\"^\\\\s*==\\\\s*$\",\"hint\":\"==\"},{\"label\":\"Type the logical operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Either side can be True</span>\",\"pattern\":\"^\\\\s*or\\\\s*$\",\"hint\":\"or\"},{\"label\":\"Type the full if block:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Check if lives does not equal 0, then print a message.</span>\",\"pattern\":\"^\\\\s*if\\\\s+lives\\\\s*!=\\\\s*0\\\\s*:\\\\s*\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\s*$\",\"hint\":\"if lives != 0:\\n    print(\\\"Keep playing\\\")\",\"multiline\":true}];\n  var streak=0, best=parseInt(localStorage.getItem('pylearn_selection_best')||'0',10); document.getElementById('sel-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem('pylearn_selection_best', best); document.getElementById('sel-ep-best').textContent=best; } document.getElementById('sel-ep-streak').textContent=streak; }\n  function wrong(){ streak=0; document.getElementById('sel-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){ var wrap=document.getElementById('sel-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"sel-ep-opts\"></div><div class=\"ex-feedback\" id=\"sel-ep-fb\"></div>'; q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){ var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o; btn.onclick=function(){ document.querySelectorAll('#sel-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); }); var fb=document.getElementById('sel-ep-fb'); if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); } else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; } }; document.getElementById('sel-ep-opts').appendChild(btn); }); }\n  function showText(q){ var wrap=document.getElementById('sel-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+(q.multiline?'<textarea id=\"sel-ep-answer\" class=\"ex-textarea\" rows=\"3\" spellcheck=\"false\" placeholder=\"if condition:\\\\n    print(\\\"Message\\\")\"></textarea>':'<input id=\"sel-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your answer here\"/>')+'<button id=\"sel-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"sel-ep-fb\"></div><div class=\"ex-explanation\" id=\"sel-ep-hint\" style=\"display:none\"></div>'; document.getElementById('sel-ep-check').onclick=function(){ var input=document.getElementById('sel-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('sel-ep-fb'); var hint=document.getElementById('sel-ep-hint'); if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; } if(new RegExp(q.pattern,'i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); } else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; } }; document.getElementById('sel-ep-answer').onkeydown=function(e){ if(e.key==='Enter' && !q.multiline) document.getElementById('sel-ep-check').click(); if(e.key==='Enter' && e.ctrlKey) document.getElementById('sel-ep-check').click(); }; document.getElementById('sel-ep-answer').focus(); }\n  next();\n})();"
+      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Selection lesson. Answer 5 questions correctly in a row to complete this step.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"sel-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"sel-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"sel-ep-q\"></div>",
+      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the comparison operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Greater than or equal to</span>\",\"correct\":\">=\",\"options\":[\">=\",\">\",\"<=\",\"=>\"]},{\"prompt\":\"Choose the comparison operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Not equal to</span>\",\"correct\":\"!=\",\"options\":[\"!=\",\"==\",\"<>\",\"not=\"]},{\"prompt\":\"Choose the logical operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Both sides must be True</span>\",\"correct\":\"and\",\"options\":[\"and\",\"or\",\"not\",\"&&\"]},{\"prompt\":\"Choose the full if block:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Check if score is at least 50, then print a message.</span>\",\"correct\":\"if score >= 50:\\n    print('Passed!')\",\"options\":[\"if score >= 50:\\n    print('Passed!')\",\"if score => 50:\\n    print('Passed!')\",\"if score >= 50\\n    print('Passed!')\",\"if score >= 50;\\n    print('Passed!')\"]}];\n  var textPool = [{\"label\":\"Type the operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Less than or equal to</span>\",\"pattern\":\"^\\\\s*<=\\\\s*$\",\"hint\":\"<=\"},{\"label\":\"Type the operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Equal to</span>\",\"pattern\":\"^\\\\s*==\\\\s*$\",\"hint\":\"==\"},{\"label\":\"Type the logical operator:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Either side can be True</span>\",\"pattern\":\"^\\\\s*or\\\\s*$\",\"hint\":\"or\"},{\"label\":\"Type the full if block:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Check if lives does not equal 0, then print a message.</span>\",\"pattern\":\"^\\\\s*if\\\\s+lives\\\\s*!=\\\\s*0\\\\s*:\\\\s*\\\\n\\\\s+print\\\\s*\\\\(\\\\s*[\\\"'][^\\\"']+[\\\"']\\\\s*\\\\)\\\\s*$\",\"hint\":\"if lives != 0:\\n    print(\\\"Keep playing\\\")\",\"multiline\":true}];\n  var streak=0, best=parseInt(localStorage.getItem('pylearn_selection_best')||'0',10); document.getElementById('sel-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem('pylearn_selection_best', best); document.getElementById('sel-ep-best').textContent=best; } document.getElementById('sel-ep-streak').textContent=streak; if(streak>=5)window.__markStepComplete&&window.__markStepComplete(); }\n  function wrong(){ streak=0; document.getElementById('sel-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){ var wrap=document.getElementById('sel-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"sel-ep-opts\"></div><div class=\"ex-feedback\" id=\"sel-ep-fb\"></div>'; q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){ var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o; btn.onclick=function(){ document.querySelectorAll('#sel-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); }); var fb=document.getElementById('sel-ep-fb'); if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); } else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; } }; document.getElementById('sel-ep-opts').appendChild(btn); }); }\n  function showText(q){ var wrap=document.getElementById('sel-ep-q'); wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+(q.multiline?'<textarea id=\"sel-ep-answer\" class=\"ex-textarea\" rows=\"3\" spellcheck=\"false\" placeholder=\"if condition:\\\\n    print(\\\"Message\\\")\"></textarea>':'<input id=\"sel-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your answer here\"/>')+'<button id=\"sel-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"sel-ep-fb\"></div><div class=\"ex-explanation\" id=\"sel-ep-hint\" style=\"display:none\"></div>'; document.getElementById('sel-ep-check').onclick=function(){ var input=document.getElementById('sel-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('sel-ep-fb'); var hint=document.getElementById('sel-ep-hint'); if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; } if(new RegExp(q.pattern,'i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); } else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; } }; document.getElementById('sel-ep-answer').onkeydown=function(e){ if(e.key==='Enter' && !q.multiline) document.getElementById('sel-ep-check').click(); if(e.key==='Enter' && e.ctrlKey) document.getElementById('sel-ep-check').click(); }; document.getElementById('sel-ep-answer').focus(); }\n  next();\n})();"
     }
   ],
   "quizQuestions": [
@@ -142,7 +142,8 @@
         "<="
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which operator means not equal to?",
@@ -153,7 +154,8 @@
         "=!"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nscore = 50\nif score >= 50:\n    print(\"Pass\")",
@@ -164,7 +166,8 @@
         "Error"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\ntemperature = 30\nif temperature > 30:\n    print(\"Hot\")",
@@ -175,7 +178,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which full if block checks whether lives is not zero?",
@@ -186,7 +190,8 @@
         "if lives <> 0:\n    print(\"Keep playing\")"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which line correctly compares role with the text player?",
@@ -197,7 +202,8 @@
         "if \"role\" == player:"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which logical operator needs both conditions to be True?",
@@ -208,7 +214,8 @@
         "either"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which logical operator needs at least one condition to be True?",
@@ -219,7 +226,8 @@
         "both"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nage = 12\nif age >= 11 and age <= 18:\n    print(\"Allowed\")",
@@ -230,7 +238,8 @@
         "Error"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\ncoins = 3\nif coins > 5 or coins == 3:\n    print(\"Open\")",
@@ -241,40 +250,46 @@
         "Error"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "type": "code_output",
       "q": "Store a score of 50. Write a full if block that prints Pass when the score meets the pass mark.",
       "inputs": [],
       "expectedOutput": "Pass",
-      "sampleAnswer": "score = 50\nif score >= 50:\n    print(\"Pass\")"
+      "sampleAnswer": "score = 50\nif score >= 50:\n    print(\"Pass\")",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write a full if block that checks whether lives is not zero and prints a message inside the block.",
       "pattern": "^\\s*if\\s+lives\\s*!=\\s*0\\s*:\\s*\\n\\s+print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*$",
-      "sampleAnswer": "if lives != 0:\n    print(\"Keep playing\")"
+      "sampleAnswer": "if lives != 0:\n    print(\"Keep playing\")",
+      "duration": 90
     },
     {
       "type": "code_output",
       "q": "Store an age of 12. Write a full if block using and that prints Allowed only when age is in the 11 to 18 range.",
       "inputs": [],
       "expectedOutput": "Allowed",
-      "sampleAnswer": "age = 12\nif age >= 11 and age <= 18:\n    print(\"Allowed\")"
+      "sampleAnswer": "age = 12\nif age >= 11 and age <= 18:\n    print(\"Allowed\")",
+      "duration": 60
     },
     {
       "type": "code_output",
       "q": "Store coins as 3. Write a full if block using or that prints Open when coins is either more than 5 or exactly 3.",
       "inputs": [],
       "expectedOutput": "Open",
-      "sampleAnswer": "coins = 3\nif coins > 5 or coins == 3:\n    print(\"Open\")"
+      "sampleAnswer": "coins = 3\nif coins > 5 or coins == 3:\n    print(\"Open\")",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write a full if block that uses not with game_over and prints a message inside the block.",
       "pattern": "^\\s*if\\s+not\\s+game_over\\s*:\\s*\\n\\s+print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*$",
-      "sampleAnswer": "if not game_over:\n    print(\"Continue\")"
+      "sampleAnswer": "if not game_over:\n    print(\"Continue\")",
+      "duration": 90
     }
   ]
 }

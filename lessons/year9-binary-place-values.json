@@ -14,28 +14,28 @@
       "title": "Step Through: Read Bits",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through an example</h2><p class='text-gray-700 mb-4'>Click through each stage to see how the total is built.</p><div id='y9pv-stepper-1'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-1',steps:[{title:'Start with the place values',html:BinaryLesson.bitTable([1,0,1,0,1,0,0,1]),note:'The headers show what each column is worth.'},{title:'Keep only the 1 columns',html:BinaryLesson.bitTable([1,0,1,0,1,0,0,1]),note:'The active columns are 128, 32, 8 and 1.'},{title:'Add the active columns',html:'<p class=\"bb-answer-line\">128 + 32 + 8 + 1 = 169</p>',note:'So 10101001 has the denary value 169.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-1',steps:[{title:'We are converting 10101001 to denary',html:'<div class=\"bb-big-number\"><span>10101001</span></div>',note:'Each bit sits under a place value. Only the columns with a 1 in them count.'},{title:'Line each bit up under its place value',html:BinaryLesson.bitTable([1,0,1,0,1,0,0,1]),note:'The bright cells are the 1s — those are the only columns we add up. The active columns here are 128, 32, 8 and 1.'},{title:'Add the active columns',html:'<p class=\"bb-answer-line\">128 + 32 + 8 + 1 = 169</p>',note:'10101001 in denary is 169.'}]});"
     },
     {
       "id": "guided-two",
       "title": "Step Through: Missing Places",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Another step-through question</h2><p class='text-gray-700 mb-4'>This time focus on identifying active place values before adding.</p><div id='y9pv-stepper-2'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-2',steps:[{title:'Read the bits',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),note:'Look for the columns with a 1.'},{title:'Name the active columns',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),note:'64, 16, 8 and 2 are active.'},{title:'Add them',html:'<p class=\"bb-answer-line\">64 + 16 + 8 + 2 = 90</p>',note:'So 01011010 is worth 90.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-2',steps:[{title:'We are converting 01011010 to denary',html:'<div class=\"bb-big-number\"><span>01011010</span></div>',note:'Find which columns have a 1, then add their place values together.'},{title:'Line each bit up under its place value',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),note:'The bright cells show the 1s. The active columns are 64, 16, 8 and 2.'},{title:'Add the active columns',html:'<p class=\"bb-answer-line\">64 + 16 + 8 + 2 = 90</p>',note:'01011010 in denary is 90.'}]});"
     },
     {
       "id": "practice-a",
       "title": "Checked Practice 1",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: active places</h2><p class='text-gray-700 mb-4'>Type the denary total for each binary number. You will get feedback after each answer.</p><div id='y9pv-practice-a'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-a',questions:[{prompt:'What is the denary value?',html:BinaryLesson.bitTable([0,1,0,1,0,0,0,0]),answer:'80',right:'Correct: 64 + 16 = 80.'},{prompt:'What is the denary value?',html:BinaryLesson.bitTable([1,0,0,0,0,1,0,1]),answer:'133',right:'Correct: 128 + 4 + 1 = 133.'},{prompt:'What is the denary value?',html:BinaryLesson.bitTable([0,0,1,0,1,0,1,0]),answer:'42',right:'Correct: 32 + 8 + 2 = 42.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-a',questions:[{generated:'binary_to_denary'},{generated:'binary_to_denary'},{generated:'binary_to_denary'}]});"
     },
     {
       "id": "practice-b",
       "title": "Checked Practice 2",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: build numbers</h2><p class='text-gray-700 mb-4'>Type the 8-bit binary number that matches the active place values.</p><div id='y9pv-practice-b'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-b',questions:[{prompt:'Use 128, 16, 4 and 1.',answer:'10010101',right:'Correct: those columns are switched on.'},{prompt:'Use 64, 32 and 8.',answer:'01101000',right:'Correct: 64 + 32 + 8.'},{prompt:'Use 16, 8, 4, 2 and 1.',answer:'00011111',right:'Correct: the final five columns are on.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-b',questions:[{generated:'denary_to_binary'},{generated:'denary_to_binary'},{generated:'denary_to_binary'}]});"
     },
     {
       "id": "endless",
@@ -49,7 +49,7 @@
       "title": "End of Lesson Exam",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions. Feedback appears after each one.</p><div id='y9pv-exam'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9pv-exam',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,1,0,0,1,0,0,0]),answer:'200',right:'128 + 64 + 8 = 200.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,1,0,1,0,1]),answer:'21',right:'16 + 4 + 1 = 21.'},{prompt:'Build 128, 16, 4 and 1 as binary.',answer:'10010101',right:'Correct.'},{prompt:'Which denary value is shown?',html:BinaryLesson.bitTable([1,0,1,0,0,0,0,1]),answer:'161',right:'128 + 32 + 1 = 161.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-exam',questions:[{generated:'binary_to_denary'},{generated:'binary_to_denary'},{generated:'denary_to_binary'},{generated:'binary_to_denary'}]});"
     }
   ],
   "quizQuestions": [
@@ -78,32 +78,20 @@
       "duration": 60
     },
     {
-      "type": "mcq",
-      "q": "What is 00101010 worth in denary?",
-      "options": [
-        "42",
-        "40",
-        "84",
-        "21"
-      ],
-      "answer": 0,
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
       "duration": 60
     },
     {
-      "type": "mcq",
-      "q": "Which binary number uses 128, 16, 4 and 1?",
-      "options": [
-        "10010101",
-        "10101001",
-        "10010011",
-        "01010101"
-      ],
-      "answer": 0,
-      "duration": 60
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 75
     },
     {
       "type": "mcq",
-      "q": "What does a 0 mean in a binary column?",
+      "q": "What does a 0 in a binary column mean?",
       "options": [
         "Do not include that place value",
         "Double that place value",
@@ -112,6 +100,96 @@
       ],
       "answer": 0,
       "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is 10000000 worth in denary?",
+      "options": [
+        "128",
+        "64",
+        "256",
+        "100"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "In binary, each column is worth how many times the column to its right?",
+      "options": [
+        "2",
+        "10",
+        "8",
+        "16"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
+      "duration": 60
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00000001 worth in denary?",
+      "options": [
+        "1",
+        "2",
+        "128",
+        "0"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
+      "duration": 60
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Which column from the left has place value 16?",
+      "options": [
+        "5th",
+        "4th",
+        "6th",
+        "3rd"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00000000 worth in denary?",
+      "options": [
+        "0",
+        "1",
+        "128",
+        "255"
+      ],
+      "answer": 0,
+      "duration": 30
     }
   ]
 }

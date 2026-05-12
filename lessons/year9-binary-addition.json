@@ -21,28 +21,28 @@
       "title": "Step Through: Simple Sum",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a binary sum</h2><div id='y9ba-stepper-1'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-1',steps:[{title:'Line up the two numbers',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1], [0,0,0,1,0,1,1,1]),note:'Start from the right-hand bit.'},{title:'Work right to left',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1], [0,0,0,1,0,1,1,1]),note:'Use 1 + 1 = 0 carry 1 whenever the column total is 2.'},{title:'Final answer',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[0,1,0,0,0,1,0,0]),note:'45 + 23 = 68, so the answer is 01000100.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-1',steps:[{title:'We are adding 45 and 23',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1]),note:'Work from right to left, one column at a time. Add the two bits and any carry that arrived. If the total is 2 or more, write 0 and carry 1 to the left. If the total is 3, write 1 and still carry 1.'},{title:'1s column: 1 + 1',html:'<p class=\"ex-prompt\">The rightmost column has 1 on top and 1 on the bottom. There is no carry coming in here — we always start with 0.</p><p class=\"bb-answer-line\">1 + 1 = 2  →  write 0, carry 1 to the left</p>'+BinaryLesson.addTablePartial([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[null,null,null,null,null,null,null,0],[null,null,null,null,null,null,1,null]),note:'We write 0 in this column and pass a carry of 1 to the 2s column on the left.'},{title:'2s column: 0 + 1 + carry 1',html:'<p class=\"ex-prompt\">The carry of 1 has arrived in the 2s column.</p><p class=\"bb-answer-line\">0 + 1 + 1 (carry) = 2  →  write 0, carry 1 again</p>'+BinaryLesson.addTablePartial([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[null,null,null,null,null,null,0,0],[null,null,null,null,null,1,1,null]),note:'The carry pushes the total to 2 even though the two bits only add to 1. Write 0 and carry again.'},{title:'4s column: 1 + 1 + carry 1',html:'<p class=\"ex-prompt\">Another carry arrives in the 4s column.</p><p class=\"bb-answer-line\">1 + 1 + 1 (carry) = 3  →  write 1, carry 1</p><p class=\"ex-prompt\">3 is the only total where you write 1 and still carry — because 3 in binary is 11.</p>'+BinaryLesson.addTablePartial([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[null,null,null,null,null,1,0,0],[null,null,null,null,1,1,1,null]),note:'Total of 3: write 1 and carry 1. Total of 2: write 0 and carry 1. Total of 0 or 1: write that number, no carry.'},{title:'Complete the remaining columns',html:'<p class=\"ex-prompt\">Keep working left — a carry arrives at each column:</p><p class=\"bb-answer-line\">8s column: 1 + 0 + carry 1 = 2  →  write 0, carry 1</p><p class=\"bb-answer-line\">16s column: 0 + 1 + carry 1 = 2  →  write 0, carry 1</p><p class=\"bb-answer-line\">32s column: 1 + 0 + carry 1 = 2  →  write 0, carry 1</p><p class=\"bb-answer-line\">64s column: 0 + 0 + carry 1 = 1  →  write 1, no carry</p><p class=\"bb-answer-line\">128s column: 0 + 0 + 0 = 0  →  write 0</p>'+BinaryLesson.addTable([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[0,1,0,0,0,1,0,0]),note:'45 + 23 = 68, giving 01000100. The carry row shows all the carries that were passed left during the working.'}]});"
     },
     {
       "id": "guided-two",
       "title": "Step Through: Carry Chain",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a carry chain</h2><div id='y9ba-stepper-2'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-2',steps:[{title:'Set up 00001111 + 00000001',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,1]),note:'The rightmost column is 1 + 1.'},{title:'Carry through the ones',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,1]),note:'Each 1 + carry 1 creates another carry.'},{title:'Final answer',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[0,0,0,1,0,0,0,0]),note:'15 + 1 = 16, so the answer is 00010000.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-2',steps:[{title:'We are adding 15 and 1',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1]),note:'The top number has four 1s in a row on the right. Adding just 1 is going to start a carry that travels through all four of them — this is called a carry chain.'},{title:'1s column: 1 + 1',html:'<p class=\"bb-answer-line\">1 + 1 = 2  →  write 0, carry 1 to the left</p>'+BinaryLesson.addTablePartial([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[null,null,null,null,null,null,null,0],[null,null,null,null,null,null,1,null]),note:'The carry of 1 moves into the 2s column. That column has a 1 in it — so the chain begins.'},{title:'2s column: 1 + 0 + carry 1',html:'<p class=\"ex-prompt\">The carry lands on a column with 1 on top and 0 on the bottom.</p><p class=\"bb-answer-line\">1 + 0 + 1 (carry) = 2  →  write 0, carry 1 again</p><p class=\"ex-prompt\">Every time a carry lands on a 1, it produces another carry and keeps moving left.</p>'+BinaryLesson.addTablePartial([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[null,null,null,null,null,null,0,0],[null,null,null,null,null,1,1,null]),note:'The chain continues as long as the carry keeps landing on 1s.'},{title:'The chain continues: 4s and 8s columns',html:'<p class=\"bb-answer-line\">4s column: 1 + 0 + carry 1 = 2  →  write 0, carry 1</p><p class=\"bb-answer-line\">8s column: 1 + 0 + carry 1 = 2  →  write 0, carry 1</p><p class=\"ex-prompt\">Same result each time — the carry passes through each 1 and keeps moving.</p>'+BinaryLesson.addTablePartial([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[null,null,null,null,0,0,0,0],[null,null,null,1,1,1,1,null]),note:'Each 1 in the top row turns into a 0 as the carry passes through it.'},{title:'16s column: the chain stops',html:'<p class=\"ex-prompt\">The carry arrives at the 16s column, but both bits are 0.</p><p class=\"bb-answer-line\">0 + 0 + 1 (carry) = 1  →  write 1, no carry</p><p class=\"ex-prompt\">The total is only 1 — we write 1 and there is nothing left to carry. The chain ends here.</p>'+BinaryLesson.addTable([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[0,0,0,1,0,0,0,0]),note:'15 + 1 = 16, giving 00010000. Four 1s became four 0s as the carry chain passed through each one, and a new 1 appeared one column further left.'}]});"
     },
     {
       "id": "practice-a",
       "title": "Checked Practice 1",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary sums</h2><div id='y9ba-practice-a'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-a',questions:[{prompt:'Add these two numbers.',type:'addition',rowA:[0,0,0,0,0,1,0,1],rowB:[0,0,0,0,0,0,1,1],answer:'00001000',right:'5 + 3 = 8.'},{prompt:'Add these two numbers.',type:'addition',rowA:[0,0,0,0,1,1,1,1],rowB:[0,0,0,0,0,0,0,1],answer:'00010000',right:'15 + 1 = 16.'},{prompt:'Add these two numbers.',type:'addition',rowA:[0,0,1,0,1,0,1,0],rowB:[0,0,0,1,0,1,0,1],answer:'00111111',right:'42 + 21 = 63.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-a',questions:[{generated:'addition'},{generated:'addition'},{generated:'addition'}]});"
     },
     {
       "id": "practice-b",
       "title": "Checked Practice 2",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: explain carries</h2><div id='y9ba-practice-b'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-b',questions:[{prompt:'What is 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct: write 0 and carry 1.'},{prompt:'What is 1 + 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 + 1 = ?</p>',answer:'11',right:'Correct: write 1 and carry 1.'},{prompt:'Add these two numbers.',type:'addition',rowA:[0,1,0,0,0,0,0,0],rowB:[0,0,1,0,0,0,0,0],answer:'01100000',right:'64 + 32 = 96.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-b',questions:[{prompt:'What is 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct: write 0 and carry 1.'},{prompt:'What is 1 + 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 + 1 = ?</p>',answer:'11',right:'Correct: write 1 and carry 1.'},{generated:'addition'}]});"
     },
     {
       "id": "endless",
@@ -56,7 +56,7 @@
       "title": "End of Lesson Exam",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><div id='y9ba-exam'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9ba-exam',questions:[{prompt:'Add these two numbers.',type:'addition',rowA:[0,0,0,0,1,0,1,0],rowB:[0,0,0,0,0,1,0,1],answer:'00001111',right:'10 + 5 = 15.'},{prompt:'Add these two numbers.',type:'addition',rowA:[0,0,0,1,1,1,1,1],rowB:[0,0,0,0,0,0,0,1],answer:'00100000',right:'31 + 1 = 32.'},{prompt:'Add these two numbers.',type:'addition',rowA:[0,1,0,0,0,0,0,0],rowB:[0,0,1,0,0,0,0,0],answer:'01100000',right:'64 + 32 = 96.'},{prompt:'What is 1 + 1? Type the binary result.',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-exam',questions:[{generated:'addition'},{generated:'addition'},{generated:'addition'},{prompt:'What is 1 + 1? Type the binary result.',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct.'}]});"
     }
   ],
   "quizQuestions": [
@@ -73,16 +73,10 @@
       "duration": 45
     },
     {
-      "type": "mcq",
-      "q": "What is 00000101 + 00000011?",
-      "options": [
-        "00001000",
-        "00000110",
-        "00000111",
-        "00001100"
-      ],
-      "answer": 0,
-      "duration": 75
+      "type": "generated",
+      "mode": "addition",
+      "q": "Add these two binary numbers. Fill in the carry row and the answer.",
+      "duration": 90
     },
     {
       "type": "mcq",
@@ -97,16 +91,10 @@
       "duration": 45
     },
     {
-      "type": "mcq",
-      "q": "What is 00001111 + 00000001?",
-      "options": [
-        "00010000",
-        "00001110",
-        "00011111",
-        "00001000"
-      ],
-      "answer": 0,
-      "duration": 75
+      "type": "generated",
+      "mode": "addition",
+      "q": "Add these two binary numbers. Fill in the carry row and the answer.",
+      "duration": 90
     },
     {
       "type": "mcq",
@@ -116,6 +104,96 @@
         "Left to right",
         "Middle outwards",
         "It does not matter"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What do you write when a column total is 2?",
+      "options": [
+        "0 and carry 1",
+        "1 and carry 1",
+        "2",
+        "0"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "addition",
+      "q": "Add these two binary numbers. Fill in the carry row and the answer.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "What do you write when a column total is 3?",
+      "options": [
+        "1 and carry 1",
+        "0 and carry 1",
+        "1",
+        "3"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "What is 1 + 1 in binary?",
+      "answer": "10",
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "addition",
+      "q": "Add these two binary numbers. Fill in the carry row and the answer.",
+      "duration": 120
+    },
+    {
+      "type": "mcq",
+      "q": "A carry chain stops when the carry reaches a column where...",
+      "options": [
+        "both bits are 0",
+        "both bits are 1",
+        "the value is 128",
+        "there is no carry in"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "text_input",
+      "q": "What is 1 + 1 + 1 in binary?",
+      "answer": "11",
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "addition",
+      "q": "Add these two binary numbers. Fill in the carry row and the answer.",
+      "duration": 120
+    },
+    {
+      "type": "mcq",
+      "q": "When adding 1 + 1 + carry 1, what is the result?",
+      "options": [
+        "Write 1, carry 1",
+        "Write 0, carry 1",
+        "Write 1, no carry",
+        "Write 0, no carry"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00000000 + 00000001?",
+      "options": [
+        "00000001",
+        "00000010",
+        "10000000",
+        "00000000"
       ],
       "answer": 0,
       "duration": 45

@@ -126,10 +126,10 @@
     {
       "id": "input-endless",
       "title": "Endless Practice",
-      "autoComplete": true,
-      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Input lesson. Keep going as long as you like.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"input-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"input-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"input-ep-q\"></div>",
+      "autoComplete": false,
+      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Input lesson. Answer 5 questions correctly in a row to complete this step.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"input-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"input-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"input-ep-q\"></div>",
       "css": "\n.ex-box{background:#1e1e2e;border:1px solid #313244;border-radius:10px;padding:16px 20px;margin-bottom:14px}\n.ex-prompt{font-family:sans-serif;font-size:0.85rem;color:#cdd6f4;margin-bottom:10px}\n.ex-code{color:#cdd6f4;font-size:0.95rem;line-height:1.7;letter-spacing:0.01em;font-family:'Courier New',monospace;display:block}\n.code-func{color:#cba6f7}\n.code-string{color:#a6e3a1}\n.code-comment{color:#94e2d5;font-style:italic}\n.code-error{color:#f38ba8}\n.green-keyword{color:#a6e3a1;font-weight:600}\n.ex-options{display:block;margin-top:10px}\n.ex-opt{display:block;width:100%;background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 14px;font-family:'Courier New',monospace;font-size:0.9rem;cursor:pointer;text-align:left;margin-bottom:6px;box-sizing:border-box;line-height:1.4}\n.ex-opt:last-child{margin-bottom:0}\n.ex-opt:hover:not([disabled]){background:#45475a;border-color:#94e2d5}\n.ex-opt.correct{background:#1a3328!important;border-color:#a6e3a1!important;color:#a6e3a1!important}\n.ex-opt.wrong{background:#351c1c!important;border-color:#f38ba8!important;color:#f38ba8!important}\n.ex-opt[disabled]{cursor:default}\n.ex-feedback{margin-top:10px;font-size:0.85rem;min-height:20px;font-family:sans-serif;line-height:1.4}\n.ex-feedback.ok{color:#a6e3a1}\n.ex-feedback.err{color:#f38ba8}\n.ex-feedback.hint{color:#f9e2af}\n.ex-progress{font-size:0.8rem;color:#585b70;margin-bottom:4px;font-family:sans-serif}\n.ex-score{font-size:0.85rem;font-weight:600;color:#cba6f7;margin-bottom:10px;font-family:sans-serif}\n.ex-label{font-family:sans-serif;font-size:0.82rem;color:#89b4fa;margin-bottom:10px;display:block}\n.ex-explanation{background:#252535;border-left:3px solid #89b4fa;padding:8px 12px;margin-top:10px;font-size:0.82rem;color:#bac2de;font-family:sans-serif;border-radius:0 6px 6px 0;line-height:1.5}\n\n.ex-input,.ex-textarea{width:100%;background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;font-size:0.9rem;box-sizing:border-box;line-height:1.45}\n.ex-input:focus,.ex-textarea:focus{outline:none;border-color:#89b4fa;box-shadow:0 0 0 2px rgba(137,180,250,0.25)}\n.ex-input.correct,.ex-textarea.correct{border-color:#a6e3a1;background:#14251d}\n.ex-input.wrong,.ex-textarea.wrong{border-color:#f38ba8;background:#281616}\n.ex-btn{display:inline-block;background:#2563eb;color:white;border:0;border-radius:6px;padding:8px 14px;font-family:sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer}\n.ex-btn:hover:not([disabled]){background:#1d4ed8}\n.ex-btn[disabled]{opacity:0.55;cursor:default}\n",
-      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the correct input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for a <span class=\\\"green-keyword\\\">name</span> and store it.</span>\",\"correct\":\"name = input(\\\"Enter name\\\")\",\"options\":[\"name = input(\\\"Enter name\\\")\",\"name = print(\\\"Enter name\\\")\",\"input(\\\"Enter name\\\")\",\"name = input(\\\"Enter name\\\"\"]},{\"prompt\":\"Choose the correct number input:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">age</span> as a number.</span>\",\"correct\":\"age = int(input(\\\"Enter age\\\"))\",\"options\":[\"age = int(input(\\\"Enter age\\\"))\",\"age = input(\\\"Enter age\\\")\",\"int(input(\\\"Enter age\\\"))\",\"age = int(input(\\\"Enter age\\\")\"]},{\"prompt\":\"Choose the data type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which data type is <span class=\\\"green-keyword\\\">3.14</span>?</span>\",\"correct\":\"Float\",\"options\":[\"Integer\",\"Float\",\"String\",\"Boolean\"]},{\"prompt\":\"Choose the data type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which data type is <span class=\\\"green-keyword\\\">\\\"42\\\"</span>?</span>\",\"correct\":\"String\",\"options\":[\"Integer\",\"Float\",\"String\",\"Boolean\"]}];\n  var textPool = [{\"label\":\"Write input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">city</span> and store it.</span>\",\"pattern\":\"city\\\\s*=\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\",\"hint\":\"city = input(\\\"Enter city\\\")\",\"rows\":1},{\"label\":\"Write number input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">score</span> as a number.</span>\",\"pattern\":\"score\\\\s*=\\\\s*int\\\\s*\\\\(\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\\\\s*\\\\)\",\"hint\":\"score = int(input(\\\"Enter score\\\"))\",\"rows\":1},{\"label\":\"Convert the type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Convert <span class=\\\"green-keyword\\\">height</span> to a float.</span>\",\"pattern\":\"float\\\\s*\\\\(\\\\s*height\\\\s*\\\\)\",\"hint\":\"float(height)\",\"rows\":1},{\"label\":\"Input and print:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">food</span>, then print it with a message.</span>\",\"pattern\":\"food\\\\s*=\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\([^)]*\\\\bfood\\\\b[^)]*\\\\)\",\"hint\":\"food = input(\\\"Food?\\\")\\nprint(\\\"I like\\\", food)\",\"rows\":4}];\n  var streak=0, best=parseInt(localStorage.getItem(\"pylearn_input_best\")||'0',10);\n  document.getElementById('input-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem(\"pylearn_input_best\", best); document.getElementById('input-ep-best').textContent=best; } document.getElementById('input-ep-streak').textContent=streak; }\n  function wrong(){ streak=0; document.getElementById('input-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){\n    var wrap=document.getElementById('input-ep-q');\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"input-ep-opts\"></div><div class=\"ex-feedback\" id=\"input-ep-fb\"></div>';\n    q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){\n      var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o;\n      btn.onclick=function(){\n        document.querySelectorAll('#input-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); });\n        var fb=document.getElementById('input-ep-fb');\n        if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n        else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; }\n      };\n      document.getElementById('input-ep-opts').appendChild(btn);\n    });\n  }\n  function showText(q){\n    var wrap=document.getElementById('input-ep-q');\n    var field=q.rows>1?'<textarea id=\"input-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea>':'<input id=\"input-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your code here\"/>';\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+field+'<button id=\"input-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"input-ep-fb\"></div><div class=\"ex-explanation\" id=\"input-ep-hint\" style=\"display:none\"></div>';\n    document.getElementById('input-ep-check').onclick=function(){\n      var input=document.getElementById('input-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('input-ep-fb'); var hint=document.getElementById('input-ep-hint');\n      if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; }\n      if(new RegExp('^'+q.pattern+'$','i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n      else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; }\n    };\n    document.getElementById('input-ep-answer').focus();\n  }\n  next();\n})();"
+      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the correct input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for a <span class=\\\"green-keyword\\\">name</span> and store it.</span>\",\"correct\":\"name = input(\\\"Enter name\\\")\",\"options\":[\"name = input(\\\"Enter name\\\")\",\"name = print(\\\"Enter name\\\")\",\"input(\\\"Enter name\\\")\",\"name = input(\\\"Enter name\\\"\"]},{\"prompt\":\"Choose the correct number input:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">age</span> as a number.</span>\",\"correct\":\"age = int(input(\\\"Enter age\\\"))\",\"options\":[\"age = int(input(\\\"Enter age\\\"))\",\"age = input(\\\"Enter age\\\")\",\"int(input(\\\"Enter age\\\"))\",\"age = int(input(\\\"Enter age\\\")\"]},{\"prompt\":\"Choose the data type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which data type is <span class=\\\"green-keyword\\\">3.14</span>?</span>\",\"correct\":\"Float\",\"options\":[\"Integer\",\"Float\",\"String\",\"Boolean\"]},{\"prompt\":\"Choose the data type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Which data type is <span class=\\\"green-keyword\\\">\\\"42\\\"</span>?</span>\",\"correct\":\"String\",\"options\":[\"Integer\",\"Float\",\"String\",\"Boolean\"]}];\n  var textPool = [{\"label\":\"Write input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">city</span> and store it.</span>\",\"pattern\":\"city\\\\s*=\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\",\"hint\":\"city = input(\\\"Enter city\\\")\",\"rows\":1},{\"label\":\"Write number input code:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">score</span> as a number.</span>\",\"pattern\":\"score\\\\s*=\\\\s*int\\\\s*\\\\(\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\\\\s*\\\\)\",\"hint\":\"score = int(input(\\\"Enter score\\\"))\",\"rows\":1},{\"label\":\"Convert the type:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Convert <span class=\\\"green-keyword\\\">height</span> to a float.</span>\",\"pattern\":\"float\\\\s*\\\\(\\\\s*height\\\\s*\\\\)\",\"hint\":\"float(height)\",\"rows\":1},{\"label\":\"Input and print:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Ask for <span class=\\\"green-keyword\\\">food</span>, then print it with a message.</span>\",\"pattern\":\"food\\\\s*=\\\\s*input\\\\s*\\\\(\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*\\\\)\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\([^)]*\\\\bfood\\\\b[^)]*\\\\)\",\"hint\":\"food = input(\\\"Food?\\\")\\nprint(\\\"I like\\\", food)\",\"rows\":4}];\n  var streak=0, best=parseInt(localStorage.getItem(\"pylearn_input_best\")||'0',10);\n  document.getElementById('input-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem(\"pylearn_input_best\", best); document.getElementById('input-ep-best').textContent=best; } document.getElementById('input-ep-streak').textContent=streak; if(streak>=5)window.__markStepComplete&&window.__markStepComplete(); }\n  function wrong(){ streak=0; document.getElementById('input-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){\n    var wrap=document.getElementById('input-ep-q');\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"input-ep-opts\"></div><div class=\"ex-feedback\" id=\"input-ep-fb\"></div>';\n    q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){\n      var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o;\n      btn.onclick=function(){\n        document.querySelectorAll('#input-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); });\n        var fb=document.getElementById('input-ep-fb');\n        if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n        else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; }\n      };\n      document.getElementById('input-ep-opts').appendChild(btn);\n    });\n  }\n  function showText(q){\n    var wrap=document.getElementById('input-ep-q');\n    var field=q.rows>1?'<textarea id=\"input-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea>':'<input id=\"input-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your code here\"/>';\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+field+'<button id=\"input-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"input-ep-fb\"></div><div class=\"ex-explanation\" id=\"input-ep-hint\" style=\"display:none\"></div>';\n    document.getElementById('input-ep-check').onclick=function(){\n      var input=document.getElementById('input-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('input-ep-fb'); var hint=document.getElementById('input-ep-hint');\n      if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; }\n      if(new RegExp('^'+q.pattern+'$','i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n      else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; }\n    };\n    document.getElementById('input-ep-answer').focus();\n  }\n  next();\n})();"
     }
   ],
   "quizQuestions": [
@@ -142,7 +142,8 @@
         "Always creates a number"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What data type does input() return before conversion?",
@@ -153,7 +154,8 @@
         "Boolean"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which line stores text typed by the user in city?",
@@ -164,7 +166,8 @@
         "city == input(\"Enter city\")"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which line is best for storing a whole-number age from the user?",
@@ -175,7 +178,8 @@
         "age = print(\"Enter age\")"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What is printed if the user types Mia?\n\nname = input(\"Name: \")\nprint(\"Hello\", name)",
@@ -186,7 +190,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What happens if the user types 7?\n\nage = input(\"Age: \")\nprint(age + 1)",
@@ -197,7 +202,8 @@
         "age + 1"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print if the user types 7?\n\nage = int(input(\"Age: \"))\nprint(age + 1)",
@@ -208,7 +214,8 @@
         "Error"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which conversion is used for decimal numbers?",
@@ -219,7 +226,8 @@
         "print()"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which value is a float?",
@@ -230,7 +238,8 @@
         "True"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which value is a string?",
@@ -241,46 +250,40 @@
         "False"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
-      "type": "code_output",
-      "q": "Ask the user for their name, store it, then print a greeting using the stored value. Test input: Mia.",
-      "inputs": [
-        "Mia"
-      ],
-      "expectedContains": "Mia",
-      "sampleAnswer": "name = input(\"Name: \")\nprint(\"Hello\", name)"
+      "type": "generated",
+      "mode": "py_input_name",
+      "q": "Ask the user for their name, store it, and print a greeting.",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write one line that stores text typed by the user in a variable called city.",
       "pattern": "^\\s*city\\s*=\\s*input\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*$",
-      "sampleAnswer": "city = input(\"City: \")"
+      "sampleAnswer": "city = input(\"City: \")",
+      "duration": 90
     },
     {
-      "type": "code_output",
-      "q": "Ask the user for a whole number age and print the age plus one. Test input: 12.",
-      "inputs": [
-        "12"
-      ],
-      "expectedOutput": "13",
-      "sampleAnswer": "age = int(input(\"Age: \"))\nprint(age + 1)"
+      "type": "generated",
+      "mode": "py_input_int_add",
+      "q": "Ask the user for a whole number and print that number plus one.",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Write one line that asks for a decimal height and stores it in height as a number.",
       "pattern": "^\\s*height\\s*=\\s*float\\s*\\(\\s*input\\s*\\(\\s*[\"'][^\"']+[\"']\\s*\\)\\s*\\)\\s*$",
-      "sampleAnswer": "height = float(input(\"Height: \"))"
+      "sampleAnswer": "height = float(input(\"Height: \"))",
+      "duration": 90
     },
     {
-      "type": "code_output",
-      "q": "Ask the user for food and print a sentence that includes what they typed. Test input: pasta.",
-      "inputs": [
-        "pasta"
-      ],
-      "expectedContains": "pasta",
-      "sampleAnswer": "food = input(\"Food: \")\nprint(\"I like\", food)"
+      "type": "generated",
+      "mode": "py_input_string",
+      "q": "Ask the user for a food and print a sentence using what they typed.",
+      "duration": 60
     }
   ]
 }

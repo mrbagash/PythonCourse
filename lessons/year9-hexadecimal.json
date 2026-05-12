@@ -21,21 +21,21 @@
       "title": "Step Through: Hex to Denary",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through hex to denary</h2><div id='y9hex-stepper-1'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-1',steps:[{title:'Read A5 as two columns',html:'<div class=\"bb-hex-pair\"><div>A</div><div>5</div></div>',note:'The left digit is the 16s column. The right digit is the 1s column.'},{title:'Convert the hex digits',html:'<table class=\"bb-table\"><thead><tr><th>16s</th><th>1s</th></tr></thead><tbody><tr><td>A = 10</td><td>5</td></tr></tbody></table>',note:'A means 10.'},{title:'Multiply and add',html:'<p class=\"bb-answer-line\">(10 x 16) + 5 = 165</p>',note:'So A5 is 165.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-1',steps:[{title:'We are converting A5 to denary',html:'<div class=\"bb-hex-pair\"><div>A</div><div>5</div></div>',note:'The left digit is in the 16s column. The right digit is in the 1s column.'},{title:'Work out the left digit',html:'<p class=\"ex-prompt\">A means 10 in denary.</p><p class=\"bb-answer-line\">10 × 16 = 160</p><table class=\"bb-table\" style=\"margin-top:0.75rem\"><thead><tr><th>16s column</th><th>1s column</th></tr></thead><tbody><tr><td>A = 10 × 16 = 160</td><td style=\"color:#64748b\">?</td></tr></tbody></table>',note:'The left digit is in the 16s column, so multiply its denary value by 16.'},{title:'Add the right digit',html:'<p class=\"ex-prompt\">The right digit 5 is in the 1s column — just add it as it is.</p><p class=\"bb-answer-line\">160 + 5 = 165</p><table class=\"bb-table\" style=\"margin-top:0.75rem\"><thead><tr><th>16s column</th><th>1s column</th></tr></thead><tbody><tr><td>A = 160</td><td>5</td></tr></tbody></table>',note:'The 1s column value is just added on without multiplying.'},{title:'A5 in denary is 165',html:'<div class=\"bb-big-number\"><span>165</span></div>',note:'Check: (10 × 16) + 5 = 160 + 5 = 165 ✓'}]});"
     },
     {
       "id": "guided-two",
       "title": "Step Through: Binary to Hex",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through binary to hex</h2><div id='y9hex-stepper-2'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-2',steps:[{title:'Split into nibbles',html:BinaryLesson.bitTable([1,1,0,0,1,0,1,0], [8,4,2,1,8,4,2,1], true),note:'The first 4 bits and last 4 bits are handled separately.'},{title:'Convert each nibble',html:'<table class=\"bb-table\"><thead><tr><th>1100</th><th>1010</th></tr></thead><tbody><tr><td>12 = C</td><td>10 = A</td></tr></tbody></table>',note:'Each nibble becomes one hex digit.'},{title:'Join the hex digits',html:'<div class=\"bb-hex-pair\"><div>C</div><div>A</div></div>',note:'11001010 is CA.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-2',steps:[{title:'We are converting 11001010 to hex',html:BinaryLesson.bitTable([1,1,0,0,1,0,1,0], [8,4,2,1,8,4,2,1], true),note:'Split the 8 bits into two groups of 4. Each group of 4 bits becomes one hex digit.'},{title:'Convert the left group: 1100',html:BinaryLesson.bitTable([1,1,0,0],[8,4,2,1]) + '<p class=\"bb-answer-line\" style=\"margin-top:0.5rem\">8 + 4 = 12 = C</p>',note:'Add up the active place values in the left group, just like binary to denary — but only 4 bits. 8 + 4 = 12, and 12 is C in hex.'},{title:'Convert the right group: 1010',html:BinaryLesson.bitTable([1,0,1,0],[8,4,2,1]) + '<p class=\"bb-answer-line\" style=\"margin-top:0.5rem\">8 + 2 = 10 = A</p>',note:'Do the same for the right group. 8 + 2 = 10, and 10 is A in hex.'},{title:'Join the two hex digits',html:'<div class=\"bb-hex-pair\"><div>C</div><div>A</div></div>',note:'Left group gave C, right group gave A. 11001010 in hex is CA.'}]});"
     },
     {
       "id": "guided-three",
       "title": "Step Through: Denary to Hex",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through denary to hex</h2><div id='y9hex-stepper-3'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-3',steps:[{title:'We are converting 200 to hex',html:'<div class=\"bb-big-number\"><span>200</span></div>',note:'A hex number has a left digit (worth 16s) and a right digit (worth 1s). We need to find both.'},{title:'Divide 200 by 16',html:'<table class=\"bb-table\"><tbody><tr><td>200 ÷ 16</td><td style=\"font-size:1.4rem;font-weight:700\">= 12.5</td></tr><tr><td>Cut off the decimal</td><td style=\"font-size:1.4rem;font-weight:700\">= 12</td></tr></tbody></table><p class=\"bb-answer-line\">The left digit is 12 — which is C in hex.</p>',note:'Divide by 16 and throw away everything after the decimal point. That number is the left hex digit. 12 is above 9, so it becomes C.'},{title:'Find the right digit',html:'<table class=\"bb-table\"><tbody><tr><td>12 × 16</td><td style=\"font-size:1.4rem;font-weight:700\">= 192</td></tr><tr><td>200 − 192</td><td style=\"font-size:1.4rem;font-weight:700\">= 8</td></tr></tbody></table><p class=\"bb-answer-line\">The right digit is 8.</p>',note:'Multiply the left digit by 16 to see how much is already covered. Subtract that from 200 to find what is left — that is the right digit.'},{title:'The answer is C8',html:'<div class=\"bb-hex-pair\"><div>C</div><div>8</div></div>',note:'200 in hex is C8. Check: (12 × 16) + 8 = 192 + 8 = 200 ✓'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-3',steps:[{title:'We are converting 200 to hex',html:'<div class=\"bb-big-number\"><span>200</span></div>',note:'A hex number has a left digit (worth 16s) and a right digit (worth 1s). We need to find both.'},{title:'Divide 200 by 16',html:'<table class=\"bb-table\"><tbody><tr><td>200 ÷ 16</td><td style=\"font-size:1.4rem;font-weight:700\">= 12.5</td></tr><tr><td>Cut off the decimal</td><td style=\"font-size:1.4rem;font-weight:700\">= 12</td></tr></tbody></table><p class=\"bb-answer-line\">The left digit is 12 — which is C in hex.</p><div class=\"bb-hex-pair\" style=\"margin-top:0.75rem\"><div>C</div><div style=\"color:#64748b\">?</div></div>',note:'Divide by 16 and throw away everything after the decimal point. That number is the left hex digit. 12 is above 9, so it becomes C.'},{title:'Find the right digit',html:'<p class=\"ex-prompt\">We have 12 sixteens, which is 192.</p><p class=\"bb-answer-line\">12 × 16 = 192</p><p class=\"ex-prompt\" style=\"margin-top:0.6rem\">What is the difference between 192 and 200?</p><p class=\"bb-answer-line\">200 − 192 = 8</p><p class=\"ex-prompt\" style=\"margin-top:0.6rem\">The right digit is 8.</p><div class=\"bb-hex-pair\" style=\"margin-top:0.75rem\"><div>C</div><div>8</div></div>',note:'8 is 9 or below, so it stays as 8 — no letter needed.'},{title:'The answer is C8',html:'<div class=\"bb-hex-pair\"><div>C</div><div>8</div></div>',note:'200 in hex is C8. Check: (12 × 16) + 8 = 192 + 8 = 200 ✓'}]});"
     },
     {
       "id": "guided-four",
@@ -49,14 +49,14 @@
       "title": "Checked Practice 1",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: hex and denary</h2><div id='y9hex-practice-a'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-a',questions:[{prompt:'Convert 2A to denary.',html:'<div class=\"bb-hex-pair\"><div>2</div><div>A</div></div>',answer:'42',right:'2 x 16 plus 10 = 42.'},{prompt:'Convert 175 to hex.',html:'<table class=\"bb-table\"><thead><tr><th>Calculation</th><th>Value</th><th>Hex digit</th></tr></thead><tbody><tr><td>175 ÷ 16 = 10</td><td>10</td><td>A</td></tr><tr><td>left over</td><td>15</td><td>F</td></tr></tbody></table>',answer:'AF',right:'Correct.'},{prompt:'Convert B4 to denary.',html:'<div class=\"bb-hex-pair\"><div>B</div><div>4</div></div>',answer:'180',right:'11 x 16 plus 4 = 180.'},{prompt:'Convert 200 to hex.',html:'<table class=\"bb-table\"><thead><tr><th>Calculation</th><th>Value</th><th>Hex digit</th></tr></thead><tbody><tr><td>200 ÷ 16 = 12</td><td>12</td><td>C</td></tr><tr><td>left over</td><td>8</td><td>8</td></tr></tbody></table>',answer:'C8',right:'Correct.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-a',questions:[{generated:'hex_to_denary'},{generated:'denary_to_hex'},{generated:'hex_to_denary'},{generated:'denary_to_hex'}]});"
     },
     {
       "id": "practice-b",
       "title": "Checked Practice 2",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary and hex</h2><div id='y9hex-practice-b'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-b',questions:[{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,1,1,1,0,0,0,0], [8,4,2,1,8,4,2,1], true),answer:'F0',right:'1111 is F and 0000 is 0.'},{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,0,0,1,1,1,1,0], [8,4,2,1,8,4,2,1], true),answer:'9E',right:'1001 is 9 and 1110 is E.'},{prompt:'Convert 5A to 8-bit binary.',html:'<div class=\"bb-hex-pair\"><div>5</div><div>A</div></div>',answer:'01011010',right:'5 is 0101 and A is 1010.'},{prompt:'Convert C3 to 8-bit binary.',html:'<div class=\"bb-hex-pair\"><div>C</div><div>3</div></div>',answer:'11000011',right:'C is 12 = 1100 and 3 = 0011.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-b',questions:[{generated:'binary_to_hex'},{generated:'binary_to_hex'},{generated:'hex_to_binary'},{generated:'hex_to_binary'}]});"
     },
     {
       "id": "endless",
@@ -70,7 +70,7 @@
       "title": "End of Lesson Exam",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><div id='y9hex-exam'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9hex-exam',questions:[{prompt:'Convert B4 to denary.',html:'<div class=\"bb-hex-pair\"><div>B</div><div>4</div></div>',answer:'180',right:'Correct.'},{prompt:'Convert 201 to hex.',html:'<div class=\"bb-hex-pair\"><div>?</div><div>?</div></div>',answer:'C9',right:'Correct.'},{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,0,0,1,1,1,1,0], [8,4,2,1,8,4,2,1], true),answer:'9E',right:'Correct.'},{prompt:'Convert 5A to 8-bit binary.',html:'<div class=\"bb-hex-pair\"><div>5</div><div>A</div></div>',answer:'01011010',right:'Correct.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-exam',questions:[{generated:'hex_to_denary'},{generated:'denary_to_hex'},{generated:'binary_to_hex'},{generated:'hex_to_binary'}]});"
     }
   ],
   "quizQuestions": [
@@ -99,15 +99,9 @@
       "duration": 75
     },
     {
-      "type": "mcq",
-      "q": "Convert 190 to hex.",
-      "options": [
-        "BE",
-        "EB",
-        "B14",
-        "AF"
-      ],
-      "answer": 0,
+      "type": "generated",
+      "mode": "denary_to_hex",
+      "q": "Convert a denary number to hex.",
       "duration": 90
     },
     {
@@ -123,16 +117,100 @@
       "duration": 90
     },
     {
+      "type": "generated",
+      "mode": "hex_to_binary",
+      "q": "Convert a hex number to 8-bit binary.",
+      "duration": 90
+    },
+    {
       "type": "mcq",
-      "q": "Convert 7C to binary.",
+      "q": "What value does hex F represent?",
       "options": [
-        "01111100",
-        "11110000",
-        "01111010",
-        "11000111"
+        "15",
+        "14",
+        "16",
+        "10"
       ],
       "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "hex_to_denary",
+      "q": "Convert a hex number to denary.",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "Convert AF to denary.",
+      "options": [
+        "175",
+        "165",
+        "185",
+        "160"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_hex",
+      "q": "Convert a denary number to hex.",
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "hex_to_binary",
+      "q": "Convert a hex number to 8-bit binary.",
       "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 11110000 to hex.",
+      "options": [
+        "F0",
+        "0F",
+        "FF",
+        "00"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "hex_to_denary",
+      "q": "Convert a hex number to denary.",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "To convert a hex digit to binary, you write exactly how many bits?",
+      "options": [
+        "4",
+        "8",
+        "2",
+        "16"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "hex_to_binary",
+      "q": "Convert a hex number to 8-bit binary.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "What is hex D in denary?",
+      "options": [
+        "13",
+        "12",
+        "14",
+        "15"
+      ],
+      "answer": 0,
+      "duration": 45
     }
   ]
 }

@@ -118,10 +118,10 @@
     {
       "id": "variables-endless",
       "title": "Endless Practice",
-      "autoComplete": true,
-      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Variables lesson. Keep going as long as you like.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"var-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"var-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"var-ep-q\"></div>",
+      "autoComplete": false,
+      "content": "<h2 class=\"text-xl font-bold mb-3 text-gray-800\">Endless Practice</h2>\n<p class=\"text-gray-700 mb-4\">Random questions from across the Variables lesson. Answer 5 questions correctly in a row to complete this step.</p>\n<div class=\"flex gap-6 mb-4 text-sm text-gray-600\">\n  <span>Streak: <strong id=\"var-ep-streak\" class=\"text-blue-600\">0</strong></span>\n  <span>Best: <strong id=\"var-ep-best\" class=\"text-green-600\">0</strong></span>\n</div>\n<div class=\"ex-box\" id=\"var-ep-q\"></div>",
       "css": "\n.ex-box{background:#1e1e2e;border:1px solid #313244;border-radius:10px;padding:16px 20px;margin-bottom:14px}\n.ex-prompt{font-family:sans-serif;font-size:0.85rem;color:#cdd6f4;margin-bottom:10px}\n.ex-code{color:#cdd6f4;font-size:0.95rem;line-height:1.7;letter-spacing:0.01em;font-family:'Courier New',monospace;display:block}\n.code-func{color:#cba6f7}\n.code-string{color:#a6e3a1}\n.code-comment{color:#94e2d5;font-style:italic}\n.code-error{color:#f38ba8}\n.green-keyword{color:#a6e3a1;font-weight:600}\n.ex-options{display:block;margin-top:10px}\n.ex-opt{display:block;width:100%;background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 14px;font-family:'Courier New',monospace;font-size:0.9rem;cursor:pointer;text-align:left;margin-bottom:6px;box-sizing:border-box;line-height:1.4}\n.ex-opt:last-child{margin-bottom:0}\n.ex-opt:hover:not([disabled]){background:#45475a;border-color:#94e2d5}\n.ex-opt.correct{background:#1a3328!important;border-color:#a6e3a1!important;color:#a6e3a1!important}\n.ex-opt.wrong{background:#351c1c!important;border-color:#f38ba8!important;color:#f38ba8!important}\n.ex-opt[disabled]{cursor:default}\n.ex-feedback{margin-top:10px;font-size:0.85rem;min-height:20px;font-family:sans-serif;line-height:1.4}\n.ex-feedback.ok{color:#a6e3a1}\n.ex-feedback.err{color:#f38ba8}\n.ex-feedback.hint{color:#f9e2af}\n.ex-progress{font-size:0.8rem;color:#585b70;margin-bottom:4px;font-family:sans-serif}\n.ex-score{font-size:0.85rem;font-weight:600;color:#cba6f7;margin-bottom:10px;font-family:sans-serif}\n.ex-label{font-family:sans-serif;font-size:0.82rem;color:#89b4fa;margin-bottom:10px;display:block}\n.ex-explanation{background:#252535;border-left:3px solid #89b4fa;padding:8px 12px;margin-top:10px;font-size:0.82rem;color:#bac2de;font-family:sans-serif;border-radius:0 6px 6px 0;line-height:1.5}\n\n.ex-input,.ex-textarea{width:100%;background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;font-size:0.9rem;box-sizing:border-box;line-height:1.45}\n.ex-input:focus,.ex-textarea:focus{outline:none;border-color:#89b4fa;box-shadow:0 0 0 2px rgba(137,180,250,0.25)}\n.ex-input.correct,.ex-textarea.correct{border-color:#a6e3a1;background:#14251d}\n.ex-input.wrong,.ex-textarea.wrong{border-color:#f38ba8;background:#281616}\n.ex-btn{display:inline-block;background:#2563eb;color:white;border:0;border-radius:6px;padding:8px 14px;font-family:sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer}\n.ex-btn:hover:not([disabled]){background:#1d4ed8}\n.ex-btn[disabled]{opacity:0.55;cursor:default}\n",
-      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the correct variable creation:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called name</span>\",\"correct\":\"name = \\\"Ryan\\\"\",\"options\":[\"name = \\\"Ryan\\\"\",\"name = Ryan\",\"SET name TO \\\"Ryan\\\"\",\"age = 15\"]},{\"prompt\":\"Choose the correct variable creation:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called age</span>\",\"correct\":\"age = 16\",\"options\":[\"age = 16\",\"age : 16\",\"age = \\\"sixteen\\\"\",\"SET age TO 16\"]},{\"prompt\":\"Which code prints a variable with a message?\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Output: My score is 100</span>\",\"correct\":\"score = 100\\nprint(\\\"My score is\\\", score)\",\"options\":[\"score = 100\\nprint(\\\"My score is\\\", score)\",\"score = 100\\nprint(\\\"My score is\\\" score)\",\"score = \\\"100\\\"\\nprint(score)\",\"print(\\\"My score is\\\", points)\"]}];\n  var textPool = [{\"label\":\"Create the variable:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called city</span>\",\"pattern\":\"city\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\",\"hint\":\"Example: city = \\\"London\\\"\",\"rows\":1},{\"label\":\"Create the variable:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called score</span>\",\"pattern\":\"score\\\\s*=\\\\s*\\\\d+\",\"hint\":\"Example: score = 100\",\"rows\":1},{\"label\":\"Store and print:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Store your <span class=\\\"green-keyword\\\">name</span> and print it.</span>\",\"pattern\":\"name\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\(\\\\s*name\\\\s*\\\\)\",\"hint\":\"name = \\\"Ryan\\\"\\nprint(name)\",\"rows\":3},{\"label\":\"Print with a message:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Store your <span class=\\\"green-keyword\\\">hobby</span> and print it with a message.</span>\",\"pattern\":\"hobby\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\([^)]*\\\\bhobby\\\\b[^)]*\\\\)\",\"hint\":\"hobby = \\\"Coding\\\"\\nprint(\\\"Hobby:\\\", hobby)\",\"rows\":4}];\n  var streak=0, best=parseInt(localStorage.getItem(\"pylearn_variables_best\")||'0',10);\n  document.getElementById('var-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem(\"pylearn_variables_best\", best); document.getElementById('var-ep-best').textContent=best; } document.getElementById('var-ep-streak').textContent=streak; }\n  function wrong(){ streak=0; document.getElementById('var-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){\n    var wrap=document.getElementById('var-ep-q');\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"var-ep-opts\"></div><div class=\"ex-feedback\" id=\"var-ep-fb\"></div>';\n    q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){\n      var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o;\n      btn.onclick=function(){\n        document.querySelectorAll('#var-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); });\n        var fb=document.getElementById('var-ep-fb');\n        if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n        else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; }\n      };\n      document.getElementById('var-ep-opts').appendChild(btn);\n    });\n  }\n  function showText(q){\n    var wrap=document.getElementById('var-ep-q');\n    var field=q.rows>1?'<textarea id=\"var-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea>':'<input id=\"var-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your code here\"/>';\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+field+'<button id=\"var-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"var-ep-fb\"></div><div class=\"ex-explanation\" id=\"var-ep-hint\" style=\"display:none\"></div>';\n    document.getElementById('var-ep-check').onclick=function(){\n      var input=document.getElementById('var-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('var-ep-fb'); var hint=document.getElementById('var-ep-hint');\n      if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; }\n      if(new RegExp('^'+q.pattern+'$','i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n      else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; }\n    };\n    document.getElementById('var-ep-answer').focus();\n  }\n  next();\n})();"
+      "js": "(function(){\n  var mcqPool = [{\"prompt\":\"Choose the correct variable creation:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called name</span>\",\"correct\":\"name = \\\"Ryan\\\"\",\"options\":[\"name = \\\"Ryan\\\"\",\"name = Ryan\",\"SET name TO \\\"Ryan\\\"\",\"age = 15\"]},{\"prompt\":\"Choose the correct variable creation:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called age</span>\",\"correct\":\"age = 16\",\"options\":[\"age = 16\",\"age : 16\",\"age = \\\"sixteen\\\"\",\"SET age TO 16\"]},{\"prompt\":\"Which code prints a variable with a message?\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Output: My score is 100</span>\",\"correct\":\"score = 100\\nprint(\\\"My score is\\\", score)\",\"options\":[\"score = 100\\nprint(\\\"My score is\\\", score)\",\"score = 100\\nprint(\\\"My score is\\\" score)\",\"score = \\\"100\\\"\\nprint(score)\",\"print(\\\"My score is\\\", points)\"]}];\n  var textPool = [{\"label\":\"Create the variable:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called city</span>\",\"pattern\":\"city\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\",\"hint\":\"Example: city = \\\"London\\\"\",\"rows\":1},{\"label\":\"Create the variable:\",\"html\":\"<span class=\\\"code-comment\\\"># Create a variable called score</span>\",\"pattern\":\"score\\\\s*=\\\\s*\\\\d+\",\"hint\":\"Example: score = 100\",\"rows\":1},{\"label\":\"Store and print:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Store your <span class=\\\"green-keyword\\\">name</span> and print it.</span>\",\"pattern\":\"name\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\(\\\\s*name\\\\s*\\\\)\",\"hint\":\"name = \\\"Ryan\\\"\\nprint(name)\",\"rows\":3},{\"label\":\"Print with a message:\",\"html\":\"<span style=\\\"font-size:0.9rem\\\">Store your <span class=\\\"green-keyword\\\">hobby</span> and print it with a message.</span>\",\"pattern\":\"hobby\\\\s*=\\\\s*(?:\\\"[^\\\"]+\\\"|'[^']+')\\\\s*[\\\\r\\\\n]+\\\\s*print\\\\s*\\\\([^)]*\\\\bhobby\\\\b[^)]*\\\\)\",\"hint\":\"hobby = \\\"Coding\\\"\\nprint(\\\"Hobby:\\\", hobby)\",\"rows\":4}];\n  var streak=0, best=parseInt(localStorage.getItem(\"pylearn_variables_best\")||'0',10);\n  document.getElementById('var-ep-best').textContent=best;\n  function rand(a){ return a[Math.floor(Math.random()*a.length)]; }\n  function correct(){ streak++; if(streak>best){ best=streak; localStorage.setItem(\"pylearn_variables_best\", best); document.getElementById('var-ep-best').textContent=best; } document.getElementById('var-ep-streak').textContent=streak; if(streak>=5)window.__markStepComplete&&window.__markStepComplete(); }\n  function wrong(){ streak=0; document.getElementById('var-ep-streak').textContent=streak; }\n  function next(){ Math.random()<0.5 ? showMcq(rand(mcqPool)) : showText(rand(textPool)); }\n  function showMcq(q){\n    var wrap=document.getElementById('var-ep-q');\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.prompt+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div><div class=\"ex-options\" id=\"var-ep-opts\"></div><div class=\"ex-feedback\" id=\"var-ep-fb\"></div>';\n    q.options.slice().sort(function(){return Math.random()-0.5;}).forEach(function(o){\n      var btn=document.createElement('button'); btn.className='ex-opt'; btn.textContent=o;\n      btn.onclick=function(){\n        document.querySelectorAll('#var-ep-opts .ex-opt').forEach(function(b){ b.disabled=true; if(b.textContent===q.correct)b.classList.add('correct'); });\n        var fb=document.getElementById('var-ep-fb');\n        if(o===q.correct){ btn.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n        else { btn.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Incorrect. The answer is shown in green.'; }\n      };\n      document.getElementById('var-ep-opts').appendChild(btn);\n    });\n  }\n  function showText(q){\n    var wrap=document.getElementById('var-ep-q');\n    var field=q.rows>1?'<textarea id=\"var-ep-answer\" class=\"ex-textarea\" rows=\"'+q.rows+'\" spellcheck=\"false\" placeholder=\"Write your code here\"></textarea>':'<input id=\"var-ep-answer\" class=\"ex-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"Type your code here\"/>';\n    wrap.innerHTML='<div class=\"ex-prompt\">'+q.label+'</div><div class=\"ex-code\" style=\"margin-bottom:10px\">'+q.html+'</div>'+field+'<button id=\"var-ep-check\" class=\"ex-btn\" style=\"margin-top:8px\">Check</button><div class=\"ex-feedback\" id=\"var-ep-fb\"></div><div class=\"ex-explanation\" id=\"var-ep-hint\" style=\"display:none\"></div>';\n    document.getElementById('var-ep-check').onclick=function(){\n      var input=document.getElementById('var-ep-answer'); var val=input.value.trim(); var fb=document.getElementById('var-ep-fb'); var hint=document.getElementById('var-ep-hint');\n      if(!val){ fb.className='ex-feedback hint'; fb.textContent='Type your answer first.'; hint.textContent=q.hint; hint.style.display='block'; return; }\n      if(new RegExp('^'+q.pattern+'$','i').test(val)){ input.classList.add('correct'); correct(); fb.className='ex-feedback ok'; fb.textContent='Correct.'; setTimeout(next,1000); }\n      else { input.classList.add('wrong'); wrong(); fb.className='ex-feedback err'; fb.textContent='Not quite. Check the syntax.'; hint.textContent=q.hint; hint.style.display='block'; }\n    };\n    document.getElementById('var-ep-answer').focus();\n  }\n  next();\n})();"
     }
   ],
   "quizQuestions": [
@@ -134,7 +134,8 @@
         "Nothing"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nname = \"Ava\"\nprint(name)",
@@ -145,7 +146,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nname = \"Ava\"\nprint(\"name\")",
@@ -156,7 +158,8 @@
         "Error"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which line correctly stores text in a variable?",
@@ -167,7 +170,8 @@
         "city == \"London\""
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which line correctly stores a number in a variable?",
@@ -178,7 +182,8 @@
         "100 = score"
       ],
       "answer": 0,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nscore = 20\nscore = score + 5\nprint(score)",
@@ -189,7 +194,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which print line combines a message and a variable correctly?",
@@ -200,7 +206,8 @@
         "print(\"score\")"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What does this print?\n\nname = \"Sam\"\nprint(\"Hello\", name)",
@@ -211,7 +218,8 @@
         "Error"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "Which variable name is valid in Python?",
@@ -222,7 +230,8 @@
         "high-score"
       ],
       "answer": 2,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
       "q": "What type of value is stored here?\n\nlevel = \"5\"",
@@ -233,41 +242,40 @@
         "Comment"
       ],
       "answer": 1,
-      "type": "mcq"
+      "type": "mcq",
+      "duration": 45
     },
     {
-      "type": "code_output",
-      "q": "Create a variable for a name, store Alex in it, then print the variable.",
-      "inputs": [],
-      "expectedContains": null,
-      "expectedOutput": "Alex",
-      "pattern": null,
-      "sampleAnswer": "name = \"Alex\"\nprint(name)"
+      "type": "generated",
+      "mode": "py_var_store_string",
+      "q": "Create a variable, store a name in it, and print the variable.",
+      "duration": 60
     },
     {
-      "type": "code_regex",
-      "q": "Create a variable called score and store the number 100 in it.",
-      "pattern": "^\\s*score\\s*=\\s*100\\s*$",
-      "sampleAnswer": "score = 100"
+      "type": "generated",
+      "mode": "py_var_store_number",
+      "q": "Create a variable called score and store a given number in it.",
+      "duration": 90
     },
     {
-      "type": "code_output",
-      "q": "Create a number variable, add 5 to it, and print the final value 15.",
-      "inputs": [],
-      "expectedOutput": "15",
-      "sampleAnswer": "total = 10\ntotal = total + 5\nprint(total)"
+      "type": "generated",
+      "mode": "py_var_arithmetic",
+      "q": "Create a number variable, add a given value to it, and print the result.",
+      "duration": 60
     },
     {
       "type": "code_regex",
       "q": "Create a variable called city and store a text value in it.",
       "pattern": "^\\s*city\\s*=\\s*[\"'][^\"']+[\"']\\s*$",
-      "sampleAnswer": "city = \"London\""
+      "sampleAnswer": "city = \"London\"",
+      "duration": 90
     },
     {
       "type": "code_regex",
       "q": "Write a print statement that outputs a message and the variable score together.",
       "pattern": "^\\s*print\\s*\\(\\s*[\"'][^\"']+[\"']\\s*,\\s*score\\s*\\)\\s*$",
-      "sampleAnswer": "print(\"Score:\", score)"
+      "sampleAnswer": "print(\"Score:\", score)",
+      "duration": 90
     }
   ]
 }

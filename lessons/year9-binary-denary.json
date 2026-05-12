@@ -15,28 +15,28 @@
       "title": "Step Through: Binary to Denary",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through binary to denary</h2><div id='y9bd-stepper-1'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9bd-stepper-1',steps:[{title:'Start with 01101100',html:BinaryLesson.bitTable([0,1,1,0,1,1,0,0]),note:'Line up each bit under its place value.'},{title:'Find the 1 columns',html:BinaryLesson.bitTable([0,1,1,0,1,1,0,0]),note:'64, 32, 8 and 4 are active.'},{title:'Add them',html:'<p class=\"bb-answer-line\">64 + 32 + 8 + 4 = 108</p>',note:'So 01101100 is 108.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9bd-stepper-1',steps:[{title:'We are converting 01101100 to denary',html:'<div class=\"bb-big-number\"><span>01101100</span></div>',note:'Find which columns have a 1, then add their place values together.'},{title:'Line each bit up under its place value',html:BinaryLesson.bitTable([0,1,1,0,1,1,0,0]),note:'The bright cells show the 1s. The active columns are 64, 32, 8 and 4.'},{title:'Add the active columns',html:'<p class=\"bb-answer-line\">64 + 32 + 8 + 4 = 108</p>',note:'01101100 in denary is 108.'}]});"
     },
     {
       "id": "guided-two",
       "title": "Step Through: Denary to Binary",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through denary to binary</h2><div id='y9bd-stepper-2'></div>",
-      "js": "BinaryLesson.createStepper({containerId:'y9bd-stepper-2',steps:[{title:'Start with 150',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),note:'Check each place value from left to right.'},{title:'Choose values that fit',html:BinaryLesson.bitTable([1,0,0,1,0,1,1,0]),note:'128 fits, 16 fits, 4 fits and 2 fits.'},{title:'Read the binary number',html:BinaryLesson.bitTable([1,0,0,1,0,1,1,0]),note:'150 in 8-bit binary is 10010110.'}]});"
+      "js": "BinaryLesson.createStepper({containerId:'y9bd-stepper-2',steps:[{title:'We are converting 150 to binary',html:'<div class=\"bb-big-number\"><span>150</span></div>',note:'Go column by column from left to right. At each column, ask: does this value fit in what I have left? If yes, write a 1 and subtract it. If no, write a 0 and move on.'},{title:'Check each column',html:'<table class=\"bb-table\"><thead><tr><th>Column</th><th>Does it fit?</th><th>Left over</th></tr></thead><tbody><tr><td>128</td><td>Yes — 150 ≥ 128</td><td>22</td></tr><tr><td>64</td><td>No — 22 < 64</td><td>22</td></tr><tr><td>32</td><td>No — 22 < 32</td><td>22</td></tr><tr><td>16</td><td>Yes — 22 ≥ 16</td><td>6</td></tr><tr><td>8</td><td>No — 6 < 8</td><td>6</td></tr><tr><td>4</td><td>Yes — 6 ≥ 4</td><td>2</td></tr><tr><td>2</td><td>Yes — 2 ≥ 2</td><td>0</td></tr><tr><td>1</td><td>No — 0 left</td><td>0</td></tr></tbody></table>',note:'Each time a column fits, subtract it from what is left over. When the left over hits 0, all remaining columns get a 0.'},{title:'Read off the binary number',html:BinaryLesson.bitTable([1,0,0,1,0,1,1,0]),note:'Columns that fitted get a 1, the rest get a 0. 150 in binary is 10010110.'}]});"
     },
     {
       "id": "practice-a",
       "title": "Checked Practice 1",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary to denary</h2><div id='y9bd-practice-a'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9bd-practice-a',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,1,1,1,1,0,0]),answer:'60',right:'32 + 16 + 8 + 4 = 60.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,0,1,0,0,0,0,1]),answer:'161',right:'128 + 32 + 1 = 161.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,1,0,1,0,1,1,0]),answer:'86',right:'64 + 16 + 4 + 2 = 86.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9bd-practice-a',questions:[{generated:'binary_to_denary'},{generated:'binary_to_denary'},{generated:'binary_to_denary'}]});"
     },
     {
       "id": "practice-b",
       "title": "Checked Practice 2",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: denary to binary</h2><div id='y9bd-practice-b'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9bd-practice-b',questions:[{prompt:'Convert 25 to 8-bit binary.',answer:'00011001',right:'16 + 8 + 1 = 25.'},{prompt:'Convert 73 to 8-bit binary.',answer:'01001001',right:'64 + 8 + 1 = 73.'},{prompt:'Convert 200 to 8-bit binary.',answer:'11001000',right:'128 + 64 + 8 = 200.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9bd-practice-b',questions:[{generated:'denary_to_binary'},{generated:'denary_to_binary'},{generated:'denary_to_binary'}]});"
     },
     {
       "id": "endless",
@@ -50,7 +50,7 @@
       "title": "End of Lesson Exam",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><div id='y9bd-exam'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9bd-exam',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,1,0,0,0,0,1,1]),answer:'195',right:'128 + 64 + 2 + 1 = 195.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),answer:'90',right:'64 + 16 + 8 + 2 = 90.'},{prompt:'Convert 45 to 8-bit binary.',answer:'00101101',right:'Correct.'},{prompt:'Convert 222 to 8-bit binary.',answer:'11011110',right:'Correct.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9bd-exam',questions:[{generated:'binary_to_denary'},{generated:'binary_to_denary'},{generated:'denary_to_binary'},{generated:'denary_to_binary'}]});"
     }
   ],
   "quizQuestions": [
@@ -67,16 +67,10 @@
       "duration": 75
     },
     {
-      "type": "mcq",
-      "q": "Convert 25 to 8-bit binary.",
-      "options": [
-        "00011001",
-        "00110001",
-        "00010110",
-        "10011000"
-      ],
-      "answer": 0,
-      "duration": 75
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 90
     },
     {
       "type": "mcq",
@@ -91,15 +85,9 @@
       "duration": 75
     },
     {
-      "type": "mcq",
-      "q": "Convert 222 to 8-bit binary.",
-      "options": [
-        "11011110",
-        "11101110",
-        "11011011",
-        "10111110"
-      ],
-      "answer": 0,
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
       "duration": 90
     },
     {
@@ -113,6 +101,90 @@
       ],
       "answer": 0,
       "duration": 45
+    },
+    {
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
+      "duration": 60
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 00111100 to denary.",
+      "options": [
+        "60",
+        "56",
+        "62",
+        "48"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 11000011 to denary.",
+      "options": [
+        "195",
+        "192",
+        "131",
+        "193"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "generated",
+      "mode": "binary_to_denary",
+      "q": "Convert this binary number to denary.",
+      "duration": 60
+    },
+    {
+      "type": "generated",
+      "mode": "denary_to_binary",
+      "q": "Convert a denary number to 8-bit binary.",
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "What is the 8-bit binary for 128?",
+      "options": [
+        "10000000",
+        "01111111",
+        "11000000",
+        "10000001"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is 01001001 in denary?",
+      "options": [
+        "73",
+        "72",
+        "74",
+        "41"
+      ],
+      "answer": 0,
+      "duration": 75
     }
   ]
 }
