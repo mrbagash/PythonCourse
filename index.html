@@ -18,6 +18,7 @@
     .step-pill  { transition: background 0.15s, color 0.15s; }
     .lesson-tab { transition: background 0.15s, border-color 0.15s; }
     #step-content pre { white-space: pre-wrap; }
+    .ex-opt { white-space: pre-wrap; text-align: left; }
 
     /* ── Python Editor ────────────────────────────────────────── */
     .pylearn-editor-wrap { border: 1px solid #d1d5db; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.75rem; }
@@ -26,10 +27,11 @@
     .pylearn-btn-reset { background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 0.25rem; padding: 0.05rem 0.45rem; font-size: 0.7rem; cursor: pointer; font-family: inherit; }
     .pylearn-btn-reset:hover { color: #cbd5e1; border-color: #475569; background: #334155; }
     .pylearn-code-area { width: 100%; background: #0f172a; color: #e2e8f0; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; line-height: 1.6; padding: 0.75rem; border: none; resize: vertical; min-height: 180px; outline: none; tab-size: 4; box-sizing: border-box; }
-    .pylearn-output-area { background: #1e293b; color: #a3e635; font-family: 'Courier New', Courier, monospace; font-size: 0.82rem; padding: 0.6rem 0.75rem; min-height: 2rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; border-top: 1px solid #334155; }
+    .pylearn-output-area { background: #1e293b; color: #a3e635; font-family: 'Courier New', Courier, monospace; font-size: 0.82rem; padding: 0.6rem 0.75rem; min-height: 2rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; border-top: 1px solid #334155; outline: none; cursor: text; }
     .pylearn-output-area.has-error { color: #f87171; }
     .pylearn-output-area.pylearn-output-listening { box-shadow: inset 0 0 0 2px #2563eb; color: #e2e8f0; }
     .pylearn-output-area.pylearn-output-listening::before { content: ''; }
+    .pylearn-output-area.pylearn-output-listening::after { content: 'Type here, then press Enter'; display: block; color: #93c5fd; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.72rem; margin-top: 0.35rem; }
     .pylearn-toolbar { background: #1e293b; padding: 0.35rem 0.6rem; border-top: 1px solid #334155; display: flex; gap: 0.5rem; align-items: center; }
     .pylearn-btn-run { background: #2563eb; color: #fff; border: none; border-radius: 0.3rem; padding: 0.25rem 0.75rem; font-size: 0.8rem; cursor: pointer; }
     .pylearn-btn-run:hover { background: #1d4ed8; }
@@ -328,6 +330,11 @@
         <button class="quiz-ans-btn rounded-xl py-5 px-4 font-bold text-base bg-yellow-500 hover:bg-yellow-400 text-gray-900 active:scale-95 transition-transform" data-idx="2">&#x25CF; <span></span></button>
         <button class="quiz-ans-btn rounded-xl py-5 px-4 font-bold text-base bg-green-600 hover:bg-green-500 active:scale-95 transition-transform" data-idx="3">&#x25CF; <span></span></button>
       </div>
+      <div id="qs-code-answer" class="hidden w-full max-w-2xl">
+        <textarea id="qs-code-input" class="w-full rounded-xl bg-slate-950 border border-slate-600 text-green-200 font-mono text-sm p-4 min-h-40 outline-none focus:border-blue-400" spellcheck="false" placeholder="Write your Python code here"></textarea>
+        <button id="btn-quiz-submit-code" class="mt-3 w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Submit Code</button>
+        <div id="qs-code-feedback" class="mt-3 text-sm text-gray-300"></div>
+      </div>
     </div>
   </div>
 
@@ -465,8 +472,9 @@ window.PyLearn = (() => {
             throw new Error("File not found: '" + file + "'");
           return Sk.builtinFiles.files[file];
         },
-        inputfun: liveFn,
-        inputfunTakesPromise: true,
+          inputfun: liveFn,
+          inputfunTakesPrompt: true,
+          inputfunTakesPromise: true,
       });
       Sk.misceval.asyncToPromise(
         function() { return Sk.importMainWithBody('<stdin>', false, code, true); }
@@ -532,7 +540,7 @@ window.PyLearn = (() => {
           (readOnly ? ' readonly' : '') +
           ' spellcheck="false">' + escHtml(startingCode) + '</textarea>' +
         (showOutput
-          ? '<div class="pylearn-output-area" id="' + uid + '-output">Output will appear here\u2026</div>'
+          ? '<div class="pylearn-output-area" id="' + uid + '-output" tabindex="0">Output will appear here\u2026</div>'
           : '') +
         '<div class="pylearn-toolbar">' +
           '<button class="pylearn-btn-run" id="' + uid + '-run">&#9654; Run</button>' +
@@ -638,12 +646,15 @@ window.PyLearn = (() => {
         return new Promise(function(resolve) {
           // Show prompt as part of the output (prompt has no trailing newline)
           var promptText = prompt || '';
+          if (promptText && liveText && !liveText.endsWith('\n')) liveText += '\n';
           liveText += promptText;
           outputEl.textContent = liveText;
 
           // Track what the user is typing (highlighted at the end of output)
           var typed = '';
           var promptLen = liveText.length;
+          var previousTabIndex = outputEl.getAttribute('tabindex');
+          outputEl.setAttribute('tabindex', '0');
 
           function render() {
             // Show the live output + a visual cursor
@@ -652,13 +663,18 @@ window.PyLearn = (() => {
           }
 
           function onKeyDown(e) {
+            if (e.__pylearnInputHandled) return;
+            e.__pylearnInputHandled = true;
             // Don't capture keys typed in inputs/textareas elsewhere
             var t = e.target;
             if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
             if (e.key === 'Enter') {
               e.preventDefault();
-              document.removeEventListener('keydown', onKeyDown);
+              outputEl.removeEventListener('keydown', onKeyDown);
+              document.removeEventListener('keydown', onKeyDown, true);
               outputEl.classList.remove('pylearn-output-listening');
+              if (previousTabIndex === null) outputEl.removeAttribute('tabindex');
+              else outputEl.setAttribute('tabindex', previousTabIndex);
               // Commit: append the typed text + newline to liveText
               liveText = liveText.substring(0, promptLen) + typed + '\n';
               outputEl.textContent = liveText;
@@ -678,11 +694,10 @@ window.PyLearn = (() => {
 
           outputEl.classList.add('pylearn-output-listening');
           // Move focus away from the code textarea so keystrokes hit our handler
-          if (document.activeElement && document.activeElement.blur) {
-            document.activeElement.blur();
-          }
+          outputEl.focus();
           render();
-          document.addEventListener('keydown', onKeyDown);
+          outputEl.addEventListener('keydown', onKeyDown);
+          document.addEventListener('keydown', onKeyDown, true);
         });
       } : null;
 
@@ -1897,6 +1912,7 @@ var quiz = {
   currentState: null,   // 'lobby'|'question'|'answer'|'finished'
   myScore:     0,       // student side
   myAnswered:  false,
+  myScored:    {},
   unsubscribers: [],    // Firebase listeners to clean up
 };
 
@@ -1989,7 +2005,19 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
     questionIdx: -1,
     lessonId:    lesson.meta.id,
     questions:   selectedQs.map(function(q) {
-      return { q: q.q, options: q.options, answer: q.answer, duration: q.duration };
+      return {
+        type: q.type || 'mcq',
+        q: q.q,
+        options: q.options || null,
+        answer: q.answer,
+        duration: q.duration,
+        pattern: q.pattern || null,
+        flags: q.flags || 'im',
+        inputs: q.inputs || null,
+        expectedOutput: q.expectedOutput || null,
+        expectedContains: q.expectedContains || null,
+        sampleAnswer: q.sampleAnswer || null
+      };
     }),
   });
 
@@ -2084,9 +2112,18 @@ async function startNextQuestion() {
 
   // Render host question view
   safeText(document.getElementById('qh-q-text'), q.q);
-  q.options.forEach(function(opt, i) {
-    safeText(document.getElementById('qh-opt-' + i), opt);
-  });
+  var isCodeQuestion = q.type && q.type !== 'mcq';
+  var hostOptions = ['qh-opt-0','qh-opt-1','qh-opt-2','qh-opt-3'].map(function(id) { return document.getElementById(id); });
+  if (isCodeQuestion) {
+    hostOptions.forEach(function(el) {
+      el.textContent = 'Code answer';
+      el.className = 'rounded-xl p-4 text-center font-semibold text-lg bg-gray-700 text-gray-200';
+    });
+  } else {
+    (q.options || []).forEach(function(opt, i) {
+      safeText(document.getElementById('qh-opt-' + i), opt);
+    });
+  }
   document.getElementById('qh-q-progress').textContent =
     'Question ' + (nextIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qh-answered-count').textContent = '';
@@ -2133,36 +2170,49 @@ async function showAnswerReveal() {
   var qIdx = snap.val();
   var q = quiz.questions[qIdx];
   var now = Date.now();
+  var isCodeQuestion = q.type && q.type !== 'mcq';
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
 
-  // Show correct answer
-  var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
   var revealEl = document.getElementById('qh-reveal-answer');
-  safeText(revealEl, q.options[q.answer]);
-  revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 ' + colours[q.answer];
+  if (isCodeQuestion) {
+    safeText(revealEl, q.sampleAnswer || 'Teacher checks accepted code');
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono whitespace-pre-wrap';
+  } else {
+    var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
+    safeText(revealEl, q.options[q.answer]);
+    revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 ' + colours[q.answer];
+  }
 
-  // Show answer breakdown
   var statsEl = document.getElementById('qh-reveal-stats');
   statsEl.innerHTML = '';
   var answersSnap = await quiz.sessionRef.child('answers/' + qIdx).get();
-  var answerCounts = [0,0,0,0];
+  var answerCounts = [0,0,0,0], codeCorrect = 0, codeTotal = 0;
   if (answersSnap.exists()) {
     Object.values(answersSnap.val()).forEach(function(a) {
-      if (typeof a.answer === 'number') answerCounts[a.answer]++;
+      if (isCodeQuestion) {
+        codeTotal++;
+        if (a.correct) codeCorrect++;
+      } else if (typeof a.answer === 'number') answerCounts[a.answer]++;
     });
   }
-  q.options.forEach(function(opt, i) {
+  if (isCodeQuestion) {
     var chip = document.createElement('div');
-    chip.className = 'rounded-lg px-4 py-2 text-center text-sm ' +
-      (i === q.answer ? 'bg-green-600 font-bold' : 'bg-gray-700 opacity-70');
-    chip.textContent = opt + ' — ' + answerCounts[i];
+    chip.className = 'rounded-lg px-4 py-2 text-center text-sm bg-green-600 font-bold';
+    chip.textContent = codeCorrect + ' correct / ' + codeTotal + ' submitted';
     statsEl.appendChild(chip);
-  });
+  } else {
+    q.options.forEach(function(opt, i) {
+      var chip = document.createElement('div');
+      chip.className = 'rounded-lg px-4 py-2 text-center text-sm ' +
+        (i === q.answer ? 'bg-green-600 font-bold' : 'bg-gray-700 opacity-70');
+      chip.textContent = opt + ' - ' + answerCounts[i];
+      statsEl.appendChild(chip);
+    });
+  }
 
   setQuizHostView('reveal');
 
-  // Auto-advance after half the question duration
   var revealDuration = Math.max(5000, (q.duration / 2) * 1000);
   quiz.timerInterval = setTimeout(async function() {
     await startNextQuestion();
@@ -2201,7 +2251,7 @@ async function buildLeaderboard() {
       var code   = child.key;
       var answer = child.child('answer').val();
       if (!scores[code]) scores[code] = 0;
-      if (answer === q.answer) scores[code]++;
+      if ((q.type && q.type !== 'mcq') ? child.child('correct').val() === true : answer === q.answer) scores[code]++;
     });
   }
   // Add players who answered nothing
@@ -2293,6 +2343,7 @@ document.getElementById('btn-join-quiz-submit').onclick = async function() {
     quiz.sessionRef = sessionRef;
     quiz.myScore    = 0;
     quiz.myAnswered = false;
+    quiz.myScored   = {};
     showStudentScreen(lobbyCode, snap.val().questions || []);
 
   } catch(e) {
@@ -2387,16 +2438,27 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   document.getElementById('qs-q-progress').textContent =
     'Question ' + (qIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qs-answered-msg').classList.add('hidden');
+  document.getElementById('qs-code-feedback').textContent = '';
 
-  // Show answer buttons
-  document.getElementById('qs-answer-grid').classList.remove('hidden');
-  document.querySelectorAll('.quiz-ans-btn').forEach(function(btn, i) {
-    safeText(btn.querySelector('span'), q.options[i]);
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.style.outline = '';
-    btn.onclick = function() { submitStudentAnswer(qIdx, i, btn); };
-  });
+  var isCodeQuestion = q.type && q.type !== 'mcq';
+  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion);
+  document.getElementById('qs-code-answer').classList.toggle('hidden', !isCodeQuestion);
+  if (isCodeQuestion) {
+    var codeInput = document.getElementById('qs-code-input');
+    codeInput.value = '';
+    codeInput.disabled = false;
+    document.getElementById('btn-quiz-submit-code').disabled = false;
+    document.getElementById('btn-quiz-submit-code').onclick = function() { submitStudentCodeAnswer(qIdx); };
+    setTimeout(function() { codeInput.focus(); }, 0);
+  } else {
+    document.querySelectorAll('.quiz-ans-btn').forEach(function(btn, i) {
+      safeText(btn.querySelector('span'), q.options[i]);
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.outline = '';
+      btn.onclick = function() { submitStudentAnswer(qIdx, i, btn); };
+    });
+  }
 
   // Timer based on server start time
   var elapsed    = (Date.now() - questionStart) / 1000;
@@ -2441,6 +2503,10 @@ function lockStudentAnswers() {
   document.querySelectorAll('.quiz-ans-btn').forEach(function(btn) {
     btn.disabled = true; btn.style.opacity = '0.5';
   });
+  var codeInput = document.getElementById('qs-code-input');
+  var codeBtn = document.getElementById('btn-quiz-submit-code');
+  if (codeInput) codeInput.disabled = true;
+  if (codeBtn) codeBtn.disabled = true;
 }
 
 async function submitStudentAnswer(qIdx, answerIdx, btn) {
@@ -2459,18 +2525,71 @@ async function submitStudentAnswer(qIdx, answerIdx, btn) {
   document.getElementById('qs-answer-grid').classList.add('hidden');
 }
 
+async function validateQuizCode(q, code) {
+  if (!code.trim()) return { correct: false, message: 'No code submitted.' };
+  if (q.type === 'code_regex') {
+    try {
+      var re = new RegExp(q.pattern, q.flags || 'im');
+      return { correct: re.test(code), message: re.test(code) ? 'Submitted.' : 'Submitted.' };
+    } catch(e) {
+      return { correct: false, message: 'Question validation error.' };
+    }
+  }
+  if (q.type === 'code_output') {
+    var result = await PyLearn.runPython(code, { inputs: q.inputs || [] });
+    if (result.error) return { correct: false, message: 'Submitted with an error.' };
+    var out = result.output.trim();
+    var correct = false;
+    if (q.expectedOutput != null) correct = out === String(q.expectedOutput).trim();
+    else if (q.expectedContains != null) correct = out.toLowerCase().indexOf(String(q.expectedContains).toLowerCase()) !== -1;
+    return { correct: correct, message: 'Submitted.' };
+  }
+  return { correct: false, message: 'Unknown code question type.' };
+}
+
+async function submitStudentCodeAnswer(qIdx) {
+  if (quiz.myAnswered) return;
+  var q = quiz.questions[qIdx];
+  var codeInput = document.getElementById('qs-code-input');
+  var fb = document.getElementById('qs-code-feedback');
+  var code = codeInput.value;
+  if (!code.trim()) {
+    fb.textContent = 'Write your code first.';
+    return;
+  }
+  document.getElementById('btn-quiz-submit-code').disabled = true;
+  fb.textContent = 'Checking...';
+  var validation = await validateQuizCode(q, code);
+  quiz.myAnswered = true;
+  lockStudentAnswers();
+
+  await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
+    answerText: code,
+    correct: validation.correct,
+    answeredAt: Date.now(),
+  });
+
+  fb.textContent = validation.message;
+  document.getElementById('qs-answered-msg').classList.remove('hidden');
+  document.getElementById('qs-code-answer').classList.add('hidden');
+}
+
 function renderStudentReveal(q, qIdx) {
   clearInterval(quiz.timerInterval);
   setStudentView('reveal');
   if (!q) return;
 
-  var answered = quiz.myAnswered;
-  // Check if our answer was right — read from Firebase
   quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).get().then(function(snap) {
-    var correct = snap.exists() && snap.child('answer').val() === q.answer;
-    if (correct) quiz.myScore++;
-    document.getElementById('qs-reveal-result').textContent = correct ? '✅ Correct!' : '❌ Wrong';
-    document.getElementById('qs-reveal-answer').textContent = 'Answer: ' + q.options[q.answer];
+    var isCodeQuestion = q.type && q.type !== 'mcq';
+    var correct = snap.exists() && (isCodeQuestion ? snap.child('correct').val() === true : snap.child('answer').val() === q.answer);
+    if (correct && !quiz.myScored[qIdx]) {
+      quiz.myScore++;
+      quiz.myScored[qIdx] = true;
+    }
+    document.getElementById('qs-reveal-result').textContent = correct ? 'Correct!' : 'Wrong';
+    document.getElementById('qs-reveal-answer').textContent = isCodeQuestion
+      ? ('Example: ' + (q.sampleAnswer || 'See teacher'))
+      : ('Answer: ' + q.options[q.answer]);
   });
 }
 

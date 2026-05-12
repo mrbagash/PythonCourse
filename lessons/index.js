@@ -27,6 +27,12 @@ window.PYLEARN_LESSON_INDEX = {
           "title": "Selection",
           "file": "lessons/selection-lesson.json",
           "order": 4
+        },
+        {
+          "id": "selection-part-2",
+          "title": "Selection Part 2",
+          "file": "lessons/selection-part-2.json",
+          "order": 5
         }
       ]
     },
