@@ -1,0 +1,131 @@
+{
+  "id": "year7-scratch-intro",
+  "title": "Getting Started with Scratch",
+  "description": "Introduction to Scratch: the interface, blocks, and your first script.",
+  "steps": [
+    {
+      "id": "intro",
+      "title": "What is Scratch?",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Welcome to Scratch</h2><p class='text-gray-700 mb-4'>Scratch is a visual programming language. Instead of typing code, you snap coloured blocks together like puzzle pieces.</p><p class='text-gray-700 mb-4'>Each block is a single instruction. Connecting them in order creates a <strong>script</strong> — a sequence of steps the computer follows.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Example script</p><pre class='scratch-blocks'>when green flag clicked\nmove (10) steps\nplay sound [Meow v] until done</pre></div><p class='text-gray-700'>Click <strong>Next Step</strong> to find out what the different block colours mean.</p>"
+    },
+    {
+      "id": "block-types",
+      "title": "Block Categories",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Block categories</h2><p class='text-gray-700 mb-4'>Every block belongs to a category. The colour tells you what kind of instruction it is.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Motion — blue</p><pre class='scratch-blocks'>move (10) steps\nturn right (15) degrees\ngo to x: (0) y: (0)</pre></div><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Looks — purple</p><pre class='scratch-blocks'>say [Hello!] for (2) seconds\nswitch costume to [costume1 v]</pre></div><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Events — yellow (hat blocks)</p><pre class='scratch-blocks'>when green flag clicked\nwhen [space v] key pressed</pre></div><p class='text-gray-700 mt-2'>Hat blocks are rounded at the top — they always go at the start of a script and tell Scratch <em>when</em> to run.</p>"
+    },
+    {
+      "id": "sequences",
+      "title": "Scripts Run in Order",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Scripts run top to bottom</h2><p class='text-gray-700 mb-4'>When a script starts, Scratch runs each block in order, from top to bottom. The script below makes a sprite move, then say something, then move again.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>A sequence</p><pre class='scratch-blocks'>when green flag clicked\nmove (50) steps\nsay [I moved!] for (1) seconds\nmove (50) steps\nsay [I moved again!] for (1) seconds</pre></div><p class='text-gray-700'>Try to predict what a script will do by reading it from top to bottom before you run it.</p>"
+    },
+    {
+      "id": "build-check",
+      "title": "Your First Task",
+      "autoComplete": false,
+      "css": ".y7-scratch-wrap { margin: 0.75rem 0; border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; } .y7-scratch-frame { width: 100%; height: 480px; display: block; border: none; } .y7-check-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: #f8fafc; border-top: 1px solid #e2e8f0; } .y7-check-result { font-size: 0.85rem; }",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Your first Scratch task</h2><p class='text-gray-700 mb-3'>Use the editor below to build this script. Find <strong>Events</strong> for the hat block and <strong>Motion</strong> for the move block, then snap them together.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Build this</p><pre class='scratch-blocks'>when green flag clicked\nmove (10) steps</pre></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span></div></div>",
+      "js": "(function(){document.getElementById('y7-check-btn').onclick=function(){var frame=document.getElementById('y7-scratch-frame');var result=document.getElementById('y7-check-result');try{var vm=frame.contentWindow.vm;if(!vm){result.style.color='#fca5a5';result.textContent='Editor still loading — wait a moment and try again.';return;}var targets=vm.runtime.targets;var found=false;for(var t=0;t<targets.length&&!found;t++){var blocks=targets[t].blocks._blocks;for(var id in blocks){var b=blocks[id];if(b.opcode==='event_whenflagclicked'&&b.next){var nb=blocks[b.next];if(nb&&nb.opcode==='motion_movesteps'){found=true;break;}}}}if(found){result.style.color='#86efac';result.textContent='✓ Correct! Green flag connected to move steps.';__markStepComplete();}else{result.style.color='#fca5a5';result.textContent='Not quite — connect the green flag block directly to a move steps block.';}}catch(e){result.style.color='#fca5a5';result.textContent='Could not check: '+e.message;console.error(e);}};})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What shape is a hat block?",
+      "options": [
+        "Rounded at the top",
+        "Pointed at the bottom",
+        "Square",
+        "Circular"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What colour are Motion blocks in Scratch?",
+      "options": [
+        "Blue",
+        "Purple",
+        "Yellow",
+        "Green"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What does the green flag block do?",
+      "options": [
+        "Starts the script when the green flag is clicked",
+        "Makes the sprite turn green",
+        "Stops the script",
+        "Saves the project"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "In what order does Scratch run the blocks in a script?",
+      "options": [
+        "Top to bottom",
+        "Bottom to top",
+        "Left to right",
+        "Randomly"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "Which block would you use to make a sprite move across the stage?",
+      "options": [
+        "move (10) steps",
+        "say [Hello]",
+        "when green flag clicked",
+        "switch costume"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What file extension does a Scratch project use when saved to your computer?",
+      "options": [
+        ".sb3",
+        ".py",
+        ".scratch",
+        ".zip"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What colour are Events blocks (like 'when green flag clicked')?",
+      "options": [
+        "Yellow",
+        "Blue",
+        "Orange",
+        "Red"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "How many blocks does the simplest working script need?",
+      "options": [
+        "At least 2 — a hat block and one action block",
+        "Exactly 1",
+        "At least 5",
+        "10 or more"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

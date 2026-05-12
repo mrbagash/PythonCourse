@@ -15,6 +15,8 @@
   <script src="https://skulpt.org/js/skulpt-stdlib.js"></script>
   <!-- SheetJS: xlsx export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- scratchblocks: render Scratch block notation as SVG -->
+  <script src="https://unpkg.com/scratchblocks@3.6.4/build/scratchblocks.min.js"></script>
   <style>
     :root {
       --jhncc-yellow: rgb(245, 186, 41);
@@ -322,6 +324,12 @@
     /* spinner */
     .spinner { border: 2px solid #e5e7eb; border-top-color: #6b7280; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scratch block display */
+    #step-content pre.scratch-blocks { background: transparent; border: none; padding: 0; white-space: pre; font-size: inherit; }
+    .scratch-blocks svg { display: block; max-width: 100%; height: auto; }
+    .scratch-blocks-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem 1.25rem; margin: 0.75rem 0; overflow-x: auto; }
+    .scratch-blocks-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -1813,6 +1821,9 @@ function loadStep(lessonIdx, stepIdx) {
 
   // Content
   document.getElementById('step-content').innerHTML = step.content;
+  if (window.scratchblocks) {
+    try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) {}
+  }
 
   // Expose current location so createEditor can build a stable storage key
   window.__pylearnCurrentLessonId = lesson.meta.id;

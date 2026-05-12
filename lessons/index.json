@@ -1,6 +1,19 @@
 {
   "yearGroups": [
     {
+      "id": "year7",
+      "label": "Year 7",
+      "courses": [
+        {
+          "id": "scratch",
+          "label": "Scratch",
+          "lessons": [
+            { "id": "year7-scratch-intro", "title": "Getting Started with Scratch", "file": "lessons/year7-scratch-intro.json", "order": 1 }
+          ]
+        }
+      ]
+    },
+    {
       "id": "year8",
       "label": "Year 8",
       "courses": [
