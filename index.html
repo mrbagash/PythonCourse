@@ -271,6 +271,24 @@
     .bb-good { color: #86efac; }
     .bb-bad { color: #fca5a5; }
 
+    /* interactive bit cells */
+    .bb-bit-btn {
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s, color 0.1s;
+      outline: none;
+    }
+    .bb-bit-btn:hover { border-color: var(--jhncc-yellow) !important; }
+    .bb-bit-btn:focus { box-shadow: 0 0 0 2px rgba(245,186,41,0.5); position: relative; z-index: 1; }
+    .bb-live-total {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 0.35rem;
+    }
+    .bb-live-total .bb-ltv { color: var(--jhncc-yellow); font-weight: 700; }
+
     /* spinner */
     .spinner { border: 2px solid #e5e7eb; border-top-color: #6b7280; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -1016,6 +1034,86 @@ window.BinaryLesson = (() => {
     return '<table class="bb-table bb-add-table"><tbody>' + row('', aBits) + row('+', bBits) + row('answer', answerBits || ['?','?','?','?','?','?','?','?']) + '</tbody></table>';
   }
   function normalise(value) { return String(value || '').trim().replace(/\s+/g,'').toUpperCase(); }
+
+  // ── Interactive bit cells ─────────────────────────────────────
+  // Attaches click/keyboard handlers to [data-i] cells inside el.
+  // bits[] is updated in place; onChange() fired after each toggle.
+  function bindBitCells(el, bits, onChange) {
+    el.querySelectorAll('[data-i]').forEach(function(cell) {
+      var i = parseInt(cell.dataset.i, 10);
+      function setVal(v) {
+        bits[i] = v;
+        cell.textContent = v;
+        var cls = 'bb-bit-btn ' + (v ? 'bb-on' : 'bb-off');
+        if (cell.classList.contains('bb-nibble-gap')) cls += ' bb-nibble-gap';
+        cell.className = cls;
+        if (onChange) onChange();
+      }
+      cell.onclick = function() { setVal(bits[i] ? 0 : 1); };
+      cell.onkeydown = function(e) {
+        if (e.key === '0') { e.preventDefault(); setVal(0); }
+        else if (e.key === '1') { e.preventDefault(); setVal(1); }
+        else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setVal(bits[i] ? 0 : 1); }
+        else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); el.querySelectorAll('[data-i]')[i - 1].focus(); }
+        else if (e.key === 'ArrowRight' && i < bits.length - 1) { e.preventDefault(); el.querySelectorAll('[data-i]')[i + 1].focus(); }
+      };
+    });
+  }
+
+  // Mount an interactive 8-bit grid into el.
+  // opts: { showTotal: bool }
+  // Returns { getAnswer(), reset() }
+  function mountBitInput(el, opts) {
+    opts = opts || {};
+    var bits = [0,0,0,0,0,0,0,0];
+    function calcValue() { return bits.reduce(function(s, b, i) { return s + b * POWERS[i]; }, 0); }
+    function render() {
+      var headHtml = POWERS.map(function(h) { return '<th>' + h + '</th>'; }).join('');
+      var cellHtml = bits.map(function(b, i) {
+        return '<td class="bb-bit-btn ' + (b ? 'bb-on' : 'bb-off') + '" tabindex="0" data-i="' + i + '">' + b + '</td>';
+      }).join('');
+      el.innerHTML =
+        '<table class="bb-table"><thead><tr>' + headHtml + '</tr></thead>' +
+        '<tbody><tr>' + cellHtml + '</tr></tbody></table>' +
+        (opts.showTotal ? '<div class="bb-live-total">Value: <span class="bb-ltv">' + calcValue() + '</span></div>' : '');
+      bindBitCells(el, bits, opts.showTotal ? function() {
+        var ltv = el.querySelector('.bb-ltv');
+        if (ltv) ltv.textContent = calcValue();
+      } : null);
+    }
+    render();
+    return {
+      getAnswer: function() { return bits.join(''); },
+      reset: function() { bits = [0,0,0,0,0,0,0,0]; render(); }
+    };
+  }
+
+  // Mount an addition table with interactive answer row into el.
+  // Returns { getAnswer(), reset() }
+  function mountAddInput(el, aBits, bBits) {
+    var ansBits = [0,0,0,0,0,0,0,0];
+    function staticCells(arr) {
+      return arr.map(function(b) { return '<td class="' + (b ? 'bb-on' : 'bb-off') + '">' + b + '</td>'; }).join('');
+    }
+    function render() {
+      var interactive = ansBits.map(function(b, i) {
+        return '<td class="bb-bit-btn ' + (b ? 'bb-on' : 'bb-off') + '" tabindex="0" data-i="' + i + '">' + b + '</td>';
+      }).join('');
+      el.innerHTML =
+        '<table class="bb-table bb-add-table"><tbody>' +
+        '<tr><td class="bb-add-label"></td>' + staticCells(aBits) + '</tr>' +
+        '<tr><td class="bb-add-label">+</td>' + staticCells(bBits) + '</tr>' +
+        '<tr><td class="bb-add-label">=</td>' + interactive + '</tr>' +
+        '</tbody></table>';
+      bindBitCells(el, ansBits, null);
+    }
+    render();
+    return {
+      getAnswer: function() { return ansBits.join(''); },
+      reset: function() { ansBits = [0,0,0,0,0,0,0,0]; render(); }
+    };
+  }
+
   function createStepper(opts) {
     var el = document.getElementById(opts.containerId);
     if (!el) return;
@@ -1035,49 +1133,79 @@ window.BinaryLesson = (() => {
     }
     render();
   }
+
   function createPractice(opts) {
     var el = document.getElementById(opts.containerId);
     if (!el) return;
-    var idx = 0, score = 0, answered = false;
+    var idx = 0, score = 0, answered = false, activeWidget = null;
     function render() {
-      if (idx >= opts.questions.length) { el.innerHTML = '<div class="ex-box"><p class="ex-feedback ok">Complete: ' + score + '/' + opts.questions.length + ' correct. Review any feedback, then move on.</p></div>'; window.__markStepComplete && window.__markStepComplete(); return; }
+      if (idx >= opts.questions.length) {
+        el.innerHTML = '<div class="ex-box"><p class="ex-feedback ok">Complete: ' + score + '/' + opts.questions.length + ' correct. Review any feedback, then move on.</p></div>';
+        window.__markStepComplete && window.__markStepComplete();
+        return;
+      }
       answered = false;
+      activeWidget = null;
       var q = opts.questions[idx];
-      el.innerHTML = '<div class="ex-box"><div class="ex-progress">Question ' + (idx + 1) + ' of ' + opts.questions.length + '</div><div class="ex-score">Score: ' + score + '</div>' +
+      var isBinary   = /^[01]{8}$/.test(q.answer);
+      var isAddition = q.type === 'addition';
+      var useWidget  = isBinary || isAddition;
+      var wid = opts.containerId + '-widget';
+      el.innerHTML =
+        '<div class="ex-box"><div class="ex-progress">Question ' + (idx + 1) + ' of ' + opts.questions.length + '</div>' +
+        '<div class="ex-score">Score: ' + score + '</div>' +
         '<div class="bb-question-card"><div class="bb-question-title">' + esc(q.prompt) + '</div>' + (q.html || '') +
-        '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="' + esc(q.placeholder || 'Type your answer') + '">' +
-        '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button><div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
-      var input = document.getElementById(opts.containerId + '-answer');
-      var btn = document.getElementById(opts.containerId + '-check');
+        (useWidget
+          ? '<div id="' + wid + '" style="margin:0.5rem 0"></div>'
+          : '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="' + esc(q.placeholder || 'Type your answer') + '">') +
+        '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button>' +
+        '<div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
+      var widgetEl = document.getElementById(wid);
+      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, q.rowA, q.rowB) : mountBitInput(widgetEl, { showTotal: true });
+      var checkBtn = document.getElementById(opts.containerId + '-check');
+      var fbEl     = document.getElementById(opts.containerId + '-fb');
+      function getValue() {
+        if (activeWidget) return activeWidget.getAnswer();
+        var inp = document.getElementById(opts.containerId + '-answer');
+        return inp ? inp.value : '';
+      }
       function check() {
         if (answered) return;
-        var val = input.value;
+        var val = getValue();
+        var inp = document.getElementById(opts.containerId + '-answer');
+        if (!activeWidget && !val.trim()) { fbEl.className = 'ex-feedback hint'; fbEl.textContent = 'Type an answer first.'; return; }
         var answers = Array.isArray(q.answers) ? q.answers : [q.answer];
         var ok = answers.some(function(a) { return normalise(a) === normalise(val); });
-        var fb = document.getElementById(opts.containerId + '-fb');
-        if (!val.trim()) { fb.className = 'ex-feedback hint'; fb.textContent = 'Type an answer first.'; return; }
-        answered = true; input.disabled = true; btn.disabled = true;
-        if (ok) { score++; input.classList.add('correct'); fb.className = 'ex-feedback ok'; fb.textContent = q.right || 'Correct.'; setTimeout(function(){ idx++; render(); }, 900); }
-        else { input.classList.add('wrong'); fb.className = 'ex-feedback err'; fb.textContent = q.wrong || ('Not quite. Correct answer: ' + answers[0]); setTimeout(function(){ idx++; render(); }, 1800); }
+        answered = true;
+        checkBtn.disabled = true;
+        if (inp) { inp.disabled = true; inp.classList.add(ok ? 'correct' : 'wrong'); }
+        if (ok) { score++; fbEl.className = 'ex-feedback ok'; fbEl.textContent = q.right || 'Correct.'; setTimeout(function(){ idx++; render(); }, 900); }
+        else { fbEl.className = 'ex-feedback err'; fbEl.textContent = q.wrong || ('Not quite. Correct answer: ' + answers[0]); setTimeout(function(){ idx++; render(); }, 1800); }
       }
-      btn.onclick = check;
-      input.onkeydown = function(e){ if (e.key === 'Enter') check(); };
-      input.focus();
+      checkBtn.onclick = check;
+      var inp2 = document.getElementById(opts.containerId + '-answer');
+      if (inp2) { inp2.onkeydown = function(e){ if (e.key === 'Enter') check(); }; inp2.focus(); }
     }
     render();
   }
+
   function createEndless(opts) {
     var el = document.getElementById(opts.containerId);
     if (!el) return;
-    var solved = 0, current;
+    var solved = 0, current, activeWidget = null;
     function makeQuestion() {
-      var n = Math.floor(Math.random() * 255) + 1, m = Math.floor(Math.random() * 127) + 1, mode = opts.mode;
+      var n = Math.floor(Math.random() * 255) + 1, mode = opts.mode;
       if (mode === 'place') return { prompt:'Find the denary value of this binary number.', html:bitTable(bitsFromNumber(n)), answer:String(n), right:'Correct. You added the active place values.' };
       if (mode === 'denary') {
         if (Math.random() < 0.5) return { prompt:'Convert this binary number to denary.', html:bitTable(bitsFromNumber(n)), answer:String(n), right:'Correct conversion.' };
-        return { prompt:'Convert this denary number to 8-bit binary: ' + n, html:bitTable([0,0,0,0,0,0,0,0]), answer:n.toString(2).padStart(8,'0'), right:'Correct binary number.' };
+        return { prompt:'Convert this denary number to 8-bit binary: <strong>' + n + '</strong>', answer:n.toString(2).padStart(8,'0'), right:'Correct binary number.' };
       }
-      if (mode === 'addition') { var total = n + m; return { prompt:'Add these binary numbers.', html:addTable(bitsFromNumber(n), bitsFromNumber(m)), answer:total.toString(2).padStart(8,'0'), right:'Correct sum.' }; }
+      if (mode === 'addition') {
+        // cap m so the sum never exceeds 255 (stays within 8 bits)
+        var m = Math.floor(Math.random() * Math.min(127, 255 - n)) + 1;
+        var total = n + m;
+        return { type:'addition', prompt:'Add these binary numbers.', rowA:bitsFromNumber(n), rowB:bitsFromNumber(m), answer:total.toString(2).padStart(8,'0'), right:n + ' + ' + m + ' = ' + total + '.' };
+      }
       var hex = n.toString(16).toUpperCase().padStart(2,'0'), choice = Math.floor(Math.random() * 4);
       if (choice === 0) return { prompt:'Convert this hex number to denary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:String(n), right:'Correct hex to denary.' };
       if (choice === 1) return { prompt:'Convert this denary number to hex: ' + n, html:'<div class="bb-hex-pair"><div>?</div><div>?</div></div>', answer:hex, right:'Correct hex value.' };
@@ -1085,23 +1213,41 @@ window.BinaryLesson = (() => {
       return { prompt:'Convert this hex number to 8-bit binary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:n.toString(2).padStart(8,'0'), right:'Correct hex to binary.' };
     }
     function render() {
+      activeWidget = null;
       current = makeQuestion();
-      el.innerHTML = '<div class="ex-box"><div class="ex-progress">Endless target: 5 correct. Completed: ' + solved + '/5</div><div class="bb-question-card"><div class="bb-question-title">' + current.prompt + '</div>' + current.html +
-        '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="Type answer">' +
-        '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button><button id="' + opts.containerId + '-skip" class="ex-btn" style="margin-top:8px;margin-left:6px;background:#475569">New challenge</button>' +
-        '<div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
+      var isBinary   = /^[01]{8}$/.test(current.answer);
+      var isAddition = current.type === 'addition';
+      var useWidget  = isBinary || isAddition;
+      var wid = opts.containerId + '-widget';
+      el.innerHTML =
+        '<div class="ex-box"><div class="ex-progress">Endless target: 5 correct. Completed: ' + solved + '/5</div>' +
+        '<div class="bb-question-card"><div class="bb-question-title">' + current.prompt + '</div>' + (current.html || '') +
+        (useWidget
+          ? '<div id="' + wid + '" style="margin:0.5rem 0"></div>'
+          : '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="Type answer">') +
+        '<div style="display:flex;gap:6px;margin-top:8px">' +
+          '<button id="' + opts.containerId + '-check" class="ex-btn">Check</button>' +
+          '<button id="' + opts.containerId + '-skip" class="ex-btn" style="background:#475569">New question</button>' +
+        '</div><div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
+      var widgetEl = document.getElementById(wid);
+      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, current.rowA, current.rowB) : mountBitInput(widgetEl, { showTotal: true });
       document.getElementById(opts.containerId + '-skip').onclick = render;
-      var input = document.getElementById(opts.containerId + '-answer');
+      function getValue() {
+        if (activeWidget) return activeWidget.getAnswer();
+        var inp = document.getElementById(opts.containerId + '-answer');
+        return inp ? inp.value : '';
+      }
       function check() {
         var fb = document.getElementById(opts.containerId + '-fb');
-        if (normalise(input.value) === normalise(current.answer)) {
+        if (normalise(getValue()) === normalise(current.answer)) {
           solved++; fb.className = 'ex-feedback ok'; fb.textContent = current.right + (solved >= 5 ? ' Endless practice complete.' : ' Next challenge loading.');
+          document.getElementById(opts.containerId + '-check').disabled = true;
           if (solved >= 5) window.__markStepComplete && window.__markStepComplete(); else setTimeout(render, 900);
         } else { fb.className = 'ex-feedback err'; fb.textContent = 'Not quite. Correct answer: ' + current.answer + '. Try the next one.'; setTimeout(render, 1600); }
       }
       document.getElementById(opts.containerId + '-check').onclick = check;
-      input.onkeydown = function(e){ if (e.key === 'Enter') check(); };
-      input.focus();
+      var inp = document.getElementById(opts.containerId + '-answer');
+      if (inp) { inp.onkeydown = function(e){ if (e.key === 'Enter') check(); }; inp.focus(); }
     }
     render();
   }

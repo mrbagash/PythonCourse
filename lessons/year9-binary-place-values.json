@@ -35,7 +35,7 @@
       "title": "Checked Practice 2",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: build numbers</h2><p class='text-gray-700 mb-4'>Type the 8-bit binary number that matches the active place values.</p><div id='y9pv-practice-b'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-b',questions:[{prompt:'Use 128, 16, 4 and 1.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'10010101',right:'Correct: those columns are switched on.'},{prompt:'Use 64, 32 and 8.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'01101000',right:'Correct: 64 + 32 + 8.'},{prompt:'Use 16, 8, 4, 2 and 1.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'00011111',right:'Correct: the final five columns are on.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-b',questions:[{prompt:'Use 128, 16, 4 and 1.',answer:'10010101',right:'Correct: those columns are switched on.'},{prompt:'Use 64, 32 and 8.',answer:'01101000',right:'Correct: 64 + 32 + 8.'},{prompt:'Use 16, 8, 4, 2 and 1.',answer:'00011111',right:'Correct: the final five columns are on.'}]});"
     },
     {
       "id": "endless",
@@ -49,7 +49,7 @@
       "title": "End of Lesson Exam",
       "autoComplete": false,
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions. Feedback appears after each one.</p><div id='y9pv-exam'></div>",
-      "js": "BinaryLesson.createPractice({containerId:'y9pv-exam',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,1,0,0,1,0,0,0]),answer:'200',right:'128 + 64 + 8 = 200.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,1,0,1,0,1]),answer:'21',right:'16 + 4 + 1 = 21.'},{prompt:'Build 128, 16, 4 and 1 as binary.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'10010101',right:'Correct.'},{prompt:'Which denary value is shown?',html:BinaryLesson.bitTable([1,0,1,0,0,0,0,1]),answer:'161',right:'128 + 32 + 1 = 161.'}]});"
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-exam',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,1,0,0,1,0,0,0]),answer:'200',right:'128 + 64 + 8 = 200.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,1,0,1,0,1]),answer:'21',right:'16 + 4 + 1 = 21.'},{prompt:'Build 128, 16, 4 and 1 as binary.',answer:'10010101',right:'Correct.'},{prompt:'Which denary value is shown?',html:BinaryLesson.bitTable([1,0,1,0,0,0,0,1]),answer:'161',right:'128 + 32 + 1 = 161.'}]});"
     }
   ],
   "quizQuestions": [
