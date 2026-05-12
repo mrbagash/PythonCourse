@@ -1,0 +1,124 @@
+{
+  "id": "year9-hexadecimal",
+  "title": "Hexadecimal",
+  "description": "Converting between denary, binary and hexadecimal.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from binary addition.</p><div id='y9hex-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-dna',questions:[{prompt:'What is 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct.'},{prompt:'Add these numbers.',html:BinaryLesson.addTable([0,0,0,0,0,1,1,1], [0,0,0,0,0,0,0,1]),answer:'00001000',right:'7 + 1 = 8.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,0,1,1,1,1]),answer:'15',right:'8 + 4 + 2 + 1 = 15.'}]});"
+    },
+    {
+      "id": "hex-digits",
+      "title": "Hex Digits",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Hexadecimal digits</h2><p class='text-gray-700 mb-4'>Hexadecimal is base 16. It uses 0-9 and then A-F for values 10-15.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Hex</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr></thead><tbody><tr><td>Denary</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Hex to Denary",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through hex to denary</h2><div id='y9hex-stepper-1'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-1',steps:[{title:'Read A5 as two columns',html:'<div class=\"bb-hex-pair\"><div>A</div><div>5</div></div>',note:'The left digit is the 16s column. The right digit is the 1s column.'},{title:'Convert the hex digits',html:'<table class=\"bb-table\"><thead><tr><th>16s</th><th>1s</th></tr></thead><tbody><tr><td>A = 10</td><td>5</td></tr></tbody></table>',note:'A means 10.'},{title:'Multiply and add',html:'<p class=\"bb-answer-line\">(10 x 16) + 5 = 165</p>',note:'So A5 is 165.'}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Binary to Hex",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through binary to hex</h2><div id='y9hex-stepper-2'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9hex-stepper-2',steps:[{title:'Split into nibbles',html:BinaryLesson.bitTable([1,1,0,0,1,0,1,0], [8,4,2,1,8,4,2,1], true),note:'The first 4 bits and last 4 bits are handled separately.'},{title:'Convert each nibble',html:'<table class=\"bb-table\"><thead><tr><th>1100</th><th>1010</th></tr></thead><tbody><tr><td>12 = C</td><td>10 = A</td></tr></tbody></table>',note:'Each nibble becomes one hex digit.'},{title:'Join the hex digits',html:'<div class=\"bb-hex-pair\"><div>C</div><div>A</div></div>',note:'11001010 is CA.'}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: hex and denary</h2><div id='y9hex-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-a',questions:[{prompt:'Convert 2A to denary.',html:'<div class=\"bb-hex-pair\"><div>2</div><div>A</div></div>',answer:'42',right:'2 x 16 plus 10 = 42.'},{prompt:'Convert 175 to hex.',html:'<table class=\"bb-table\"><thead><tr><th>Calculation</th><th>Value</th><th>Hex digit</th></tr></thead><tbody><tr><td>175 / 16</td><td>10</td><td>A</td></tr><tr><td>remainder</td><td>15</td><td>F</td></tr></tbody></table>',answer:'AF',right:'Correct.'},{prompt:'Convert B4 to denary.',html:'<div class=\"bb-hex-pair\"><div>B</div><div>4</div></div>',answer:'180',right:'11 x 16 plus 4 = 180.'}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary and hex</h2><div id='y9hex-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-practice-b',questions:[{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,1,1,1,0,0,0,0], [8,4,2,1,8,4,2,1], true),answer:'F0',right:'1111 is F and 0000 is 0.'},{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,0,0,1,1,1,1,0], [8,4,2,1,8,4,2,1], true),answer:'9E',right:'1001 is 9 and 1110 is E.'},{prompt:'Convert 5A to 8-bit binary.',html:'<div class=\"bb-hex-pair\"><div>5</div><div>A</div></div>',answer:'01011010',right:'5 is 0101 and A is 1010.'}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated hex questions correctly to complete this step.</p><div id='y9hex-endless'></div>",
+      "js": "BinaryLesson.createEndless({containerId:'y9hex-endless',mode:'hex'});"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><div id='y9hex-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9hex-exam',questions:[{prompt:'Convert B4 to denary.',html:'<div class=\"bb-hex-pair\"><div>B</div><div>4</div></div>',answer:'180',right:'Correct.'},{prompt:'Convert 201 to hex.',html:'<div class=\"bb-hex-pair\"><div>?</div><div>?</div></div>',answer:'C9',right:'Correct.'},{prompt:'Convert this binary number to hex.',html:BinaryLesson.bitTable([1,0,0,1,1,1,1,0], [8,4,2,1,8,4,2,1], true),answer:'9E',right:'Correct.'},{prompt:'Convert 5A to 8-bit binary.',html:'<div class=\"bb-hex-pair\"><div>5</div><div>A</div></div>',answer:'01011010',right:'Correct.'}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What value does hex A represent?",
+      "options": [
+        "10",
+        "11",
+        "12",
+        "15"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Convert A5 to denary.",
+      "options": [
+        "165",
+        "105",
+        "175",
+        "155"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 190 to hex.",
+      "options": [
+        "BE",
+        "EB",
+        "B14",
+        "AF"
+      ],
+      "answer": 0,
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 11001010 to hex.",
+      "options": [
+        "CA",
+        "AC",
+        "C10",
+        "9A"
+      ],
+      "answer": 0,
+      "duration": 90
+    },
+    {
+      "type": "mcq",
+      "q": "Convert 7C to binary.",
+      "options": [
+        "01111100",
+        "11110000",
+        "01111010",
+        "11000111"
+      ],
+      "answer": 0,
+      "duration": 90
+    }
+  ]
+}

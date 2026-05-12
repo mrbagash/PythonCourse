@@ -1,0 +1,124 @@
+{
+  "id": "year9-binary-addition",
+  "title": "Binary Addition",
+  "description": "Adding binary numbers using carry rules.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick conversion check before addition.</p><div id='y9ba-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-dna',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,0,1,1,1,1]),answer:'15',right:'8 + 4 + 2 + 1 = 15.'},{prompt:'Convert 48 to 8-bit binary.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'00110000',right:'32 + 16 = 48.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,0,0,0,0,0,0,0]),answer:'128',right:'Correct.'}]});"
+    },
+    {
+      "id": "rules",
+      "title": "Addition Rules",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Binary addition rules</h2><p class='text-gray-700 mb-4'>Binary addition works column by column from right to left, just like denary addition.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Column total</th><th>Write</th><th>Carry</th></tr></thead><tbody><tr><td>0 + 0</td><td>0</td><td>0</td></tr><tr><td>0 + 1</td><td>1</td><td>0</td></tr><tr><td>1 + 1</td><td>0</td><td>1</td></tr><tr><td>1 + 1 + 1</td><td>1</td><td>1</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Simple Sum",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a binary sum</h2><div id='y9ba-stepper-1'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-1',steps:[{title:'Line up the two numbers',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1], [0,0,0,1,0,1,1,1]),note:'Start from the right-hand bit.'},{title:'Work right to left',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1], [0,0,0,1,0,1,1,1]),note:'Use 1 + 1 = 0 carry 1 whenever the column total is 2.'},{title:'Final answer',html:BinaryLesson.addTable([0,0,1,0,1,1,0,1],[0,0,0,1,0,1,1,1],[0,1,0,0,0,1,0,0]),note:'45 + 23 = 68, so the answer is 01000100.'}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Carry Chain",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a carry chain</h2><div id='y9ba-stepper-2'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9ba-stepper-2',steps:[{title:'Set up 00001111 + 00000001',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,1]),note:'The rightmost column is 1 + 1.'},{title:'Carry through the ones',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,1]),note:'Each 1 + carry 1 creates another carry.'},{title:'Final answer',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1],[0,0,0,0,0,0,0,1],[0,0,0,1,0,0,0,0]),note:'15 + 1 = 16, so the answer is 00010000.'}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary sums</h2><div id='y9ba-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-a',questions:[{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,0,0,0,0,1,0,1], [0,0,0,0,0,0,1,1]),answer:'00001000',right:'5 + 3 = 8.'},{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,1]),answer:'00010000',right:'15 + 1 = 16.'},{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,0,1,0,1,0,1,0], [0,0,0,1,0,1,0,1]),answer:'00111111',right:'42 + 21 = 63.'}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: explain carries</h2><div id='y9ba-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-practice-b',questions:[{prompt:'What is 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct: write 0 and carry 1.'},{prompt:'What is 1 + 1 + 1 in binary?',html:'<p class=\"bb-answer-line\">1 + 1 + 1 = ?</p>',answer:'11',right:'Correct: write 1 and carry 1.'},{prompt:'Add 01000000 + 00100000. Type the 8-bit answer.',html:BinaryLesson.addTable([0,1,0,0,0,0,0,0], [0,0,1,0,0,0,0,0]),answer:'01100000',right:'64 + 32 = 96.'}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated binary addition questions correctly to complete this step.</p><div id='y9ba-endless'></div>",
+      "js": "BinaryLesson.createEndless({containerId:'y9ba-endless',mode:'addition'});"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><div id='y9ba-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9ba-exam',questions:[{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,0,0,0,1,0,1,0], [0,0,0,0,0,1,0,1]),answer:'00001111',right:'10 + 5 = 15.'},{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,0,0,1,1,1,1,1], [0,0,0,0,0,0,0,1]),answer:'00100000',right:'31 + 1 = 32.'},{prompt:'Add these numbers. Type the 8-bit answer.',html:BinaryLesson.addTable([0,1,0,0,0,0,0,0], [0,0,1,0,0,0,0,0]),answer:'01100000',right:'64 + 32 = 96.'},{prompt:'What is 1 + 1? Type the binary result.',html:'<p class=\"bb-answer-line\">1 + 1 = ?</p>',answer:'10',right:'Correct.'}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "In binary addition, what is 1 + 1?",
+      "options": [
+        "10",
+        "2",
+        "1 carry 1",
+        "11"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00000101 + 00000011?",
+      "options": [
+        "00001000",
+        "00000110",
+        "00000111",
+        "00001100"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "What is 1 + 1 + 1 in binary?",
+      "options": [
+        "11",
+        "10",
+        "111",
+        "3"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00001111 + 00000001?",
+      "options": [
+        "00010000",
+        "00001110",
+        "00011111",
+        "00001000"
+      ],
+      "answer": 0,
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "Which direction should you work when adding binary columns?",
+      "options": [
+        "Right to left",
+        "Left to right",
+        "Middle outwards",
+        "It does not matter"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

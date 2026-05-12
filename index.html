@@ -109,6 +109,151 @@
     }
     .ex-btn:hover:not(:disabled) { background: #1d4ed8; }
     .ex-btn:disabled { opacity: 0.55; cursor: default; }
+    .ex-box {
+      color: #cdd6f4;
+    }
+    .ex-prompt {
+      color: #cdd6f4;
+    }
+    .ex-progress {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ex-score {
+      color: #c4b5fd;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ex-feedback {
+      color: #cdd6f4;
+      margin-top: 0.65rem;
+      font-size: 0.85rem;
+      min-height: 1.25rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.4;
+    }
+    .ex-feedback.ok { color: #86efac; }
+    .ex-feedback.err { color: #fca5a5; }
+    .ex-feedback.hint { color: #fde68a; }
+    .bb-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0.25rem;
+      table-layout: fixed;
+      font-family: 'Courier New', Courier, monospace;
+      color: #e2e8f0;
+    }
+    .bb-table th,
+    .bb-table td {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.35rem;
+      text-align: center;
+      padding: 0.55rem 0.35rem;
+      font-weight: 700;
+    }
+    .bb-table th {
+      color: #67e8f9;
+      font-size: 0.75rem;
+    }
+    .bb-table td {
+      font-size: 1.15rem;
+    }
+    .bb-table .bb-on {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    .bb-table .bb-off {
+      color: #64748b;
+    }
+    .bb-nibble-gap {
+      border-left: 0.45rem solid #1e293b !important;
+    }
+    .bb-add-table td,
+    .bb-add-table th {
+      font-size: 1rem;
+      padding: 0.45rem 0.25rem;
+    }
+    .bb-add-label {
+      color: #94a3b8;
+      font-size: 0.75rem !important;
+      background: transparent !important;
+      border-color: transparent !important;
+      text-align: right !important;
+    }
+    .bb-hex-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(4rem, 1fr));
+      gap: 0.5rem;
+      max-width: 14rem;
+      margin: 0 auto;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .bb-hex-pair div {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      color: #e2e8f0;
+      text-align: center;
+      padding: 0.75rem 0.5rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .bb-question-card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      padding: 0.8rem;
+      margin: 0.75rem 0;
+    }
+    .bb-question-title {
+      color: #93c5fd;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
+    }
+    .bb-answer-line {
+      color: #facc15;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      margin-top: 0.45rem;
+    }
+    .bb-mini-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(2rem, 1fr));
+      gap: 0.25rem;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .bb-mini-row span {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.3rem;
+      color: #e2e8f0;
+      text-align: center;
+      padding: 0.35rem 0.2rem;
+      font-weight: 700;
+    }
+    .bb-mini-row .bb-muted { color: #64748b; }
+    .bb-step-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+    }
+    .bb-step-pill {
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .bb-good { color: #86efac; }
+    .bb-bad { color: #fca5a5; }
 
     /* spinner */
     .spinner { border: 2px solid #e5e7eb; border-top-color: #6b7280; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
@@ -832,6 +977,116 @@ window.PyLearn = (() => {
   }
 
   return { runPython, createEditor };
+})();
+
+window.BinaryLesson = (() => {
+  const POWERS = [128,64,32,16,8,4,2,1];
+  const NIBBLE = [8,4,2,1,8,4,2,1];
+  function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function bitsFromNumber(n) { return Number(n).toString(2).padStart(8,'0').split('').map(Number); }
+  function bitTable(bits, headers, useNibbles) {
+    headers = headers || (useNibbles ? NIBBLE : POWERS);
+    var head = headers.map(function(h, i) { return '<th' + (useNibbles && i === 4 ? ' class="bb-nibble-gap"' : '') + '>' + h + '</th>'; }).join('');
+    var cells = bits.map(function(b, i) { return '<td class="' + (b ? 'bb-on' : 'bb-off') + (useNibbles && i === 4 ? ' bb-nibble-gap' : '') + '">' + b + '</td>'; }).join('');
+    return '<table class="bb-table"><thead><tr>' + head + '</tr></thead><tbody><tr>' + cells + '</tr></tbody></table>';
+  }
+  function addTable(aBits, bBits, answerBits) {
+    function row(label, arr) {
+      return '<tr><td class="bb-add-label">' + label + '</td>' + arr.map(function(v) { return '<td class="' + (v === '?' ? '' : (v ? 'bb-on' : 'bb-off')) + '">' + v + '</td>'; }).join('') + '</tr>';
+    }
+    return '<table class="bb-table bb-add-table"><tbody>' + row('', aBits) + row('+', bBits) + row('answer', answerBits || ['?','?','?','?','?','?','?','?']) + '</tbody></table>';
+  }
+  function normalise(value) { return String(value || '').trim().replace(/\s+/g,'').toUpperCase(); }
+  function createStepper(opts) {
+    var el = document.getElementById(opts.containerId);
+    if (!el) return;
+    var idx = 0;
+    function render() {
+      var step = opts.steps[idx];
+      el.innerHTML = '<div class="ex-box"><div class="bb-question-title">' + esc(step.title) + '</div>' + step.html +
+        '<p class="ex-feedback hint">' + esc(step.note || '') + '</p><div class="bb-step-controls">' +
+        '<button class="ex-btn" id="' + opts.containerId + '-prev">Back</button><span class="bb-step-pill">Step ' + (idx + 1) + ' of ' + opts.steps.length + '</span>' +
+        '<button class="ex-btn" id="' + opts.containerId + '-next">' + (idx === opts.steps.length - 1 ? 'Finish example' : 'Next step') + '</button></div></div>';
+      document.getElementById(opts.containerId + '-prev').disabled = idx === 0;
+      document.getElementById(opts.containerId + '-prev').onclick = function(){ if (idx > 0) { idx--; render(); } };
+      document.getElementById(opts.containerId + '-next').onclick = function(){
+        if (idx < opts.steps.length - 1) { idx++; render(); }
+        else { var fb = el.querySelector('.ex-feedback'); fb.className = 'ex-feedback ok'; fb.textContent = 'Example complete. You can now move on.'; window.__markStepComplete && window.__markStepComplete(); }
+      };
+    }
+    render();
+  }
+  function createPractice(opts) {
+    var el = document.getElementById(opts.containerId);
+    if (!el) return;
+    var idx = 0, score = 0, answered = false;
+    function render() {
+      if (idx >= opts.questions.length) { el.innerHTML = '<div class="ex-box"><p class="ex-feedback ok">Complete: ' + score + '/' + opts.questions.length + ' correct. Review any feedback, then move on.</p></div>'; window.__markStepComplete && window.__markStepComplete(); return; }
+      answered = false;
+      var q = opts.questions[idx];
+      el.innerHTML = '<div class="ex-box"><div class="ex-progress">Question ' + (idx + 1) + ' of ' + opts.questions.length + '</div><div class="ex-score">Score: ' + score + '</div>' +
+        '<div class="bb-question-card"><div class="bb-question-title">' + esc(q.prompt) + '</div>' + (q.html || '') +
+        '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="' + esc(q.placeholder || 'Type your answer') + '">' +
+        '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button><div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
+      var input = document.getElementById(opts.containerId + '-answer');
+      var btn = document.getElementById(opts.containerId + '-check');
+      function check() {
+        if (answered) return;
+        var val = input.value;
+        var answers = Array.isArray(q.answers) ? q.answers : [q.answer];
+        var ok = answers.some(function(a) { return normalise(a) === normalise(val); });
+        var fb = document.getElementById(opts.containerId + '-fb');
+        if (!val.trim()) { fb.className = 'ex-feedback hint'; fb.textContent = 'Type an answer first.'; return; }
+        answered = true; input.disabled = true; btn.disabled = true;
+        if (ok) { score++; input.classList.add('correct'); fb.className = 'ex-feedback ok'; fb.textContent = q.right || 'Correct.'; setTimeout(function(){ idx++; render(); }, 900); }
+        else { input.classList.add('wrong'); fb.className = 'ex-feedback err'; fb.textContent = q.wrong || ('Not quite. Correct answer: ' + answers[0]); setTimeout(function(){ idx++; render(); }, 1800); }
+      }
+      btn.onclick = check;
+      input.onkeydown = function(e){ if (e.key === 'Enter') check(); };
+      input.focus();
+    }
+    render();
+  }
+  function createEndless(opts) {
+    var el = document.getElementById(opts.containerId);
+    if (!el) return;
+    var solved = 0, current;
+    function makeQuestion() {
+      var n = Math.floor(Math.random() * 255) + 1, m = Math.floor(Math.random() * 127) + 1, mode = opts.mode;
+      if (mode === 'place') return { prompt:'Find the denary value of this binary number.', html:bitTable(bitsFromNumber(n)), answer:String(n), right:'Correct. You added the active place values.' };
+      if (mode === 'denary') {
+        if (Math.random() < 0.5) return { prompt:'Convert this binary number to denary.', html:bitTable(bitsFromNumber(n)), answer:String(n), right:'Correct conversion.' };
+        return { prompt:'Convert this denary number to 8-bit binary: ' + n, html:bitTable([0,0,0,0,0,0,0,0]), answer:n.toString(2).padStart(8,'0'), right:'Correct binary number.' };
+      }
+      if (mode === 'addition') { var total = n + m; return { prompt:'Add these binary numbers.', html:addTable(bitsFromNumber(n), bitsFromNumber(m)), answer:total.toString(2).padStart(8,'0'), right:'Correct sum.' }; }
+      var hex = n.toString(16).toUpperCase().padStart(2,'0'), choice = Math.floor(Math.random() * 4);
+      if (choice === 0) return { prompt:'Convert this hex number to denary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:String(n), right:'Correct hex to denary.' };
+      if (choice === 1) return { prompt:'Convert this denary number to hex: ' + n, html:'<div class="bb-hex-pair"><div>?</div><div>?</div></div>', answer:hex, right:'Correct hex value.' };
+      if (choice === 2) return { prompt:'Convert this binary number to hex.', html:bitTable(bitsFromNumber(n), NIBBLE, true), answer:hex, right:'Correct binary to hex.' };
+      return { prompt:'Convert this hex number to 8-bit binary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:n.toString(2).padStart(8,'0'), right:'Correct hex to binary.' };
+    }
+    function render() {
+      current = makeQuestion();
+      el.innerHTML = '<div class="ex-box"><div class="ex-progress">Endless target: 5 correct. Completed: ' + solved + '/5</div><div class="bb-question-card"><div class="bb-question-title">' + current.prompt + '</div>' + current.html +
+        '<input id="' + opts.containerId + '-answer" class="ex-input" autocomplete="off" spellcheck="false" placeholder="Type answer">' +
+        '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button><button id="' + opts.containerId + '-skip" class="ex-btn" style="margin-top:8px;margin-left:6px;background:#475569">New challenge</button>' +
+        '<div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
+      document.getElementById(opts.containerId + '-skip').onclick = render;
+      var input = document.getElementById(opts.containerId + '-answer');
+      function check() {
+        var fb = document.getElementById(opts.containerId + '-fb');
+        if (normalise(input.value) === normalise(current.answer)) {
+          solved++; fb.className = 'ex-feedback ok'; fb.textContent = current.right + (solved >= 5 ? ' Endless practice complete.' : ' Next challenge loading.');
+          if (solved >= 5) window.__markStepComplete && window.__markStepComplete(); else setTimeout(render, 900);
+        } else { fb.className = 'ex-feedback err'; fb.textContent = 'Not quite. Correct answer: ' + current.answer + '. Try the next one.'; setTimeout(render, 1600); }
+      }
+      document.getElementById(opts.containerId + '-check').onclick = check;
+      input.onkeydown = function(e){ if (e.key === 'Enter') check(); };
+      input.focus();
+    }
+    render();
+  }
+  return { bitTable, addTable, createStepper, createPractice, createEndless };
 })();
 
 

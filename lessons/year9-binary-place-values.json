@@ -1,0 +1,117 @@
+{
+  "id": "year9-binary-place-values",
+  "title": "Binary Place Values",
+  "description": "Understanding 8-bit binary place values and how bits build denary numbers.",
+  "steps": [
+    {
+      "id": "intro",
+      "title": "Binary Places",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Binary place values</h2><p class='text-gray-700 mb-4'>Binary uses only two digits: <strong>0</strong> and <strong>1</strong>. Each column is worth twice as much as the column to its right.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>128</th><th>64</th><th>32</th><th>16</th><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead><tbody><tr><td class='bb-on'>1</td><td class='bb-off'>0</td><td class='bb-on'>1</td><td class='bb-off'>0</td><td class='bb-on'>1</td><td class='bb-off'>0</td><td class='bb-off'>0</td><td class='bb-on'>1</td></tr></tbody></table></div><p class='text-gray-700'>A 1 means include that place value. A 0 means ignore it.</p>"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Read Bits",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through an example</h2><p class='text-gray-700 mb-4'>Click through each stage to see how the total is built.</p><div id='y9pv-stepper-1'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-1',steps:[{title:'Start with the place values',html:BinaryLesson.bitTable([1,0,1,0,1,0,0,1]),note:'The headers show what each column is worth.'},{title:'Keep only the 1 columns',html:BinaryLesson.bitTable([1,0,1,0,1,0,0,1]),note:'The active columns are 128, 32, 8 and 1.'},{title:'Add the active columns',html:'<p class=\"bb-answer-line\">128 + 32 + 8 + 1 = 169</p>',note:'So 10101001 has the denary value 169.'}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Missing Places",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Another step-through question</h2><p class='text-gray-700 mb-4'>This time focus on identifying active place values before adding.</p><div id='y9pv-stepper-2'></div>",
+      "js": "BinaryLesson.createStepper({containerId:'y9pv-stepper-2',steps:[{title:'Read the bits',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),note:'Look for the columns with a 1.'},{title:'Name the active columns',html:BinaryLesson.bitTable([0,1,0,1,1,0,1,0]),note:'64, 16, 8 and 2 are active.'},{title:'Add them',html:'<p class=\"bb-answer-line\">64 + 16 + 8 + 2 = 90</p>',note:'So 01011010 is worth 90.'}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: active places</h2><p class='text-gray-700 mb-4'>Type the denary total for each binary number. You will get feedback after each answer.</p><div id='y9pv-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-a',questions:[{prompt:'What is the denary value?',html:BinaryLesson.bitTable([0,1,0,1,0,0,0,0]),answer:'80',right:'Correct: 64 + 16 = 80.'},{prompt:'What is the denary value?',html:BinaryLesson.bitTable([1,0,0,0,0,1,0,1]),answer:'133',right:'Correct: 128 + 4 + 1 = 133.'},{prompt:'What is the denary value?',html:BinaryLesson.bitTable([0,0,1,0,1,0,1,0]),answer:'42',right:'Correct: 32 + 8 + 2 = 42.'}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: build numbers</h2><p class='text-gray-700 mb-4'>Type the 8-bit binary number that matches the active place values.</p><div id='y9pv-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-practice-b',questions:[{prompt:'Use 128, 16, 4 and 1.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'10010101',right:'Correct: those columns are switched on.'},{prompt:'Use 64, 32 and 8.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'01101000',right:'Correct: 64 + 32 + 8.'},{prompt:'Use 16, 8, 4, 2 and 1.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'00011111',right:'Correct: the final five columns are on.'}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated questions correctly. The step will mark itself complete automatically when you hit the target.</p><div id='y9pv-endless'></div>",
+      "js": "BinaryLesson.createEndless({containerId:'y9pv-endless',mode:'place'});"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions. Feedback appears after each one.</p><div id='y9pv-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y9pv-exam',questions:[{prompt:'Convert to denary.',html:BinaryLesson.bitTable([1,1,0,0,1,0,0,0]),answer:'200',right:'128 + 64 + 8 = 200.'},{prompt:'Convert to denary.',html:BinaryLesson.bitTable([0,0,0,1,0,1,0,1]),answer:'21',right:'16 + 4 + 1 = 21.'},{prompt:'Build 128, 16, 4 and 1 as binary.',html:BinaryLesson.bitTable([0,0,0,0,0,0,0,0]),answer:'10010101',right:'Correct.'},{prompt:'Which denary value is shown?',html:BinaryLesson.bitTable([1,0,1,0,0,0,0,1]),answer:'161',right:'128 + 32 + 1 = 161.'}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "Which place value is furthest left in an 8-bit binary number?",
+      "options": [
+        "128",
+        "64",
+        "1",
+        "256"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "In 01010000, which place values are active?",
+      "options": [
+        "64 and 16",
+        "128 and 32",
+        "16 and 8",
+        "64 and 8"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "What is 00101010 worth in denary?",
+      "options": [
+        "42",
+        "40",
+        "84",
+        "21"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which binary number uses 128, 16, 4 and 1?",
+      "options": [
+        "10010101",
+        "10101001",
+        "10010011",
+        "01010101"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "What does a 0 mean in a binary column?",
+      "options": [
+        "Do not include that place value",
+        "Double that place value",
+        "Add one",
+        "The number is invalid"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

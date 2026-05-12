@@ -37,6 +37,36 @@ window.PYLEARN_LESSON_INDEX = {
       ]
     },
     {
+      "id": "year9",
+      "label": "Year 9",
+      "lessons": [
+        {
+          "id": "year9-binary-place-values",
+          "title": "Binary Place Values",
+          "file": "lessons/year9-binary-place-values.json",
+          "order": 1
+        },
+        {
+          "id": "year9-binary-denary",
+          "title": "Binary and Denary",
+          "file": "lessons/year9-binary-denary.json",
+          "order": 2
+        },
+        {
+          "id": "year9-binary-addition",
+          "title": "Binary Addition",
+          "file": "lessons/year9-binary-addition.json",
+          "order": 3
+        },
+        {
+          "id": "year9-hexadecimal",
+          "title": "Hexadecimal",
+          "file": "lessons/year9-hexadecimal.json",
+          "order": 4
+        }
+      ]
+    },
+    {
       "id": "gcse",
       "label": "GCSE",
       "lessons": [
