@@ -49322,7 +49322,8 @@ function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t =
 
 
 
-const isInvalidEmbed = window.parent !== window;
+const isInvalidEmbed = false; // allow embedding
+
 const handleClickAddonSettings = addonId => {
   // addonId might be a string of the addon to focus on, undefined, or an event (treat like undefined)
   const path =  false ? undefined : 'addons.html';
