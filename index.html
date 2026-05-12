@@ -46,6 +46,16 @@
     .pylearn-feedback.pass { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
     .pylearn-feedback.fail { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
     .pylearn-feedback.err  { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .quiz-code-wrap { border: 1px solid #334155; border-radius: 0.5rem; overflow: hidden; background: #0f172a; box-shadow: 0 18px 45px rgba(0,0,0,0.28); }
+    .quiz-code-header { background: #1e293b; color: #94a3b8; font-size: 0.72rem; padding: 0.35rem 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+    .quiz-code-area { width: 100%; min-height: 180px; background: #0f172a; color: #e2e8f0; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; line-height: 1.6; padding: 0.75rem; border: none; resize: vertical; outline: none; tab-size: 4; box-sizing: border-box; display: block; }
+    .quiz-code-toolbar { background: #1e293b; padding: 0.45rem 0.6rem; border-top: 1px solid #334155; display: flex; gap: 0.5rem; align-items: center; }
+    .quiz-code-submit { background: #2563eb; color: #fff; border: none; border-radius: 0.3rem; padding: 0.35rem 0.85rem; font-size: 0.82rem; cursor: pointer; font-weight: 600; }
+    .quiz-code-submit:hover:not(:disabled) { background: #1d4ed8; }
+    .quiz-code-submit:disabled { opacity: 0.55; cursor: default; }
+    .quiz-code-feedback { color: #94a3b8; font-size: 0.78rem; margin-left: auto; }
+    .quiz-code-feedback.ok { color: #4ade80; }
+    .quiz-code-feedback.err { color: #f87171; }
 
     /* spinner */
     .spinner { border: 2px solid #e5e7eb; border-top-color: #6b7280; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
@@ -331,9 +341,16 @@
         <button class="quiz-ans-btn rounded-xl py-5 px-4 font-bold text-base bg-green-600 hover:bg-green-500 active:scale-95 transition-transform" data-idx="3">&#x25CF; <span></span></button>
       </div>
       <div id="qs-code-answer" class="hidden w-full max-w-2xl">
-        <textarea id="qs-code-input" class="w-full rounded-xl bg-slate-950 border border-slate-600 text-green-200 font-mono text-sm p-4 min-h-40 outline-none focus:border-blue-400" spellcheck="false" placeholder="Write your Python code here"></textarea>
-        <button id="btn-quiz-submit-code" class="mt-3 w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Submit Code</button>
-        <div id="qs-code-feedback" class="mt-3 text-sm text-gray-300"></div>
+        <div class="quiz-code-wrap">
+          <div class="quiz-code-header">
+            <span>Python code answer</span>
+            <span id="qs-code-feedback" class="quiz-code-feedback"></span>
+          </div>
+          <textarea id="qs-code-input" class="quiz-code-area" spellcheck="false" placeholder="Write your Python code here"></textarea>
+          <div class="quiz-code-toolbar">
+            <button id="btn-quiz-submit-code" class="quiz-code-submit">Submit Code</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2005,17 +2022,18 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
     questionIdx: -1,
     lessonId:    lesson.meta.id,
     questions:   selectedQs.map(function(q) {
+      var isCodeQuestion = q.type && q.type !== 'mcq';
       return {
         type: q.type || 'mcq',
-        q: q.q,
+        q: q.q || '',
         options: q.options || null,
-        answer: q.answer,
-        duration: q.duration,
+        answer: isCodeQuestion ? null : (q.answer != null ? q.answer : 0),
+        duration: q.duration || 60,
         pattern: q.pattern || null,
         flags: q.flags || 'im',
         inputs: q.inputs || null,
-        expectedOutput: q.expectedOutput || null,
-        expectedContains: q.expectedContains || null,
+        expectedOutput: q.expectedOutput != null ? q.expectedOutput : null,
+        expectedContains: q.expectedContains != null ? q.expectedContains : null,
         sampleAnswer: q.sampleAnswer || null
       };
     }),
@@ -2438,7 +2456,9 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   document.getElementById('qs-q-progress').textContent =
     'Question ' + (qIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qs-answered-msg').classList.add('hidden');
-  document.getElementById('qs-code-feedback').textContent = '';
+  var codeFeedback = document.getElementById('qs-code-feedback');
+  codeFeedback.textContent = '';
+  codeFeedback.className = 'quiz-code-feedback';
 
   var isCodeQuestion = q.type && q.type !== 'mcq';
   document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion);
@@ -2447,6 +2467,15 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     var codeInput = document.getElementById('qs-code-input');
     codeInput.value = '';
     codeInput.disabled = false;
+    codeInput.onkeydown = function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        var start = codeInput.selectionStart;
+        var end = codeInput.selectionEnd;
+        codeInput.value = codeInput.value.substring(0, start) + '    ' + codeInput.value.substring(end);
+        codeInput.selectionStart = codeInput.selectionEnd = start + 4;
+      }
+    };
     document.getElementById('btn-quiz-submit-code').disabled = false;
     document.getElementById('btn-quiz-submit-code').onclick = function() { submitStudentCodeAnswer(qIdx); };
     setTimeout(function() { codeInput.focus(); }, 0);
@@ -2555,10 +2584,12 @@ async function submitStudentCodeAnswer(qIdx) {
   var code = codeInput.value;
   if (!code.trim()) {
     fb.textContent = 'Write your code first.';
+    fb.className = 'quiz-code-feedback err';
     return;
   }
   document.getElementById('btn-quiz-submit-code').disabled = true;
   fb.textContent = 'Checking...';
+  fb.className = 'quiz-code-feedback';
   var validation = await validateQuizCode(q, code);
   quiz.myAnswered = true;
   lockStudentAnswers();
@@ -2570,6 +2601,7 @@ async function submitStudentCodeAnswer(qIdx) {
   });
 
   fb.textContent = validation.message;
+  fb.className = 'quiz-code-feedback ' + (validation.correct ? 'ok' : 'err');
   document.getElementById('qs-answered-msg').classList.remove('hidden');
   document.getElementById('qs-code-answer').classList.add('hidden');
 }
