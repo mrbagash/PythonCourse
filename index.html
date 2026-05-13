@@ -74,6 +74,9 @@
     .quiz-code-feedback { color: #94a3b8; font-size: 0.78rem; margin-left: auto; }
     .quiz-code-feedback.ok { color: #4ade80; }
     .quiz-code-feedback.err { color: #f87171; }
+    #qs-scratch-wrap.qs-scratch-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
+    #qs-scratch-wrap.qs-scratch-fullscreen #qs-scratch-scroll { flex:1; overflow:auto; max-height:none!important; }
+    #btn-qs-scratch-fs:hover { background:#334155; color:#e2e8f0; }
     .ex-input,
     .ex-textarea {
       display: block;
@@ -656,6 +659,7 @@
           <div class="qs-scratch-checkbar" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:#1e293b;border-top:1px solid #334155">
             <button id="btn-quiz-submit-scratch" class="jhncc-primary px-6 py-2 rounded font-semibold text-sm">Check &amp; Submit</button>
             <span id="qs-scratch-feedback" style="font-size:0.82rem;color:#94a3b8;flex:1"></span>
+            <button id="btn-qs-scratch-fs" title="Full screen" style="background:none;border:1px solid #475569;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#94a3b8;line-height:1">&#x26F6;</button>
           </div>
         </div>
       </div>
@@ -3549,9 +3553,18 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     document.getElementById('qs-scratch-feedback').textContent = '';
     document.getElementById('btn-quiz-submit-scratch').disabled = false;
     document.getElementById('btn-quiz-submit-scratch').onclick = function() { submitStudentScratchAnswer(qIdx); };
+    document.getElementById('btn-qs-scratch-fs').onclick = toggleQsScratchFullscreen;
     if (window._qsScratchResize) window.removeEventListener('resize', window._qsScratchResize);
     window._qsScratchResize = scaleScratchQuizFrame;
     window.addEventListener('resize', window._qsScratchResize);
+    if (window._qsScratchEsc) document.removeEventListener('keydown', window._qsScratchEsc);
+    window._qsScratchEsc = function(e) {
+      if (e.key === 'Escape') {
+        var w = document.getElementById('qs-scratch-wrap');
+        if (w && w.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
+      }
+    };
+    document.addEventListener('keydown', window._qsScratchEsc);
   } else {
     document.querySelectorAll('.quiz-ans-btn').forEach(function(btn, i) {
       // Restore structure if a previous scratch_mcq removed the bullet + span
@@ -3639,31 +3652,45 @@ function renderStudentLeaderboard(lb) {
 }
 
 function scaleScratchQuizFrame() {
-  var frame = document.getElementById('qs-scratch-frame');
-  var wrap  = document.getElementById('qs-scratch-wrap');
+  var frame  = document.getElementById('qs-scratch-frame');
+  var wrap   = document.getElementById('qs-scratch-wrap');
   var scroll = document.getElementById('qs-scratch-scroll');
   if (!frame || !wrap || !scroll) return;
   var NW = 1100, NH = 650;
-
-  // Match the lesson-mode behaviour: scale to the available width so the full
-  // TurboWarp editor is visible, but do not add extra vertical squeezing.
-  var headerEl   = document.querySelector('#quiz-student-screen > div:first-child');
-  var qTextEl    = document.getElementById('qs-q-text');
   var checkBarEl = wrap.querySelector('.qs-scratch-checkbar');
-  var headerH    = headerEl   ? headerEl.offsetHeight   : 44;
-  var qTextH     = qTextEl    ? qTextEl.offsetHeight + 40 : 80; // +40 for mb-6 gap
-  var checkBarH  = checkBarEl ? checkBarEl.offsetHeight  : 44;
-  var maxH       = Math.max(260, window.innerHeight - headerH - 42 - qTextH - checkBarH - 16);
-  var availW     = Math.max(320, window.innerWidth - 48);
-  var scale      = Math.min(1, availW / NW);
+  var checkBarH  = checkBarEl ? checkBarEl.offsetHeight : 44;
+  var isFs = wrap.classList.contains('qs-scratch-fullscreen');
+  var scale, availW;
+
+  if (isFs) {
+    availW = window.innerWidth;
+    scale  = Math.min(1, availW / NW, (window.innerHeight - checkBarH) / NH);
+  } else {
+    var headerEl = document.querySelector('#quiz-student-screen > div:first-child');
+    var qTextEl  = document.getElementById('qs-q-text');
+    var headerH  = headerEl ? headerEl.offsetHeight       : 44;
+    var qTextH   = qTextEl  ? qTextEl.offsetHeight + 40   : 80;
+    var maxH     = Math.max(260, window.innerHeight - headerH - 42 - qTextH - checkBarH - 16);
+    availW       = Math.max(320, window.innerWidth - 48);
+    scale        = Math.min(1, availW / NW);
+    scroll.style.maxHeight = Math.min(Math.ceil(NH * scale), maxH) + 'px';
+    scroll.scrollLeft      = 0;
+  }
 
   frame.style.width        = NW + 'px';
   frame.style.height       = NH + 'px';
   frame.style.transform    = 'scale(' + scale + ')';
   frame.style.marginBottom = Math.round(NH * (scale - 1)) + 'px';
   frame.style.marginLeft   = Math.max(0, Math.round((availW - NW * scale) / 2)) + 'px';
-  scroll.style.maxHeight   = Math.min(Math.ceil(NH * scale), maxH) + 'px';
-  scroll.scrollLeft        = 0;
+}
+
+function toggleQsScratchFullscreen() {
+  var wrap = document.getElementById('qs-scratch-wrap');
+  var btn  = document.getElementById('btn-qs-scratch-fs');
+  var isFs = wrap.classList.toggle('qs-scratch-fullscreen');
+  btn.textContent = isFs ? '✕' : '⛶';
+  btn.title = isFs ? 'Exit full screen (Esc)' : 'Full screen';
+  scaleScratchQuizFrame();
 }
 
 async function submitStudentScratchAnswer(qIdx) {
@@ -3712,6 +3739,8 @@ function lockStudentAnswers() {
   if (codeBtn) codeBtn.disabled = true;
   var scratchBtn = document.getElementById('btn-quiz-submit-scratch');
   if (scratchBtn) scratchBtn.disabled = true;
+  var scratchWrap = document.getElementById('qs-scratch-wrap');
+  if (scratchWrap && scratchWrap.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
 }
 
 async function submitStudentAnswer(qIdx, answerIdx, btn) {
