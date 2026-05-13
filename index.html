@@ -650,8 +650,10 @@
       </div>
       <div id="qs-scratch-answer" class="hidden w-full" style="max-width:100%">
         <div id="qs-scratch-wrap" style="border-radius:0.5rem;overflow:hidden;border:1px solid #334155">
-          <iframe id="qs-scratch-frame" src="./scratch/editor.html" allow="microphone; camera" style="display:block;border:none;transform-origin:top left"></iframe>
-          <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:#1e293b;border-top:1px solid #334155">
+          <div id="qs-scratch-scroll" style="overflow:auto;background:#111827">
+            <iframe id="qs-scratch-frame" src="./scratch/editor.html" allow="microphone; camera" style="display:block;border:none;width:1100px;height:650px"></iframe>
+          </div>
+          <div class="qs-scratch-checkbar" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:#1e293b;border-top:1px solid #334155">
             <button id="btn-quiz-submit-scratch" class="jhncc-primary px-6 py-2 rounded font-semibold text-sm">Check &amp; Submit</button>
             <span id="qs-scratch-feedback" style="font-size:0.82rem;color:#94a3b8;flex:1"></span>
           </div>
@@ -3628,30 +3630,26 @@ function renderStudentLeaderboard(lb) {
 function scaleScratchQuizFrame() {
   var frame = document.getElementById('qs-scratch-frame');
   var wrap  = document.getElementById('qs-scratch-wrap');
-  if (!frame || !wrap) return;
+  var scroll = document.getElementById('qs-scratch-scroll');
+  if (!frame || !wrap || !scroll) return;
   var NW = 1100, NH = 650;
 
-  // Horizontal: viewport minus the px-6 padding on each side of the content area
-  var availW = window.innerWidth - 48;
-
-  // Vertical: viewport minus quiz header, progress/timer bars,
-  //           question text + its bottom margin, check bar, and bottom padding
+  // Keep TurboWarp at native size. Fractional iframe scaling makes block labels
+  // inside the editor look distorted, so the container scrolls instead.
   var headerEl   = document.querySelector('#quiz-student-screen > div:first-child');
   var qTextEl    = document.getElementById('qs-q-text');
-  var checkBarEl = wrap.querySelector('div');
+  var checkBarEl = wrap.querySelector('.qs-scratch-checkbar');
   var headerH    = headerEl   ? headerEl.offsetHeight   : 44;
   var qTextH     = qTextEl    ? qTextEl.offsetHeight + 40 : 80; // +40 for mb-6 gap
   var checkBarH  = checkBarEl ? checkBarEl.offsetHeight  : 44;
-  var availH     = window.innerHeight - headerH - 42 - qTextH - checkBarH - 16;
-  //                                              ^42 progress+timer rows, 16 pb-4
-
-  var scale = Math.min(1, availW / NW, availH / NH);
+  var maxH       = Math.max(260, window.innerHeight - headerH - 42 - qTextH - checkBarH - 16);
 
   frame.style.width        = NW + 'px';
   frame.style.height       = NH + 'px';
-  frame.style.transform    = 'scale(' + scale + ')';
-  frame.style.marginBottom = Math.round(NH * (scale - 1)) + 'px';
-  frame.style.marginLeft   = Math.max(0, Math.round((availW - NW * scale) / 2)) + 'px';
+  frame.style.transform    = 'none';
+  frame.style.marginBottom = '0';
+  frame.style.marginLeft   = '0';
+  scroll.style.maxHeight   = Math.min(NH, maxH) + 'px';
 }
 
 async function submitStudentScratchAnswer(qIdx) {
