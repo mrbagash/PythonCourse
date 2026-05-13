@@ -651,7 +651,7 @@
       <div id="qs-scratch-answer" class="hidden w-full" style="max-width:100%">
         <div id="qs-scratch-wrap" style="border-radius:0.5rem;overflow:hidden;border:1px solid #334155">
           <div id="qs-scratch-scroll" style="overflow:auto;background:#111827">
-            <iframe id="qs-scratch-frame" src="./scratch/editor.html" allow="microphone; camera" style="display:block;border:none;width:1100px;height:650px"></iframe>
+            <iframe id="qs-scratch-frame" src="about:blank" data-src="./scratch/editor.html" allow="microphone; camera" style="display:block;border:none;width:1100px;height:650px"></iframe>
           </div>
           <div class="qs-scratch-checkbar" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:#1e293b;border-top:1px solid #334155">
             <button id="btn-quiz-submit-scratch" class="jhncc-primary px-6 py-2 rounded font-semibold text-sm">Check &amp; Submit</button>
@@ -3534,7 +3534,18 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     document.getElementById('btn-quiz-submit-code').onclick = function() { submitStudentCodeAnswer(qIdx); };
     setTimeout(function() { codeInput.focus(); }, 0);
   } else if (isScratch) {
-    requestAnimationFrame(scaleScratchQuizFrame);
+    var scratchFrame = document.getElementById('qs-scratch-frame');
+    var scratchLoadKey = qIdx + ':' + questionStart;
+    if (scratchFrame && scratchFrame.dataset.quizLoadKey !== scratchLoadKey) {
+      scratchFrame.dataset.quizLoadKey = scratchLoadKey;
+      scratchFrame.onload = function() {
+        requestAnimationFrame(scaleScratchQuizFrame);
+      };
+      scratchFrame.src = (scratchFrame.dataset.src || './scratch/editor.html') +
+        '?quiz=' + encodeURIComponent(scratchLoadKey);
+    } else {
+      requestAnimationFrame(scaleScratchQuizFrame);
+    }
     document.getElementById('qs-scratch-feedback').textContent = '';
     document.getElementById('btn-quiz-submit-scratch').disabled = false;
     document.getElementById('btn-quiz-submit-scratch').onclick = function() { submitStudentScratchAnswer(qIdx); };
