@@ -3491,11 +3491,15 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
         try {
           var script = scratchblocks.parse(q.options[i], { style: 'scratch3' });
           var svg = scratchblocks.render(script, { style: 'scratch3' });
-          svg.style.maxWidth = '100%';
+          svg.removeAttribute('width');
+          svg.removeAttribute('height');
+          svg.style.width = '100%';
           svg.style.height = 'auto';
           svg.style.display = 'block';
           svg.style.margin = '0 auto';
           svg.style.pointerEvents = 'none';
+          svg.style.fontWeight = 'normal';
+          svg.style.fontFamily = '"Helvetica Neue", Helvetica, sans-serif';
           btn.innerHTML = '';
           btn.style.paddingTop = '0.75rem';
           btn.style.paddingBottom = '0.75rem';
