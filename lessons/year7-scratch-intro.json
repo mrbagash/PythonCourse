@@ -140,6 +140,30 @@
       "duration": 45
     },
     {
+      "type": "scratch_mcq",
+      "q": "Which block asks the user a question and waits for a reply?",
+      "options": [
+        "ask [What is your name?] and wait",
+        "say [Hello!] for (2) seconds",
+        "set [name v] to (answer)",
+        "when green flag clicked"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which block copies the typed answer into a variable called name?",
+      "options": [
+        "say (join [Hello ] (name)) for (2) seconds",
+        "ask [What is your name?] and wait",
+        "set [name v] to (answer)",
+        "when green flag clicked"
+      ],
+      "answer": 2,
+      "duration": 30
+    },
+    {
       "type": "scratch_build",
       "q": "Build a script that asks the user's name, stores it in a variable, and says hello using their name. Click Check & Submit when done.",
       "check": ["sensing_askandwait", "data_setvariableto", "looks_sayforsecs"],

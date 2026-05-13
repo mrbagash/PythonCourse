@@ -73,6 +73,30 @@
     { "type": "mcq", "q": "Which Scratch menu contains the equals operator ( ) = ( )?", "options": ["Control", "Variables", "Operators", "Sensing"], "answer": 2, "duration": 30 },
     { "type": "mcq", "q": "What is the difference between 'if' and 'if/else'?", "options": ["There is no difference", "if/else also runs different code when the condition is false; if only runs code when true", "if/else is faster than if", "if can only be used once in a script"], "answer": 1, "duration": 45 },
     {
+      "type": "scratch_mcq",
+      "q": "Which block runs different code depending on whether a condition is true or false?",
+      "options": [
+        "if <(answer) = [yes]> then\nend",
+        "if <(answer) = [yes]> then\nelse\nend",
+        "repeat (10)\nend",
+        "forever\nend"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which block checks if two values are equal?",
+      "options": [
+        "<(answer) = [yes]>",
+        "(answer) + (10)",
+        "join [Hello ] (answer)",
+        "(answer) * (2)"
+      ],
+      "answer": 0,
+      "duration": 30
+    },
+    {
       "type": "scratch_build",
       "q": "Build a script that asks 'Are you ok?' and uses if/else to say 'Great!' if the answer is 'yes', or something different if not. Click Check & Submit when done.",
       "check": ["sensing_askandwait", "control_if_else", "operator_equals"],
