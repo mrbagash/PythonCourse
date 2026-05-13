@@ -3358,6 +3358,42 @@ function showStudentScreen(lobbyCode, questions) {
   quiz.unsubscribers.push(function() { sessionRef.off('value', stateListener); });
 }
 
+function sbLogDevice() {
+  if (sbLogDevice._done) return;
+  sbLogDevice._done = true;
+  console.log('[ScratchBlocks device] dpr=' + window.devicePixelRatio +
+    ' screen=' + screen.width + 'x' + screen.height +
+    ' inner=' + window.innerWidth + 'x' + window.innerHeight +
+    ' ua=' + navigator.userAgent.slice(0, 80));
+  if (window.document && document.fonts) {
+    console.log('[ScratchBlocks device] fonts.status=' + document.fonts.status);
+  }
+  // Sample canvas font measurement at scratchblocks default font
+  try {
+    var c = document.createElement('canvas').getContext('2d');
+    c.font = '500 12pt Helvetica Neue, Helvetica, sans-serif';
+    console.log('[ScratchBlocks device] canvas font (after set): "' + c.font + '"  measureText("Hello")=' + c.measureText('Hello').width.toFixed(1));
+  } catch(e) {}
+}
+
+function sbLogSvg(svg, label) {
+  var vb = svg.getAttribute('viewBox');
+  var w  = svg.getAttribute('width');
+  var h  = svg.getAttribute('height');
+  console.log('[ScratchBlocks ' + label + '] viewBox="' + vb + '" attr w=' + w + ' h=' + h);
+  requestAnimationFrame(function() {
+    var cs    = getComputedStyle(svg);
+    var texts = svg.querySelectorAll('text');
+    var tInfo = 'no <text>';
+    if (texts.length) {
+      var tcs  = getComputedStyle(texts[0]);
+      tInfo = 'font-family=' + tcs.fontFamily + ' font-weight=' + tcs.fontWeight + ' font-size=' + tcs.fontSize;
+    }
+    console.log('[ScratchBlocks ' + label + '] rendered offsetW=' + svg.offsetWidth + ' offsetH=' + svg.offsetHeight +
+      ' | text[0]: ' + tInfo);
+  });
+}
+
 function renderTextWithBlocks(el, text) {
   var str = String(text || '');
   if (!window.scratchblocks || str.indexOf('<sb>') === -1) {
@@ -3372,15 +3408,14 @@ function renderTextWithBlocks(el, text) {
       try {
         var script = scratchblocks.parse(match[1], { style: 'scratch3' });
         var svg = scratchblocks.render(script, { style: 'scratch3' });
+        sbLogDevice();
+        sbLogSvg(svg, 'sb-inline');
         svg.removeAttribute('width');
         svg.removeAttribute('height');
-        svg.style.height = '2em';
-        svg.style.width = 'auto';
-        svg.style.display = 'inline-block';
-        svg.style.verticalAlign = 'middle';
-        svg.style.pointerEvents = 'none';
+        svg.style.cssText = 'all: initial; height: 2em; width: auto; display: inline-block; vertical-align: middle; pointer-events: none;';
         el.appendChild(svg);
       } catch(e) {
+        console.error('[ScratchBlocks sb-inline] render error:', e);
         el.appendChild(document.createTextNode(match[1]));
       }
     } else if (part) {
@@ -3491,20 +3526,19 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
         try {
           var script = scratchblocks.parse(q.options[i], { style: 'scratch3' });
           var svg = scratchblocks.render(script, { style: 'scratch3' });
+          sbLogDevice();
+          sbLogSvg(svg, 'scratch_mcq-opt' + i);
           svg.removeAttribute('width');
           svg.removeAttribute('height');
-          svg.style.width = '100%';
-          svg.style.height = 'auto';
-          svg.style.display = 'block';
-          svg.style.margin = '0 auto';
-          svg.style.pointerEvents = 'none';
-          svg.style.fontWeight = 'normal';
-          svg.style.fontFamily = '"Helvetica Neue", Helvetica, sans-serif';
+          svg.style.cssText = 'all: initial; display: block; width: 100%; height: auto; pointer-events: none; margin: 0 auto;';
           btn.innerHTML = '';
           btn.style.paddingTop = '0.75rem';
           btn.style.paddingBottom = '0.75rem';
           btn.appendChild(svg);
-        } catch(e) { safeText(btn.querySelector('span'), q.options[i]); }
+        } catch(e) {
+          console.error('[ScratchBlocks scratch_mcq-opt' + i + '] render error:', e);
+          safeText(btn.querySelector('span'), q.options[i]);
+        }
       } else {
         renderTextWithBlocks(btn.querySelector('span'), q.options[i]);
       }
