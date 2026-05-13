@@ -138,6 +138,13 @@
       "options": ["It does not matter","You need to ask the question before the answer exists to store","Variables must be created first","Blocks run in alphabetical order"],
       "answer": 1,
       "duration": 45
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that asks the user's name, stores it in a variable, and says hello using their name. Click Check & Submit when done.",
+      "check": ["sensing_askandwait", "data_setvariableto", "looks_sayforsecs"],
+      "sampleAnswer": "when flag clicked → ask [] and wait → set [name] to (answer) → say (join [Hello ] (name)) for 2 seconds",
+      "duration": 120
     }
   ]
 }
