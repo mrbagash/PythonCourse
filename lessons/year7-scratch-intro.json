@@ -1,130 +1,142 @@
 {
   "id": "year7-scratch-intro",
-  "title": "Getting Started with Scratch",
-  "description": "Introduction to Scratch: the interface, blocks, and your first script.",
+  "title": "Variables",
+  "description": "What variables are, how they store values, and how to use them to build a chatbot in Scratch.",
   "steps": [
     {
-      "id": "intro",
-      "title": "What is Scratch?",
-      "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Welcome to Scratch</h2><p class='text-gray-700 mb-4'>Scratch is a visual programming language. Instead of typing code, you snap coloured blocks together like puzzle pieces.</p><p class='text-gray-700 mb-4'>Each block is a single instruction. Connecting them in order creates a <strong>script</strong> — a sequence of steps the computer follows.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Example script</p><pre class='scratch-blocks'>when green flag clicked\nmove (10) steps\nplay sound [Meow v] until done</pre></div><p class='text-gray-700'>Click <strong>Next Step</strong> to find out what the different block colours mean.</p>"
-    },
-    {
-      "id": "block-types",
-      "title": "Block Categories",
-      "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Block categories</h2><p class='text-gray-700 mb-4'>Every block belongs to a category. The colour tells you what kind of instruction it is.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Motion — blue</p><pre class='scratch-blocks'>move (10) steps\nturn right (15) degrees\ngo to x: (0) y: (0)</pre></div><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Looks — purple</p><pre class='scratch-blocks'>say [Hello!] for (2) seconds\nswitch costume to [costume1 v]</pre></div><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Events — yellow (hat blocks)</p><pre class='scratch-blocks'>when green flag clicked\nwhen [space v] key pressed</pre></div><p class='text-gray-700 mt-2'>Hat blocks are rounded at the top — they always go at the start of a script and tell Scratch <em>when</em> to run.</p>"
-    },
-    {
-      "id": "sequences",
-      "title": "Scripts Run in Order",
-      "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Scripts run top to bottom</h2><p class='text-gray-700 mb-4'>When a script starts, Scratch runs each block in order, from top to bottom. The script below makes a sprite move, then say something, then move again.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>A sequence</p><pre class='scratch-blocks'>when green flag clicked\nmove (50) steps\nsay [I moved!] for (1) seconds\nmove (50) steps\nsay [I moved again!] for (1) seconds</pre></div><p class='text-gray-700'>Try to predict what a script will do by reading it from top to bottom before you run it.</p>"
-    },
-    {
-      "id": "build-check",
-      "title": "Your First Task",
+      "id": "do-now",
+      "title": "Do Now Activity",
       "autoComplete": false,
-      "css": ".y7-scratch-wrap { margin: 0.75rem 0; border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; } .y7-scratch-wrap.y7-fullscreen { position: fixed !important; inset: 0 !important; z-index: 9999 !important; margin: 0 !important; border-radius: 0 !important; border: none !important; background: #111827; } .y7-scratch-frame { display: block; border: none; transform-origin: top left; } .y7-check-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: #f8fafc; border-top: 1px solid #e2e8f0; } .y7-check-result { font-size: 0.85rem; flex: 1; } .y7-fs-btn { margin-left: auto; background: none; border: 1px solid #cbd5e1; border-radius: 0.3rem; cursor: pointer; padding: 0.15rem 0.5rem; font-size: 1rem; color: #64748b; line-height: 1; } .y7-fs-btn:hover { background: #f1f5f9; color: #374151; }",
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Your first Scratch task</h2><p class='text-gray-700 mb-3'>Use the editor below to build this script. Find <strong>Events</strong> for the hat block and <strong>Motion</strong> for the move block, then snap them together.</p><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Build this</p><pre class='scratch-blocks'>when green flag clicked\nmove (10) steps</pre></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>⛶</button></div></div>",
-      "js": "(function(){var NW=1100,NH=650;function scaleFrame(){var frame=document.getElementById('y7-scratch-frame');if(!frame)return;var wrap=frame.parentElement;var bar=wrap.querySelector('.y7-check-bar');var barH=bar?bar.offsetHeight:44;var isFs=wrap.classList.contains('y7-fullscreen');var availW=isFs?window.innerWidth:wrap.clientWidth;var scale=isFs?Math.min(availW/NW,(window.innerHeight-barH)/NH):availW/NW;frame.style.width=NW+'px';frame.style.height=NH+'px';frame.style.transform='scale('+scale+')';frame.style.marginBottom=Math.round(NH*(scale-1))+'px';frame.style.marginLeft=isFs?Math.max(0,Math.round((availW-NW*scale)/2))+'px':'0';}function toggleFs(){var frame=document.getElementById('y7-scratch-frame');var wrap=frame.parentElement;var btn=document.getElementById('y7-fs-btn');var isFs=wrap.classList.toggle('y7-fullscreen');btn.textContent=isFs?'✕':'⛶';btn.title=isFs?'Exit full screen (Esc)':'Full screen';if(isFs){window._y7ScrollY=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._y7ScrollY||0);}scaleFrame();}scaleFrame();if(window._y7Resize)window.removeEventListener('resize',window._y7Resize);window._y7Resize=scaleFrame;window.addEventListener('resize',window._y7Resize);if(window._y7Key)document.removeEventListener('keydown',window._y7Key);window._y7Key=function(e){if(e.key==='Escape'){var frame=document.getElementById('y7-scratch-frame');if(frame&&frame.parentElement.classList.contains('y7-fullscreen'))toggleFs();}};document.addEventListener('keydown',window._y7Key);document.getElementById('y7-fs-btn').onclick=toggleFs;document.getElementById('y7-check-btn').onclick=function(){var frame=document.getElementById('y7-scratch-frame');var result=document.getElementById('y7-check-result');try{var vm=frame.contentWindow.vm;if(!vm){result.style.color='#fca5a5';result.textContent='Editor still loading — wait a moment and try again.';return;}var targets=vm.runtime.targets;var found=false;for(var t=0;t<targets.length&&!found;t++){var blocks=targets[t].blocks._blocks;for(var id in blocks){var b=blocks[id];if(b.opcode==='event_whenflagclicked'&&b.next){var nb=blocks[b.next];if(nb&&nb.opcode==='motion_movesteps'){found=true;break;}}}}if(found){result.style.color='#86efac';result.textContent='✓ Correct! Green flag connected to move steps.';__markStepComplete();}else{result.style.color='#fca5a5';result.textContent='Not quite — connect the green flag block directly to a move steps block.';}}catch(e){result.style.color='#fca5a5';result.textContent='Could not check: '+e.message;console.error(e);}};})();"
+      "css": ".dn-grid{display:grid;grid-template-columns:100px 1fr;gap:0.5rem 1rem;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;padding:1rem;margin-bottom:0.75rem} .dn-lbl{color:#93c5fd;font-size:0.85rem;font-weight:600} .dn-inp{background:#1e293b;border:1px solid #334155;border-radius:0.3rem;color:#e2e8f0;padding:0.35rem 0.6rem;font-size:0.85rem;outline:none;width:100%;box-sizing:border-box} .dn-inp:focus{border-color:var(--jhncc-yellow)} .dn-story{background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.5rem;padding:1rem;margin:0.75rem 0;font-size:0.9rem;line-height:1.8;color:#374151;min-height:4.5rem}",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now: variables in a story</h2><p class='text-gray-700 mb-3'>A <strong>variable</strong> is a named container that stores a value. Assign a value to each variable below — then watch the story update automatically.</p><div class='dn-grid'><span class='dn-lbl'>COUNTRY</span><input id='dn-country' class='dn-inp' placeholder='e.g. Greece'><span class='dn-lbl'>VILLAIN</span><input id='dn-villain' class='dn-inp' placeholder='e.g. Maleficent'><span class='dn-lbl'>TOWN</span><input id='dn-town' class='dn-inp' placeholder='e.g. Arendelle'><span class='dn-lbl'>SISTER</span><input id='dn-sister' class='dn-inp' placeholder='e.g. Anna'><span class='dn-lbl'>HERO</span><input id='dn-hero' class='dn-inp' placeholder='e.g. Elsa'></div><div class='dn-story' id='dn-story'>Fill in all five variables above to see the story.</div><button class='ex-btn mt-3' id='dn-done' disabled>Mark Complete &rarr;</button>",
+      "js": "(function(){var ids=['country','villain','town','sister','hero'];function v(id){return document.getElementById('dn-'+id).value.trim()||'['+id.toUpperCase()+']';}function update(){var c=v('country'),vi=v('villain'),t=v('town'),s=v('sister'),h=v('hero');document.getElementById('dn-story').innerHTML='In a faraway land called <strong>'+c+'</strong>, there was a magical castle in the town of <strong>'+t+'</strong>. It was said that behind its walls lived a princess called <strong>'+h+'</strong>. <strong>'+h+'</strong> tried to hide her powers from the people of <strong>'+t+'</strong>, but a prince called <strong>'+vi+'</strong> found out and forced <strong>'+h+'</strong> to run away. <strong>'+h+'</strong> imposed an endless winter on <strong>'+t+'</strong>. Her sister <strong>'+s+'</strong> set off on a dangerous adventure to bring <strong>'+h+'</strong> home to <strong>'+t+'</strong>.';var filled=ids.every(function(id){return document.getElementById('dn-'+id).value.trim()!=='';});document.getElementById('dn-done').disabled=!filled;}ids.forEach(function(id){document.getElementById('dn-'+id).addEventListener('input',update);});document.getElementById('dn-done').onclick=function(){__markStepComplete();};update();})();"
+    },
+    {
+      "id": "what-is-variable",
+      "title": "What is a Variable?",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a variable?</h2><p class='text-gray-700 mb-4'>A <strong>variable</strong> is a named storage location inside the computer's memory. It holds a value that the program can read or change at any time.</p><p class='text-gray-700 mb-3'>Think of it like a labelled box — the <strong>label</strong> is the variable name, and what is <strong>inside</strong> is the value:</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Variable name</th><th>Value stored</th></tr></thead><tbody><tr><td>name</td><td>\"Alex\"</td></tr><tr><td>score</td><td>250</td></tr><tr><td>age</td><td>13</td></tr></tbody></table></div><div class='ex-box' style='margin-top:0.5rem'><p class='bb-question-title'>Key facts</p><ul style='list-style:disc;padding-left:1.2rem;line-height:2.2;color:#cdd6f4;font-size:0.88rem'><li>A variable has a <strong>name</strong> chosen by the programmer</li><li>A variable stores a <strong>value</strong> — a number or a piece of text</li><li>The value can <strong>change</strong> while the program runs</li><li>The name always refers to the same storage location</li></ul></div>"
+    },
+    {
+      "id": "ipo-model",
+      "title": "Input → Process → Output",
+      "autoComplete": true,
+      "css": ".ipo-row{display:flex;align-items:stretch;gap:0.5rem;margin:1rem 0} .ipo-arrow{display:flex;align-items:center;font-size:1.4rem;color:#94a3b8;font-weight:700;padding:0 0.1rem} .ipo-box{flex:1;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem;text-align:center} .ipo-t{font-weight:700;font-size:0.8rem;letter-spacing:0.06em;margin-bottom:0.3rem} .ipo-s{font-size:0.74rem;color:#94a3b8;line-height:1.6} .ipo-in .ipo-t{color:#67e8f9} .ipo-proc .ipo-t{color:#c4b5fd} .ipo-out .ipo-t{color:#86efac} .ipo-stor .ipo-t{color:#fde68a} .ipo-full{display:flex;justify-content:center;margin-top:0.35rem}",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Input &rarr; Process &rarr; Output</h2><p class='text-gray-700 mb-4'>Every computer program follows this pattern. Variables live in <strong>storage</strong> — they hold values between the input and output steps.</p><div class='ipo-row'><div class='ipo-box ipo-in'><div class='ipo-t'>INPUT</div><div class='ipo-s'>data coming in<br>keyboard, mouse,<br>microphone</div></div><div class='ipo-arrow'>&rarr;</div><div class='ipo-box ipo-proc'><div class='ipo-t'>PROCESS</div><div class='ipo-s'>code runs,<br>calculations happen,<br>decisions made</div></div><div class='ipo-arrow'>&rarr;</div><div class='ipo-box ipo-out'><div class='ipo-t'>OUTPUT</div><div class='ipo-s'>result shown<br>screen, speaker,<br>printer</div></div></div><div class='ipo-full'><div class='ipo-box ipo-stor' style='max-width:240px'><div class='ipo-t'>STORAGE (variables)</div><div class='ipo-s'>values saved in memory and used across the program</div></div></div><p class='text-gray-700 mt-4'>In the chatbot you are about to build:</p><ul class='text-gray-700 mt-1' style='list-style:disc;padding-left:1.3rem;line-height:2.1'><li><strong>Input</strong> — the user types their name</li><li><strong>Process</strong> — the program stores it in a variable</li><li><strong>Output</strong> — the sprite says hello using the stored name</li></ul>"
+    },
+    {
+      "id": "blocks",
+      "title": "Variables in Scratch",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key blocks for variables</h2><p class='text-gray-700 mb-4'>Three blocks work together to ask a question, store the answer, and use it. <strong>Order matters</strong> — each block depends on the one before it.</p><p class='text-gray-700 mb-1'><strong>1. Ask a question</strong> — pauses the program and waits for the user to type. The answer is automatically stored in a built-in variable called <code>answer</code>.</p><div class='ex-box mb-3'><pre class='scratch-blocks'>ask [What is your name?] and wait</pre></div><p class='text-gray-700 mb-1'><strong>2. Save the answer</strong> — copy the value from <code>answer</code> into a variable you have created and named.</p><div class='ex-box mb-3'><pre class='scratch-blocks'>set [name v] to (answer)</pre></div><p class='text-gray-700 mb-1'><strong>3. Use the variable</strong> — the <code>join</code> block combines fixed text with your variable into one message.</p><div class='ex-box mb-3'><pre class='scratch-blocks'>say (join [Hello ] (name)) for (2) seconds</pre></div><p class='text-gray-700 mb-2'>Put them all together under <strong>when green flag clicked</strong>:</p><div class='ex-box'><pre class='scratch-blocks'>when green flag clicked\nask [What is your name?] and wait\nset [name v] to (answer)\nsay (join [Hello ] (name)) for (2) seconds</pre></div>"
+    },
+    {
+      "id": "predict",
+      "title": "Predict the Output",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Predict the output</h2><p class='text-gray-700 mb-3'>Read this script carefully. Trace through each block in order from top to bottom.</p><div class='ex-box'><pre class='scratch-blocks'>when green flag clicked\nask [What is your name?] and wait\nset [name v] to (answer)\nsay (join [Hello ] (name)) for (2) seconds</pre></div><p class='text-gray-700 mb-3 mt-3'>The user types <strong>Sam</strong> when the question appears. What does the sprite say?</p><div id='predict-q'></div>",
+      "js": "createMCQ('predict-q',['Hello Sam','Hello answer','What is your name?','Hello name'],0,'Correct! The join block combines the text \"Hello \" with the value stored in name — which is \"Sam\".','Not quite. Trace through: ask stores the typed word in answer, set copies it into name, then say uses name.');"
+    },
+    {
+      "id": "build-name",
+      "title": "Build: Ask Name",
+      "autoComplete": false,
+      "css": ".y7-scratch-wrap{margin:0.75rem 0;border:1px solid #e2e8f0;border-radius:0.5rem;overflow:hidden} .y7-scratch-wrap.y7-fullscreen{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;border-radius:0!important;border:none!important;background:#111827} .y7-scratch-frame{display:block;border:none;transform-origin:top left} .y7-check-bar{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:#f8fafc;border-top:1px solid #e2e8f0} .y7-check-result{font-size:0.85rem;flex:1} .y7-fs-btn{margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#64748b;line-height:1} .y7-fs-btn:hover{background:#f1f5f9;color:#374151}",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build it: ask_name</h2><p class='text-gray-700 mb-3'>Build the script below in TurboWarp. Follow each step in order.</p><ol class='text-gray-700 mb-3' style='list-style:decimal;padding-left:1.3rem;line-height:2.2'><li>Go to <strong>Variables</strong> and click <strong>Make a Variable</strong> — name it <strong>name</strong></li><li>Add a <strong>when green flag clicked</strong> block (Events)</li><li>Attach <strong>ask [What is your name?] and wait</strong> (Sensing)</li><li>Attach <strong>set [name] to (answer)</strong> (Variables)</li><li>Attach <strong>say (join [Hello ] (name)) for (2) seconds</strong> (Looks + Operators)</li><li>Click the green flag and type your name to test it</li></ol><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Your finished script</p><pre class='scratch-blocks'>when green flag clicked\nask [What is your name?] and wait\nset [name v] to (answer)\nsay (join [Hello ] (name)) for (2) seconds</pre></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>⛶</button></div></div>",
+      "js": "(function(){var NW=1100,NH=650;function scaleFrame(){var frame=document.getElementById('y7-scratch-frame');if(!frame)return;var wrap=frame.parentElement;var bar=wrap.querySelector('.y7-check-bar');var barH=bar?bar.offsetHeight:44;var isFs=wrap.classList.contains('y7-fullscreen');var availW=isFs?window.innerWidth:wrap.clientWidth;var scale=isFs?Math.min(availW/NW,(window.innerHeight-barH)/NH):availW/NW;frame.style.width=NW+'px';frame.style.height=NH+'px';frame.style.transform='scale('+scale+')';frame.style.marginBottom=Math.round(NH*(scale-1))+'px';frame.style.marginLeft=isFs?Math.max(0,Math.round((availW-NW*scale)/2))+'px':'0';}function toggleFs(){var frame=document.getElementById('y7-scratch-frame');var wrap=frame.parentElement;var btn=document.getElementById('y7-fs-btn');var isFs=wrap.classList.toggle('y7-fullscreen');btn.textContent=isFs?'✕':'⛶';btn.title=isFs?'Exit full screen (Esc)':'Full screen';if(isFs){window._y7ScrollY=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._y7ScrollY||0);}scaleFrame();}scaleFrame();if(window._y7Resize)window.removeEventListener('resize',window._y7Resize);window._y7Resize=scaleFrame;window.addEventListener('resize',window._y7Resize);if(window._y7Key)document.removeEventListener('keydown',window._y7Key);window._y7Key=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))toggleFs();}};document.addEventListener('keydown',window._y7Key);document.getElementById('y7-fs-btn').onclick=toggleFs;document.getElementById('y7-check-btn').onclick=function(){var frame=document.getElementById('y7-scratch-frame');var result=document.getElementById('y7-check-result');try{var vm=frame.contentWindow.vm;if(!vm){result.style.color='#fca5a5';result.textContent='Editor still loading — wait a moment and try again.';return;}var targets=vm.runtime.targets;var hasAsk=false,hasSet=false,hasSay=false;for(var t=0;t<targets.length;t++){var blks=targets[t].blocks._blocks;for(var id in blks){var b=blks[id];if(b.opcode==='sensing_askandwait')hasAsk=true;if(b.opcode==='data_setvariableto')hasSet=true;if(b.opcode==='looks_sayforsecs')hasSay=true;}}if(hasAsk&&hasSet&&hasSay){result.style.color='#86efac';result.textContent='✓ Great work! Your chatbot asks, stores and says hello.';__markStepComplete();}else{var miss=[];if(!hasAsk)miss.push('ask [] and wait');if(!hasSet)miss.push('set [] to (answer)');if(!hasSay)miss.push('say [] for [] seconds');result.style.color='#fca5a5';result.textContent='Still missing: '+miss.join(', ')+'.';};}catch(e){result.style.color='#fca5a5';result.textContent='Could not check: '+e.message;console.error(e);}};})();"
+    },
+    {
+      "id": "build-age",
+      "title": "Build: Ask Age",
+      "autoComplete": false,
+      "css": ".y7-scratch-wrap{margin:0.75rem 0;border:1px solid #e2e8f0;border-radius:0.5rem;overflow:hidden} .y7-scratch-wrap.y7-fullscreen{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;border-radius:0!important;border:none!important;background:#111827} .y7-scratch-frame{display:block;border:none;transform-origin:top left} .y7-check-bar{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:#f8fafc;border-top:1px solid #e2e8f0} .y7-check-result{font-size:0.85rem;flex:1} .y7-fs-btn{margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#64748b;line-height:1} .y7-fs-btn:hover{background:#f1f5f9;color:#374151}",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build it: ask_age</h2><p class='text-gray-700 mb-3'>Now apply the same pattern to ask for an age. This time there are <strong>two</strong> say blocks.</p><ol class='text-gray-700 mb-3' style='list-style:decimal;padding-left:1.3rem;line-height:2.2'><li>Make a new variable called <strong>age</strong></li><li>Add <strong>when green flag clicked</strong></li><li>Attach <strong>ask [How old are you?] and wait</strong></li><li>Attach <strong>set [age] to (answer)</strong></li><li>Attach <strong>say (join [Wow ] (age)) for (2) seconds</strong></li><li>Attach <strong>say [Your monster is much older than me in the year 2182] for (2) seconds</strong></li></ol><div class='scratch-blocks-wrap'><p class='scratch-blocks-label'>Your finished script</p><pre class='scratch-blocks'>when green flag clicked\nask [How old are you?] and wait\nset [age v] to (answer)\nsay (join [Wow ] (age)) for (2) seconds\nsay [Your monster is much older than me in the year 2182] for (2) seconds</pre></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>⛶</button></div></div>",
+      "js": "(function(){var NW=1100,NH=650;function scaleFrame(){var frame=document.getElementById('y7-scratch-frame');if(!frame)return;var wrap=frame.parentElement;var bar=wrap.querySelector('.y7-check-bar');var barH=bar?bar.offsetHeight:44;var isFs=wrap.classList.contains('y7-fullscreen');var availW=isFs?window.innerWidth:wrap.clientWidth;var scale=isFs?Math.min(availW/NW,(window.innerHeight-barH)/NH):availW/NW;frame.style.width=NW+'px';frame.style.height=NH+'px';frame.style.transform='scale('+scale+')';frame.style.marginBottom=Math.round(NH*(scale-1))+'px';frame.style.marginLeft=isFs?Math.max(0,Math.round((availW-NW*scale)/2))+'px':'0';}function toggleFs(){var frame=document.getElementById('y7-scratch-frame');var wrap=frame.parentElement;var btn=document.getElementById('y7-fs-btn');var isFs=wrap.classList.toggle('y7-fullscreen');btn.textContent=isFs?'✕':'⛶';btn.title=isFs?'Exit full screen (Esc)':'Full screen';if(isFs){window._y7ScrollY=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._y7ScrollY||0);}scaleFrame();}scaleFrame();if(window._y7Resize)window.removeEventListener('resize',window._y7Resize);window._y7Resize=scaleFrame;window.addEventListener('resize',window._y7Resize);if(window._y7Key)document.removeEventListener('keydown',window._y7Key);window._y7Key=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))toggleFs();}};document.addEventListener('keydown',window._y7Key);document.getElementById('y7-fs-btn').onclick=toggleFs;document.getElementById('y7-check-btn').onclick=function(){var frame=document.getElementById('y7-scratch-frame');var result=document.getElementById('y7-check-result');try{var vm=frame.contentWindow.vm;if(!vm){result.style.color='#fca5a5';result.textContent='Editor still loading — wait a moment and try again.';return;}var targets=vm.runtime.targets;var sayCount=0,hasAsk=false,hasSet=false;for(var t=0;t<targets.length;t++){var blks=targets[t].blocks._blocks;for(var id in blks){var b=blks[id];if(b.opcode==='sensing_askandwait')hasAsk=true;if(b.opcode==='data_setvariableto')hasSet=true;if(b.opcode==='looks_sayforsecs')sayCount++;}}if(hasAsk&&hasSet&&sayCount>=2){result.style.color='#86efac';result.textContent='✓ Perfect! Two say blocks, an ask and a set — well done.';__markStepComplete();}else{var miss=[];if(!hasAsk)miss.push('ask block');if(!hasSet)miss.push('set variable');if(sayCount<2)miss.push('two say blocks');result.style.color='#fca5a5';result.textContent='Not quite. Missing: '+miss.join(', ')+'.';};}catch(e){result.style.color='#fca5a5';result.textContent='Could not check: '+e.message;console.error(e);}};})();"
+    },
+    {
+      "id": "trace",
+      "title": "Tracing Variables",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Tracing variables</h2><p class='text-gray-700 mb-3'><strong>Tracing</strong> means following a program line by line and recording what value a variable holds at each point. It is one of the most important skills in programming.</p><p class='text-gray-700 mb-2'>Track the value of <code>score</code> as each block runs. Write it down as you go.</p><div class='ex-box'><pre class='scratch-blocks'>when green flag clicked\nset [score v] to (0)\nsay (score) for (1) seconds\nset [score v] to ((score) + (10))\nsay (score) for (1) seconds\nset [score v] to ((score) * (2))\nsay (score) for (1) seconds</pre></div><p class='text-gray-700 mt-3 mb-3'>What does the sprite say the <strong>third</strong> time it speaks?</p><div id='trace-q'></div>",
+      "js": "createMCQ('trace-q',['0','10','20','30'],2,'Correct! score starts at 0, then 0+10=10, then 10×2=20. The third say shows 20.','Not quite. Trace it step by step: set to 0 → say 0 → add 10 → say 10 → multiply by 2 → say 20.');"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Check",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson check</h2><p class='text-gray-700 mb-4'>Answer all four questions. The correct answer is shown after each one.</p><div id='exam-q'></div>",
+      "js": "createMCQSet('exam-q',[{q:'What is a variable?',opts:['A block that moves a sprite','A named storage location that holds a value','A type of loop','A sound effect'],correct:1,feedback:'Correct — a variable is a named container that stores a value in memory.',wrongFeedback:'A variable is a named storage location that holds a value. The name stays the same; the value can change.'},{q:'Which block copies the typed answer into a variable called name?',opts:['say (name) for 2 seconds','ask [name] and wait','set [name v] to (answer)','join [name] [answer]'],correct:2,feedback:'Correct — set [] to (answer) copies whatever the user typed into your named variable.',wrongFeedback:'The correct block is set [name v] to (answer). It takes the value in answer and stores it in name.'},{q:'In the IPO model, which part do variables belong to?',opts:['Input','Process','Output','Storage'],correct:3,feedback:'Correct — variables are part of storage, holding values between the input and output stages.',wrongFeedback:'Variables belong to Storage — they sit in memory and hold values that the program uses during processing.'},{q:'A script runs: set [score v] to (5), then set [score v] to ((score) + (3)). What is score?',opts:['3','5','8','15'],correct:2,feedback:'Correct! 5 + 3 = 8. The second set block adds 3 to the existing value of 5.',wrongFeedback:'Trace it: score starts at 5, then 5 + 3 = 8. The answer is 8.'}]);"
     }
   ],
   "quizQuestions": [
     {
       "type": "mcq",
-      "q": "What shape is a hat block?",
-      "options": [
-        "Rounded at the top",
-        "Pointed at the bottom",
-        "Square",
-        "Circular"
-      ],
-      "answer": 0,
+      "q": "What is a variable?",
+      "options": ["A block that moves a sprite","A named storage location that holds a value","A type of loop","A sound effect"],
+      "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
-      "q": "What colour are Motion blocks in Scratch?",
-      "options": [
-        "Blue",
-        "Purple",
-        "Yellow",
-        "Green"
-      ],
-      "answer": 0,
+      "q": "Which Scratch block asks the user a question and waits for a reply?",
+      "options": ["say [] for [] seconds","ask [] and wait","set [] to []","when green flag clicked"],
+      "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
-      "q": "What does the green flag block do?",
-      "options": [
-        "Starts the script when the green flag is clicked",
-        "Makes the sprite turn green",
-        "Stops the script",
-        "Saves the project"
-      ],
-      "answer": 0,
+      "q": "After 'ask [] and wait' runs, where is the typed answer automatically stored?",
+      "options": ["In the name variable","In the answer variable","In the sprite","It is not stored"],
+      "answer": 1,
       "duration": 45
     },
     {
       "type": "mcq",
-      "q": "In what order does Scratch run the blocks in a script?",
-      "options": [
-        "Top to bottom",
-        "Bottom to top",
-        "Left to right",
-        "Randomly"
-      ],
-      "answer": 0,
-      "duration": 30
-    },
-    {
-      "type": "mcq",
-      "q": "Which block would you use to make a sprite move across the stage?",
-      "options": [
-        "move (10) steps",
-        "say [Hello]",
-        "when green flag clicked",
-        "switch costume"
-      ],
-      "answer": 0,
+      "q": "What does 'set [name v] to (answer)' do?",
+      "options": ["Asks the user their name","Copies the value of answer into the name variable","Says the name out loud","Deletes the variable"],
+      "answer": 1,
       "duration": 45
     },
     {
       "type": "mcq",
-      "q": "What file extension does a Scratch project use when saved to your computer?",
-      "options": [
-        ".sb3",
-        ".py",
-        ".scratch",
-        ".zip"
-      ],
-      "answer": 0,
+      "q": "In the IPO model, which part do variables belong to?",
+      "options": ["Input","Process","Output","Storage"],
+      "answer": 3,
       "duration": 30
     },
     {
       "type": "mcq",
-      "q": "What colour are Events blocks (like 'when green flag clicked')?",
-      "options": [
-        "Yellow",
-        "Blue",
-        "Orange",
-        "Red"
-      ],
-      "answer": 0,
+      "q": "What does the join block do?",
+      "options": ["Adds two numbers together","Combines two pieces of text into one","Copies a variable","Asks a question"],
+      "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
-      "q": "How many blocks does the simplest working script need?",
-      "options": [
-        "At least 2 — a hat block and one action block",
-        "Exactly 1",
-        "At least 5",
-        "10 or more"
-      ],
-      "answer": 0,
+      "q": "score is 10. After 'set [score v] to ((score) + (5))', what is score?",
+      "options": ["5","10","15","50"],
+      "answer": 2,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is a bug in programming?",
+      "options": ["A fast-running program","An error in the code","A type of variable","A Scratch sprite"],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What is debugging?",
+      "options": ["Adding variables to code","Running a program faster","Finding and fixing errors in code","Designing a new sprite"],
+      "answer": 2,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "Why must 'ask [] and wait' come before 'set [] to (answer)' in a script?",
+      "options": ["It does not matter","You need to ask the question before the answer exists to store","Variables must be created first","Blocks run in alphabetical order"],
+      "answer": 1,
       "duration": 45
     }
   ]

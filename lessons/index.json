@@ -8,7 +8,7 @@
           "id": "scratch",
           "label": "Scratch",
           "lessons": [
-            { "id": "year7-scratch-intro", "title": "Getting Started with Scratch", "file": "lessons/year7-scratch-intro.json", "order": 1 }
+            { "id": "year7-scratch-intro", "title": "Variables", "file": "lessons/year7-scratch-intro.json", "order": 1 }
           ]
         }
       ]
