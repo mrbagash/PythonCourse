@@ -3364,16 +3364,33 @@ function sbLogDevice() {
   console.log('[ScratchBlocks device] dpr=' + window.devicePixelRatio +
     ' screen=' + screen.width + 'x' + screen.height +
     ' inner=' + window.innerWidth + 'x' + window.innerHeight +
-    ' ua=' + navigator.userAgent.slice(0, 80));
+    ' ua=' + navigator.userAgent.slice(0, 120));
   if (window.document && document.fonts) {
     console.log('[ScratchBlocks device] fonts.status=' + document.fonts.status);
   }
-  // Sample canvas font measurement at scratchblocks default font
+  // Check whether scratchblocks' injected CSS is actually being applied
+  try {
+    var probe = document.createElement('span');
+    probe.className = 'sb3-label';
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none';
+    document.body.appendChild(probe);
+    var pcs = getComputedStyle(probe);
+    console.log('[ScratchBlocks device] .sb3-label computed: font-family=' + pcs.fontFamily +
+      ' font-weight=' + pcs.fontWeight + ' font-size=' + pcs.fontSize +
+      ' (if font-family is serif/sans-serif only, scratchblocks CSS did NOT load)');
+    document.body.removeChild(probe);
+  } catch(e) {}
+  // Canvas font resolution — shows which fallback the browser actually uses for measurement
   try {
     var c = document.createElement('canvas').getContext('2d');
     c.font = '500 12pt Helvetica Neue, Helvetica, sans-serif';
-    console.log('[ScratchBlocks device] canvas font (after set): "' + c.font + '"  measureText("Hello")=' + c.measureText('Hello').width.toFixed(1));
+    var resolved = c.font;
+    var w1 = c.measureText('if <> then').width;
+    console.log('[ScratchBlocks device] canvas resolved font: "' + resolved + '"');
+    console.log('[ScratchBlocks device] canvas measureText("if <> then")=' + w1.toFixed(1) + 'px');
   } catch(e) {}
+  // aspect-ratio CSS support check
+  console.log('[ScratchBlocks device] aspect-ratio CSS supported: ' + ('aspectRatio' in document.documentElement.style));
 }
 
 function sbLogSvg(svg, label) {
@@ -3382,14 +3399,16 @@ function sbLogSvg(svg, label) {
   var h  = svg.getAttribute('height');
   console.log('[ScratchBlocks ' + label + '] viewBox="' + vb + '" attr w=' + w + ' h=' + h);
   requestAnimationFrame(function() {
-    var cs    = getComputedStyle(svg);
     var texts = svg.querySelectorAll('text');
     var tInfo = 'no <text>';
     if (texts.length) {
-      var tcs  = getComputedStyle(texts[0]);
-      tInfo = 'font-family=' + tcs.fontFamily + ' font-weight=' + tcs.fontWeight + ' font-size=' + tcs.fontSize;
+      var tcs = getComputedStyle(texts[0]);
+      tInfo = 'font-family=' + tcs.fontFamily +
+              ' font-weight=' + tcs.fontWeight +
+              ' font-size=' + tcs.fontSize;
     }
-    console.log('[ScratchBlocks ' + label + '] rendered offsetW=' + svg.offsetWidth + ' offsetH=' + svg.offsetHeight +
+    console.log('[ScratchBlocks ' + label + '] rendered offsetW=' + svg.offsetWidth +
+      ' offsetH=' + svg.offsetHeight + ' aspectRatio=' + svg.style.aspectRatio +
       ' | text[0]: ' + tInfo);
   });
 }
@@ -3412,7 +3431,14 @@ function renderTextWithBlocks(el, text) {
         sbLogSvg(svg, 'sb-inline');
         svg.removeAttribute('width');
         svg.removeAttribute('height');
-        svg.style.cssText = 'all: initial; height: 2em; width: auto; display: inline-block; vertical-align: middle; pointer-events: none;';
+        svg.style.display        = 'inline-block';
+        svg.style.height         = '2em';
+        svg.style.width          = 'auto';
+        svg.style.verticalAlign  = 'middle';
+        svg.style.overflow       = 'hidden';
+        svg.style.pointerEvents  = 'none';
+        svg.style.fontWeight     = 'normal';
+        svg.style.fontStyle      = 'normal';
         el.appendChild(svg);
       } catch(e) {
         console.error('[ScratchBlocks sb-inline] render error:', e);
@@ -3527,10 +3553,21 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
           var script = scratchblocks.parse(q.options[i], { style: 'scratch3' });
           var svg = scratchblocks.render(script, { style: 'scratch3' });
           sbLogDevice();
+          var natW = parseFloat(svg.getAttribute('width'))  || 200;
+          var natH = parseFloat(svg.getAttribute('height')) || 60;
           sbLogSvg(svg, 'scratch_mcq-opt' + i);
           svg.removeAttribute('width');
           svg.removeAttribute('height');
-          svg.style.cssText = 'all: initial; display: block; width: 100%; height: auto; pointer-events: none; margin: 0 auto;';
+          svg.style.display       = 'block';
+          svg.style.width         = '100%';
+          svg.style.height        = 'auto';
+          svg.style.aspectRatio   = (natW / natH).toFixed(4);
+          svg.style.maxWidth      = natW + 'px';
+          svg.style.overflow      = 'hidden';
+          svg.style.pointerEvents = 'none';
+          svg.style.margin        = '0 auto';
+          svg.style.fontWeight    = 'normal';
+          svg.style.fontStyle     = 'normal';
           btn.innerHTML = '';
           btn.style.paddingTop = '0.75rem';
           btn.style.paddingBottom = '0.75rem';
