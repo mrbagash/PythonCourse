@@ -1683,6 +1683,8 @@ async function loadApp() {
       course.lessons.forEach(function(meta) {
         meta.yearGroupId = yg.id;
         meta.courseId    = course.id;
+        meta.yearLabel   = yg.label || yg.id;
+        meta.courseLabel = course.label || course.id;
         lessonFilesNeeded.push(meta);
       });
     });
@@ -2358,6 +2360,22 @@ function exportCodesSheet(className) {
 }
 
 // ── Export: detailed report workbook ─────────────────────────
+function makeUniqueSheetName(baseName, usedNames) {
+  var base = String(baseName || 'Sheet')
+    .replace(/[:\\/?*\[\]]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Sheet';
+  var name = base.slice(0, 31);
+  var n = 2;
+  while (usedNames[name.toLowerCase()]) {
+    var suffix = ' ' + n;
+    name = base.slice(0, 31 - suffix.length) + suffix;
+    n++;
+  }
+  usedNames[name.toLowerCase()] = true;
+  return name;
+}
+
 async function exportDetailedReport(className) {
   try {
     var results = await Promise.all([
@@ -2372,13 +2390,14 @@ async function exportDetailedReport(className) {
     var codes = Object.keys(codesSnap.val());
 
     var wb = XLSX.utils.book_new();
+    var usedSheetNames = {};
 
     // ── Sheet 1: Codes ──────────────────────────────────────
     var codesData = [['Name', 'Code']];
     codes.forEach(function(code) { codesData.push([studentName(code) || '', code]); });
     var wsCodesSheet = XLSX.utils.aoa_to_sheet(codesData);
     wsCodesSheet['!cols'] = [{ wch: 30 }, { wch: 20 }];
-    XLSX.utils.book_append_sheet(wb, wsCodesSheet, 'Codes');
+    XLSX.utils.book_append_sheet(wb, wsCodesSheet, makeUniqueSheetName('Codes', usedSheetNames));
 
     // ── Sheet 2: Summary ────────────────────────────────────
     var summaryHdr = ['Name', 'Code', 'Total Steps Done', 'Total Time'];
@@ -2435,7 +2454,7 @@ async function exportDetailedReport(className) {
     });
 
     XLSX.utils.sheet_add_aoa(wsSummary, chartData, { origin: { r: chartAnchorRow, c: 0 } });
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    XLSX.utils.book_append_sheet(wb, wsSummary, makeUniqueSheetName('Summary', usedSheetNames));
 
     // ── One sheet per lesson ─────────────────────────────────
     state.allLessons.forEach(function(lesson) {
@@ -2471,8 +2490,11 @@ async function exportDetailedReport(className) {
       steps.forEach(function() { ws['!cols'].push({ wch: 8 }); ws['!cols'].push({ wch: 10 }); });
       ws['!cols'].push({ wch: 10 }); ws['!cols'].push({ wch: 10 });
 
-      // Truncate sheet name to 31 chars (Excel limit)
-      var sheetName = lesson.data.title.slice(0, 31);
+      var courseLabel = lesson.meta && lesson.meta.courseLabel ? lesson.meta.courseLabel : '';
+      var yearLabel = lesson.meta && lesson.meta.yearLabel ? lesson.meta.yearLabel : '';
+      var sheetBase = lesson.data.title;
+      if (courseLabel || yearLabel) sheetBase += ' ' + [yearLabel, courseLabel].filter(Boolean).join(' ');
+      var sheetName = makeUniqueSheetName(sheetBase, usedSheetNames);
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
 
@@ -2498,7 +2520,7 @@ async function exportDetailedReport(className) {
       });
       var wsQSummary = XLSX.utils.aoa_to_sheet(qSummaryData);
       wsQSummary['!cols'] = [{ wch: 12 }, { wch: 8 }, { wch: 28 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, wsQSummary, 'Quiz Summary');
+      XLSX.utils.book_append_sheet(wb, wsQSummary, makeUniqueSheetName('Quiz Summary', usedSheetNames));
 
       // One sheet per quiz
       quizRecords.forEach(function(rec, recIdx) {
@@ -2546,8 +2568,7 @@ async function exportDetailedReport(className) {
         qs.forEach(function() { wsQ['!cols'].push({ wch: 14 }); });
         wsQ['!cols'].push({ wch: 8 });
 
-        // Sheet name: "Quiz 01 DD-MM" (max 31 chars)
-        var sheetLabel = ('Quiz ' + String(recIdx + 1).padStart(2, '0') + ' ' + dateStr + ' ' + timeStr).slice(0, 31);
+        var sheetLabel = makeUniqueSheetName('Quiz ' + String(recIdx + 1).padStart(2, '0') + ' ' + dateStr + ' ' + timeStr, usedSheetNames);
         XLSX.utils.book_append_sheet(wb, wsQ, sheetLabel);
       });
     }
