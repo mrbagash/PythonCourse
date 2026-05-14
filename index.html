@@ -3645,29 +3645,54 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     var pyBotFb    = document.getElementById('qs-pybot-feedback');
     if (pyBotFb) pyBotFb.textContent = 'Complete the level to submit.';
     var pyBotLoadKey = qIdx + ':' + questionStart;
-    if (pyBotFrame && pyBotFrame.dataset.quizLoadKey !== pyBotLoadKey) {
-      pyBotFrame.dataset.quizLoadKey = pyBotLoadKey;
-      pyBotFrame.onload = function() {
-        requestAnimationFrame(scalePyBotQuizFrame);
-        pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*');
-      };
-      pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
-    } else {
-      requestAnimationFrame(scalePyBotQuizFrame);
-    }
-    // Remove any existing LEVEL_COMPLETE listener before adding a new one
-    if (window._qsPyBotMsg) window.removeEventListener('message', window._qsPyBotMsg);
+    // Cancel any in-flight level-send retry from a previous question
+    if (window._qsPyBotRetryInterval) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; }
+    if (window._qsPyBotMsg) { window.removeEventListener('message', window._qsPyBotMsg); window._qsPyBotMsg = null; }
+
+    // Set up message listener BEFORE loading the iframe so we never miss LEVEL_LOADED
+    var levelAcked = false;
     window._qsPyBotMsg = function(e) {
       if (e.origin !== 'https://jquinney-hue.github.io') return;
       var data = e.data || {};
-      if (data.type === 'LEVEL_LOADED' && q.starterCode) {
-        pyBotFrame.contentWindow.postMessage({ type: 'SET_CODE', data: { code: q.starterCode } }, '*');
+      if (data.type === 'LEVEL_LOADED') {
+        levelAcked = true;
+        if (window._qsPyBotRetryInterval) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; }
+        if (pyBotFb) pyBotFb.textContent = 'Complete the level to submit.';
       }
       if (data.type === 'LEVEL_COMPLETE') {
         submitStudentPyBotAnswer(qIdx, data.medal, data.lines);
       }
     };
     window.addEventListener('message', window._qsPyBotMsg);
+
+    function sendLevel() {
+      pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*');
+    }
+
+    if (pyBotFrame && pyBotFrame.dataset.quizLoadKey !== pyBotLoadKey) {
+      pyBotFrame.dataset.quizLoadKey = pyBotLoadKey;
+      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
+      pyBotFrame.onload = function() {
+        requestAnimationFrame(scalePyBotQuizFrame);
+        // Retry every 400ms until LEVEL_LOADED confirms PyBot is ready
+        var attempts = 0;
+        sendLevel();
+        window._qsPyBotRetryInterval = setInterval(function() {
+          if (levelAcked || ++attempts > 15) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
+          sendLevel();
+        }, 400);
+      };
+      pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
+    } else {
+      // Frame already loaded — send immediately with retry in case PyBot needs it
+      requestAnimationFrame(scalePyBotQuizFrame);
+      var attempts2 = 0;
+      sendLevel();
+      window._qsPyBotRetryInterval = setInterval(function() {
+        if (levelAcked || ++attempts2 > 15) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
+        sendLevel();
+      }, 400);
+    }
     document.getElementById('btn-qs-pybot-fs').onclick = toggleQsPyBotFullscreen;
     if (window._qsPyBotResize) window.removeEventListener('resize', window._qsPyBotResize);
     window._qsPyBotResize = scalePyBotQuizFrame;
