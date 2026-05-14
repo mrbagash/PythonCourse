@@ -1974,11 +1974,40 @@ function createMCQSet(containerId, questions) {
       return;
     }
     var q = questions[idx];
-    c.innerHTML = '<p class="ex-progress">Question ' + (idx + 1) + ' of ' + questions.length + '</p>' +
-      '<p class="ex-prompt" style="font-weight:600;margin-bottom:0.5rem;">' + q.q + '</p>' +
-      (q.html || '') +
-      q.opts.map(function(o, i) { return '<button class="ex-mcq-btn" data-i="' + i + '">' + o + '</button>'; }).join('') +
-      '<div class="ex-feedback" id="' + containerId + '-fb"></div>';
+    c.innerHTML = '';
+    var progress = document.createElement('p');
+    progress.className = 'ex-progress';
+    progress.textContent = 'Question ' + (idx + 1) + ' of ' + questions.length;
+    c.appendChild(progress);
+
+    var prompt = document.createElement('p');
+    prompt.className = 'ex-prompt';
+    prompt.style.fontWeight = '600';
+    prompt.style.marginBottom = '0.5rem';
+    prompt.textContent = q.q || '';
+    c.appendChild(prompt);
+
+    if (q.html) {
+      var htmlWrap = document.createElement('div');
+      htmlWrap.innerHTML = q.html;
+      c.appendChild(htmlWrap);
+      if (window.scratchblocks) {
+        try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) {}
+      }
+    }
+
+    (q.opts || []).forEach(function(o, i) {
+      var btn = document.createElement('button');
+      btn.className = 'ex-mcq-btn';
+      btn.dataset.i = i;
+      btn.textContent = o;
+      c.appendChild(btn);
+    });
+
+    var feedback = document.createElement('div');
+    feedback.className = 'ex-feedback';
+    feedback.id = containerId + '-fb';
+    c.appendChild(feedback);
     c.querySelectorAll('.ex-mcq-btn').forEach(function(btn) {
       btn.onclick = function() {
         var i = parseInt(this.dataset.i);
@@ -2948,8 +2977,8 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         sampleAnswer: q.sampleAnswer || null,
         check: q.check || null,
         checkCounts: q.checkCounts || null,
-        checkFields: q.checkFields || null,
-        checkAlternatives: q.checkAlternatives || null,
+        checkFields: normaliseScratchCheckFields(q.checkFields),
+        checkAlternatives: normaliseScratchCheckAlternatives(q.checkAlternatives),
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -2964,6 +2993,28 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
 };
 
 // ── ADMIN: Host screen ─────────────────────────────────────────
+function normaliseScratchCheckFields(checkFields) {
+  if (!checkFields) return null;
+  if (Array.isArray(checkFields)) return checkFields;
+  return Object.keys(checkFields).map(function(key) {
+    var parts = key.split('.');
+    return {
+      opcode: parts[0],
+      field: parts.slice(1).join('.'),
+      values: checkFields[key]
+    };
+  });
+}
+
+function normaliseScratchCheckAlternatives(checkAlternatives) {
+  if (!Array.isArray(checkAlternatives)) return null;
+  return checkAlternatives.map(function(rule) {
+    return Object.assign({}, rule, {
+      checkFields: normaliseScratchCheckFields(rule.checkFields)
+    });
+  });
+}
+
 function showQuizHostScreen() {
   document.getElementById('quiz-host-screen').classList.remove('hidden');
   document.getElementById('qh-lobby-code').textContent = quiz.lobbyCode;
@@ -3667,6 +3718,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   document.getElementById('qs-widget-answer').classList.toggle('hidden', !isWidget);
   document.getElementById('qs-scratch-answer').classList.toggle('hidden', !isScratch);
   document.getElementById('qs-pybot-answer').classList.toggle('hidden', !isPyBot);
+  if (!isScratch) resetScratchQuizFrame();
   if (isWidget) {
     quiz.currentWidget = null;
     var widgetContainer = document.getElementById('qs-widget-container');
@@ -3914,6 +3966,16 @@ function toggleQsScratchFullscreen() {
   scaleScratchQuizFrame();
 }
 
+function resetScratchQuizFrame() {
+  var frame = document.getElementById('qs-scratch-frame');
+  if (!frame) return;
+  var wrap = document.getElementById('qs-scratch-wrap');
+  if (wrap && wrap.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
+  frame.onload = null;
+  frame.dataset.quizLoadKey = '';
+  if (frame.src !== 'about:blank') frame.src = 'about:blank';
+}
+
 function scalePyBotQuizFrame() {
   var frame  = document.getElementById('qs-pybot-frame');
   var wrap   = document.getElementById('qs-pybot-wrap');
@@ -4025,6 +4087,10 @@ function collectScratchOpcodes(targets) {
       var values = fields[key] || [];
       accepted = (Array.isArray(accepted) ? accepted : [accepted]).map(function(v) { return String(v).toLowerCase(); });
       return values.some(function(value) { return accepted.indexOf(value) !== -1; });
+    },
+    fieldRuleMatches: function(rule) {
+      if (!rule) return true;
+      return this.fieldMatches(rule.opcode + '.' + rule.field, rule.values);
     }
   };
 }
@@ -4049,9 +4115,9 @@ function scratchBuildRuleMatches(q, info) {
     return info.countAny(group) >= counts[key];
   });
   if (!countsOk) return false;
-  var fields = q.checkFields || {};
-  return Object.keys(fields).every(function(key) {
-    return info.fieldMatches(key, fields[key]);
+  var fields = normaliseScratchCheckFields(q.checkFields) || [];
+  return fields.every(function(rule) {
+    return info.fieldRuleMatches(rule);
   });
 }
 
@@ -4189,6 +4255,7 @@ function renderStudentReveal(q, qIdx) {
   clearInterval(quiz.timerInterval);
   setStudentView('reveal');
   if (!q) return;
+  if (q.type === 'scratch_build') resetScratchQuizFrame();
 
   quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).get().then(function(snap) {
     var isTextInput = q.type === 'text_input';

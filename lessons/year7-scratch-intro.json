@@ -227,11 +227,15 @@
               "motion_glidesecstoxy"
             ]
           ],
-          "checkFields": {
-            "event_whenkeypressed.KEY_OPTION": [
-              "right arrow"
-            ]
-          }
+          "checkFields": [
+            {
+              "opcode": "event_whenkeypressed",
+              "field": "KEY_OPTION",
+              "values": [
+                "right arrow"
+              ]
+            }
+          ]
         },
         {
           "check": [
@@ -247,11 +251,15 @@
               "motion_glidesecstoxy"
             ]
           ],
-          "checkFields": {
-            "sensing_keypressed.KEY_OPTION": [
-              "right arrow"
-            ]
-          }
+          "checkFields": [
+            {
+              "opcode": "sensing_keypressed",
+              "field": "KEY_OPTION",
+              "values": [
+                "right arrow"
+              ]
+            }
+          ]
         }
       ],
       "sampleAnswer": "when [right arrow] key pressed -> change x by 10",
@@ -271,11 +279,15 @@
               "motion_glidesecstoxy"
             ]
           ],
-          "checkFields": {
-            "event_whenkeypressed.KEY_OPTION": [
-              "left arrow"
-            ]
-          }
+          "checkFields": [
+            {
+              "opcode": "event_whenkeypressed",
+              "field": "KEY_OPTION",
+              "values": [
+                "left arrow"
+              ]
+            }
+          ]
         },
         {
           "check": [
@@ -291,11 +303,15 @@
               "motion_glidesecstoxy"
             ]
           ],
-          "checkFields": {
-            "sensing_keypressed.KEY_OPTION": [
-              "left arrow"
-            ]
-          }
+          "checkFields": [
+            {
+              "opcode": "sensing_keypressed",
+              "field": "KEY_OPTION",
+              "values": [
+                "left arrow"
+              ]
+            }
+          ]
         }
       ],
       "sampleAnswer": "when [left arrow] key pressed -> change x by -10",
@@ -328,11 +344,15 @@
           "motion_turnleft"
         ]
       ],
-      "checkFields": {
-        "event_whenkeypressed.KEY_OPTION": [
-          "space"
-        ]
-      },
+      "checkFields": [
+        {
+          "opcode": "event_whenkeypressed",
+          "field": "KEY_OPTION",
+          "values": [
+            "space"
+          ]
+        }
+      ],
       "sampleAnswer": "when [space] key pressed -> turn 15 degrees",
       "duration": 75
     },
