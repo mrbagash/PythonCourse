@@ -259,5 +259,112 @@
       "css": "",
       "js": "(function(){\n  var challenges = [\n  {\n    \"title\": \"Straight line, 3 steps\",\n    \"hint\": \"Walk forward 3 times then light().\",\n    \"levelString\": \"Gold: 2\\nSilver: 4\\nBronze: 6\\nDir: 0\\n\\nHeight map:\\n1111\\n\\nItem map:\\nP00L\",\n    \"starter\": \"\"\n  },\n  {\n    \"title\": \"Straight line, 6 steps\",\n    \"hint\": \"Use range(6) in a for loop.\",\n    \"levelString\": \"Gold: 3\\nSilver: 5\\nBronze: 8\\nDir: 0\\n\\nHeight map:\\n1111111\\n\\nItem map:\\nP00000L\",\n    \"starter\": \"# Use range(6) in a for loop\\n\"\n  },\n  {\n    \"title\": \"Two lights in a row\",\n    \"hint\": \"Walk 2, light, walk 2, light.\",\n    \"levelString\": \"Gold: 4\\nSilver: 6\\nBronze: 9\\nDir: 0\\n\\nHeight map:\\n11111\\n\\nItem map:\\nP0L0L\",\n    \"starter\": \"\"\n  },\n  {\n    \"title\": \"L-shape (2 steps each side)\",\n    \"hint\": \"Walk 2, turn right, walk 2, light.\",\n    \"levelString\": \"Gold: 5\\nSilver: 8\\nBronze: 12\\nDir: 0\\n\\nHeight map:\\n111\\n111\\n111\\n\\nItem map:\\nP00\\n000\\n00L\",\n    \"starter\": \"\"\n  },\n  {\n    \"title\": \"L-shape (3+2 steps)\",\n    \"hint\": \"Walk 3 right, turn right, walk 2 down, light.\",\n    \"levelString\": \"Gold: 6\\nSilver: 9\\nBronze: 13\\nDir: 0\\n\\nHeight map:\\n1111\\n1111\\n1111\\n\\nItem map:\\nP000\\n0000\\n000L\",\n    \"starter\": \"\"\n  },\n  {\n    \"title\": \"Square — 2 steps per side\",\n    \"hint\": \"Loop 3 times: walk 2, light, turn right.\",\n    \"levelString\": \"Gold: 4\\nSilver: 6\\nBronze: 10\\nDir: 0\\n\\nHeight map:\\n111\\n101\\n111\\n\\nItem map:\\nP0L\\n000\\nL0L\",\n    \"starter\": \"# Loop 3 times: walk 2, light, turn right\\n\"\n  },\n  {\n    \"title\": \"Square — 4 steps per side\",\n    \"hint\": \"Outer loop 3 times, inner loop 4 times.\",\n    \"levelString\": \"Gold: 4\\nSilver: 6\\nBronze: 9\\nDir: 0\\n\\nHeight map:\\n11111\\n10001\\n10001\\n10001\\n11111\\n\\nItem map:\\nP000L\\n00000\\n00000\\n00000\\nL000L\",\n    \"starter\": \"# Outer loop 3 times\\n# Inner loop - how many steps?\\n\"\n  },\n  {\n    \"title\": \"All 4 corners — 3×3 grid\",\n    \"hint\": \"Loop 4 times: walk 2, light, turn right. The 4th loop will light the start!\",\n    \"levelString\": \"Gold: 5\\nSilver: 8\\nBronze: 12\\nDir: 0\\n\\nHeight map:\\n111\\n101\\n111\\n\\nItem map:\\nP0L\\n000\\nL0L\",\n    \"starter\": \"# Loop 4 times\\n\"\n  },\n  {\n    \"title\": \"All 4 corners — 4×4 grid\",\n    \"hint\": \"Loop 4 times: walk 3, light, turn right.\",\n    \"levelString\": \"Gold: 6\\nSilver: 9\\nBronze: 13\\nDir: 3\\n\\nHeight map:\\n1111\\n1001\\n1001\\n1111\\n\\nItem map:\\nL00L\\n0000\\n0000\\nP00L\",\n    \"starter\": \"# How many steps per side?\\n\"\n  },\n  {\n    \"title\": \"All 4 corners — 6×6 grid\",\n    \"hint\": \"Each side has 5 steps. Loop 4 times.\",\n    \"levelString\": \"Gold: 6\\nSilver: 9\\nBronze: 13\\nDir: 0\\n\\nHeight map:\\n111111\\n100001\\n100001\\n100001\\n100001\\n111111\\n\\nItem map:\\nP0000L\\n000000\\n000000\\n000000\\n000000\\nL0000L\",\n    \"starter\": \"# How many steps on each side of a 6x6 grid?\\n\"\n  }\n];\n  var currentIdx = -1;\n  var streak = 0;\n  var best = parseInt(localStorage.getItem('pylearn_pybot_best') || '0', 10);\n  document.getElementById('el-best').textContent = best;\n\n  function loadChallenge(idx) {\n    var ch = challenges[idx];\n    var frame  = document.getElementById('pybot-endless');\n    var status = document.getElementById('pybot-status-endless');\n    document.getElementById('el-title').textContent = ch.title;\n    document.getElementById('el-hint').textContent = '\\u1F4A1 ' + ch.hint;\n    status.textContent = 'Loading\\u2026';\n\n    if (window.__pybotEndlessListener) {\n      window.removeEventListener('message', window.__pybotEndlessListener);\n    }\n\n    function onMessage(e) {\n      if (e.source !== frame.contentWindow) return;\n      if (e.data.type === 'LEVEL_LOADED') {\n        status.textContent = '\\u2705 Level ready \\u2014 write your code and press Play!';\n        if (ch.starter) {\n          frame.contentWindow.postMessage({ type: 'SET_CODE', data: { code: ch.starter } }, '*');\n        }\n      }\n      if (e.data.type === 'LEVEL_COMPLETE') {\n        streak++;\n        status.innerHTML = '<span class=\"text-green-700 font-bold\">\\u1F389 Complete! ' + (e.data.medal||'') + ' \\u2014 ' + e.data.lines + ' lines in ' + Math.round(e.data.time) + 's</span>';\n        if (streak > best) {\n          best = streak;\n          localStorage.setItem('pylearn_pybot_best', best);\n          document.getElementById('el-best').textContent = best;\n        }\n        document.getElementById('el-streak').textContent = streak;\n        setTimeout(function() {\n          var next = (idx + 1) % challenges.length;\n          loadChallenge(next);\n        }, 2500);\n      }\n    }\n    window.__pybotEndlessListener = onMessage;\n    window.addEventListener('message', onMessage);\n\n    function doLoad() {\n      frame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: ch.levelString } }, '*');\n    }\n    if (frame.contentDocument && frame.contentDocument.readyState === 'complete' && frame.src !== 'about:blank') {\n      doLoad();\n    } else {\n      frame.onload = doLoad;\n      if (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href) {\n        frame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';\n      } else {\n        frame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: ch.levelString } }, '*');\n        if (ch.starter) {\n          setTimeout(function() {\n            frame.contentWindow.postMessage({ type: 'SET_CODE', data: { code: ch.starter } }, '*');\n          }, 800);\n        }\n      }\n    }\n  }\n\n  document.getElementById('el-skip').onclick = function() {\n    streak = 0;\n    document.getElementById('el-streak').textContent = streak;\n    currentIdx = (currentIdx + 1) % challenges.length;\n    loadChallenge(currentIdx);\n  };\n\n  currentIdx = 0;\n  var frame = document.getElementById('pybot-endless');\n  frame.onload = function() { loadChallenge(0); };\n  frame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';\n})();"
     }
+  ],
+  "quizQuestions": [
+    {
+      "type": "pybot_level",
+      "q": "Guide PyBot to the light tile — walk forward and light it up!",
+      "levelString": "Gold: 5\nSilver: 7\nBronze: 10\nDir: 0\n\nHeight map:\n11111\n\nItem map:\nP000L",
+      "starterCode": "",
+      "duration": 90
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk PyBot to the light — can you use a loop to save lines?",
+      "levelString": "Gold: 3\nSilver: 5\nBronze: 8\nDir: 0\n\nHeight map:\n111111\n\nItem map:\nP0000L",
+      "starterCode": "",
+      "duration": 90
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk to the corner and light the tile.",
+      "levelString": "Gold: 4\nSilver: 6\nBronze: 10\nDir: 0\n\nHeight map:\n111\n111\n111\n\nItem map:\nP00\n000\n00L",
+      "starterCode": "",
+      "duration": 90
+    },
+    {
+      "type": "pybot_level",
+      "q": "Turn the corner and light both tiles!",
+      "levelString": "Gold: 5\nSilver: 8\nBronze: 12\nDir: 0\n\nHeight map:\n111\n111\n111\n\nItem map:\nP0L\n000\n00L",
+      "starterCode": "",
+      "duration": 120
+    },
+    {
+      "type": "pybot_level",
+      "q": "Light both tiles at the end of the L-shape.",
+      "levelString": "Gold: 6\nSilver: 9\nBronze: 14\nDir: 0\n\nHeight map:\n11111\n11111\n11111\n\nItem map:\nP0000\n00000\n000LL",
+      "starterCode": "",
+      "duration": 120
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk PyBot around the square and light all three corner tiles.",
+      "levelString": "Gold: 4\nSilver: 7\nBronze: 12\nDir: 0\n\nHeight map:\n111\n101\n111\n\nItem map:\nP0L\n000\nL0L",
+      "starterCode": "",
+      "duration": 150
+    },
+    {
+      "type": "pybot_level",
+      "q": "Light all tiles around the inside of the square. Use nested loops!",
+      "levelString": "Gold: 5\nSilver: 7\nBronze: 10\nDir: 3\n\nHeight map:\n1111\n1001\n1001\n1111\n\nItem map:\nL00L\n0000\n0000\nP00L",
+      "starterCode": "",
+      "duration": 180
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk the 5×5 square perimeter using loops — light all three corner tiles.",
+      "levelString": "Gold: 4\nSilver: 6\nBronze: 9\nDir: 0\n\nHeight map:\n11111\n10001\n10001\n10001\n11111\n\nItem map:\nP000L\n00000\n00000\n00000\nL000L",
+      "starterCode": "",
+      "duration": 180
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk the full perimeter of the 4×4 square — light all four corners.",
+      "levelString": "Gold: 6\nSilver: 8\nBronze: 12\nDir: 3\n\nHeight map:\n1111\n1001\n1001\n1111\n\nItem map:\nL00L\n0000\n0000\nL00L",
+      "starterCode": "",
+      "duration": 180
+    },
+    {
+      "type": "pybot_level",
+      "q": "The next tile is higher — jump up to reach the light!",
+      "levelString": "Gold: 4\nSilver: 6\nBronze: 9\nDir: 0\n\nHeight map:\n112\n\nItem map:\nP0L",
+      "starterCode": "",
+      "duration": 90
+    },
+    {
+      "type": "pybot_level",
+      "q": "Jump over the staircase to reach the light on the other side.",
+      "levelString": "Gold: 3\nSilver: 5\nBronze: 8\nDir: 0\n\nHeight map:\n12321\n\nItem map:\nP000L",
+      "starterCode": "",
+      "duration": 120
+    },
+    {
+      "type": "pybot_level",
+      "q": "Walk and jump up the steps to reach the light at the top.",
+      "levelString": "Gold: 4\nSilver: 6\nBronze: 9\nDir: 0\n\nHeight map:\n11223\n\nItem map:\nP000L",
+      "starterCode": "",
+      "duration": 120
+    },
+    {
+      "type": "pybot_level",
+      "q": "Climb up the big staircase and back down — light is at the bottom!",
+      "levelString": "Gold: 4\nSilver: 6\nBronze: 9\nDir: 0\n\nHeight map:\n1234321\n\nItem map:\nP00000L",
+      "starterCode": "",
+      "duration": 150
+    },
+    {
+      "type": "pybot_level",
+      "q": "Jump between the two platforms and light both tiles!",
+      "levelString": "Gold: 5\nSilver: 8\nBronze: 12\nDir: 0\n\nHeight map:\n1211211\n\nItem map:\nPL00L00",
+      "starterCode": "",
+      "duration": 150
+    },
+    {
+      "type": "pybot_level",
+      "q": "Navigate the valley — jump down into it and back up the other side!",
+      "levelString": "Gold: 5\nSilver: 7\nBronze: 10\nDir: 0\n\nHeight map:\n32223\n\nItem map:\nP000L",
+      "starterCode": "",
+      "duration": 150
+    }
   ]
 }
