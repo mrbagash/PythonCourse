@@ -3760,21 +3760,17 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     var scratchFrame = document.getElementById('qs-scratch-frame');
     if (scratchFrame) scratchFrame.style.pointerEvents = '';
     var scratchLoadKey = qIdx + ':' + questionStart;
+    var scratchSubmitBtn = document.getElementById('btn-quiz-submit-scratch');
+    scratchSubmitBtn.disabled = true;
+    scratchSubmitBtn.textContent = 'Loading editor...';
+    scratchSubmitBtn.onclick = null;
+    document.getElementById('qs-scratch-feedback').textContent = 'Loading TurboWarp editor...';
     if (scratchFrame && scratchFrame.dataset.quizLoadKey !== scratchLoadKey) {
-      scratchFrame.dataset.quizLoadKey = scratchLoadKey;
-      scratchFrame.onload = function() {
-        requestAnimationFrame(scaleScratchQuizFrame);
-      };
-      scratchFrame.src = (scratchFrame.dataset.src || './scratch/editor.html') +
-        '?quiz=' + encodeURIComponent(scratchLoadKey) + '&suppressBeforeUnload=1';
+      loadScratchQuizEditor(qIdx, scratchLoadKey, 0);
     } else {
       requestAnimationFrame(scaleScratchQuizFrame);
+      waitForScratchQuizReady(qIdx, scratchLoadKey, 0);
     }
-    document.getElementById('qs-scratch-feedback').textContent = '';
-    var scratchSubmitBtn = document.getElementById('btn-quiz-submit-scratch');
-    scratchSubmitBtn.disabled = false;
-    scratchSubmitBtn.textContent = 'Check & Submit';
-    scratchSubmitBtn.onclick = function() { submitStudentScratchAnswer(qIdx); };
     document.getElementById('btn-qs-scratch-fs').onclick = toggleQsScratchFullscreen;
     if (window._qsScratchResize) window.removeEventListener('resize', window._qsScratchResize);
     window._qsScratchResize = scaleScratchQuizFrame;
@@ -3970,11 +3966,99 @@ function toggleQsScratchFullscreen() {
   scaleScratchQuizFrame();
 }
 
+function clearScratchQuizLoadTimers() {
+  if (window._qsScratchLoadTimer) {
+    clearTimeout(window._qsScratchLoadTimer);
+    window._qsScratchLoadTimer = null;
+  }
+  if (window._qsScratchReadyTimer) {
+    clearTimeout(window._qsScratchReadyTimer);
+    window._qsScratchReadyTimer = null;
+  }
+}
+
+function scratchQuizEditorUrl(loadKey, attempt) {
+  return './scratch/editor.html?quiz=' + encodeURIComponent(loadKey) +
+    '&suppressBeforeUnload=1&attempt=' + encodeURIComponent(attempt || 0);
+}
+
+function loadScratchQuizEditor(qIdx, loadKey, attempt) {
+  var frame = document.getElementById('qs-scratch-frame');
+  var fb = document.getElementById('qs-scratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-scratch');
+  if (!frame || !submitBtn) return;
+  clearScratchQuizLoadTimers();
+  frame.style.pointerEvents = '';
+  frame.dataset.quizLoadKey = loadKey;
+  frame.dataset.quizLoadAttempt = String(attempt || 0);
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Loading editor...';
+  submitBtn.onclick = null;
+  if (fb) fb.textContent = attempt ? 'Reloading TurboWarp editor...' : 'Loading TurboWarp editor...';
+  frame.onload = function() {
+    requestAnimationFrame(scaleScratchQuizFrame);
+    waitForScratchQuizReady(qIdx, loadKey, attempt || 0);
+  };
+  frame.src = scratchQuizEditorUrl(loadKey, attempt || 0);
+  waitForScratchQuizReady(qIdx, loadKey, attempt || 0);
+}
+
+function waitForScratchQuizReady(qIdx, loadKey, attempt) {
+  var frame = document.getElementById('qs-scratch-frame');
+  var fb = document.getElementById('qs-scratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-scratch');
+  if (!frame || !submitBtn || frame.dataset.quizLoadKey !== loadKey) return;
+  clearScratchQuizLoadTimers();
+  var started = Date.now();
+  function isReady() {
+    try {
+      return !!(frame.contentWindow && frame.contentWindow.vm &&
+        frame.contentWindow.vm.runtime && frame.contentWindow.vm.runtime.targets);
+    } catch(e) {
+      return false;
+    }
+  }
+  function finishReady() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Check & Submit';
+    submitBtn.onclick = function() { submitStudentScratchAnswer(qIdx); };
+    if (fb) fb.textContent = '';
+  }
+  function showManualReload() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Reload editor';
+    submitBtn.onclick = function() { loadScratchQuizEditor(qIdx, loadKey, (attempt || 0) + 1); };
+    if (fb) fb.textContent = 'TurboWarp is taking too long to load. Reload the editor, then try the question again.';
+  }
+  function poll() {
+    var answerBox = document.getElementById('qs-scratch-answer');
+    if (!answerBox || answerBox.classList.contains('hidden') || frame.dataset.quizLoadKey !== loadKey) return;
+    if (isReady()) {
+      finishReady();
+      return;
+    }
+    if (Date.now() - started > 12000) {
+      if ((attempt || 0) < 1) loadScratchQuizEditor(qIdx, loadKey, (attempt || 0) + 1);
+      else showManualReload();
+      return;
+    }
+    window._qsScratchReadyTimer = setTimeout(poll, 250);
+  }
+  window._qsScratchLoadTimer = setTimeout(function() {
+    if (!isReady() && frame.dataset.quizLoadKey === loadKey) {
+      if ((attempt || 0) < 1) loadScratchQuizEditor(qIdx, loadKey, (attempt || 0) + 1);
+      else showManualReload();
+    }
+  }, 12000);
+  poll();
+}
+
 function resetScratchQuizFrame() {
   var frame = document.getElementById('qs-scratch-frame');
   if (!frame) return;
   var wrap = document.getElementById('qs-scratch-wrap');
   if (wrap && wrap.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
+  clearScratchQuizLoadTimers();
   frame.style.pointerEvents = '';
   frame.onload = null;
   frame.dataset.quizLoadKey = '';
