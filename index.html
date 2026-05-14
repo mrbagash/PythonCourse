@@ -2948,6 +2948,8 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         sampleAnswer: q.sampleAnswer || null,
         check: q.check || null,
         checkCounts: q.checkCounts || null,
+        checkFields: q.checkFields || null,
+        checkAlternatives: q.checkAlternatives || null,
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -3997,21 +3999,44 @@ async function submitStudentScratchAnswer(qIdx) {
 
 function collectScratchOpcodes(targets) {
   var counts = {};
+  var fields = {};
   for (var t = 0; t < targets.length; t++) {
     var blks = targets[t].blocks._blocks;
     for (var id in blks) {
-      var opcode = blks[id] && blks[id].opcode;
+      var block = blks[id] || {};
+      var opcode = block.opcode;
       if (opcode) counts[opcode] = (counts[opcode] || 0) + 1;
+      if (opcode && block.fields) {
+        Object.keys(block.fields).forEach(function(name) {
+          var field = block.fields[name];
+          var value = Array.isArray(field) ? field[0] : field && field.value != null ? field.value : field;
+          var key = opcode + '.' + name;
+          if (!fields[key]) fields[key] = [];
+          fields[key].push(String(value).toLowerCase());
+        });
+      }
     }
   }
   return {
     countAny: function(group) {
       return group.reduce(function(total, opcode) { return total + (counts[opcode] || 0); }, 0);
+    },
+    fieldMatches: function(key, accepted) {
+      var values = fields[key] || [];
+      accepted = (Array.isArray(accepted) ? accepted : [accepted]).map(function(v) { return String(v).toLowerCase(); });
+      return values.some(function(value) { return accepted.indexOf(value) !== -1; });
     }
   };
 }
 
 function scratchBuildMatches(q, info) {
+  if (Array.isArray(q.checkAlternatives) && q.checkAlternatives.length) {
+    return q.checkAlternatives.some(function(rule) { return scratchBuildRuleMatches(rule, info); });
+  }
+  return scratchBuildRuleMatches(q, info);
+}
+
+function scratchBuildRuleMatches(q, info) {
   var required = q.check || [];
   var groupsOk = required.every(function(item) {
     var group = Array.isArray(item) ? item : [item];
@@ -4019,9 +4044,14 @@ function scratchBuildMatches(q, info) {
   });
   if (!groupsOk) return false;
   var counts = q.checkCounts || {};
-  return Object.keys(counts).every(function(key) {
+  var countsOk = Object.keys(counts).every(function(key) {
     var group = key.indexOf('|') >= 0 ? key.split('|') : [key];
     return info.countAny(group) >= counts[key];
+  });
+  if (!countsOk) return false;
+  var fields = q.checkFields || {};
+  return Object.keys(fields).every(function(key) {
+    return info.fieldMatches(key, fields[key]);
   });
 }
 

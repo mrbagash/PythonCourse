@@ -215,6 +215,143 @@
     },
     {
       "type": "scratch_build",
+      "q": "Build a script that moves the sprite to the right when the right arrow key is pressed. Click Check & Submit when done.",
+      "checkAlternatives": [
+        {
+          "check": [
+            "event_whenkeypressed",
+            [
+              "motion_changexby",
+              "motion_movesteps",
+              "motion_setx",
+              "motion_glidesecstoxy"
+            ]
+          ],
+          "checkFields": {
+            "event_whenkeypressed.KEY_OPTION": [
+              "right arrow"
+            ]
+          }
+        },
+        {
+          "check": [
+            "sensing_keypressed",
+            [
+              "control_forever",
+              "control_if"
+            ],
+            [
+              "motion_changexby",
+              "motion_movesteps",
+              "motion_setx",
+              "motion_glidesecstoxy"
+            ]
+          ],
+          "checkFields": {
+            "sensing_keypressed.KEY_OPTION": [
+              "right arrow"
+            ]
+          }
+        }
+      ],
+      "sampleAnswer": "when [right arrow] key pressed -> change x by 10",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that moves the sprite to the left when the left arrow key is pressed. Click Check & Submit when done.",
+      "checkAlternatives": [
+        {
+          "check": [
+            "event_whenkeypressed",
+            [
+              "motion_changexby",
+              "motion_movesteps",
+              "motion_setx",
+              "motion_glidesecstoxy"
+            ]
+          ],
+          "checkFields": {
+            "event_whenkeypressed.KEY_OPTION": [
+              "left arrow"
+            ]
+          }
+        },
+        {
+          "check": [
+            "sensing_keypressed",
+            [
+              "control_forever",
+              "control_if"
+            ],
+            [
+              "motion_changexby",
+              "motion_movesteps",
+              "motion_setx",
+              "motion_glidesecstoxy"
+            ]
+          ],
+          "checkFields": {
+            "sensing_keypressed.KEY_OPTION": [
+              "left arrow"
+            ]
+          }
+        }
+      ],
+      "sampleAnswer": "when [left arrow] key pressed -> change x by -10",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that starts when the green flag is clicked and moves the sprite. Click Check & Submit when done.",
+      "check": [
+        "event_whenflagclicked",
+        [
+          "motion_movesteps",
+          "motion_changexby",
+          "motion_changeyby",
+          "motion_setx",
+          "motion_sety",
+          "motion_glidesecstoxy"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked -> move 10 steps",
+      "duration": 75
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that makes the sprite turn when the space key is pressed. Click Check & Submit when done.",
+      "check": [
+        "event_whenkeypressed",
+        [
+          "motion_turnright",
+          "motion_turnleft"
+        ]
+      ],
+      "checkFields": {
+        "event_whenkeypressed.KEY_OPTION": [
+          "space"
+        ]
+      },
+      "sampleAnswer": "when [space] key pressed -> turn 15 degrees",
+      "duration": 75
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that starts when the green flag is clicked and resets the sprite's position. Click Check & Submit when done.",
+      "check": [
+        "event_whenflagclicked",
+        [
+          "motion_gotoxy",
+          "motion_setx",
+          "motion_sety"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked -> go to x: 0 y: 0",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
       "q": "Build a simple script that starts when the green flag is clicked and makes the sprite say hello. Click Check & Submit when done.",
       "check": [
         "event_whenflagclicked",
