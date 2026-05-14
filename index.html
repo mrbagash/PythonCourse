@@ -3376,20 +3376,12 @@ function setStudentView(view) {
   });
 }
 
-function preloadPyBotFrame() {
-  var frame = document.getElementById('qs-pybot-frame');
-  var pyBotUrl = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
-  if (!frame || frame.src === pyBotUrl) return;
-  frame.src = pyBotUrl;
-}
 
 function showStudentScreen(lobbyCode, questions) {
   quiz.questions = questions;
   document.getElementById('quiz-student-screen').classList.remove('hidden');
   document.getElementById('qs-my-code').textContent = 'Your code: ' + state.uid;
   setStudentView('lobby');
-  // Eagerly load PyBot in the background during the lobby if any question needs it
-  if (questions.some(function(q) { return q.type === 'pybot_level'; })) preloadPyBotFrame();
 
   var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
 
@@ -3672,9 +3664,8 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     };
     window.addEventListener('message', window._qsPyBotMsg);
 
-    // Always do a fresh load so Three.js initialises with a visible canvas.
-    // (Loading while display:none prevents WebGL context creation, breaking initEmbedListener.)
-    // Assets are browser-cached from preloadPyBotFrame so this is fast.
+    // Append _q param so each question gets a distinct URL — browsers won't reload
+    // on same-URL assignment, which would silently swallow the onload event.
     pyBotFrame.onload = function() {
       requestAnimationFrame(scalePyBotQuizFrame);
       var attempts = 0;
@@ -3687,7 +3678,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
         sendLevel();
       }, 500);
     };
-    pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
+    pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true&_q=' + qIdx + '_' + questionStart;
     document.getElementById('btn-qs-pybot-fs').onclick = toggleQsPyBotFullscreen;
     if (window._qsPyBotResize) window.removeEventListener('resize', window._qsPyBotResize);
     window._qsPyBotResize = scalePyBotQuizFrame;
@@ -3872,12 +3863,12 @@ function toggleQsPyBotFullscreen() {
 
 async function submitStudentPyBotAnswer(qIdx, medal, lines) {
   if (quiz.myAnswered) return;
-  var correct = !!medal;
-  var medalEmoji = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : medal === 'bronze' ? '🥉' : '';
+  // PyBot sends emoji strings directly: '🥇','🥈','🥉', or '🤷‍♂️' for no medal
+  var correct = medal === '🥇' || medal === '🥈' || medal === '🥉';
   quiz.myAnswered = true;
   lockStudentAnswers();
   var fb = document.getElementById('qs-pybot-feedback');
-  if (fb) fb.textContent = medalEmoji ? medalEmoji + ' Level complete! ' + lines + ' line' + (lines === 1 ? '' : 's') + ' used.' : 'Level complete — no medal.';
+  if (fb) fb.textContent = correct ? medal + ' Level complete! ' + lines + ' line' + (lines === 1 ? '' : 's') + ' used.' : 'Level complete — no medal.';
   await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
     correct: correct,
     medal: medal || '',
@@ -4069,8 +4060,8 @@ function renderStudentReveal(q, qIdx) {
     if (isPyBot) {
       var medal = snap.exists() ? snap.child('medal').val() : '';
       var lines = snap.exists() ? snap.child('lines').val() : 0;
-      var medalEmoji = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : medal === 'bronze' ? '🥉' : '';
-      revealEl.textContent = medalEmoji ? medalEmoji + ' ' + lines + ' line' + (lines === 1 ? '' : 's') : (snap.exists() ? 'No medal' : 'Not completed');
+      var correct2 = medal === '🥇' || medal === '🥈' || medal === '🥉';
+      revealEl.textContent = correct2 ? medal + ' ' + lines + ' line' + (lines === 1 ? '' : 's') : (snap.exists() ? 'No medal' : 'Not completed');
     } else if (isTextInput || isWidget) {
       revealEl.textContent = 'Answer: ' + q.answer;
     } else if (isScratch) {
