@@ -3652,13 +3652,11 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   } else if (isPyBot) {
     var pyBotFrame = document.getElementById('qs-pybot-frame');
     var pyBotFb    = document.getElementById('qs-pybot-feedback');
-    if (pyBotFb) pyBotFb.textContent = 'Complete the level to submit.';
-    var pyBotLoadKey = qIdx + ':' + questionStart;
-    // Cancel any in-flight level-send retry from a previous question
+    if (pyBotFb) pyBotFb.textContent = 'Loading level…';
+
     if (window._qsPyBotRetryInterval) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; }
     if (window._qsPyBotMsg) { window.removeEventListener('message', window._qsPyBotMsg); window._qsPyBotMsg = null; }
 
-    // Set up message listener BEFORE loading the iframe so we never miss LEVEL_LOADED
     var levelAcked = false;
     window._qsPyBotMsg = function(e) {
       if (e.origin !== 'https://jquinney-hue.github.io') return;
@@ -3674,32 +3672,22 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     };
     window.addEventListener('message', window._qsPyBotMsg);
 
-    function sendLevel() {
-      try { pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*'); } catch(e2) {}
-    }
-
-    function startRetry() {
+    // Always do a fresh load so Three.js initialises with a visible canvas.
+    // (Loading while display:none prevents WebGL context creation, breaking initEmbedListener.)
+    // Assets are browser-cached from preloadPyBotFrame so this is fast.
+    pyBotFrame.onload = function() {
       requestAnimationFrame(scalePyBotQuizFrame);
-      sendLevel();
       var attempts = 0;
+      function sendLevel() {
+        try { pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*'); } catch(e2) {}
+      }
+      sendLevel();
       window._qsPyBotRetryInterval = setInterval(function() {
         if (levelAcked || ++attempts > 20) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
         sendLevel();
       }, 500);
-    }
-
-    var pyBotUrl = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
-    var alreadyAtPyBot = pyBotFrame && pyBotFrame.src === pyBotUrl;
-    if (alreadyAtPyBot) {
-      // Preloaded during lobby — PyBot is already running, just send the level
-      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
-      startRetry();
-    } else {
-      // Not yet loaded — set src now and send level once iframe is ready
-      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
-      pyBotFrame.onload = startRetry;
-      pyBotFrame.src = pyBotUrl;
-    }
+    };
+    pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
     document.getElementById('btn-qs-pybot-fs').onclick = toggleQsPyBotFullscreen;
     if (window._qsPyBotResize) window.removeEventListener('resize', window._qsPyBotResize);
     window._qsPyBotResize = scalePyBotQuizFrame;
