@@ -97,6 +97,26 @@
       (function () {
         'use strict';
 
+        if (/[?&]suppressBeforeUnload=1(?:&|$)/.test(location.search)) {
+          try {
+            Object.defineProperty(window, 'onbeforeunload', {
+              configurable: true,
+              get: function () {
+                return null;
+              },
+              set: function () {
+                return true;
+              }
+            });
+          } catch (e) {
+            window.onbeforeunload = null;
+          }
+          window.addEventListener('beforeunload', function (e) {
+            e.stopImmediatePropagation();
+            delete e.returnValue;
+          }, true);
+        }
+
         var theme = '';
         var accent = '#ff4c4c';
 

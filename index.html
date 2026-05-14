@@ -3758,6 +3758,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     setTimeout(function() { codeInput.focus(); }, 0);
   } else if (isScratch) {
     var scratchFrame = document.getElementById('qs-scratch-frame');
+    if (scratchFrame) scratchFrame.style.pointerEvents = '';
     var scratchLoadKey = qIdx + ':' + questionStart;
     if (scratchFrame && scratchFrame.dataset.quizLoadKey !== scratchLoadKey) {
       scratchFrame.dataset.quizLoadKey = scratchLoadKey;
@@ -3765,13 +3766,15 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
         requestAnimationFrame(scaleScratchQuizFrame);
       };
       scratchFrame.src = (scratchFrame.dataset.src || './scratch/editor.html') +
-        '?quiz=' + encodeURIComponent(scratchLoadKey);
+        '?quiz=' + encodeURIComponent(scratchLoadKey) + '&suppressBeforeUnload=1';
     } else {
       requestAnimationFrame(scaleScratchQuizFrame);
     }
     document.getElementById('qs-scratch-feedback').textContent = '';
-    document.getElementById('btn-quiz-submit-scratch').disabled = false;
-    document.getElementById('btn-quiz-submit-scratch').onclick = function() { submitStudentScratchAnswer(qIdx); };
+    var scratchSubmitBtn = document.getElementById('btn-quiz-submit-scratch');
+    scratchSubmitBtn.disabled = false;
+    scratchSubmitBtn.textContent = 'Check & Submit';
+    scratchSubmitBtn.onclick = function() { submitStudentScratchAnswer(qIdx); };
     document.getElementById('btn-qs-scratch-fs').onclick = toggleQsScratchFullscreen;
     if (window._qsScratchResize) window.removeEventListener('resize', window._qsScratchResize);
     window._qsScratchResize = scaleScratchQuizFrame;
@@ -3972,8 +3975,12 @@ function resetScratchQuizFrame() {
   if (!frame) return;
   var wrap = document.getElementById('qs-scratch-wrap');
   if (wrap && wrap.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
+  frame.style.pointerEvents = '';
   frame.onload = null;
   frame.dataset.quizLoadKey = '';
+  try {
+    if (frame.contentWindow) frame.contentWindow.onbeforeunload = null;
+  } catch(e) {}
   if (frame.src !== 'about:blank') frame.src = 'about:blank';
 }
 
@@ -4061,11 +4068,7 @@ async function submitStudentScratchAnswer(qIdx) {
     }
     if (!correct) {
       if (fb) fb.textContent = 'Not quite yet. Check the required event, blocks and condition, then try again.';
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText || 'Check & Submit';
-      }
-      if (frame) frame.style.pointerEvents = '';
+      unlockScratchTesting(frame, submitBtn, originalText);
       return;
     }
     quiz.myAnswered = true;
@@ -4077,13 +4080,17 @@ async function submitStudentScratchAnswer(qIdx) {
     document.getElementById('qs-answered-msg').classList.remove('hidden');
     document.getElementById('qs-scratch-answer').classList.add('hidden');
   } catch(e) {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText || 'Check & Submit';
-    }
-    if (frame) frame.style.pointerEvents = '';
+    unlockScratchTesting(frame, submitBtn, originalText);
     if (fb) fb.textContent = 'Could not check: ' + e.message;
   }
+}
+
+function unlockScratchTesting(frame, submitBtn, originalText) {
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText || 'Check & Submit';
+  }
+  if (frame) frame.style.pointerEvents = '';
 }
 
 async function runScratchRuntimeTest(q, vm) {
