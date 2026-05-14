@@ -557,7 +557,8 @@
     <div class="h-2 bg-gray-700"><div id="qh-timer-bar" class="h-2 bg-green-500 transition-all" style="width:100%"></div></div>
     <!-- Question text -->
     <div class="flex-1 flex flex-col items-center justify-center px-8">
-      <div id="qh-q-text" class="text-2xl font-bold text-center mb-8 max-w-3xl leading-snug"></div>
+      <div id="qh-q-text" class="text-2xl font-bold text-center mb-4 max-w-3xl leading-snug"></div>
+      <div id="qh-q-visual" class="hidden ex-box w-full max-w-2xl overflow-x-auto mb-6"></div>
       <!-- 4 answer boxes (display only for host) -->
       <div class="grid grid-cols-2 gap-4 w-full max-w-2xl">
         <div id="qh-opt-0" class="rounded-xl p-4 text-center font-semibold text-lg bg-red-600"></div>
@@ -621,7 +622,8 @@
     </div>
     <div class="h-1.5 bg-gray-700"><div id="qs-timer-bar" class="h-1.5 bg-green-500 transition-all" style="width:100%"></div></div>
     <div class="flex-1 flex flex-col items-center justify-center px-6 pb-4">
-      <div id="qs-q-text" class="text-xl font-bold text-center mb-6 max-w-2xl leading-snug"></div>
+      <div id="qs-q-text" class="text-xl font-bold text-center mb-4 max-w-2xl leading-snug"></div>
+      <div id="qs-q-visual" class="hidden ex-box w-full max-w-xl overflow-x-auto mb-4"></div>
       <div id="qs-answered-msg" class="hidden text-green-400 font-semibold text-lg mb-4">&#x2713; Answer submitted!</div>
       <div id="qs-answer-grid" class="grid grid-cols-2 gap-3 w-full max-w-xl">
         <button class="quiz-ans-btn rounded-xl py-5 px-4 font-bold text-base bg-red-600 hover:bg-red-500 active:scale-95 transition-transform" data-idx="0">&#x25CF; <span></span></button>
@@ -1411,7 +1413,7 @@ window.BinaryLesson = (() => {
     }
     render();
   }
-  return { bitTable, addTable, addTablePartial, createStepper, createPractice, createEndless, genQuestion };
+  return { bitTable, addTable, addTablePartial, mountBitInput, mountAddInput, createStepper, createPractice, createEndless, genQuestion };
 })();
 
 
@@ -2905,6 +2907,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
       return {
         type: q.type || 'mcq',
         q: q.q || '',
+        html: q.html || null,
         options: q.options || null,
         answer: isCodeType ? null : (q.answer != null ? q.answer : 0),
         rowA: q.rowA || null,
@@ -2915,13 +2918,17 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         inputs: q.inputs || null,
         expectedOutput: q.expectedOutput != null ? q.expectedOutput : null,
         expectedContains: q.expectedContains != null ? q.expectedContains : null,
-        sampleAnswer: q.sampleAnswer || null
+        sampleAnswer: q.sampleAnswer || null,
+        check: q.check || null,
+        levelString: q.levelString || null,
+        starterCode: q.starterCode || null
       };
     }),
   });
 
-  // Remove session when host disconnects
-  quiz.sessionRef.onDisconnect().remove();
+  // Do not remove the whole quiz on a transient host disconnect. Students can be
+  // dropped from Firebase briefly during heavy embedded tasks, so quizzes are
+  // cleaned up explicitly when the host ends/finishes them instead.
 
   showQuizHostScreen();
 };
@@ -3025,11 +3032,28 @@ async function startNextQuestion() {
 
   // Render host question view
   safeText(document.getElementById('qh-q-text'), q.q);
-  var isCodeQuestion = q.type && q.type !== 'mcq';
+  var hostVisual = document.getElementById('qh-q-visual');
+  if (q.html) {
+    hostVisual.innerHTML = q.html;
+    hostVisual.classList.remove('hidden');
+  } else {
+    hostVisual.innerHTML = '';
+    hostVisual.classList.add('hidden');
+  }
+  var isTextInput = q.type === 'text_input';
+  var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
+  var isScratch = q.type === 'scratch_build';
+  var isPyBot = q.type === 'pybot_level';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
   var hostOptions = ['qh-opt-0','qh-opt-1','qh-opt-2','qh-opt-3'].map(function(id) { return document.getElementById(id); });
-  if (isCodeQuestion) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) {
+    var label = isWidget ? 'Interactive answer'
+      : isTextInput ? 'Typed answer'
+      : isScratch ? 'Scratch build'
+      : isPyBot ? 'PyBot level'
+      : 'Code answer';
     hostOptions.forEach(function(el) {
-      el.textContent = 'Code answer';
+      el.textContent = label;
       el.className = 'rounded-xl p-4 text-center font-semibold text-lg bg-gray-700 text-gray-200';
     });
   } else {
@@ -3085,7 +3109,9 @@ async function showAnswerReveal() {
   var now = Date.now();
   var isTextInput = q.type === 'text_input';
   var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && !isTextInput && !isWidget;
+  var isScratch = q.type === 'scratch_build';
+  var isPyBot = q.type === 'pybot_level';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
 
@@ -3093,6 +3119,12 @@ async function showAnswerReveal() {
   if (isTextInput || isWidget) {
     safeText(revealEl, 'Answer: ' + q.answer);
     revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono';
+  } else if (isPyBot) {
+    safeText(revealEl, q.sampleAnswer || 'Complete the PyBot level');
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
+  } else if (isScratch) {
+    safeText(revealEl, q.sampleAnswer || "See your teacher's screen");
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
   } else if (isCodeQuestion) {
     safeText(revealEl, q.sampleAnswer || 'Teacher checks accepted code');
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono whitespace-pre-wrap';
@@ -3117,7 +3149,7 @@ async function showAnswerReveal() {
     qiSnap.forEach(function(child) {
       var code = child.key;
       if (!scores[code]) scores[code] = 0;
-      var correct = (qiQ.type && qiQ.type !== 'mcq')
+      var correct = (qiQ.type && qiQ.type !== 'mcq' && qiQ.type !== 'scratch_mcq')
         ? child.child('correct').val() === true
         : child.child('answer').val() === qiQ.answer;
       if (correct) scores[code]++;
@@ -3128,7 +3160,7 @@ async function showAnswerReveal() {
   var distEl = document.createElement('div');
   distEl.className = 'flex flex-col gap-2 min-w-48';
   var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
-  if (isCodeQuestion || isTextInput || isWidget) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) {
     var codeCorrect = 0, codeTotal = 0;
     if (currentQSnap && currentQSnap.exists()) {
       currentQSnap.forEach(function(child) {
@@ -3261,7 +3293,7 @@ async function buildLeaderboard() {
       var code   = child.key;
       var answer = child.child('answer').val();
       if (!scores[code]) scores[code] = 0;
-      if ((q.type && q.type !== 'mcq') ? child.child('correct').val() === true : answer === q.answer) scores[code]++;
+      if ((q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq') ? child.child('correct').val() === true : answer === q.answer) scores[code]++;
     });
   }
   // Add players who answered nothing
@@ -3559,6 +3591,14 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   if (!q) return;
 
   renderTextWithBlocks(document.getElementById('qs-q-text'), q.q);
+  var quizVisual = document.getElementById('qs-q-visual');
+  if (q.html) {
+    quizVisual.innerHTML = q.html;
+    quizVisual.classList.remove('hidden');
+  } else {
+    quizVisual.innerHTML = '';
+    quizVisual.classList.add('hidden');
+  }
   document.getElementById('qs-q-progress').textContent =
     'Question ' + (qIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qs-answered-msg').classList.add('hidden');
@@ -3582,7 +3622,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     var widgetContainer = document.getElementById('qs-widget-container');
     widgetContainer.innerHTML = '';
     if (q.type === 'bit_input') {
-      quiz.currentWidget = BinaryLesson.mountBitInput(widgetContainer);
+      quiz.currentWidget = BinaryLesson.mountBitInput(widgetContainer, { showTotal: true });
     } else if (q.type === 'addition_input') {
       quiz.currentWidget = BinaryLesson.mountAddInput(widgetContainer, q.rowA, q.rowB);
     }
@@ -3671,6 +3711,11 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
       var attempts = 0;
       function sendLevel() {
         try { pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*'); } catch(e2) {}
+        if (q.starterCode) {
+          setTimeout(function() {
+            try { pyBotFrame.contentWindow.postMessage({ type: 'SET_CODE', data: { code: q.starterCode } }, '*'); } catch(e3) {}
+          }, 500);
+        }
       }
       sendLevel();
       window._qsPyBotRetryInterval = setInterval(function() {
