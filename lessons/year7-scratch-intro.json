@@ -263,7 +263,13 @@
         }
       ],
       "sampleAnswer": "when [right arrow] key pressed -> change x by 10",
-      "duration": 90
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "keyMoves",
+        "key": "ArrowRight",
+        "axis": "x",
+        "direction": "positive"
+      }
     },
     {
       "type": "scratch_build",
@@ -315,7 +321,13 @@
         }
       ],
       "sampleAnswer": "when [left arrow] key pressed -> change x by -10",
-      "duration": 90
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "keyMoves",
+        "key": "ArrowLeft",
+        "axis": "x",
+        "direction": "negative"
+      }
     },
     {
       "type": "scratch_build",
@@ -332,7 +344,10 @@
         ]
       ],
       "sampleAnswer": "when flag clicked -> move 10 steps",
-      "duration": 75
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
     },
     {
       "type": "scratch_build",
@@ -354,7 +369,11 @@
         }
       ],
       "sampleAnswer": "when [space] key pressed -> turn 15 degrees",
-      "duration": 75
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "keyTurns",
+        "key": " "
+      }
     },
     {
       "type": "scratch_build",
@@ -368,7 +387,10 @@
         ]
       ],
       "sampleAnswer": "when flag clicked -> go to x: 0 y: 0",
-      "duration": 90
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "greenFlagResetsPosition"
+      }
     },
     {
       "type": "scratch_build",
@@ -401,7 +423,12 @@
         "data_setvariableto"
       ],
       "sampleAnswer": "ask [What is your name?] and wait -> set [name] to (answer)",
-      "duration": 105
+      "duration": 105,
+      "runtimeTest": {
+        "kind": "askStores",
+        "answer": "Sam",
+        "waitMs": 900
+      }
     },
     {
       "type": "scratch_build",
@@ -428,7 +455,13 @@
         ]
       ],
       "sampleAnswer": "when flag clicked -> ask [] and wait -> set [name] to (answer) -> say (join [Hello ] (name)) for 2 seconds",
-      "duration": 120
+      "duration": 120,
+      "runtimeTest": {
+        "kind": "askStoresAndSays",
+        "answer": "Sam",
+        "requireSpeech": false,
+        "waitMs": 1200
+      }
     }
   ]
 }

@@ -2979,6 +2979,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         checkCounts: q.checkCounts || null,
         checkFields: normaliseScratchCheckFields(q.checkFields),
         checkAlternatives: normaliseScratchCheckAlternatives(q.checkAlternatives),
+        runtimeTest: q.runtimeTest || null,
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -4041,11 +4042,32 @@ async function submitStudentScratchAnswer(qIdx) {
   var q = quiz.questions[qIdx];
   var frame = document.getElementById('qs-scratch-frame');
   var fb = document.getElementById('qs-scratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-scratch');
+  var originalText = submitBtn ? submitBtn.textContent : '';
   try {
     var vm = frame.contentWindow.vm;
-    if (!vm) { fb.textContent = 'Editor still loading — wait a moment and try again.'; return; }
-    var targets = vm.runtime.targets;
-    var correct = scratchBuildMatches(q, collectScratchOpcodes(targets));
+    if (!vm) { fb.textContent = 'Editor still loading - wait a moment and try again.'; return; }
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Testing...';
+    }
+    if (frame) frame.style.pointerEvents = 'none';
+    if (fb) fb.textContent = 'Running a test with simulated input...';
+    var runtimeResult = await runScratchRuntimeTest(q, vm);
+    var correct = runtimeResult === true;
+    if (!correct) {
+      var targets = vm.runtime.targets;
+      correct = scratchBuildMatches(q, collectScratchOpcodes(targets));
+    }
+    if (!correct) {
+      if (fb) fb.textContent = 'Not quite yet. Check the required event, blocks and condition, then try again.';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText || 'Check & Submit';
+      }
+      if (frame) frame.style.pointerEvents = '';
+      return;
+    }
     quiz.myAnswered = true;
     lockStudentAnswers();
     await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
@@ -4055,26 +4077,153 @@ async function submitStudentScratchAnswer(qIdx) {
     document.getElementById('qs-answered-msg').classList.remove('hidden');
     document.getElementById('qs-scratch-answer').classList.add('hidden');
   } catch(e) {
-    fb.textContent = 'Could not check: ' + e.message;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText || 'Check & Submit';
+    }
+    if (frame) frame.style.pointerEvents = '';
+    if (fb) fb.textContent = 'Could not check: ' + e.message;
   }
+}
+
+async function runScratchRuntimeTest(q, vm) {
+  var test = q.runtimeTest;
+  if (!test || !vm || !vm.runtime) return null;
+  var runtime = vm.runtime;
+  var target = getScratchMainSprite(runtime);
+  if (!target) return null;
+  runtime.stopAll();
+  await waitMs(80);
+
+  if (test.kind === 'keyMoves') {
+    target.setXY(0, 0);
+    var startX = target.x;
+    var startY = target.y;
+    postScratchKey(runtime, test.key || 'ArrowRight', true);
+    await waitMs(test.holdMs || 220);
+    postScratchKey(runtime, test.key || 'ArrowRight', false);
+    await waitMs(80);
+    runtime.stopAll();
+    if (test.axis === 'y') {
+      return test.direction === 'negative' ? target.y < startY : target.y > startY;
+    }
+    return test.direction === 'negative' ? target.x < startX : target.x > startX;
+  }
+
+  if (test.kind === 'greenFlagMoves') {
+    target.setXY(0, 0);
+    var moveX = target.x;
+    var moveY = target.y;
+    runtime.greenFlag();
+    await waitMs(test.waitMs || 300);
+    runtime.stopAll();
+    return Math.abs(target.x - moveX) + Math.abs(target.y - moveY) >= 1;
+  }
+
+  if (test.kind === 'greenFlagResetsPosition') {
+    target.setXY(90, 70);
+    runtime.greenFlag();
+    await waitMs(test.waitMs || 300);
+    runtime.stopAll();
+    return Math.abs(target.x) <= 5 && Math.abs(target.y) <= 5;
+  }
+
+  if (test.kind === 'keyTurns') {
+    var startDir = target.direction;
+    postScratchKey(runtime, test.key || ' ', true);
+    await waitMs(test.holdMs || 220);
+    postScratchKey(runtime, test.key || ' ', false);
+    await waitMs(80);
+    runtime.stopAll();
+    return Math.abs(target.direction - startDir) >= 1;
+  }
+
+  if (test.kind === 'askStores' || test.kind === 'askStoresAndSays') {
+    var said = [];
+    var answer = test.answer || 'Sam';
+    var sayHandler = function(target, type, text) {
+      if (text != null) said.push(String(text));
+    };
+    if (test.kind === 'askStoresAndSays' && runtime.on) runtime.on('SAY', sayHandler);
+    autoAnswerScratch(runtime, answer);
+    runtime.greenFlag();
+    await waitMs(test.waitMs || 1100);
+    if (runtime.off) runtime.off('SAY', sayHandler);
+    runtime.stopAll();
+    var answerNorm = normaliseScratchFieldValue(answer);
+    var stored = getScratchVariableValues(runtime).some(function(value) {
+      return normaliseScratchFieldValue(value) === answerNorm;
+    });
+    if (test.kind === 'askStores') return stored;
+    var spoken = said.some(function(text) {
+      return normaliseScratchFieldValue(text).indexOf(answerNorm) !== -1;
+    });
+    return stored && (spoken || !test.requireSpeech);
+  }
+
+  return null;
+}
+
+function getScratchMainSprite(runtime) {
+  var targets = runtime.targets || [];
+  for (var i = 0; i < targets.length; i++) {
+    if (targets[i] && !targets[i].isStage) return targets[i];
+  }
+  return null;
+}
+
+function waitMs(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
+function postScratchKey(runtime, key, isDown) {
+  if (!runtime.ioDevices || !runtime.ioDevices.keyboard) return;
+  runtime.ioDevices.keyboard.postData({ key: key, isDown: isDown });
+}
+
+function autoAnswerScratch(runtime, answer) {
+  if (!runtime.on) return;
+  var answered = false;
+  var handler = function() {
+    if (answered) return;
+    answered = true;
+    setTimeout(function() { runtime.emit('ANSWER', answer); }, 20);
+    if (runtime.off) runtime.off('QUESTION', handler);
+  };
+  runtime.on('QUESTION', handler);
+}
+
+function getScratchVariableValues(runtime) {
+  var values = [];
+  (runtime.targets || []).forEach(function(target) {
+    var variables = target.variables || {};
+    Object.keys(variables).forEach(function(id) {
+      if (variables[id] && variables[id].value != null) values.push(variables[id].value);
+    });
+  });
+  return values;
 }
 
 function collectScratchOpcodes(targets) {
   var counts = {};
   var fields = {};
+  var blocksSeen = [];
   for (var t = 0; t < targets.length; t++) {
     var blks = targets[t].blocks._blocks;
     for (var id in blks) {
       var block = blks[id] || {};
       var opcode = block.opcode;
-      if (opcode) counts[opcode] = (counts[opcode] || 0) + 1;
+      if (opcode) {
+        counts[opcode] = (counts[opcode] || 0) + 1;
+        blocksSeen.push(opcode);
+      }
       if (opcode && block.fields) {
         Object.keys(block.fields).forEach(function(name) {
           var field = block.fields[name];
-          var value = Array.isArray(field) ? field[0] : field && field.value != null ? field.value : field;
+          var value = scratchFieldValue(field);
           var key = opcode + '.' + name;
           if (!fields[key]) fields[key] = [];
-          fields[key].push(String(value).toLowerCase());
+          fields[key].push(normaliseScratchFieldValue(value));
         });
       }
     }
@@ -4085,14 +4234,39 @@ function collectScratchOpcodes(targets) {
     },
     fieldMatches: function(key, accepted) {
       var values = fields[key] || [];
-      accepted = (Array.isArray(accepted) ? accepted : [accepted]).map(function(v) { return String(v).toLowerCase(); });
+      accepted = (Array.isArray(accepted) ? accepted : [accepted]).map(normaliseScratchFieldValue);
       return values.some(function(value) { return accepted.indexOf(value) !== -1; });
     },
     fieldRuleMatches: function(rule) {
       if (!rule) return true;
-      return this.fieldMatches(rule.opcode + '.' + rule.field, rule.values);
+      var key = rule.opcode + '.' + rule.field;
+      if (!fields[key] || !fields[key].length) {
+        // Older/embedded Scratch builds can expose the opcode but not the field
+        // metadata consistently. Do not reject an otherwise valid build only
+        // because the editor did not expose the key option/name field.
+        return this.countAny([rule.opcode]) > 0;
+      }
+      return this.fieldMatches(key, rule.values);
+    },
+    debugSummary: function() {
+      return blocksSeen.join(', ');
     }
   };
+}
+
+function scratchFieldValue(field) {
+  if (Array.isArray(field)) return field[0];
+  if (field && field.value != null) return field.value;
+  if (field && field.name != null) return field.name;
+  return field;
+}
+
+function normaliseScratchFieldValue(value) {
+  return String(value == null ? '' : value)
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function scratchBuildMatches(q, info) {
