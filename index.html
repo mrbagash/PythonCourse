@@ -3376,11 +3376,20 @@ function setStudentView(view) {
   });
 }
 
+function preloadPyBotFrame() {
+  var frame = document.getElementById('qs-pybot-frame');
+  var pyBotUrl = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
+  if (!frame || frame.src === pyBotUrl) return;
+  frame.src = pyBotUrl;
+}
+
 function showStudentScreen(lobbyCode, questions) {
   quiz.questions = questions;
   document.getElementById('quiz-student-screen').classList.remove('hidden');
   document.getElementById('qs-my-code').textContent = 'Your code: ' + state.uid;
   setStudentView('lobby');
+  // Eagerly load PyBot in the background during the lobby if any question needs it
+  if (questions.some(function(q) { return q.type === 'pybot_level'; })) preloadPyBotFrame();
 
   var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
 
@@ -3666,32 +3675,30 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     window.addEventListener('message', window._qsPyBotMsg);
 
     function sendLevel() {
-      pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*');
+      try { pyBotFrame.contentWindow.postMessage({ type: 'LOAD_CUSTOM_LEVEL', data: { levelString: q.levelString || '' } }, '*'); } catch(e2) {}
     }
 
-    if (pyBotFrame && pyBotFrame.dataset.quizLoadKey !== pyBotLoadKey) {
-      pyBotFrame.dataset.quizLoadKey = pyBotLoadKey;
-      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
-      pyBotFrame.onload = function() {
-        requestAnimationFrame(scalePyBotQuizFrame);
-        // Retry every 400ms until LEVEL_LOADED confirms PyBot is ready
-        var attempts = 0;
-        sendLevel();
-        window._qsPyBotRetryInterval = setInterval(function() {
-          if (levelAcked || ++attempts > 15) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
-          sendLevel();
-        }, 400);
-      };
-      pyBotFrame.src = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
-    } else {
-      // Frame already loaded — send immediately with retry in case PyBot needs it
+    function startRetry() {
       requestAnimationFrame(scalePyBotQuizFrame);
-      var attempts2 = 0;
       sendLevel();
+      var attempts = 0;
       window._qsPyBotRetryInterval = setInterval(function() {
-        if (levelAcked || ++attempts2 > 15) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
+        if (levelAcked || ++attempts > 20) { clearInterval(window._qsPyBotRetryInterval); window._qsPyBotRetryInterval = null; return; }
         sendLevel();
-      }, 400);
+      }, 500);
+    }
+
+    var pyBotUrl = 'https://jquinney-hue.github.io/PyBot?hideMenu=true';
+    var alreadyAtPyBot = pyBotFrame && pyBotFrame.src === pyBotUrl;
+    if (alreadyAtPyBot) {
+      // Preloaded during lobby — PyBot is already running, just send the level
+      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
+      startRetry();
+    } else {
+      // Not yet loaded — set src now and send level once iframe is ready
+      if (pyBotFb) pyBotFb.textContent = 'Loading level…';
+      pyBotFrame.onload = startRetry;
+      pyBotFrame.src = pyBotUrl;
     }
     document.getElementById('btn-qs-pybot-fs').onclick = toggleQsPyBotFullscreen;
     if (window._qsPyBotResize) window.removeEventListener('resize', window._qsPyBotResize);
