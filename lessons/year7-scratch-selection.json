@@ -62,16 +62,126 @@
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "What is a condition?", "options": ["A block that moves a sprite", "An expression that evaluates to true or false", "A type of loop", "A variable"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "What does a selection statement do?", "options": ["Repeats code multiple times", "Runs different code depending on whether a condition is true or false", "Stores a value in memory", "Asks the user a question"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "Which Scratch menu contains the if/else block?", "options": ["Sensing", "Operators", "Variables", "Control"], "answer": 3, "duration": 30 },
-    { "type": "mcq", "q": "If a condition is false, which branch of an if/else block runs?", "options": ["The if branch", "The else branch", "Both branches", "Neither branch"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "Which operator checks if two values are equal in Scratch?", "options": ["( ) + ( )", "( ) = ( )", "( ) > ( )", "join ( ) ( )"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "A chatbot asks 'Are you ok?' The condition is (answer = yes). The user types 'no'. What happens?", "options": ["The if branch runs", "The else branch runs", "The program crashes", "Nothing happens"], "answer": 1, "duration": 45 },
-    { "type": "mcq", "q": "If there is no else and the condition is false, what does the program do?", "options": ["It stops completely", "It runs the if section anyway", "It skips to the next block after the if", "It asks the question again"], "answer": 2, "duration": 45 },
-    { "type": "mcq", "q": "What is an Easter egg in programming?", "options": ["A bug in the code", "Hidden functionality triggered by a specific condition", "A type of variable", "A sprite in Scratch"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "Which Scratch menu contains the equals operator ( ) = ( )?", "options": ["Control", "Variables", "Operators", "Sensing"], "answer": 2, "duration": 30 },
-    { "type": "mcq", "q": "What is the difference between 'if' and 'if/else'?", "options": ["There is no difference", "if/else also runs different code when the condition is false; if only runs code when true", "if/else is faster than if", "if can only be used once in a script"], "answer": 1, "duration": 45 },
+    {
+      "type": "mcq",
+      "q": "What is a condition?",
+      "options": [
+        "A block that moves a sprite",
+        "An expression that evaluates to true or false",
+        "A type of loop",
+        "A variable"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What does a selection statement do?",
+      "options": [
+        "Repeats code multiple times",
+        "Runs different code depending on whether a condition is true or false",
+        "Stores a value in memory",
+        "Asks the user a question"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "Which Scratch menu contains the if/else block?",
+      "options": [
+        "Sensing",
+        "Operators",
+        "Variables",
+        "Control"
+      ],
+      "answer": 3,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "If a condition is false, which branch of an if/else block runs?",
+      "options": [
+        "The if branch",
+        "The else branch",
+        "Both branches",
+        "Neither branch"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "Which operator checks if two values are equal in Scratch?",
+      "options": [
+        "( ) + ( )",
+        "( ) = ( )",
+        "( ) > ( )",
+        "join ( ) ( )"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "A chatbot asks 'Are you ok?' The condition is (answer = yes). The user types 'no'. What happens?",
+      "options": [
+        "The if branch runs",
+        "The else branch runs",
+        "The program crashes",
+        "Nothing happens"
+      ],
+      "answer": 1,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "If there is no else and the condition is false, what does the program do?",
+      "options": [
+        "It stops completely",
+        "It runs the if section anyway",
+        "It skips to the next block after the if",
+        "It asks the question again"
+      ],
+      "answer": 2,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What is an Easter egg in programming?",
+      "options": [
+        "A bug in the code",
+        "Hidden functionality triggered by a specific condition",
+        "A type of variable",
+        "A sprite in Scratch"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "Which Scratch menu contains the equals operator ( ) = ( )?",
+      "options": [
+        "Control",
+        "Variables",
+        "Operators",
+        "Sensing"
+      ],
+      "answer": 2,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "What is the difference between 'if' and 'if/else'?",
+      "options": [
+        "There is no difference",
+        "if/else also runs different code when the condition is false; if only runs code when true",
+        "if/else is faster than if",
+        "if can only be used once in a script"
+      ],
+      "answer": 1,
+      "duration": 45
+    },
     {
       "type": "scratch_mcq",
       "q": "Which block runs different code depending on whether a condition is true or false?",
@@ -98,9 +208,62 @@
     },
     {
       "type": "scratch_build",
-      "q": "Build a script that asks 'Are you ok?' and uses if/else to say 'Great!' if the answer is 'yes', or something different if not. Click Check & Submit when done.",
-      "check": ["sensing_askandwait", "control_if_else", "operator_equals"],
-      "sampleAnswer": "when flag clicked → ask [Are you ok?] and wait → if/else (answer = yes) → say [Great!] / say [I am sorry]",
+      "q": "Build a script that asks the user a yes/no question. Click Check & Submit when done.",
+      "check": [
+        "sensing_askandwait"
+      ],
+      "sampleAnswer": "ask [Are you ok?] and wait",
+      "duration": 75
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script with an if block or an if/else block. Click Check & Submit when done.",
+      "check": [
+        [
+          "control_if",
+          "control_if_else"
+        ]
+      ],
+      "sampleAnswer": "if <condition> then ... end",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a condition that checks if the answer is equal to a word. Click Check & Submit when done.",
+      "check": [
+        "operator_equals",
+        "sensing_answer"
+      ],
+      "sampleAnswer": "<(answer) = [yes]>",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build an if/else block with a say block in each branch. Click Check & Submit when done.",
+      "check": [
+        "control_if_else"
+      ],
+      "checkCounts": {
+        "looks_say|looks_sayforsecs": 2
+      },
+      "sampleAnswer": "if <condition> then say [Great!] else say [Try again] end",
+      "duration": 120
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that asks 'Are you ok?' and uses selection to respond differently depending on the answer. Click Check & Submit when done.",
+      "check": [
+        "sensing_askandwait",
+        [
+          "control_if",
+          "control_if_else"
+        ],
+        "operator_equals"
+      ],
+      "checkCounts": {
+        "looks_say|looks_sayforsecs": 1
+      },
+      "sampleAnswer": "ask [Are you ok?] and wait -> if/else <(answer) = [yes]> -> say [Great!] / say [I am sorry]",
       "duration": 120
     }
   ]

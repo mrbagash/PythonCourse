@@ -72,70 +72,120 @@
     {
       "type": "mcq",
       "q": "What is a variable?",
-      "options": ["A block that moves a sprite","A named storage location that holds a value","A type of loop","A sound effect"],
+      "options": [
+        "A block that moves a sprite",
+        "A named storage location that holds a value",
+        "A type of loop",
+        "A sound effect"
+      ],
       "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "Which Scratch block asks the user a question and waits for a reply?",
-      "options": ["say [] for [] seconds","ask [] and wait","set [] to []","when green flag clicked"],
+      "options": [
+        "say [] for [] seconds",
+        "ask [] and wait",
+        "set [] to []",
+        "when green flag clicked"
+      ],
       "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "After 'ask [] and wait' runs, where is the typed answer automatically stored?",
-      "options": ["In the name variable","In the answer variable","In the sprite","It is not stored"],
+      "options": [
+        "In the name variable",
+        "In the answer variable",
+        "In the sprite",
+        "It is not stored"
+      ],
       "answer": 1,
       "duration": 45
     },
     {
       "type": "mcq",
       "q": "What does 'set [name v] to (answer)' do?",
-      "options": ["Asks the user their name","Copies the value of answer into the name variable","Says the name out loud","Deletes the variable"],
+      "options": [
+        "Asks the user their name",
+        "Copies the value of answer into the name variable",
+        "Says the name out loud",
+        "Deletes the variable"
+      ],
       "answer": 1,
       "duration": 45
     },
     {
       "type": "mcq",
       "q": "In the IPO model, which part do variables belong to?",
-      "options": ["Input","Process","Output","Storage"],
+      "options": [
+        "Input",
+        "Process",
+        "Output",
+        "Storage"
+      ],
       "answer": 3,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "What does the join block do?",
-      "options": ["Adds two numbers together","Combines two pieces of text into one","Copies a variable","Asks a question"],
+      "options": [
+        "Adds two numbers together",
+        "Combines two pieces of text into one",
+        "Copies a variable",
+        "Asks a question"
+      ],
       "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "score is 10. After 'set [score v] to ((score) + (5))', what is score?",
-      "options": ["5","10","15","50"],
+      "options": [
+        "5",
+        "10",
+        "15",
+        "50"
+      ],
       "answer": 2,
       "duration": 45
     },
     {
       "type": "mcq",
       "q": "What is a bug in programming?",
-      "options": ["A fast-running program","An error in the code","A type of variable","A Scratch sprite"],
+      "options": [
+        "A fast-running program",
+        "An error in the code",
+        "A type of variable",
+        "A Scratch sprite"
+      ],
       "answer": 1,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "What is debugging?",
-      "options": ["Adding variables to code","Running a program faster","Finding and fixing errors in code","Designing a new sprite"],
+      "options": [
+        "Adding variables to code",
+        "Running a program faster",
+        "Finding and fixing errors in code",
+        "Designing a new sprite"
+      ],
       "answer": 2,
       "duration": 30
     },
     {
       "type": "mcq",
       "q": "Why must 'ask [] and wait' come before 'set [] to (answer)' in a script?",
-      "options": ["It does not matter","You need to ask the question before the answer exists to store","Variables must be created first","Blocks run in alphabetical order"],
+      "options": [
+        "It does not matter",
+        "You need to ask the question before the answer exists to store",
+        "Variables must be created first",
+        "Blocks run in alphabetical order"
+      ],
       "answer": 1,
       "duration": 45
     },
@@ -165,9 +215,62 @@
     },
     {
       "type": "scratch_build",
+      "q": "Build a simple script that starts when the green flag is clicked and makes the sprite say hello. Click Check & Submit when done.",
+      "check": [
+        "event_whenflagclicked",
+        [
+          "looks_say",
+          "looks_sayforsecs"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked -> say [Hello!] for 2 seconds",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that starts when the green flag is clicked and asks the user a question. Click Check & Submit when done.",
+      "check": [
+        "event_whenflagclicked",
+        "sensing_askandwait"
+      ],
+      "sampleAnswer": "when flag clicked -> ask [What is your name?] and wait",
+      "duration": 90
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that asks a question, then stores the answer in any variable. Click Check & Submit when done.",
+      "check": [
+        "sensing_askandwait",
+        "data_setvariableto"
+      ],
+      "sampleAnswer": "ask [What is your name?] and wait -> set [name] to (answer)",
+      "duration": 105
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that stores a value in a variable, then makes the sprite say something. Click Check & Submit when done.",
+      "check": [
+        "data_setvariableto",
+        [
+          "looks_say",
+          "looks_sayforsecs"
+        ]
+      ],
+      "sampleAnswer": "set [score] to [10] -> say (score) for 2 seconds",
+      "duration": 105
+    },
+    {
+      "type": "scratch_build",
       "q": "Build a script that asks the user's name, stores it in a variable, and says hello using their name. Click Check & Submit when done.",
-      "check": ["sensing_askandwait", "data_setvariableto", "looks_sayforsecs"],
-      "sampleAnswer": "when flag clicked → ask [] and wait → set [name] to (answer) → say (join [Hello ] (name)) for 2 seconds",
+      "check": [
+        "sensing_askandwait",
+        "data_setvariableto",
+        [
+          "looks_say",
+          "looks_sayforsecs"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked -> ask [] and wait -> set [name] to (answer) -> say (join [Hello ] (name)) for 2 seconds",
       "duration": 120
     }
   ]

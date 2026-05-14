@@ -2926,6 +2926,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         expectedContains: q.expectedContains != null ? q.expectedContains : null,
         sampleAnswer: q.sampleAnswer || null,
         check: q.check || null,
+        checkCounts: q.checkCounts || null,
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -3959,14 +3960,7 @@ async function submitStudentScratchAnswer(qIdx) {
     var vm = frame.contentWindow.vm;
     if (!vm) { fb.textContent = 'Editor still loading — wait a moment and try again.'; return; }
     var targets = vm.runtime.targets;
-    var checkOpcodes = q.check || [];
-    var correct = checkOpcodes.every(function(op) {
-      for (var t = 0; t < targets.length; t++) {
-        var blks = targets[t].blocks._blocks;
-        for (var id in blks) { if (blks[id].opcode === op) return true; }
-      }
-      return false;
-    });
+    var correct = scratchBuildMatches(q, collectScratchOpcodes(targets));
     quiz.myAnswered = true;
     lockStudentAnswers();
     await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
@@ -3978,6 +3972,36 @@ async function submitStudentScratchAnswer(qIdx) {
   } catch(e) {
     fb.textContent = 'Could not check: ' + e.message;
   }
+}
+
+function collectScratchOpcodes(targets) {
+  var counts = {};
+  for (var t = 0; t < targets.length; t++) {
+    var blks = targets[t].blocks._blocks;
+    for (var id in blks) {
+      var opcode = blks[id] && blks[id].opcode;
+      if (opcode) counts[opcode] = (counts[opcode] || 0) + 1;
+    }
+  }
+  return {
+    countAny: function(group) {
+      return group.reduce(function(total, opcode) { return total + (counts[opcode] || 0); }, 0);
+    }
+  };
+}
+
+function scratchBuildMatches(q, info) {
+  var required = q.check || [];
+  var groupsOk = required.every(function(item) {
+    var group = Array.isArray(item) ? item : [item];
+    return info.countAny(group) > 0;
+  });
+  if (!groupsOk) return false;
+  var counts = q.checkCounts || {};
+  return Object.keys(counts).every(function(key) {
+    var group = key.indexOf('|') >= 0 ? key.split('|') : [key];
+    return info.countAny(group) >= counts[key];
+  });
 }
 
 function lockStudentAnswers() {
