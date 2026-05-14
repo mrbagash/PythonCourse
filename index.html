@@ -2761,6 +2761,8 @@ var quiz = {
   currentStudentQuestionKey: null,
   currentStudentRevealKey: null,
   currentWidget: null,
+  missingSessionTimer: null,
+  cleanupTimer: null,
   unsubscribers: [],    // Firebase listeners to clean up
 };
 
@@ -3277,9 +3279,12 @@ async function endQuiz() {
     }
   } catch(e) { console.warn('Quiz history save failed:', e); }
 
-  // Delete session from Firebase after a delay so students see finished state
-  setTimeout(function() {
-    if (quiz.sessionRef) quiz.sessionRef.remove().catch(function(){});
+  // Delete this finished session after a delay so students see the leaderboard.
+  // Capture the ref now: a later quiz may replace quiz.sessionRef before this fires.
+  var finishedSessionRef = quiz.sessionRef;
+  quiz.cleanupTimer = setTimeout(function() {
+    if (finishedSessionRef) finishedSessionRef.remove().catch(function(){});
+    if (quiz.cleanupTimer) quiz.cleanupTimer = null;
   }, 30000);
 }
 
@@ -3426,7 +3431,24 @@ function showStudentScreen(lobbyCode, questions) {
 
   // Listen to overall quiz state
   var stateListener = sessionRef.on('value', function(snap) {
-    if (!snap.exists()) { exitStudentQuiz(); return; }
+    if (!snap.exists()) {
+      if (quiz.missingSessionTimer) return;
+      quiz.missingSessionTimer = setTimeout(function() {
+        var stillThisQuiz = quiz.sessionRef && quiz.sessionRef.toString() === sessionRef.toString();
+        quiz.missingSessionTimer = null;
+        if (!stillThisQuiz) return;
+        sessionRef.get().then(function(latest) {
+          if (!latest.exists()) exitStudentQuiz({ removePlayer: false });
+        }).catch(function() {
+          // Stay on the quiz screen if Firebase is temporarily unreachable.
+        });
+      }, 3000);
+      return;
+    }
+    if (quiz.missingSessionTimer) {
+      clearTimeout(quiz.missingSessionTimer);
+      quiz.missingSessionTimer = null;
+    }
     var qzState = snap.child('state').val();
     var qIdx    = snap.child('questionIdx').val();
 
@@ -4120,11 +4142,11 @@ function renderStudentReveal(q, qIdx) {
 }
 
 document.getElementById('btn-quiz-student-exit').onclick = function() {
-  if (confirm('Leave the quiz?')) exitStudentQuiz();
+  if (confirm('Leave the quiz?')) exitStudentQuiz({ removePlayer: true });
 };
 
 document.getElementById('btn-quiz-student-home').onclick = function() {
-  exitStudentQuiz();
+  exitStudentQuiz({ removePlayer: true });
 };
 
 document.getElementById('btn-quiz-rejoin').onclick = async function() {
@@ -4137,11 +4159,16 @@ document.getElementById('btn-quiz-rejoin').onclick = async function() {
   if (result.committed) setStudentView('lobby');
 };
 
-function exitStudentQuiz() {
+function exitStudentQuiz(opts) {
+  opts = opts || {};
   clearInterval(quiz.timerInterval);
+  if (quiz.missingSessionTimer) {
+    clearTimeout(quiz.missingSessionTimer);
+    quiz.missingSessionTimer = null;
+  }
   quiz.unsubscribers.forEach(function(fn) { fn(); });
   quiz.unsubscribers = [];
-  if (quiz.sessionRef) {
+  if (opts.removePlayer && quiz.sessionRef) {
     quiz.sessionRef.child('players/' + state.uid).remove();
   }
   quiz.sessionRef = null;
