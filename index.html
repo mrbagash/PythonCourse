@@ -1182,9 +1182,12 @@ window.BinaryLesson = (() => {
     var bits = [0,0,0,0,0,0,0,0];
     function calcValue() { return bits.reduce(function(s, b, i) { return s + b * POWERS[i]; }, 0); }
     function render() {
-      var headHtml = POWERS.map(function(h) { return '<th>' + h + '</th>'; }).join('');
+      var headers = opts.headers || (opts.useNibbles ? NIBBLE : POWERS);
+      var headHtml = headers.map(function(h, i) {
+        return '<th' + (opts.useNibbles && i === 4 ? ' class="bb-nibble-gap"' : '') + '>' + h + '</th>';
+      }).join('');
       var cellHtml = bits.map(function(b, i) {
-        return '<td class="bb-bit-btn ' + (b ? 'bb-on' : 'bb-off') + '" tabindex="0" data-i="' + i + '">' + b + '</td>';
+        return '<td class="bb-bit-btn ' + (b ? 'bb-on' : 'bb-off') + (opts.useNibbles && i === 4 ? ' bb-nibble-gap' : '') + '" tabindex="0" data-i="' + i + '">' + b + '</td>';
       }).join('');
       el.innerHTML =
         '<table class="bb-table"><thead><tr>' + headHtml + '</tr></thead>' +
@@ -1293,7 +1296,7 @@ window.BinaryLesson = (() => {
         '<button id="' + opts.containerId + '-check" class="ex-btn" style="margin-top:8px">Check</button>' +
         '<div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
       var widgetEl = document.getElementById(wid);
-      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, q.rowA, q.rowB) : mountBitInput(widgetEl, { showTotal: true });
+      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, q.rowA, q.rowB) : mountBitInput(widgetEl, { showTotal: !q.useNibbles, useNibbles: !!q.useNibbles });
       var checkBtn = document.getElementById(opts.containerId + '-check');
       var fbEl     = document.getElementById(opts.containerId + '-fb');
       function getValue() {
@@ -1346,7 +1349,7 @@ window.BinaryLesson = (() => {
       return { type: 'text_input', prompt: 'Convert this binary number to hex.', q: 'Convert this binary number to hex.', html: bitTable(bits, NIBBLE, true), answer: hex, right: 'Correct: this binary is ' + hex + ' in hex.' };
     }
     if (mode === 'hex_to_binary') {
-      return { type: 'bit_input', prompt: 'Convert ' + hex + ' to 8-bit binary.', q: 'Convert ' + hex + ' to 8-bit binary. Click the correct bits.', html: '<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer: n.toString(2).padStart(8, '0'), right: 'Correct: ' + hex + ' in binary is ' + n.toString(2).padStart(8, '0') + '.' };
+      return { type: 'bit_input', prompt: 'Convert ' + hex + ' to 8-bit binary.', q: 'Convert ' + hex + ' to 8-bit binary. Click the correct bits.', html: '<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer: n.toString(2).padStart(8, '0'), useNibbles: true, right: 'Correct: ' + hex + ' in binary is ' + n.toString(2).padStart(8, '0') + '.' };
     }
     return null;
   }
@@ -1372,7 +1375,7 @@ window.BinaryLesson = (() => {
       if (choice === 0) return { prompt:'Convert this hex number to denary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:String(n), right:'Correct hex to denary.' };
       if (choice === 1) return { prompt:'Convert this denary number to hex: ' + n, html:'<div class="bb-hex-pair"><div>?</div><div>?</div></div>', answer:hex, right:'Correct hex value.' };
       if (choice === 2) return { prompt:'Convert this binary number to hex.', html:bitTable(bitsFromNumber(n), NIBBLE, true), answer:hex, right:'Correct binary to hex.' };
-      return { prompt:'Convert this hex number to 8-bit binary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:n.toString(2).padStart(8,'0'), right:'Correct hex to binary.' };
+      return { prompt:'Convert this hex number to 8-bit binary: ' + hex, html:'<div class="bb-hex-pair"><div>' + hex[0] + '</div><div>' + hex[1] + '</div></div>', answer:n.toString(2).padStart(8,'0'), useNibbles:true, right:'Correct hex to binary.' };
     }
     function render() {
       activeWidget = null;
@@ -1392,7 +1395,7 @@ window.BinaryLesson = (() => {
           '<button id="' + opts.containerId + '-skip" class="ex-btn" style="background:#475569">New question</button>' +
         '</div><div id="' + opts.containerId + '-fb" class="ex-feedback"></div></div></div>';
       var widgetEl = document.getElementById(wid);
-      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, current.rowA, current.rowB) : mountBitInput(widgetEl, { showTotal: true });
+      if (widgetEl) activeWidget = isAddition ? mountAddInput(widgetEl, current.rowA, current.rowB) : mountBitInput(widgetEl, { showTotal: !current.useNibbles, useNibbles: !!current.useNibbles });
       document.getElementById(opts.containerId + '-skip').onclick = render;
       function getValue() {
         if (activeWidget) return activeWidget.getAnswer();
@@ -2912,6 +2915,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
         html: q.html || null,
         options: q.options || null,
         answer: isCodeType ? null : (q.answer != null ? q.answer : 0),
+        useNibbles: q.useNibbles || null,
         rowA: q.rowA || null,
         rowB: q.rowB || null,
         duration: q.duration || 60,
@@ -3644,7 +3648,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     var widgetContainer = document.getElementById('qs-widget-container');
     widgetContainer.innerHTML = '';
     if (q.type === 'bit_input') {
-      quiz.currentWidget = BinaryLesson.mountBitInput(widgetContainer, { showTotal: true });
+      quiz.currentWidget = BinaryLesson.mountBitInput(widgetContainer, { showTotal: !q.useNibbles, useNibbles: !!q.useNibbles });
     } else if (q.type === 'addition_input') {
       quiz.currentWidget = BinaryLesson.mountAddInput(widgetContainer, q.rowA, q.rowB);
     }
