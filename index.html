@@ -749,6 +749,8 @@
     <div class="max-w-5xl mx-auto">
       <p class="text-gray-300 mb-4">Students work at their own pace. Their project is saved while they work and restored after refresh.</p>
       <div id="aph-students" class="grid gap-2"></div>
+      <div id="aph-inspector" class="hidden mt-4 bg-gray-800 rounded-lg p-4"></div>
+      <iframe id="aph-inspector-frame" src="about:blank" class="hidden"></iframe>
     </div>
   </div>
 </div>
@@ -3188,14 +3190,156 @@ function renderAssessmentHostStudents(session) {
   codes.forEach(function(code) {
     var r = responses[code] || {};
     var row = document.createElement('div');
-    row.className = 'grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center bg-gray-800 rounded-lg px-4 py-2';
+    row.className = 'grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-800 rounded-lg px-4 py-2';
     row.innerHTML =
       '<span class="font-mono text-gray-200">' + (studentName(code) || code) + '</span>' +
       '<span class="text-sm text-gray-400">' + (r.completed ? 'Submitted' : 'Working') + '</span>' +
       '<span class="font-bold text-yellow-400">' + (r.score != null ? r.score + ' / ' + (r.maxScore || 21) : '-') + '</span>' +
-      '<span class="text-xs text-gray-500">' + (r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleTimeString('en-GB') : '') + '</span>';
+      '<span class="text-xs text-gray-500">' + (r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleTimeString('en-GB') : '') + '</span>' +
+      '<button class="btn-ap-inspect px-2 py-1 rounded border border-gray-600 text-xs text-gray-200 hover:bg-gray-700" data-code="' + code + '">Inspect</button>';
+    row.querySelector('.btn-ap-inspect').onclick = function() {
+      inspectAssessmentProject(code);
+    };
     box.appendChild(row);
   });
+}
+
+async function inspectAssessmentProject(code) {
+  var panel = document.getElementById('aph-inspector');
+  panel.classList.remove('hidden');
+  panel.innerHTML = '<p class="text-gray-300 text-sm">Loading saved project for ' + (studentName(code) || code) + '...</p>';
+  try {
+    if (!assessment.sessionRef) throw new Error('No active assessment session.');
+    var snap = await assessment.sessionRef.child('answers/0/' + code).get();
+    var projectData = snap.child('projectData').val();
+    if (!projectData) {
+      panel.innerHTML = '<p class="text-yellow-300 text-sm">No saved project available yet for ' + (studentName(code) || code) + '.</p>';
+      return;
+    }
+    var vm = await loadSavedProjectIntoInspector(projectData);
+    var summary = summariseScratchProjectVm(vm);
+    panel.innerHTML = renderScratchProjectSummary(code, summary);
+  } catch(e) {
+    panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect project: ' + e.message + '</p>';
+  }
+}
+
+function loadSavedProjectIntoInspector(projectData) {
+  var frame = document.getElementById('aph-inspector-frame');
+  return new Promise(function(resolve, reject) {
+    var done = false;
+    function fail(msg) {
+      if (done) return;
+      done = true;
+      reject(new Error(msg));
+    }
+    function tryLoad() {
+      waitForAssessmentInspectorVm(frame).then(async function(vm) {
+        try {
+          var bin = atob(projectData);
+          var arr = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          await vm.loadProject(arr.buffer);
+          if (!done) {
+            done = true;
+            resolve(vm);
+          }
+        } catch(e) {
+          fail(e.message);
+        }
+      });
+    }
+    frame.onload = tryLoad;
+    if (!frame.src || frame.src === 'about:blank') {
+      frame.src = './scratch/editor.html?assessmentInspector=1&suppressBeforeUnload=1';
+    } else {
+      tryLoad();
+    }
+    setTimeout(function(){ fail('Inspector editor did not load in time.'); }, 20000);
+  });
+}
+
+function waitForAssessmentInspectorVm(frame) {
+  return new Promise(function(resolve, reject) {
+    var started = Date.now();
+    var timer = setInterval(function() {
+      try {
+        if (frame.contentWindow && frame.contentWindow.vm && frame.contentWindow.vm.runtime) {
+          clearInterval(timer);
+          resolve(frame.contentWindow.vm);
+        } else if (Date.now() - started > 15000) {
+          clearInterval(timer);
+          reject(new Error('Inspector VM not ready.'));
+        }
+      } catch(e) {}
+    }, 250);
+  });
+}
+
+function summariseScratchProjectVm(vm) {
+  var targets = vm.runtime && vm.runtime.targets ? vm.runtime.targets : [];
+  var info = collectAssessmentScratchInfo(targets);
+  var targetsSummary = targets.map(function(target) {
+    var costumes = [];
+    try {
+      costumes = target.getCostumes ? target.getCostumes() : ((target.sprite && target.sprite.costumes) || []);
+    } catch(e) { costumes = []; }
+    var variables = Object.keys(target.variables || {}).map(function(id) {
+      var v = target.variables[id];
+      return v && v.name ? v.name : id;
+    });
+    var blocks = target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
+    var localCounts = {};
+    Object.keys(blocks).forEach(function(id) {
+      var opcode = blocks[id] && blocks[id].opcode;
+      if (opcode) localCounts[opcode] = (localCounts[opcode] || 0) + 1;
+    });
+    return {
+      name: target.isStage ? 'Stage' : (target.sprite && target.sprite.name) || target.name || 'Sprite',
+      isStage: !!target.isStage,
+      x: target.x,
+      y: target.y,
+      direction: target.direction,
+      costumes: costumes.map(function(c) { return c.name || c.assetId || 'costume'; }),
+      variables: variables,
+      opcodes: localCounts
+    };
+  });
+  return { targets: targetsSummary, opcodeCounts: info.counts, keyFields: info.keyFields, variableNames: info.variableNames };
+}
+
+function renderScratchProjectSummary(code, summary) {
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+  }
+  var opcodes = Object.keys(summary.opcodeCounts || {}).sort(function(a, b) {
+    return summary.opcodeCounts[b] - summary.opcodeCounts[a];
+  });
+  var html = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Project inspection: ' + escHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div>';
+  html += '<div class="grid md:grid-cols-2 gap-4">';
+  html += '<div><h4 class="font-semibold text-yellow-300 mb-2">Sprites, costumes and variables</h4><div class="space-y-2">';
+  summary.targets.forEach(function(t) {
+    html += '<div class="bg-gray-900 rounded p-3 text-sm">';
+    html += '<div class="font-semibold text-gray-100">' + escHtml(t.name) + (t.isStage ? ' (stage)' : '') + '</div>';
+    if (!t.isStage) html += '<div class="text-gray-400">Position: x ' + Math.round(t.x || 0) + ', y ' + Math.round(t.y || 0) + ', direction ' + Math.round(t.direction || 0) + '</div>';
+    html += '<div class="text-gray-300 mt-1">Costumes/backdrops: ' + (t.costumes.length ? escHtml(t.costumes.join(', ')) : '<span class="text-gray-500">none listed</span>') + '</div>';
+    html += '<div class="text-gray-300">Variables: ' + (t.variables.length ? escHtml(t.variables.join(', ')) : '<span class="text-gray-500">none</span>') + '</div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+  html += '<div><h4 class="font-semibold text-yellow-300 mb-2">Opcodes present</h4>';
+  html += '<div class="bg-gray-900 rounded p-3 text-xs font-mono max-h-96 overflow-y-auto">';
+  if (!opcodes.length) html += '<div class="text-gray-500">No blocks found.</div>';
+  opcodes.forEach(function(op) {
+    html += '<div class="flex justify-between gap-3 border-b border-gray-800 py-1"><span class="text-gray-300">' + escHtml(op) + '</span><span class="text-yellow-300">' + summary.opcodeCounts[op] + '</span></div>';
+  });
+  html += '</div>';
+  html += '<div class="mt-3 text-sm text-gray-300">Keys used: ' + (summary.keyFields.length ? escHtml(summary.keyFields.join(', ')) : '<span class="text-gray-500">none detected</span>') + '</div>';
+  html += '<div class="text-sm text-gray-300">Variables detected: ' + (summary.variableNames.length ? escHtml(Array.from(new Set(summary.variableNames)).join(', ')) : '<span class="text-gray-500">none detected</span>') + '</div>';
+  html += '</div></div>';
+  return html;
 }
 
 document.getElementById('btn-ap-host-exit').onclick = async function() {
@@ -3415,30 +3559,54 @@ function assessYear7Ap2Scratch(vm) {
   var sprites = targets.filter(function(t) { return t && !t.isStage; });
   var stage = targets.filter(function(t) { return t && t.isStage; })[0];
   var info = collectAssessmentScratchInfo(targets);
+  var diverSprite = findAssessmentSprite(sprites, ['diver', 'swimmer', 'scuba', 'snorkel']);
+  var sharkSprite = findAssessmentSprite(sprites, ['shark']);
+  var targetSprite = sprites.find(function(sprite) {
+    if (sprite === diverSprite || sprite === sharkSprite) return false;
+    return spriteHasAnyWord(sprite, ['fish', 'coin', 'star', 'shell', 'target', 'food', 'gem', 'crab', 'octopus', 'treasure', 'pearl']);
+  }) || sprites.find(function(sprite) {
+    return sprite !== diverSprite && sprite !== sharkSprite;
+  });
   function hasAny(list) { return list.some(function(op) { return (info.counts[op] || 0) > 0; }); }
   function hasText(text) { return info.fieldValues.some(function(v) { return v.indexOf(text) !== -1; }); }
+  function spriteHasAny(sprite, list) {
+    return sprite && sprite.info && list.some(function(op) { return (sprite.info.counts[op] || 0) > 0; });
+  }
+  function spriteHasText(sprite, text) {
+    return sprite && sprite.info && sprite.info.fieldValues.some(function(v) { return v.indexOf(text) !== -1; });
+  }
   function criterion(id, text, marks, ok, got) { return { id:id, text:text, marks:marks, awarded: ok ? marks : (got || 0) }; }
   var backdropCount = 0;
+  var underwaterBackdrop = false;
   try {
-    backdropCount = stage && stage.getCostumes ? stage.getCostumes().length :
-      (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes.length : 0);
+    var backdrops = stage && stage.getCostumes ? stage.getCostumes() :
+      (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes : []);
+    backdropCount = backdrops.length;
+    underwaterBackdrop = backdrops.some(function(backdrop) {
+      var name = normaliseScratchFieldValue((backdrop && (backdrop.name || backdrop.assetId)) || '');
+      return ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'].some(function(word) {
+        return name.indexOf(word) !== -1;
+      });
+    });
   } catch(e) { backdropCount = 0; }
+  var movementInfo = diverSprite && diverSprite.info ? diverSprite.info : info;
   var movement = 0;
   ['up arrow','down arrow','left arrow','right arrow'].forEach(function(key) {
-    if (info.keyFields.indexOf(key) !== -1) movement++;
+    if (movementInfo.keyFields.indexOf(key) !== -1) movement++;
   });
   var scoreVar = info.variableNames.indexOf('score') !== -1;
-  var plusScore = scoreVar && (info.changeVariableValues.indexOf('1') !== -1 || info.changeVariableValues.indexOf('+1') !== -1);
-  var minusScore = scoreVar && (info.changeVariableValues.indexOf('-1') !== -1);
+  var plusScore = scoreVar && diverSprite && (diverSprite.info.changeVariableValues.indexOf('1') !== -1 || diverSprite.info.changeVariableValues.indexOf('+1') !== -1 || info.changeVariableValues.indexOf('1') !== -1);
+  var minusScore = scoreVar && sharkSprite && (sharkSprite.info.changeVariableValues.indexOf('-1') !== -1 || info.changeVariableValues.indexOf('-1') !== -1);
+  var targetRandom = targetSprite && (spriteHasAny(targetSprite, ['motion_gotorandom','motion_glideto','operator_random']) || hasAny(['operator_random']));
   var criteria = [
-    criterion('backdrop', 'Underwater background', 2, backdropCount > 1),
-    criterion('diver', 'Diver sprite created', 2, sprites.length >= 1),
-    criterion('movement', 'Diver moves up, down, left and right with keys', 4, movement >= 4, movement),
-    criterion('target', 'Chase sprite moves to a random place when caught', 2, sprites.length >= 2 && (hasAny(['motion_gotorandom','motion_glideto']) || hasAny(['operator_random']))),
+    criterion('backdrop', 'Underwater background', 2, backdropCount > 1 && underwaterBackdrop),
+    criterion('diver', 'Diver sprite created', 2, !!diverSprite),
+    criterion('movement', 'Diver moves up, down, left and right with keys', 4, !!diverSprite && movement >= 4, diverSprite ? movement : 0),
+    criterion('target', 'Chase sprite moves to a random place when caught', 2, !!targetRandom),
     criterion('scorePlus', 'Score variable and +1 when target is caught', 3, plusScore, scoreVar ? 1 : 0),
-    criterion('shark', 'Shark sprite created', 2, sprites.length >= 3),
-    criterion('sharkChase', 'Shark chases the diver', 2, sprites.length >= 3 && hasAny(['motion_pointtowards','motion_glideto','motion_movesteps'])),
-    criterion('yum', 'Shark says Yum Yum when touching diver', 2, hasAny(['looks_sayforsecs','looks_say']) && hasText('yum yum')),
+    criterion('shark', 'Shark sprite created', 2, !!sharkSprite),
+    criterion('sharkChase', 'Shark chases the diver', 2, !!sharkSprite && spriteHasAny(sharkSprite, ['motion_pointtowards','motion_glideto','motion_movesteps'])),
+    criterion('yum', 'Shark says Yum Yum when touching diver', 2, !!sharkSprite && spriteHasAny(sharkSprite, ['looks_sayforsecs','looks_say']) && spriteHasText(sharkSprite, 'yum yum')),
     criterion('scoreMinus', 'Score changes by -1 when shark touches diver', 2, minusScore)
   ];
   var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
@@ -3448,30 +3616,70 @@ function assessYear7Ap2Scratch(vm) {
 function collectAssessmentScratchInfo(targets) {
   var counts = {}, fieldValues = [], keyFields = [], variableNames = [], changeVariableValues = [];
   targets.forEach(function(target) {
-    Object.keys(target.variables || {}).forEach(function(id) {
-      var v = target.variables[id];
-      if (v && v.name) variableNames.push(normaliseScratchFieldValue(v.name));
+    target.info = collectAssessmentScratchInfoFromTarget(target);
+    mergeAssessmentScratchInfo({ counts: counts, fieldValues: fieldValues, keyFields: keyFields, variableNames: variableNames, changeVariableValues: changeVariableValues }, target.info);
+  });
+  return { counts: counts, fieldValues: fieldValues, keyFields: keyFields, variableNames: variableNames, changeVariableValues: changeVariableValues };
+}
+
+function collectAssessmentScratchInfoFromTarget(target) {
+  var counts = {}, fieldValues = [], keyFields = [], variableNames = [], changeVariableValues = [];
+  Object.keys(target.variables || {}).forEach(function(id) {
+    var v = target.variables[id];
+    if (v && v.name) variableNames.push(normaliseScratchFieldValue(v.name));
+  });
+  var blocks = target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
+  Object.keys(blocks).forEach(function(id) {
+    var b = blocks[id] || {};
+    if (b.opcode) counts[b.opcode] = (counts[b.opcode] || 0) + 1;
+    Object.keys(b.fields || {}).forEach(function(name) {
+      var val = normaliseScratchFieldValue(scratchFieldValue(b.fields[name]));
+      fieldValues.push(val);
+      if (name === 'KEY_OPTION') keyFields.push(val);
+      if (b.opcode === 'data_changevariableby' && name === 'VARIABLE') variableNames.push(val);
     });
-    var blocks = target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
-    Object.keys(blocks).forEach(function(id) {
-      var b = blocks[id] || {};
-      if (b.opcode) counts[b.opcode] = (counts[b.opcode] || 0) + 1;
-      Object.keys(b.fields || {}).forEach(function(name) {
-        var val = normaliseScratchFieldValue(scratchFieldValue(b.fields[name]));
-        fieldValues.push(val);
-        if (name === 'KEY_OPTION') keyFields.push(val);
-        if (b.opcode === 'data_changevariableby' && name === 'VARIABLE') variableNames.push(val);
-      });
-      Object.keys(b.inputs || {}).forEach(function(name) {
-        var input = b.inputs[name];
-        var raw = Array.isArray(input) ? input.join(' ') : String(input || '');
-        var val = normaliseScratchFieldValue(raw);
-        fieldValues.push(val);
-        if (b.opcode === 'data_changevariableby' && /-?1/.test(raw)) changeVariableValues.push(raw.indexOf('-') !== -1 ? '-1' : '1');
-      });
+    Object.keys(b.inputs || {}).forEach(function(name) {
+      var input = b.inputs[name];
+      var raw = Array.isArray(input) ? input.join(' ') : String(input || '');
+      var val = normaliseScratchFieldValue(raw);
+      fieldValues.push(val);
+      if (b.opcode === 'data_changevariableby' && /-?1/.test(raw)) changeVariableValues.push(raw.indexOf('-') !== -1 ? '-1' : '1');
     });
   });
   return { counts: counts, fieldValues: fieldValues, keyFields: keyFields, variableNames: variableNames, changeVariableValues: changeVariableValues };
+}
+
+function mergeAssessmentScratchInfo(total, part) {
+  Object.keys(part.counts || {}).forEach(function(op) {
+    total.counts[op] = (total.counts[op] || 0) + part.counts[op];
+  });
+  total.fieldValues.push.apply(total.fieldValues, part.fieldValues || []);
+  total.keyFields.push.apply(total.keyFields, part.keyFields || []);
+  total.variableNames.push.apply(total.variableNames, part.variableNames || []);
+  total.changeVariableValues.push.apply(total.changeVariableValues, part.changeVariableValues || []);
+}
+
+function findAssessmentSprite(sprites, words) {
+  return sprites.find(function(sprite) { return spriteHasAnyWord(sprite, words); });
+}
+
+function spriteHasAnyWord(sprite, words) {
+  var haystack = scratchSpriteSearchText(sprite);
+  return words.some(function(word) { return haystack.indexOf(normaliseScratchFieldValue(word)) !== -1; });
+}
+
+function scratchSpriteSearchText(sprite) {
+  var parts = [];
+  try {
+    if (sprite.name) parts.push(sprite.name);
+    if (sprite.sprite && sprite.sprite.name) parts.push(sprite.sprite.name);
+    var costumes = sprite.getCostumes ? sprite.getCostumes() : ((sprite.sprite && sprite.sprite.costumes) || []);
+    costumes.forEach(function(costume) {
+      if (costume.name) parts.push(costume.name);
+      if (costume.assetId) parts.push(costume.assetId);
+    });
+  } catch(e) {}
+  return normaliseScratchFieldValue(parts.join(' '));
 }
 
 function renderAssessmentFeedback(result, finalMode) {
