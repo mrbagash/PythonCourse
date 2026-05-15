@@ -2942,6 +2942,9 @@ var quiz = {
   sessionRef:  null,    // Firebase ref
   playerCount: 0,
   timerInterval: null,
+  revealTimer: null,
+  studentTimerInterval: null,
+  hostTimerToken: 0,
   timerEnd:    null,
   currentState: null,   // 'lobby'|'question'|'answer'|'finished'
   myScore:     0,       // student side
@@ -3219,7 +3222,7 @@ document.getElementById('btn-quiz-begin').onclick = async function() {
 };
 
 document.getElementById('btn-quiz-next').onclick = async function() {
-  clearInterval(quiz.timerInterval);
+  clearHostQuestionTimer();
   await showAnswerReveal();
 };
 
@@ -3238,7 +3241,7 @@ document.getElementById('btn-quiz-host-home').onclick = function() {
 };
 
 function exitHostQuizScreen() {
-  clearInterval(quiz.timerInterval);
+  clearAllQuizTimers();
   quiz.unsubscribers.forEach(function(fn) { fn(); });
   quiz.unsubscribers = [];
   quiz.sessionRef = null;
@@ -3247,7 +3250,8 @@ function exitHostQuizScreen() {
 }
 
 async function startNextQuestion() {
-  clearInterval(quiz.timerInterval);
+  clearHostQuestionTimer();
+  clearRevealTimer();
   var snap = await quiz.sessionRef.child('questionIdx').get();
   var nextIdx = (snap.exists() ? snap.val() : -1) + 1;
 
@@ -3301,14 +3305,44 @@ async function startNextQuestion() {
   document.getElementById('qh-answered-count').textContent = '';
 
   setQuizHostView('question');
-  startHostTimer(q.duration, nextIdx);
+  startHostTimer(q.duration, nextIdx, now);
 }
 
-function startHostTimer(duration, qIdx) {
+function clearHostQuestionTimer() {
+  if (quiz.timerInterval) {
+    clearInterval(quiz.timerInterval);
+    quiz.timerInterval = null;
+  }
+}
+
+function clearRevealTimer() {
+  if (quiz.revealTimer) {
+    clearTimeout(quiz.revealTimer);
+    quiz.revealTimer = null;
+  }
+}
+
+function clearStudentTimer() {
+  if (quiz.studentTimerInterval) {
+    clearInterval(quiz.studentTimerInterval);
+    quiz.studentTimerInterval = null;
+  }
+}
+
+function clearAllQuizTimers() {
+  clearHostQuestionTimer();
+  clearRevealTimer();
+  clearStudentTimer();
+}
+
+function startHostTimer(duration, qIdx, questionStart) {
   quiz.timerEnd = Date.now() + duration * 1000;
-  clearInterval(quiz.timerInterval);
+  clearHostQuestionTimer();
+  quiz.hostTimerToken++;
+  var timerToken = quiz.hostTimerToken;
 
   function tick() {
+    if (timerToken !== quiz.hostTimerToken || quiz.currentState !== 'question') return;
     var remaining = Math.max(0, Math.ceil((quiz.timerEnd - Date.now()) / 1000));
     document.getElementById('qh-timer').textContent = remaining;
     var pct = ((quiz.timerEnd - Date.now()) / (duration * 1000)) * 100;
@@ -3318,28 +3352,36 @@ function startHostTimer(duration, qIdx) {
 
     // Check how many have answered
     quiz.sessionRef.child('answers/' + qIdx).get().then(function(snap) {
+      if (timerToken !== quiz.hostTimerToken || quiz.currentState !== 'question') return;
       var answered = snap.exists() ? Object.keys(snap.val()).length : 0;
       document.getElementById('qh-answered-count').textContent =
         answered + ' / ' + quiz.playerCount + ' answered';
       if (answered >= quiz.playerCount && quiz.playerCount > 0) {
-        clearInterval(quiz.timerInterval);
-        showAnswerReveal();
+        clearHostQuestionTimer();
+        showAnswerReveal(qIdx, questionStart);
       }
     });
 
     if (remaining <= 0) {
-      clearInterval(quiz.timerInterval);
-      showAnswerReveal();
+      clearHostQuestionTimer();
+      showAnswerReveal(qIdx, questionStart);
     }
   }
   tick();
   quiz.timerInterval = setInterval(tick, 500);
 }
 
-async function showAnswerReveal() {
-  clearInterval(quiz.timerInterval);
-  var snap = await quiz.sessionRef.child('questionIdx').get();
-  var qIdx = snap.val();
+async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
+  clearHostQuestionTimer();
+  quiz.hostTimerToken++;
+  clearRevealTimer();
+  var sessionSnap = await quiz.sessionRef.get();
+  if (!sessionSnap.exists()) return;
+  var qIdx = sessionSnap.child('questionIdx').val();
+  var currentStart = sessionSnap.child('questionStart').val();
+  if (expectedQIdx != null && qIdx !== expectedQIdx) return;
+  if (expectedQuestionStart != null && currentStart !== expectedQuestionStart) return;
+  if (sessionSnap.child('state').val() !== 'question') return;
   var q = quiz.questions[qIdx];
   var now = Date.now();
   var isTextInput = q.type === 'text_input';
@@ -3458,13 +3500,14 @@ async function showAnswerReveal() {
   setQuizHostView('reveal');
 
   var revealDuration = Math.max(5000, (q.duration / 2) * 1000);
-  quiz.timerInterval = setTimeout(async function() {
+  quiz.revealTimer = setTimeout(async function() {
+    quiz.revealTimer = null;
     await startNextQuestion();
   }, revealDuration);
 }
 
 async function endQuiz() {
-  clearInterval(quiz.timerInterval);
+  clearAllQuizTimers();
   await clearForcedQuizForCurrentClass();
   // Cancel the onDisconnect removal BEFORE writing finished state,
   // otherwise Firebase deletes the session immediately after the write
@@ -4136,20 +4179,22 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   // Timer based on server start time
   var elapsed    = (Date.now() - questionStart) / 1000;
   var remaining  = Math.max(0, duration - elapsed);
-  clearInterval(quiz.timerInterval);
+  clearStudentTimer();
   var timerEnd   = Date.now() + remaining * 1000;
+  var studentQuestionKey = qIdx + ':' + questionStart;
 
   function tick() {
+    if (quiz.currentStudentQuestionKey !== studentQuestionKey) return;
     var rem = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
     document.getElementById('qs-timer').textContent = rem;
     var pct = ((timerEnd - Date.now()) / (duration * 1000)) * 100;
     var bar = document.getElementById('qs-timer-bar');
     bar.style.width = Math.max(0, pct) + '%';
     bar.className = 'h-1.5 transition-all ' + (pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-500' : 'bg-red-500');
-    if (rem <= 0) { clearInterval(quiz.timerInterval); lockStudentAnswers(); }
+    if (rem <= 0) { clearStudentTimer(); lockStudentAnswers(); }
   }
   tick();
-  quiz.timerInterval = setInterval(tick, 500);
+  quiz.studentTimerInterval = setInterval(tick, 500);
 }
 
 function renderStudentLeaderboard(lb) {
@@ -4765,7 +4810,7 @@ async function submitStudentCodeAnswer(qIdx) {
 }
 
 function renderStudentReveal(q, qIdx) {
-  clearInterval(quiz.timerInterval);
+  clearStudentTimer();
   setStudentView('reveal');
   if (!q) return;
   if (q.type === 'scratch_build') resetScratchQuizFrame();
@@ -4821,7 +4866,7 @@ document.getElementById('btn-quiz-rejoin').onclick = async function() {
 function exitStudentQuiz(opts) {
   opts = opts || {};
   if (quiz.forced && !opts.keepForced && !opts.displaced) return;
-  clearInterval(quiz.timerInterval);
+  clearStudentTimer();
   if (quiz.missingSessionTimer) {
     clearTimeout(quiz.missingSessionTimer);
     quiz.missingSessionTimer = null;
