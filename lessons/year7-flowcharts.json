@@ -1,0 +1,43 @@
+{
+  "id": "year7-flowcharts",
+  "title": "Flowcharts & Pseudocode",
+  "description": "How to represent algorithms using flowchart symbols and pseudocode, and how to trace through a flowchart.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><div id='fc-dna'></div>",
+      "js": "createMCQ('fc-dna',['A set of step-by-step instructions to solve a problem','A type of hardware','A spreadsheet program','A list of files'],0,'Correct — you remembered from last lesson!','An algorithm is a set of step-by-step instructions to solve a problem.');"
+    },
+    {
+      "id": "two-representations",
+      "title": "Two Ways to Show an Algorithm",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Two ways to represent an algorithm</h2><p class='text-gray-700 mb-4'>Before writing code you can plan the logic in one of two ways:</p><div class='ex-box'><p class='bb-question-title'>Flowchart — shapes and arrows</p><p class='text-gray-200'>Visual. Each shape has a specific meaning. Easy to see decisions and flow.</p></div><div class='ex-box'><p class='bb-question-title'>Pseudocode — English-like text</p><p class='text-gray-200'>Written. Reads like code but is not a real language. Good for planning logic.</p><pre class='scratch-blocks'>START\nASK \"What is your name?\"\nSTORE answer in name\nOUTPUT \"Hello \" + name\nEND</pre></div>"
+    },
+    {
+      "id": "flowchart-symbols",
+      "title": "Flowchart Symbols",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Flowchart symbols</h2><p class='text-gray-700 mb-4'>Learn the five shapes — they are always the same in every flowchart.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Shape</th><th>Name</th><th>Used for</th></tr></thead><tbody><tr><td><span style='background:#fde68a;color:#111;border-radius:4px;padding:2px 10px;font-size:0.8rem'>Oval</span></td><td>Start / End</td><td>Beginning or end of the flowchart</td></tr><tr><td><span style='background:#93c5fd;color:#111;border-radius:4px;padding:2px 10px;font-size:0.8rem'>Rectangle</span></td><td>Process</td><td>An action — e.g. \"Add 1 to score\"</td></tr><tr><td><span style='background:#86efac;color:#111;border-radius:4px;padding:2px 10px;font-size:0.8rem'>Parallelogram</span></td><td>Input / Output</td><td>Data in or out — e.g. \"Display score\"</td></tr><tr><td><span style='background:#f9a8d4;color:#111;border-radius:4px;padding:2px 10px;font-size:0.8rem'>Diamond</span></td><td>Decision</td><td>A yes/no question — splits into two paths</td></tr><tr><td><span style='background:#c4b5fd;color:#111;border-radius:4px;padding:2px 10px;font-size:0.8rem'>Arrow</span></td><td>Flow line</td><td>Shows the direction</td></tr></tbody></table></div><p class='text-gray-700 mb-2'>Match each shape to its correct purpose:</p><div id='fc-match'></div>",
+      "js": "(function(){var defs=[['Oval','Start or End of the flowchart'],['Rectangle','A process — an instruction or action'],['Diamond','A decision — a yes/no question'],['Parallelogram','An input or output'],['Arrow','Shows the direction of flow']];var opts=defs.map(function(d){return d[1];}).sort(function(){return Math.random()-0.5;});var c=document.getElementById('fc-match');c.innerHTML=defs.map(function(d,i){return '<label class=\"block mb-2\"><span class=\"bb-question-title\">'+d[0]+'</span><select id=\"fc-m-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose...</option>'+opts.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></label>';}).join('')+'<button id=\"fc-check\" class=\"ex-btn\">Check</button><div id=\"fc-fb\" class=\"ex-feedback\"></div>';document.getElementById('fc-check').onclick=function(){var ok=0;defs.forEach(function(d,i){var el=document.getElementById('fc-m-'+i);var pass=el.value===d[1];el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('fc-fb');if(ok===defs.length){fb.className='ex-feedback ok';fb.textContent='All correct!';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent=ok+' / '+defs.length+'. Review the table and try again.';}};})();"
+    },
+    {
+      "id": "trace-flowchart",
+      "title": "Trace a Flowchart",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Trace a flowchart</h2><p class='text-gray-700 mb-3'>Tracing means following a flowchart step by step. Read this one carefully, then answer the questions.</p><div class='ex-box'><pre class='scratch-blocks'>START\n↓\nINPUT: number\n↓\nDecision: Is number ÷ 2 a whole number?\n  Yes → OUTPUT: \"Even\"\n  No  → OUTPUT: \"Odd\"\n↓\nEND</pre></div><div id='fc-trace'></div>",
+      "js": "createMCQSet('fc-trace',[{q:'The user inputs 6. What does the flowchart output?',opts:['Odd','Even','6','Nothing'],correct:1,feedback:'Correct — 6 ÷ 2 = 3 (whole), so Yes → \"Even\".',wrongFeedback:'6 ÷ 2 = 3, a whole number. Decision is Yes → output \"Even\".'},{q:'The user inputs 7. What does the flowchart output?',opts:['Even','7','Odd','Nothing'],correct:2,feedback:'Correct — 7 ÷ 2 = 3.5 (not whole), so No → \"Odd\".',wrongFeedback:'7 ÷ 2 = 3.5, not a whole number. Decision is No → output \"Odd\".'},{q:'Which shape is used for the yes/no question in this flowchart?',opts:['Rectangle','Oval','Parallelogram','Diamond'],correct:3,feedback:'Correct — decisions are always shown as a diamond.',wrongFeedback:'Decisions are always diamonds — the two exit paths (yes/no) come out of the two sides.'}]);"
+    }
+  ],
+  "quizQuestions": [
+    { "type": "mcq", "q": "What are the two main ways to represent an algorithm?", "options": ["Flowchart and pseudocode", "Python and Scratch", "Spreadsheet and database", "Diagram and essay"], "answer": 0, "duration": 25 },
+    { "type": "mcq", "q": "Which flowchart shape is used for Start or End?", "options": ["Rectangle", "Diamond", "Oval", "Arrow"], "answer": 2, "duration": 25 },
+    { "type": "mcq", "q": "Which flowchart shape is used for a Decision?", "options": ["Rectangle", "Diamond", "Oval", "Parallelogram"], "answer": 1, "duration": 25 },
+    { "type": "mcq", "q": "Which flowchart shape is used for a Process (an action)?", "options": ["Diamond", "Oval", "Parallelogram", "Rectangle"], "answer": 3, "duration": 25 },
+    { "type": "text_input", "q": "What shape in a flowchart always has two exit paths (yes and no)?", "answer": "DIAMOND", "duration": 25 },
+    { "type": "mcq", "q": "A flowchart processes the number 4. It asks 'Is number ÷ 2 a whole number?' Which path?", "options": ["No — Odd", "Yes — Even", "No — 4", "Yes — Whole"], "answer": 1, "duration": 35 },
+    { "type": "mcq", "q": "Pseudocode uses...", "options": ["Shapes and arrows", "Plain English structured like code", "Python syntax", "Binary numbers"], "answer": 1, "duration": 25 }
+  ]
+}

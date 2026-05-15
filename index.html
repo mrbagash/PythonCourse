@@ -338,7 +338,7 @@
     .ex-mcq-btn.ex-mcq-wrong { background: #281616; border-color: #f87171; color: #fee2e2; }
 
     /* Scratch block display */
-    #step-content pre.scratch-blocks { background: transparent; border: none; padding: 0; white-space: pre; font-size: inherit; }
+    #step-content pre.scratch-blocks { background: #1e1e2e; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; font-family: 'Courier New', Courier, monospace; font-size: 0.875rem; color: #cdd6f4; white-space: pre; overflow-x: auto; margin: 0.75rem 0; display: block; }
     .scratch-blocks svg { display: block; max-width: 100%; height: auto; }
     .scratch-blocks-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem 1.25rem; margin: 0.75rem 0; overflow-x: auto; }
     .scratch-blocks-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
@@ -511,6 +511,13 @@
         <p class="text-xs text-gray-500 mb-2">Select questions and set time per question:</p>
         <div id="quiz-custom-list" class="space-y-2"></div>
       </div>
+      <label class="flex items-start gap-2 border border-red-200 bg-red-50 rounded-lg p-3 mb-3 cursor-pointer">
+        <input id="quiz-force-class" type="checkbox" class="mt-0.5 accent-[rgb(176,28,35)]" />
+        <span>
+          <span class="block text-sm font-semibold text-red-800">Force quiz for this class</span>
+          <span class="block text-xs text-red-700">Students in this class will be taken straight into the quiz, including after refreshing.</span>
+        </span>
+      </label>
     </div>
     <button id="btn-quiz-start-host" class="jhncc-primary w-full py-2 rounded font-medium">
       Create Lobby &#x1F680;
@@ -1436,9 +1443,24 @@ var state = {
   isAdmin: false,
   db: null,
   uid: null,
+  className: null,
   progress: {},
   stepStartTime: null,
   stepInjectedStyle: null,
+  forcedQuizRef: null,
+  forcedQuizListener: null,
+  forcedQuizCode: null,
+  quizClientId: (function(){
+    try {
+      var existing = sessionStorage.getItem('pylearn_quiz_client_id');
+      if (existing) return existing;
+      var id = Date.now() + '-' + Math.random().toString(36).slice(2);
+      sessionStorage.setItem('pylearn_quiz_client_id', id);
+      return id;
+    } catch(e) {
+      return Date.now() + '-' + Math.random().toString(36).slice(2);
+    }
+  })(),
   nameMap: (function(){ try { return JSON.parse(localStorage.getItem('pylearn_name_map')) || {}; } catch(e) { return {}; } })(),
 };
 
@@ -1803,11 +1825,11 @@ function renderLessonTabs() {
     var started  = isLessonStarted(lesson);
     var active   = idx === state.currentLessonIdx;
     var btn = document.createElement('button');
-    btn.className = 'lesson-tab px-3 py-1 rounded text-sm whitespace-nowrap border ' + (
-      active    ? 'border-red-700 bg-red-50 text-red-800 font-medium' :
-      complete  ? 'border-green-400 bg-green-50 text-green-700 hover:bg-green-100' :
-      started   ? 'border-yellow-400 bg-yellow-50 text-yellow-700 hover:bg-yellow-100' :
-                  'border-gray-200 bg-white text-gray-600 hover:bg-gray-50');
+    var _tabBase = complete  ? 'border-green-400 bg-green-50 text-green-700 hover:bg-green-100' :
+                   started   ? 'border-yellow-400 bg-yellow-50 text-yellow-700 hover:bg-yellow-100' :
+                               'border-gray-200 bg-white text-gray-600 hover:bg-gray-50';
+    btn.className = 'lesson-tab px-3 py-1 rounded text-sm whitespace-nowrap border ' + _tabBase +
+                    (active ? ' ring-2 ring-red-700 ring-offset-1 font-semibold' : '');
     btn.textContent = lesson.data.title;
     btn.onclick = function() { saveStepTime(); loadLesson(idx); };
     container.appendChild(btn);
@@ -1823,11 +1845,11 @@ function renderStepBar() {
     var started  = isStepStarted(lesson.meta.id, step.id);
     var active   = idx === state.currentStepIdx;
     var btn = document.createElement('button');
-    btn.className = 'step-pill px-3 py-1 rounded text-xs border whitespace-nowrap ' + (
-      active    ? 'border-red-700 bg-red-100 text-red-800 font-semibold' :
-      complete  ? 'border-green-400 bg-green-100 text-green-700 hover:bg-green-200' :
-      started   ? 'border-yellow-400 bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-                  'border-gray-200 bg-white text-gray-500 hover:bg-gray-50');
+    var _pillBase = complete  ? 'border-green-400 bg-green-100 text-green-700 hover:bg-green-200' :
+                    started   ? 'border-yellow-400 bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                                'border-gray-200 bg-white text-gray-500 hover:bg-gray-50';
+    btn.className = 'step-pill px-3 py-1 rounded text-xs border whitespace-nowrap ' + _pillBase +
+                    (active ? ' ring-2 ring-red-700 ring-offset-1 font-semibold' : '');
     btn.textContent = step.title;
     btn.onclick = function() { saveStepTime(); loadStep(state.currentLessonIdx, idx); };
     container.appendChild(btn);
@@ -1842,7 +1864,7 @@ function loadLesson(idx) {
   loadStep(idx, 0);
 }
 
-function loadStep(lessonIdx, stepIdx) {
+async function loadStep(lessonIdx, stepIdx) {
   state.currentLessonIdx = lessonIdx;
   state.currentStepIdx   = stepIdx;
   renderStepBar();
@@ -1861,10 +1883,27 @@ function loadStep(lessonIdx, stepIdx) {
     state.stepInjectedStyle = null;
   }
 
+  // ── Auto-save outgoing TurboWarp step ──────────────────────
+  var __twOut = document.getElementById('y7-scratch-frame');
+  if (__twOut && window.__pylearnCurrentLessonId && window.__pylearnCurrentStepId) {
+    try {
+      var __twVm = __twOut.contentWindow && __twOut.contentWindow.vm;
+      if (__twVm && typeof __twVm.saveProjectSb3 === 'function') {
+        var __twBuf = await __twVm.saveProjectSb3();
+        var __twU8 = new Uint8Array(__twBuf);
+        var __twStr = '';
+        for (var __twI = 0; __twI < __twU8.length; __twI++) __twStr += String.fromCharCode(__twU8[__twI]);
+        sessionStorage.setItem('y7proj_' + window.__pylearnCurrentLessonId + '::' + window.__pylearnCurrentStepId, btoa(__twStr));
+      }
+    } catch(__twE) {}
+  }
+
   // Content
   document.getElementById('step-content').innerHTML = step.content;
   if (window.scratchblocks) {
-    try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) {}
+    try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) { console.warn('[scratchblocks renderMatching]', e); }
+  } else {
+    console.warn('[scratchblocks] library not loaded — blocks will show as plain text');
   }
 
   // Expose current location so createEditor can build a stable storage key
@@ -1881,8 +1920,9 @@ function loadStep(lessonIdx, stepIdx) {
   var total = lesson.data.steps.length;
   document.getElementById('step-counter').textContent = 'Step '+(stepIdx+1)+' of '+total;
   document.getElementById('btn-prev').disabled = stepIdx === 0;
-  document.getElementById('btn-next').disabled = stepIdx === total - 1;
+  document.getElementById('btn-next').disabled = false;
   document.getElementById('btn-next').textContent = stepIdx === total-1 ? 'Finish \u2713' : 'Next Step \u2192';
+  document.getElementById('btn-next').className = 'jhncc-primary px-4 py-1.5 rounded text-sm disabled:opacity-40';
 
   // Mark step as started (always, for local progress colours)
   // Time tracking (stepStartTime) is set inside markStepStarted only when uid is set
@@ -1893,6 +1933,56 @@ function loadStep(lessonIdx, stepIdx) {
     await saveStepTime();
     await markStepComplete(lesson.meta.id, step.id);
   };
+
+  // TurboWarp lesson-step loading state
+  // Clear any previous poll so navigating quickly doesn't leave stale timers
+  if (window._y7LoadPoll) { clearInterval(window._y7LoadPoll); window._y7LoadPoll = null; }
+  if (window._y7LoadTimeout) { clearTimeout(window._y7LoadTimeout); window._y7LoadTimeout = null; }
+  var _y7iframe = document.getElementById('y7-scratch-frame');
+  var __twLoadKey = lesson.meta.id + '::' + step.id;
+  if (_y7iframe) {
+    var _y7checkBtn = document.getElementById('y7-check-btn');
+    var _y7resultEl = document.getElementById('y7-check-result');
+    var _y7originalText = _y7checkBtn ? _y7checkBtn.textContent : 'Check My Work';
+    if (_y7checkBtn) { _y7checkBtn.disabled = true; _y7checkBtn.textContent = 'Loading editor…'; }
+    var __twHasSaved = !!sessionStorage.getItem('y7proj_' + __twLoadKey);
+    if (_y7resultEl) { _y7resultEl.style.color = '#94a3b8'; _y7resultEl.textContent = __twHasSaved ? 'Restoring your project…' : 'TurboWarp is loading — this can take up to 30 seconds on first use.'; }
+    function _y7isVmReady() {
+      try { var f = document.getElementById('y7-scratch-frame'); return !!(f && f.contentWindow && f.contentWindow.vm && f.contentWindow.vm.runtime && f.contentWindow.vm.runtime.targets); } catch(e) { return false; }
+    }
+    function _y7onReady() {
+      if (window._y7LoadPoll) { clearInterval(window._y7LoadPoll); window._y7LoadPoll = null; }
+      if (window._y7LoadTimeout) { clearTimeout(window._y7LoadTimeout); window._y7LoadTimeout = null; }
+      var btn = document.getElementById('y7-check-btn');
+      var res = document.getElementById('y7-check-result');
+      if (btn && btn.disabled) { btn.disabled = false; btn.textContent = _y7originalText; }
+      if (res && res.textContent.indexOf('TurboWarp') === 0 || res && res.textContent.indexOf('Restoring') === 0) { res.style.color = ''; res.textContent = ''; }
+      // ── Restore saved project ───────────────────────────────
+      var __saved = sessionStorage.getItem('y7proj_' + __twLoadKey);
+      if (__saved) {
+        try {
+          var __bin = atob(__saved);
+          var __arr = new Uint8Array(__bin.length);
+          for (var __j = 0; __j < __bin.length; __j++) __arr[__j] = __bin.charCodeAt(__j);
+          var __lf = document.getElementById('y7-scratch-frame');
+          if (__lf && __lf.contentWindow && __lf.contentWindow.vm) {
+            __lf.contentWindow.vm.loadProject(__arr.buffer).catch(function(){});
+          }
+        } catch(__ex) {}
+      }
+    }
+    window._y7LoadPoll = setInterval(function() {
+      if (!document.getElementById('y7-scratch-frame')) { if (window._y7LoadPoll) clearInterval(window._y7LoadPoll); return; }
+      if (_y7isVmReady()) _y7onReady();
+    }, 400);
+    window._y7LoadTimeout = setTimeout(function() {
+      if (window._y7LoadPoll) { clearInterval(window._y7LoadPoll); window._y7LoadPoll = null; }
+      var btn = document.getElementById('y7-check-btn');
+      var res = document.getElementById('y7-check-result');
+      if (btn && btn.disabled) { btn.disabled = false; btn.textContent = _y7originalText; }
+      if (res && res.textContent.indexOf('TurboWarp') === 0) { res.style.color = '#fca5a5'; res.textContent = 'Editor is taking a long time — try refreshing the page.'; }
+    }, 45000);
+  }
 
   // Step JS
   if (step.js) {
@@ -1908,31 +1998,52 @@ document.getElementById('btn-prev').onclick = async function() {
   if (state.currentStepIdx > 0) loadStep(state.currentLessonIdx, state.currentStepIdx-1);
 };
 
+function flashButton(btn, text, addCls, removeCls) {
+  var orig = btn.textContent;
+  btn.textContent = text;
+  (removeCls || []).forEach(function(c) { btn.classList.remove(c); });
+  (addCls || []).forEach(function(c) { btn.classList.add(c); });
+  setTimeout(function() {
+    btn.textContent = orig;
+    (addCls || []).forEach(function(c) { btn.classList.remove(c); });
+    (removeCls || []).forEach(function(c) { btn.classList.add(c); });
+  }, 1800);
+}
+
 document.getElementById('btn-next').onclick = async function() {
-  var lesson = state.lessons[state.currentLessonIdx];
-  var step   = lesson.data.steps[state.currentStepIdx];
+  var lesson    = state.lessons[state.currentLessonIdx];
+  var step      = lesson.data.steps[state.currentStepIdx];
+  var total     = lesson.data.steps.length;
+  var isLast    = state.currentStepIdx === total - 1;
+  var nextBtn   = this;
   await saveStepTime();
 
-  if (step.autoComplete !== false) {
-    // If the step has an editor but the student hasn't run the code yet, nudge them
+  if (step.autoComplete === false) {
+    // Step requires manual completion \u2014 block if not done
+    if (!isStepComplete(lesson.meta.id, step.id)) {
+      flashButton(nextBtn, 'Complete the task first! \u26A0', ['bg-orange-500'], ['jhncc-primary']);
+      return;
+    }
+  } else {
+    // Auto-complete step \u2014 nudge if editor not run
     if (window.__pylearnStepHasEditor && !window.__pylearnStepRan) {
-      var nextBtn = document.getElementById('btn-next');
-      var original = nextBtn.textContent;
-      nextBtn.textContent = 'Try the code first! \u25B6';
-      nextBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-      nextBtn.classList.remove('jhncc-primary');
-      setTimeout(function() {
-        nextBtn.textContent = original;
-        nextBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-        nextBtn.classList.add('jhncc-primary');
-      }, 2000);
+      flashButton(nextBtn, 'Try the code first! \u25B6', ['bg-yellow-500'], ['jhncc-primary']);
       return;
     }
     await markStepComplete(lesson.meta.id, step.id);
   }
 
-  var next = state.currentStepIdx + 1;
-  if (next < lesson.data.steps.length) loadStep(state.currentLessonIdx, next);
+  if (isLast) {
+    var nextLessonIdx = state.currentLessonIdx + 1;
+    if (nextLessonIdx < state.lessons.length) {
+      flashButton(nextBtn, 'Moving to next lesson\u2026', ['bg-green-600'], ['jhncc-primary']);
+      setTimeout(function() { loadLesson(nextLessonIdx); }, 900);
+    } else {
+      flashButton(nextBtn, 'All lessons complete! \uD83C\uDF89', ['bg-green-600'], ['jhncc-primary']);
+    }
+  } else {
+    loadStep(state.currentLessonIdx, state.currentStepIdx + 1);
+  }
 };
 
 // ── MCQ helpers ───────────────────────────────────────────────
@@ -1992,7 +2103,7 @@ function createMCQSet(containerId, questions) {
       htmlWrap.innerHTML = q.html;
       c.appendChild(htmlWrap);
       if (window.scratchblocks) {
-        try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) {}
+        try { scratchblocks.renderMatching('pre.scratch-blocks', { style: 'scratch3' }); } catch(e) { console.warn('[scratchblocks renderMatching]', e); }
       }
     }
 
@@ -2076,12 +2187,14 @@ function setupAuthUI() {
       // Use the stored version of the code (correct case) as the uid
       var classesSnap = await state.db.ref('classes').get();
       var foundCode = null;
+      var foundClass = null;
       if (classesSnap.exists()) {
         classesSnap.forEach(function(classSnap) {
           var codesVal = classSnap.child('codes').val() || {};
           Object.keys(codesVal).forEach(function(storedCode) {
             if (storedCode.toLowerCase() === code.toLowerCase()) {
               foundCode = storedCode;  // use the correctly-cased stored code as uid
+              foundClass = classSnap.key;
             }
           });
         });
@@ -2089,11 +2202,12 @@ function setupAuthUI() {
       if (!foundCode) { errEl.textContent='Invalid code. Please ask your teacher.'; errEl.classList.remove('hidden'); return; }
       localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
       localStorage.setItem('pylearn_code', foundCode);
-      state.uid=foundCode; state.isAdmin=false;
+      state.uid=foundCode; state.className=foundClass; state.isAdmin=false;
       await loadProgress();
       renderLessonTabs(); renderStepBar();
       modalLogin.classList.add('hidden');
       updateAuthUI(first,last,false);
+      startForcedQuizWatcher(foundClass);
     } catch(e) { errEl.textContent='Error connecting. Please try again.'; errEl.classList.remove('hidden'); }
   };
 
@@ -2109,7 +2223,8 @@ function setupAuthUI() {
     } catch(e) {}
     // Clear local progress so the next student starts fresh on this device
     try { localStorage.removeItem(localProgressKey()); } catch(e) {}
-    state.uid=null; state.isAdmin=false; state.progress={};
+    stopForcedQuizWatcher();
+    state.uid=null; state.className=null; state.isAdmin=false; state.progress={};
     updateAuthUI(null,null,false);
     renderLessonTabs(); renderStepBar();
   };
@@ -2127,7 +2242,7 @@ function setupAuthUI() {
   if (savedCode && savedName) {
     var n = JSON.parse(savedName);
     if (savedCode.toLowerCase() === state.config.adminCode.toLowerCase()) {
-      state.uid='admin'; state.isAdmin=true;
+      state.uid='admin'; state.className=null; state.isAdmin=true;
       // Re-register admin UID on page refresh so Firebase rules still recognise them
       try {
         var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
@@ -2138,6 +2253,10 @@ function setupAuthUI() {
       updateAuthUI(n.first,n.last,true);
     } else {
       state.uid=savedCode;
+      findClassForCode(savedCode).then(function(className) {
+        state.className = className;
+        startForcedQuizWatcher(className);
+      });
       loadProgress().then(function(){ renderLessonTabs(); renderStepBar(); });
       updateAuthUI(n.first,n.last,false);
     }
@@ -2170,6 +2289,23 @@ function studentName(code) {
     if (keys[i].toLowerCase() === lower) return state.nameMap[keys[i]];
   }
   return null;
+}
+
+async function findClassForCode(code) {
+  if (!code || !state.db) return null;
+  var classesSnap = await state.db.ref('classes').get();
+  if (!classesSnap.exists()) return null;
+  var foundClass = null;
+  classesSnap.forEach(function(classSnap) {
+    if (foundClass) return;
+    var codesVal = classSnap.child('codes').val() || {};
+    Object.keys(codesVal).forEach(function(storedCode) {
+      if (!foundClass && storedCode.toLowerCase() === code.toLowerCase()) {
+        foundClass = classSnap.key;
+      }
+    });
+  });
+  return foundClass;
 }
 
 function stepStatus(prog, lid, sid) {
@@ -2816,6 +2952,8 @@ var quiz = {
   currentWidget: null,
   missingSessionTimer: null,
   cleanupTimer: null,
+  forced: false,
+  displaced: false,
   unsubscribers: [],    // Firebase listeners to clean up
 };
 
@@ -2881,6 +3019,7 @@ function openQuizSetup(className) {
   var allQs = lesson.data.quizQuestions || [];
 
   document.getElementById('quiz-setup-lesson-name').textContent = lesson.data.title;
+  document.getElementById('quiz-force-class').checked = false;
   document.getElementById('quiz-q-count').max = allQs.length;
   document.getElementById('quiz-q-count').value = Math.min(5, allQs.length);
 
@@ -2918,6 +3057,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
   var lesson = state.lessons[state.currentLessonIdx];
   var allQs  = lesson.data.quizQuestions || [];
   var mode   = document.querySelector('input[name="quiz-mode"]:checked').value;
+  var forceClass = document.getElementById('quiz-force-class').checked;
   var selectedQs = [];
 
   if (mode === 'quick') {
@@ -2957,6 +3097,8 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
     state:       'lobby',
     questionIdx: -1,
     lessonId:    lesson.meta.id,
+    className:   quiz.className || null,
+    forced:      !!forceClass,
     questions:   selectedQs.map(function(q) {
       var isCodeType = q.type === 'code_regex' || q.type === 'code_output';
       return {
@@ -2985,6 +3127,16 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
       };
     }),
   });
+
+  if (forceClass && quiz.className) {
+    await state.db.ref('classes/' + quiz.className + '/forcedQuiz').set({
+      active: true,
+      lobbyCode: lobbyCode,
+      hostUid: firebaseUid || null,
+      lessonId: lesson.meta.id,
+      startedAt: Date.now()
+    });
+  }
 
   // Do not remove the whole quiz on a transient host disconnect. Students can be
   // dropped from Firebase briefly during heavy embedded tasks, so quizzes are
@@ -3077,6 +3229,7 @@ document.getElementById('btn-quiz-continue').onclick = async function() {
 
 document.getElementById('btn-quiz-host-exit').onclick = async function() {
   if (!confirm('End the quiz for all players?')) return;
+  await clearForcedQuizForCurrentClass();
   await endQuiz();
 };
 
@@ -3312,6 +3465,7 @@ async function showAnswerReveal() {
 
 async function endQuiz() {
   clearInterval(quiz.timerInterval);
+  await clearForcedQuizForCurrentClass();
   // Cancel the onDisconnect removal BEFORE writing finished state,
   // otherwise Firebase deletes the session immediately after the write
   // causing WebSocket errors on connected clients.
@@ -3366,6 +3520,19 @@ async function endQuiz() {
     if (finishedSessionRef) finishedSessionRef.remove().catch(function(){});
     if (quiz.cleanupTimer) quiz.cleanupTimer = null;
   }, 30000);
+}
+
+async function clearForcedQuizForCurrentClass() {
+  if (!quiz.className || !quiz.lobbyCode || !state.db) return;
+  try {
+    var forcedRef = state.db.ref('classes/' + quiz.className + '/forcedQuiz');
+    var snap = await forcedRef.get();
+    if (snap.child('lobbyCode').val() === quiz.lobbyCode) {
+      await forcedRef.update({ active: false, endedAt: Date.now() });
+    }
+  } catch(e) {
+    console.warn('Could not clear forced quiz:', e.message);
+  }
 }
 
 async function buildLeaderboard() {
@@ -3423,6 +3590,33 @@ document.getElementById('btn-join-quiz-cancel').onclick = function() {
 // Prevent join-spam: track in-flight join request
 var joinInProgress = false;
 
+function stopForcedQuizWatcher() {
+  if (state.forcedQuizRef && state.forcedQuizListener) {
+    state.forcedQuizRef.off('value', state.forcedQuizListener);
+  }
+  state.forcedQuizRef = null;
+  state.forcedQuizListener = null;
+  state.forcedQuizCode = null;
+}
+
+function startForcedQuizWatcher(className) {
+  stopForcedQuizWatcher();
+  if (!className || state.isAdmin || !state.uid) return;
+  state.forcedQuizRef = state.db.ref('classes/' + className + '/forcedQuiz');
+  state.forcedQuizListener = state.forcedQuizRef.on('value', function(snap) {
+    var forced = snap.val() || {};
+    if (!forced.active || !forced.lobbyCode) {
+      state.forcedQuizCode = null;
+      return;
+    }
+    if (state.forcedQuizCode === forced.lobbyCode && quiz.sessionRef) return;
+    state.forcedQuizCode = forced.lobbyCode;
+    joinQuizByCode(String(forced.lobbyCode), { forced: true, allowLate: true }).catch(function(e) {
+      console.warn('Forced quiz join failed:', e.message);
+    });
+  });
+}
+
 document.getElementById('btn-join-quiz-submit').onclick = async function() {
   if (joinInProgress) return;
   var lobbyCode = document.getElementById('input-lobby-code').value.trim().toUpperCase();
@@ -3434,53 +3628,62 @@ document.getElementById('btn-join-quiz-submit').onclick = async function() {
 
   joinInProgress = true;
   document.getElementById('btn-join-quiz-submit').disabled = true;
-
   try {
-    var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
-    var snap = await sessionRef.get();
-    if (!snap.exists() || snap.child('state').val() !== 'lobby') {
-      errEl.textContent = 'No open lobby found with that code.'; errEl.classList.remove('hidden');
-      joinInProgress = false; document.getElementById('btn-join-quiz-submit').disabled = false;
-      return;
-    }
-
-    // Check if already in (not kicked)
-    var existing = snap.child('players/' + state.uid);
-    if (existing.exists() && !existing.child('kicked').val()) {
-      errEl.textContent = 'You are already in this quiz.'; errEl.classList.remove('hidden');
-      joinInProgress = false; document.getElementById('btn-join-quiz-submit').disabled = false;
-      return;
-    }
-
-    // Use Firebase transaction to prevent duplicate join
-    var playerRef = sessionRef.child('players/' + state.uid);
-    var result = await playerRef.transaction(function(current) {
-      if (current && !current.kicked) return; // already joined, abort
-      return { joinedAt: Date.now(), kicked: false };
-    });
-
-    if (!result.committed) {
-      errEl.textContent = 'Already joined.'; errEl.classList.remove('hidden');
-      joinInProgress = false; document.getElementById('btn-join-quiz-submit').disabled = false;
-      return;
-    }
-
+    await joinQuizByCode(lobbyCode, { forced: false, allowLate: true });
     document.getElementById('modal-join-quiz').classList.add('hidden');
-    quiz.lobbyCode  = lobbyCode;
-    quiz.sessionRef = sessionRef;
-    quiz.myScore    = 0;
-    quiz.myAnswered = false;
-    quiz.myScored   = {};
-    quiz.currentStudentQuestionKey = null;
-    quiz.currentStudentRevealKey = null;
-    showStudentScreen(lobbyCode, snap.val().questions || []);
-
   } catch(e) {
-    errEl.textContent = 'Error joining: ' + e.message; errEl.classList.remove('hidden');
+    errEl.textContent = e.message || 'Error joining quiz.'; errEl.classList.remove('hidden');
   }
   joinInProgress = false;
   document.getElementById('btn-join-quiz-submit').disabled = false;
 };
+
+async function joinQuizByCode(lobbyCode, opts) {
+  opts = opts || {};
+  if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join a quiz.');
+  if (!lobbyCode || String(lobbyCode).length !== 4) throw new Error('Please enter a 4-digit code.');
+  if (quiz.sessionRef && quiz.lobbyCode === lobbyCode && !quiz.displaced) {
+    return;
+  }
+
+  var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
+  var snap = await sessionRef.get();
+  if (!snap.exists()) throw new Error('No quiz found with that code.');
+  var sessionState = snap.child('state').val();
+  if (sessionState === 'finished') throw new Error('That quiz has already finished.');
+  if (!opts.allowLate && sessionState !== 'lobby') throw new Error('No open lobby found with that code.');
+
+  if (quiz.sessionRef && quiz.lobbyCode !== lobbyCode) {
+    exitStudentQuiz({ removePlayer: false, keepForced: true });
+  }
+
+  var playerRef = sessionRef.child('players/' + state.uid);
+  var playerData = {
+    joinedAt: Date.now(),
+    kicked: false,
+    activeClientId: state.quizClientId,
+    lastSeenAt: Date.now(),
+    forced: !!opts.forced
+  };
+  var result = await playerRef.transaction(function(current) {
+    if (current && current.kicked && !opts.forced) return;
+    return Object.assign({}, current || {}, playerData);
+  });
+
+  if (!result.committed) throw new Error('You cannot rejoin this quiz right now.');
+
+  quiz.lobbyCode  = lobbyCode;
+  quiz.sessionRef = sessionRef;
+  quiz.myScore    = 0;
+  quiz.myAnswered = false;
+  quiz.myScored   = {};
+  quiz.forced     = !!opts.forced || snap.child('forced').val() === true;
+  quiz.displaced  = false;
+  quiz.currentStudentQuestionKey = null;
+  quiz.currentStudentRevealKey = null;
+  var joinedQuestions = snap.val().questions || [];
+  showStudentScreen(lobbyCode, Array.isArray(joinedQuestions) ? joinedQuestions : Object.values(joinedQuestions), { forced: quiz.forced });
+}
 
 document.getElementById('btn-join-quiz-cancel').onclick = function() {
   document.getElementById('modal-join-quiz').classList.add('hidden');
@@ -3493,14 +3696,55 @@ function setStudentView(view) {
   });
 }
 
+function updateForcedQuizChrome() {
+  var exitBtn = document.getElementById('btn-quiz-student-exit');
+  var homeBtn = document.getElementById('btn-quiz-student-home');
+  if (exitBtn) exitBtn.classList.toggle('hidden', !!quiz.forced);
+  if (homeBtn) homeBtn.classList.toggle('hidden', !!quiz.forced);
+}
 
-function showStudentScreen(lobbyCode, questions) {
+function showQuizDisplacedMessage() {
+  document.getElementById('quiz-student-screen').classList.remove('hidden');
+  ['lobby','kicked','question','reveal','finished'].forEach(function(v) {
+    document.getElementById('qs-' + v).classList.add('hidden');
+  });
+  var lobby = document.getElementById('qs-lobby');
+  lobby.classList.remove('hidden');
+  lobby.innerHTML =
+    '<div class="text-5xl mb-4">&#x1F5A5;</div>' +
+    '<h2 class="text-xl font-bold mb-2">Quiz moved to another tab</h2>' +
+    '<p class="text-gray-400 text-sm">This tab has been disconnected because the quiz was opened somewhere else.</p>';
+}
+
+
+function showStudentScreen(lobbyCode, questions, opts) {
+  opts = opts || {};
   quiz.questions = questions;
+  quiz.forced = !!opts.forced;
+  quiz.displaced = false;
+  document.getElementById('qs-lobby').innerHTML =
+    '<div class="text-5xl mb-4">&#x23F3;</div>' +
+    '<h2 class="text-xl font-bold mb-2">You are in the lobby!</h2>' +
+    '<p class="text-gray-400 text-sm">Wait for your teacher to start the quiz&#x2026;</p>' +
+    '<p id="qs-my-code" class="text-gray-500 text-xs mt-4"></p>';
   document.getElementById('quiz-student-screen').classList.remove('hidden');
   document.getElementById('qs-my-code').textContent = 'Your code: ' + state.uid;
+  updateForcedQuizChrome();
   setStudentView('lobby');
 
   var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
+
+  // If the same student opens the quiz in a newer tab, that newer tab owns the
+  // session. The old tab stops listening and shows a disconnected message.
+  var activeClientRef = sessionRef.child('players/' + state.uid + '/activeClientId');
+  var activeClientListener = activeClientRef.on('value', function(snap) {
+    var activeClientId = snap.val();
+    if (activeClientId && activeClientId !== state.quizClientId) {
+      quiz.displaced = true;
+      exitStudentQuiz({ removePlayer: false, displaced: true, keepForced: true });
+    }
+  });
+  quiz.unsubscribers.push(function() { activeClientRef.off('value', activeClientListener); });
 
   // Listen to kicked state
   var kickedRef = sessionRef.child('players/' + state.uid + '/kicked');
@@ -3551,6 +3795,8 @@ function showStudentScreen(lobbyCode, questions) {
       }
     } else if (qzState === 'answer') {
       quiz.currentStudentQuestionKey = null;
+      var answerFbQs = snap.child('questions').val();
+      if (answerFbQs) quiz.questions = Object.values(answerFbQs);
       var q = quiz.questions[qIdx];
       if (quiz.currentStudentRevealKey !== String(qIdx)) {
         quiz.currentStudentRevealKey = String(qIdx);
@@ -3559,6 +3805,8 @@ function showStudentScreen(lobbyCode, questions) {
     } else if (qzState === 'finished') {
       quiz.currentStudentQuestionKey = null;
       quiz.currentStudentRevealKey = null;
+      quiz.forced = false;
+      updateForcedQuizChrome();
       setStudentView('finished');
       document.getElementById('qs-final-score').textContent =
         'You scored ' + quiz.myScore + ' / ' + quiz.questions.length;
@@ -4572,6 +4820,7 @@ document.getElementById('btn-quiz-rejoin').onclick = async function() {
 
 function exitStudentQuiz(opts) {
   opts = opts || {};
+  if (quiz.forced && !opts.keepForced && !opts.displaced) return;
   clearInterval(quiz.timerInterval);
   if (quiz.missingSessionTimer) {
     clearTimeout(quiz.missingSessionTimer);
@@ -4583,7 +4832,13 @@ function exitStudentQuiz(opts) {
     quiz.sessionRef.child('players/' + state.uid).remove();
   }
   quiz.sessionRef = null;
-  document.getElementById('quiz-student-screen').classList.add('hidden');
+  quiz.forced = false;
+  if (opts.displaced) {
+    showQuizDisplacedMessage();
+  } else {
+    document.getElementById('quiz-student-screen').classList.add('hidden');
+  }
+  updateForcedQuizChrome();
 }
 
 // ── Wire up join quiz button visibility ────────────────────────

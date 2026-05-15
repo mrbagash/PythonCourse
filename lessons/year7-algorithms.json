@@ -1,0 +1,43 @@
+{
+  "id": "year7-algorithms",
+  "title": "Algorithms",
+  "description": "What algorithms are, why they matter, and how to write step-by-step instructions to solve problems.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-4'>A recipe, a set of directions, and a morning routine all have something in common — they are all <strong>algorithms</strong>. Answer these two questions:</p><div id='algo-dna' class='ex-box'></div>",
+      "js": "(function(){var c=document.getElementById('algo-dna');c.innerHTML='<label class=\"block mb-3\"><span class=\"bb-question-title\">1. In one sentence, what do you think an algorithm is?</span><input id=\"dna-0\" class=\"ex-input mt-1\" placeholder=\"e.g. A set of steps that...\"></label><label class=\"block mb-3\"><span class=\"bb-question-title\">2. Give one real-life example of an algorithm.</span><input id=\"dna-1\" class=\"ex-input mt-1\" placeholder=\"e.g. A recipe, getting dressed...\"></label><button id=\"dna-go\" class=\"ex-btn\">Continue</button><div id=\"dna-fb\" class=\"ex-feedback\"></div>';document.getElementById('dna-go').onclick=function(){var a=document.getElementById('dna-0').value.trim(),b=document.getElementById('dna-1').value.trim();if(a.length>4&&b.length>2){document.getElementById('dna-fb').className='ex-feedback ok';document.getElementById('dna-fb').textContent='Good. Keep those ideas in mind.';__markStepComplete();}else{document.getElementById('dna-fb').className='ex-feedback hint';document.getElementById('dna-fb').textContent='Please answer both questions.';}};})()"
+    },
+    {
+      "id": "what-is-algorithm",
+      "title": "What is an Algorithm?",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is an algorithm?</h2><p class='text-gray-700 mb-4'>An <strong>algorithm</strong> is a precise, ordered sequence of instructions that solves a problem.</p><div class='ex-box'><p class='bb-answer-line'>Algorithm = step-by-step instructions to solve a problem</p></div><p class='text-gray-700 my-4'>A good algorithm must be:</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Property</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><strong>Precise</strong></td><td>No vague steps</td><td>✓ \"Boil for 10 minutes\" <br>✗ \"Cook for a while\"</td></tr><tr><td><strong>Ordered</strong></td><td>Steps in the right sequence</td><td>Socks before shoes, not after</td></tr><tr><td><strong>Finite</strong></td><td>Has a clear end</td><td>\"Arrive at school\" — stops there</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "sequence-task",
+      "title": "Sequencing Challenge",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Put it in order</h2><p class='text-gray-700 mb-3'>Click the steps in the correct order from <strong>first to last</strong>. Wrong click resets the challenge.</p><div id='algo-seq' class='ex-box'></div>",
+      "js": "(function(){var chs=[{q:'Making a bowl of cereal:',steps:['Pour milk into the bowl','Get a bowl from the cupboard','Pick up a spoon and eat','Pour cereal into the bowl'],ans:[1,3,0,2]},{q:'Crossing the road safely:',steps:['Walk straight across','Look right','Stop at the kerb','Look left','Check both ways are clear'],ans:[2,1,3,4,0]},{q:'Logging into a computer:',steps:['Type your password','Click Log in','Turn on the monitor','Type your username','See the desktop'],ans:[2,3,0,1,4]}];var cur=0,seq=[];function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}function render(){var ch=chs[cur];var c=document.getElementById('algo-seq');var avail=shuffle(ch.steps.map(function(s,i){return{s:s,i:i};}));c.innerHTML='<p class=\"bb-question-title mb-1\">Challenge '+(cur+1)+' of '+chs.length+'</p><p class=\"text-gray-200 mb-3\">'+ch.q+'</p><div id=\"algo-btns\" class=\"flex flex-col gap-2 mb-3\"></div><div id=\"algo-fb\" class=\"ex-feedback\"></div>';var bd=document.getElementById('algo-btns');avail.forEach(function(item){var btn=document.createElement('button');btn.className='ex-btn';btn.style.cssText='text-align:left;width:100%';btn.textContent=item.s;btn.dataset.idx=item.i;btn.onclick=function(){if(btn.disabled)return;var fb=document.getElementById('algo-fb');if(parseInt(btn.dataset.idx)===ch.ans[seq.length]){btn.style.opacity='0.35';btn.disabled=true;seq.push(parseInt(btn.dataset.idx));if(seq.length===ch.steps.length){fb.className='ex-feedback ok';fb.textContent='Correct order!';seq=[];if(cur<chs.length-1){cur++;setTimeout(render,900);}else{fb.textContent='All three complete — you can sequence an algorithm!';setTimeout(__markStepComplete,900);}}}else{fb.className='ex-feedback err';fb.textContent='Not quite — think about what must happen first. Resetting...';seq=[];setTimeout(render,1200);}};bd.appendChild(btn);});}render();})();"
+    },
+    {
+      "id": "exam",
+      "title": "Quick Check",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Quick check</h2><div id='algo-exam'></div>",
+      "js": "createMCQSet('algo-exam',[{q:'What is an algorithm?',opts:['A type of computer hardware','A set of step-by-step instructions to solve a problem','A programming language','A random list of numbers'],correct:1,feedback:'Correct.',wrongFeedback:'An algorithm is a precise, ordered set of instructions that solves a problem.'},{q:'\"Cook it until it looks right\" — which property does this break?',opts:['Finite','Precise','Ordered','None — it is fine'],correct:1,feedback:'Correct — it is vague, not precise.',wrongFeedback:'\"Looks right\" is vague. A good algorithm must be precise.'},{q:'Why must algorithm steps be in the correct order?',opts:['It looks neater','The wrong order produces the wrong result','Computers read bottom to top','Order does not matter'],correct:1,feedback:'Correct.',wrongFeedback:'The wrong order produces the wrong result — try putting your socks on after your shoes!'}]);"
+    }
+  ],
+  "quizQuestions": [
+    { "type": "mcq", "q": "What is an algorithm?", "options": ["A set of step-by-step instructions to solve a problem", "A type of computer hardware", "A programming language", "A random list of numbers"], "answer": 0, "duration": 25 },
+    { "type": "mcq", "q": "Which property means an algorithm has a clear start and end?", "options": ["Precise", "Ordered", "Finite", "Unambiguous"], "answer": 2, "duration": 25 },
+    { "type": "mcq", "q": "Which is the best-written algorithm step?", "options": ["Do the thing", "Cook it for a bit", "Boil 500 ml of water for exactly 3 minutes", "Add some stuff"], "answer": 2, "duration": 25 },
+    { "type": "mcq", "q": "A recipe is an example of an algorithm because...", "options": ["It uses a computer", "It gives ordered steps to produce a meal", "It has pictures", "It is stored digitally"], "answer": 1, "duration": 25 },
+    { "type": "mcq", "q": "\"Cook until done\" breaks which property?", "options": ["Finite", "Precise", "Ordered", "None"], "answer": 1, "duration": 25 },
+    { "type": "text_input", "q": "What word describes an algorithm that has a clear start and end?", "answer": "FINITE", "duration": 25 },
+    { "type": "mcq", "q": "Algorithms are used in everyday life. Which of these is NOT an algorithm?", "options": ["A cooking recipe", "Satnav directions", "A random noise", "Getting dressed in order"], "answer": 2, "duration": 25 }
+  ]
+}

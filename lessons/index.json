@@ -5,11 +5,23 @@
       "label": "Year 7",
       "courses": [
         {
+          "id": "algorithms",
+          "label": "Algorithms",
+          "lessons": [
+            { "id": "year7-algorithms", "title": "Algorithms", "file": "lessons/year7-algorithms.json", "order": 1 },
+            { "id": "year7-flowcharts", "title": "Flowcharts & Pseudocode", "file": "lessons/year7-flowcharts.json", "order": 2 }
+          ]
+        },
+        {
           "id": "scratch",
           "label": "Scratch",
           "lessons": [
-            { "id": "year7-scratch-intro", "title": "Variables", "file": "lessons/year7-scratch-intro.json", "order": 1 },
-            { "id": "year7-scratch-selection", "title": "Selection", "file": "lessons/year7-scratch-selection.json", "order": 2 }
+            { "id": "year7-scratch-basics", "title": "Scratch Basics", "file": "lessons/year7-scratch-basics.json", "order": 1 },
+            { "id": "year7-scratch-conditionals", "title": "Conditionals & Variables", "file": "lessons/year7-scratch-conditionals.json", "order": 2 },
+            { "id": "year7-scratch-iteration", "title": "Iteration", "file": "lessons/year7-scratch-iteration.json", "order": 3 },
+            { "id": "year7-scratch-games", "title": "Game Creation", "file": "lessons/year7-scratch-games.json", "order": 4 },
+            { "id": "year7-scratch-project", "title": "Own Game Project", "file": "lessons/year7-scratch-project.json", "order": 5 },
+            { "id": "year7-ap2-revision", "title": "AP2 Revision", "file": "lessons/year7-ap2-revision.json", "order": 6 }
           ]
         }
       ]
@@ -50,6 +62,19 @@
             { "id": "year9-binary-denary",      "title": "Binary and Denary",  "file": "lessons/year9-binary-denary.json",      "order": 2 },
             { "id": "year9-binary-addition",    "title": "Binary Addition",    "file": "lessons/year9-binary-addition.json",    "order": 3 },
             { "id": "year9-hexadecimal",        "title": "Hexadecimal",        "file": "lessons/year9-hexadecimal.json",        "order": 4 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "btec-dit",
+      "label": "BTEC DIT",
+      "courses": [
+        {
+          "id": "component-2-spreadsheets",
+          "label": "Component 2 - Spreadsheets",
+          "lessons": [
+            { "id": "btec-dit-spreadsheets-lesson-1", "title": "Spreadsheet Basics", "file": "lessons/btec-dit-spreadsheets-lesson-1.json", "order": 1 }
           ]
         }
       ]

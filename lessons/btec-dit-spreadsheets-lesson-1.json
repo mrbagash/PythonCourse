@@ -1,0 +1,211 @@
+{
+  "id": "btec-dit-spreadsheets-lesson-1",
+  "title": "Spreadsheet Basics",
+  "description": "Data, information, spreadsheet structure, fields, records, and qualitative and quantitative data for BTEC DIT Component 2.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Answer these starter questions from your previous knowledge. Use short answers.</p><div id='dit-dna' class='ex-box'></div>",
+      "js": "(function(){var qs=[{q:'What is data?',a:['raw facts and figures','facts and figures','raw facts','facts']},{q:'How can we visually represent data in a table?',a:['chart','charts','graph','graphs','chart or graph','charts or graphs']},{q:'What is a spreadsheet?',a:['a document that displays data using rows and columns','document that displays data using rows and columns','rows and columns','a document that organises data into rows and columns']},{q:'Which Microsoft software can we use to manipulate spreadsheets?',a:['excel','microsoft excel']}];var c=document.getElementById('dit-dna');c.innerHTML=qs.map(function(x,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+(i+1)+'. '+x.q+'</span><input id=\"dit-dna-'+i+'\" class=\"ex-input mt-1\" autocomplete=\"off\"></label>';}).join('')+'<button id=\"dit-dna-check\" class=\"ex-btn\">Check answers</button><div id=\"dit-dna-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-dna-check').onclick=function(){var ok=0;qs.forEach(function(x,i){var el=document.getElementById('dit-dna-'+i);var v=el.value.trim().toLowerCase().replace(/\\s+/g,' ');var pass=x.a.some(function(a){return v===a||v.indexOf(a)!==-1;});el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-dna-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Good start. You have remembered the key starter ideas.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='You have '+ok+' / '+qs.length+'. Improve any red answers, then check again.';}};})();"
+    },
+    {
+      "id": "spreadsheet-basics",
+      "title": "Spreadsheet Basics",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a spreadsheet?</h2><p class='text-gray-700 mb-4'>A spreadsheet is a document that organises data using <strong>rows</strong> and <strong>columns</strong>. It is useful because data can be stored, sorted, calculated and turned into charts.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Cell</td><td>A single box in a spreadsheet</td></tr><tr><td>Row</td><td>A horizontal line, labelled with numbers</td></tr><tr><td>Column</td><td>A vertical line, labelled with letters</td></tr><tr><td>Cell reference</td><td>The column letter followed by the row number, such as B4</td></tr><tr><td>Workbook</td><td>All of the sheets in one spreadsheet file</td></tr></tbody></table></div><p class='text-gray-700'>In Microsoft Excel, the cell reference tells you exactly where a piece of data is stored.</p>"
+    },
+    {
+      "id": "spreadsheet-task",
+      "title": "Spreadsheet Vocabulary",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a spreadsheet? - Task</h2><p class='text-gray-700 mb-4'>Use the word bank to complete each sentence.</p><div class='ex-box'><p class='bb-question-title'>Word bank</p><p class='text-gray-200'>Numbers | Letters | Workbook | Cell | Range | Number | Letter</p></div><div id='dit-vocab-task' class='ex-box'></div>",
+      "js": "(function(){var qs=[{text:'A single box in a spreadsheet is known as a',ans:'Cell',opts:['Cell','Range','Workbook']},{text:'Rows are labelled with',ans:'Numbers',opts:['Numbers','Letters','Workbook']},{text:'Columns are labelled with',ans:'Letters',opts:['Letters','Numbers','Range']},{text:'A cell is referenced using the column',ans:'Letter',opts:['Letter','Number','Workbook']},{text:'followed by the row',ans:'Number',opts:['Number','Letter','Cell']},{text:'All of the sheets in a spreadsheet make up a',ans:'Workbook',opts:['Workbook','Range','Cell']}];var c=document.getElementById('dit-vocab-task');c.innerHTML=qs.map(function(q,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+q.text+'</span><select id=\"dit-vocab-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose...</option>'+q.opts.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></label>';}).join('')+'<button id=\"dit-vocab-check\" class=\"ex-btn\">Check</button><div id=\"dit-vocab-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-vocab-check').onclick=function(){var ok=0;qs.forEach(function(q,i){var el=document.getElementById('dit-vocab-'+i);var pass=el.value===q.ans;el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-vocab-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Correct. You can now identify the core parts of a spreadsheet.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='You have '+ok+' / '+qs.length+'. Re-read the sentence and try again.';}};})();"
+    },
+    {
+      "id": "data-information",
+      "title": "Data and Information",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Data and information</h2><p class='text-gray-700 mb-4'>Click through each stage. The important idea is that information is data with meaning.</p><div id='dit-data-stepper' class='ex-box'></div>",
+      "js": "(function(){var steps=[{t:'1. Raw data',h:'<p class=\"text-gray-200\">5, Yes, 25%, Red, 12</p>',n:'These are facts and figures, but we do not know what they describe yet.'},{t:'2. Add field names',h:'<table class=\"bb-table\"><thead><tr><th>Age</th><th>Member?</th><th>Discount</th><th>House colour</th><th>Points</th></tr></thead><tbody><tr><td>5</td><td>Yes</td><td>25%</td><td>Red</td><td>12</td></tr></tbody></table>',n:'The headers give the data context. Now it has meaning.'},{t:'3. Key fact',h:'<p class=\"bb-answer-line\">All information is data, but not all data is information.</p>',n:'Information is data that has been given context or meaning.'}];var i=0,c=document.getElementById('dit-data-stepper');function render(){var s=steps[i];c.innerHTML='<p class=\"bb-question-title\">'+s.t+'</p>'+s.h+'<p class=\"ex-feedback hint\">'+s.n+'</p><div class=\"bb-step-controls\"><button id=\"dit-prev\" class=\"ex-btn\" '+(i===0?'disabled':'')+'>Previous</button><span class=\"bb-step-pill\">Step '+(i+1)+' of '+steps.length+'</span><button id=\"dit-next\" class=\"ex-btn\">'+(i===steps.length-1?'Complete':'Next')+'</button></div>';document.getElementById('dit-prev').onclick=function(){if(i>0){i--;render();}};document.getElementById('dit-next').onclick=function(){if(i<steps.length-1){i++;render();}else{__markStepComplete();}};}render();})();"
+    },
+    {
+      "id": "fields-records",
+      "title": "Fields and Records",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Fields and records</h2><p class='text-gray-700 mb-4'>Tables are made from fields and records. A <strong>field</strong> describes one column. A <strong>record</strong> is one full entry, usually one row.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Name</th><th>Age</th><th>Favourite game</th></tr></thead><tbody><tr><td>Amira</td><td>14</td><td>Minecraft</td></tr><tr><td>Ben</td><td>15</td><td>FC 26</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>In this table, how many records are there?</p><div id='dit-record-q'></div>",
+      "js": "createMCQ('dit-record-q',['2 records','3 records','6 records','1 record'],0,'Correct. There are two rows of entries, so there are two records.','Not quite. A record is one full entry, usually one row.');"
+    },
+    {
+      "id": "definitions-task",
+      "title": "Definitions Task",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Definitions - Task</h2><p class='text-gray-700 mb-4'>Match each key term to the correct definition.</p><div id='dit-def-task' class='ex-box'></div>",
+      "js": "(function(){var defs=[['Spreadsheet','A document that organises data into rows and columns.'],['Table','A structure that organises data into rows and columns.'],['Field','Describes data in one column and groups data of the same type.'],['Record','A single entry in a table, usually a whole row.'],['Data','Raw facts and figures.'],['Information','Data with context or meaning.']];var options=defs.map(function(d){return d[1];}).sort(function(){return Math.random()-0.5;});var c=document.getElementById('dit-def-task');c.innerHTML=defs.map(function(d,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+d[0]+'</span><select id=\"dit-def-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose a definition...</option>'+options.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></label>';}).join('')+'<button id=\"dit-def-check\" class=\"ex-btn\">Check definitions</button><div id=\"dit-def-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-def-check').onclick=function(){var ok=0;defs.forEach(function(d,i){var el=document.getElementById('dit-def-'+i);var pass=el.value===d[1];el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-def-fb');if(ok===defs.length){fb.className='ex-feedback ok';fb.textContent='Excellent. These definitions are secure.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='You have '+ok+' / '+defs.length+'. Check the highlighted rows and try again.';}};})();"
+    },
+    {
+      "id": "representing-information",
+      "title": "Representing Information",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Qualitative and quantitative data</h2><p class='text-gray-700 mb-4'>Text is often used for qualitative data. Numbers are often used for quantitative data.</p><div class='ex-box'><p><strong class='text-gray-100'>Qualitative:</strong> data that cannot be measured, such as a name, colour, opinion or review.</p><p class='mt-2'><strong class='text-gray-100'>Quantitative:</strong> data that can be counted or measured, such as age, score, price or percentage.</p></div><div id='dit-type-task' class='ex-box'></div>",
+      "js": "(function(){var qs=[['Student name','Qualitative'],['Age','Quantitative'],['Favourite colour','Qualitative'],['Test score','Quantitative'],['Review comment','Qualitative'],['Attendance percentage','Quantitative']];var c=document.getElementById('dit-type-task');c.innerHTML=qs.map(function(q,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+q[0]+'</span><select id=\"dit-type-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose...</option><option>Qualitative</option><option>Quantitative</option></select></label>';}).join('')+'<button id=\"dit-type-check\" class=\"ex-btn\">Check</button><div id=\"dit-type-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-type-check').onclick=function(){var ok=0;qs.forEach(function(q,i){var el=document.getElementById('dit-type-'+i);var pass=el.value===q[1];el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-type-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Correct. You can now separate measured data from descriptive data.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='You have '+ok+' / '+qs.length+'. Ask: can this be measured or counted?';}};})();"
+    },
+    {
+      "id": "storing-data-task",
+      "title": "Storing Data Task",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Create your data tables</h2><p class='text-gray-700 mb-2'>Build two tables using the spreadsheets below.</p><ul class='list-disc ml-5 text-gray-700 mb-4 text-sm space-y-1'><li><strong>Table 1</strong> — a topic with qualitative data (names, colours, opinions, reviews).</li><li><strong>Table 2</strong> — a topic with quantitative data (scores, prices, counts, percentages).</li></ul><p class='text-gray-500 text-sm mb-4'>Put your <strong>field names in row 1</strong>. Add at least <strong>3 records</strong> (data rows) in each table.</p><p class='text-sm font-semibold text-gray-300 mb-1'>Table 1 — Qualitative data</p><div id='dit-qual-sheet' class='mb-6 overflow-x-auto'></div><p class='text-sm font-semibold text-gray-300 mt-2 mb-1'>Table 2 — Quantitative data</p><div id='dit-quant-sheet' class='mb-5 overflow-x-auto'></div><button id='dit-sheet-check' class='ex-btn'>Check tables</button><div id='dit-sheet-fb' class='ex-feedback'></div>",
+      "js": "(function(){var C='https://cdn.jsdelivr.net/npm/';function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){if(window.jspreadsheet){cb();return;}var s=document.createElement('script');s.src=u;s.onload=cb;document.head.appendChild(s);}lcss(C+'jsuites@4/dist/jsuites.css');lcss(C+'jspreadsheet-ce@4/dist/jspreadsheet.css');function blank(){return Array.from({length:10},function(){return new Array(6).fill('');});}function mkSheet(id){return jspreadsheet(document.getElementById(id),{data:blank(),columns:[{width:120},{width:120},{width:120},{width:120},{width:120},{width:120}],minDimensions:[6,10],tableOverflow:true,tableWidth:'100%',toolbar:true,about:false});}ljs(C+'jsuites@4/dist/jsuites.js',function(){ljs(C+'jspreadsheet-ce@4/dist/jspreadsheet.js',function(){var s1=mkSheet('dit-qual-sheet');var s2=mkSheet('dit-quant-sheet');document.getElementById('dit-sheet-check').onclick=function(){var fb=document.getElementById('dit-sheet-fb');var d1=s1.getData(),d2=s2.getData();var h1=d1[0].filter(function(c){return String(c).trim()!=='';}).length;var r1=d1.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});}).length;var h2=d2[0].filter(function(c){return String(c).trim()!=='';}).length;var r2=d2.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});}).length;if(h1<3){fb.className='ex-feedback err';fb.textContent='Qualitative table: add at least 3 field names in row 1.';return;}if(r1<3){fb.className='ex-feedback err';fb.textContent='Qualitative table: add at least 3 data records below the header row.';return;}if(h2<3){fb.className='ex-feedback err';fb.textContent='Quantitative table: add at least 3 field names in row 1.';return;}if(r2<3){fb.className='ex-feedback err';fb.textContent='Quantitative table: add at least 3 data records below the header row.';return;}fb.className='ex-feedback ok';fb.textContent='Both tables complete. Well done.';__markStepComplete();};});});})();"
+    },
+    {
+      "id": "formatting-extension",
+      "title": "Formatting Extension",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension: formatting your spreadsheet</h2><p class='text-gray-700 mb-3'>Use the toolbar above the spreadsheet to improve the sample data below. Make it readable and professional, then tick each box to confirm what you have done.</p><div id='dit-fmt-sheet' class='mb-5 overflow-x-auto'></div><div class='ex-box'><p class='bb-question-title mb-3'>Formatting checklist</p><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Bold field names in row 1</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Background colour applied to the header row</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Columns widened so all data is visible</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Number formatting applied to numeric columns</label><label class='block mb-3'><input type='checkbox' class='dit-fmt-chk mr-2'>Borders added to the table</label><button id='dit-fmt-check' class='ex-btn'>Confirm formatting complete</button><div id='dit-fmt-fb' class='ex-feedback'></div></div>",
+      "js": "(function(){var C='https://cdn.jsdelivr.net/npm/';function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){if(window.jspreadsheet){cb();return;}var s=document.createElement('script');s.src=u;s.onload=cb;document.head.appendChild(s);}lcss(C+'jsuites@4/dist/jsuites.css');lcss(C+'jspreadsheet-ce@4/dist/jspreadsheet.css');var data=[['Student','Score','Grade','Attendance %'],['Amira','85','A','95'],['Ben','62','C','88'],['Charlie','74','B','91'],['Diana','91','A*','99'],['Ethan','55','D','76'],['Fatima','78','B','87'],['George','83','A','93']];ljs(C+'jsuites@4/dist/jsuites.js',function(){ljs(C+'jspreadsheet-ce@4/dist/jspreadsheet.js',function(){jspreadsheet(document.getElementById('dit-fmt-sheet'),{data:data,columns:[{type:'text',width:130,title:'Student'},{type:'numeric',width:80,title:'Score'},{type:'text',width:80,title:'Grade'},{type:'numeric',width:130,title:'Attendance %'}],tableOverflow:true,tableWidth:'460px',toolbar:true,about:false});document.getElementById('dit-fmt-check').onclick=function(){var fb=document.getElementById('dit-fmt-fb');var done=[].slice.call(document.querySelectorAll('.dit-fmt-chk')).filter(function(c){return c.checked;}).length;if(done<4){fb.className='ex-feedback hint';fb.textContent='Complete at least 4 formatting steps and tick each box before confirming.';return;}fb.className='ex-feedback ok';fb.textContent='Good work. Your spreadsheet is now readable and professional.';__markStepComplete();};});});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer every question. Feedback appears after each one.</p><div id='dit-exam'></div>",
+      "js": "createMCQSet('dit-exam',[{q:'A single box in a spreadsheet is called a...',options:['Cell','Workbook','Field','Record'],answer:0,right:'Correct. A cell is one box.'},{q:'Rows in a spreadsheet are labelled with...',options:['Numbers','Letters','Colours','Formulas'],answer:0,right:'Correct. Rows use numbers.'},{q:'Columns in a spreadsheet are labelled with...',options:['Letters','Numbers','Records','Sheets'],answer:0,right:'Correct. Columns use letters.'},{q:'Which term means data with context or meaning?',options:['Information','Raw data','A range','A record'],answer:0,right:'Correct. Information has meaning.'},{q:'Which option is quantitative?',options:['Age','Favourite colour','Surname','Review comment'],answer:0,right:'Correct. Age can be measured.'},{q:'What is a field?',options:['A column heading that describes a type of data','A whole spreadsheet file','One row entry','A chart'],answer:0,right:'Correct. A field describes a column.'},{q:'What is a record?',options:['One full entry in a table','One column heading','A spreadsheet formula','A workbook'],answer:0,right:'Correct. A record is usually one row.'},{q:'All of the sheets in one spreadsheet file make up a...',options:['Workbook','Cell','Field','Record'],answer:0,right:'Correct. The whole file is a workbook.'}]);"
+    },
+    {
+      "id": "endless-practice",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated questions correctly. The step marks complete automatically.</p><div id='dit-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'A single box in a spreadsheet is called a...',o:['Cell','Workbook','Record','Table'],a:0},{q:'Data with context or meaning is...',o:['Information','Raw data','A field','A range'],a:0},{q:'A whole row entry in a table is a...',o:['Record','Field','Workbook','Column'],a:0},{q:'A column heading that describes data is a...',o:['Field','Record','Cell','Sheet'],a:0},{q:'Favourite colour is...',o:['Qualitative','Quantitative','A workbook','A formula'],a:0},{q:'Test score is...',o:['Quantitative','Qualitative','A record','A field'],a:0},{q:'Rows are labelled using...',o:['Numbers','Letters','Cells','Workbooks'],a:0},{q:'Columns are labelled using...',o:['Letters','Numbers','Rows','Records'],a:0}];var solved=0,c=document.getElementById('dit-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return {x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct answers: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question loading.';if(solved>=5)__markStepComplete();else setTimeout(render,800);}else{fb.className='ex-feedback err';fb.textContent='Not quite. Think about the exact definition, then try another.';setTimeout(render,1200);}};});}render();})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What is data?",
+      "options": [
+        "Raw facts and figures",
+        "Data with meaning",
+        "A chart only",
+        "A finished report"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "What is one single box in a spreadsheet called?",
+      "answer": "CELL",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Rows and columns in a spreadsheet are used to...",
+      "options": [
+        "Organise data",
+        "Delete data automatically",
+        "Stop calculations",
+        "Create passwords"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "What Microsoft software is commonly used to manipulate spreadsheets?",
+      "answer": "EXCEL",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which statement best describes information?",
+      "options": [
+        "Data with context or meaning",
+        "Random values without labels",
+        "Only numbers",
+        "Only text"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "What is a field in a table?",
+      "options": [
+        "A column heading that describes a type of data",
+        "A single spreadsheet file",
+        "One complete row entry",
+        "A blank cell"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "What is a record in a table?",
+      "options": [
+        "One full entry, usually a row",
+        "One column heading",
+        "All sheets in a file",
+        "A graph"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which example is qualitative data?",
+      "options": [
+        "Favourite colour",
+        "Age",
+        "Score out of 20",
+        "Attendance percentage"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which example is quantitative data?",
+      "options": [
+        "Number of tickets sold",
+        "Surname",
+        "Review comment",
+        "Favourite game genre"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "All of the sheets in one spreadsheet file make up a what?",
+      "answer": "WORKBOOK",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which cell reference is written correctly?",
+      "options": [
+        "B4",
+        "4B",
+        "Row B Column 4",
+        "B-4 only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Why do field names make data more useful?",
+      "options": [
+        "They give the values meaning",
+        "They remove every record",
+        "They stop sorting",
+        "They turn numbers into text"
+      ],
+      "answer": 0,
+      "duration": 60
+    }
+  ]
+}
