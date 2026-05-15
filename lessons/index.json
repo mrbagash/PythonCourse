@@ -38,7 +38,9 @@
             { "id": "variables",       "title": "Variables & Output",     "file": "lessons/variables.json",       "order": 2 },
             { "id": "input-lesson",    "title": "Input & Data Types",     "file": "lessons/input-lesson.json",    "order": 3 },
             { "id": "selection-lesson","title": "Selection",              "file": "lessons/selection-lesson.json","order": 4 },
-            { "id": "selection-part-2","title": "Selection Part 2",       "file": "lessons/selection-part-2.json","order": 5 }
+            { "id": "selection-part-2","title": "Selection Part 2",       "file": "lessons/selection-part-2.json","order": 5 },
+            { "id": "for-loops",       "title": "For Loops",              "file": "lessons/for-loops.json",       "order": 6 },
+            { "id": "while-loops",     "title": "While Loops",            "file": "lessons/while-loops.json",     "order": 7 }
           ]
         },
         {
