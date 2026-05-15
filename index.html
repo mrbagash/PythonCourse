@@ -709,6 +709,81 @@
 </div>
 
 <!-- ── JOIN QUIZ MODAL (student) ──────────────────────────── -->
+<!-- ASSESSMENT POINT SETUP MODAL (admin) -->
+<div id="modal-ap-setup" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold">Start Assessment Point</h2>
+      <button id="btn-ap-setup-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
+    </div>
+    <p class="text-sm text-gray-600 mb-3">Class: <span id="ap-setup-class" class="font-semibold text-gray-800"></span></p>
+    <label class="block text-xs text-gray-500 mb-1">Assessment</label>
+    <select id="ap-assessment-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none">
+      <option value="year7-ap2-scratch">Year 7 AP2 Scratch - Underwater Racing Game</option>
+    </select>
+    <div class="border border-red-200 bg-red-50 rounded-lg p-3 mb-4">
+      <p class="text-sm font-semibold text-red-800">Force AP for this class</p>
+      <p class="text-xs text-red-700">Students in this class will be taken straight into the assessment, including after refreshing. Other classes are not affected.</p>
+    </div>
+    <button id="btn-ap-start-host" class="jhncc-primary w-full py-2 rounded font-medium">Create AP Session</button>
+  </div>
+</div>
+
+<!-- ASSESSMENT POINT HOST SCREEN -->
+<div id="ap-host-screen" class="hidden fixed inset-0 bg-gray-900 flex flex-col z-50 text-white">
+  <div class="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
+    <div>
+      <span class="font-bold text-lg">Assessment Point</span>
+      <span id="aph-title" class="text-gray-400 text-sm ml-3"></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-gray-400 text-sm">Join code:</span>
+      <span id="aph-code" class="font-mono text-2xl font-bold tracking-widest text-yellow-400"></span>
+    </div>
+    <div class="flex gap-2">
+      <button id="btn-ap-download" class="jhncc-secondary px-3 py-1 rounded border text-sm">Download Results</button>
+      <button id="btn-ap-host-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">End AP</button>
+    </div>
+  </div>
+  <div class="flex-1 overflow-y-auto p-6">
+    <div class="max-w-5xl mx-auto">
+      <p class="text-gray-300 mb-4">Students work at their own pace. Their project is saved while they work and restored after refresh.</p>
+      <div id="aph-students" class="grid gap-2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ASSESSMENT POINT STUDENT SCREEN -->
+<div id="ap-student-screen" class="hidden fixed inset-0 flex flex-col z-50 text-white" style="background:#111827">
+  <div class="flex items-center justify-between px-6 py-3 bg-black/30">
+    <span class="font-bold">Assessment Point</span>
+    <div class="flex items-center gap-2">
+      <span id="aps-save-status" class="text-xs text-gray-400"></span>
+      <button id="btn-ap-student-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">Leave</button>
+    </div>
+  </div>
+  <div id="aps-active" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4">
+    <aside class="bg-white text-gray-800 rounded-lg p-4 overflow-y-auto">
+      <h2 id="aps-title" class="text-lg font-bold mb-2"></h2>
+      <p id="aps-brief" class="text-sm text-gray-600 mb-4"></p>
+      <ol id="aps-criteria" class="list-decimal pl-5 text-sm space-y-2 mb-4"></ol>
+      <button id="btn-ap-check" class="jhncc-primary w-full py-2 rounded font-semibold mb-2">Check My Project</button>
+      <button id="btn-ap-finish" class="w-full py-2 rounded border border-green-500 text-green-700 bg-green-50 font-semibold">Submit Final Assessment</button>
+      <div id="aps-feedback" class="mt-4 text-sm"></div>
+    </aside>
+    <div id="aps-scratch-wrap" class="min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
+      <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;width:100%;height:100%"></iframe>
+    </div>
+  </div>
+  <div id="aps-finished" class="hidden flex-1 overflow-y-auto p-6">
+    <div class="max-w-3xl mx-auto bg-white text-gray-800 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-2">Assessment Submitted</h2>
+      <p id="aps-final-score" class="text-lg font-semibold text-yellow-700 mb-4"></p>
+      <div id="aps-final-rubric" class="space-y-2"></div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-join-quiz" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-80">
     <h2 class="text-lg font-semibold mb-4">&#x1F3AE; Join a Quiz</h2>
@@ -1450,6 +1525,9 @@ var state = {
   forcedQuizRef: null,
   forcedQuizListener: null,
   forcedQuizCode: null,
+  forcedAssessmentRef: null,
+  forcedAssessmentListener: null,
+  forcedAssessmentCode: null,
   quizClientId: (function(){
     try {
       var existing = sessionStorage.getItem('pylearn_quiz_client_id');
@@ -2208,6 +2286,7 @@ function setupAuthUI() {
       modalLogin.classList.add('hidden');
       updateAuthUI(first,last,false);
       startForcedQuizWatcher(foundClass);
+      startForcedAssessmentWatcher(foundClass);
     } catch(e) { errEl.textContent='Error connecting. Please try again.'; errEl.classList.remove('hidden'); }
   };
 
@@ -2224,6 +2303,7 @@ function setupAuthUI() {
     // Clear local progress so the next student starts fresh on this device
     try { localStorage.removeItem(localProgressKey()); } catch(e) {}
     stopForcedQuizWatcher();
+    stopForcedAssessmentWatcher();
     state.uid=null; state.className=null; state.isAdmin=false; state.progress={};
     updateAuthUI(null,null,false);
     renderLessonTabs(); renderStepBar();
@@ -2256,6 +2336,7 @@ function setupAuthUI() {
       findClassForCode(savedCode).then(function(className) {
         state.className = className;
         startForcedQuizWatcher(className);
+        startForcedAssessmentWatcher(className);
       });
       loadProgress().then(function(){ renderLessonTabs(); renderStepBar(); });
       updateAuthUI(n.first,n.last,false);
@@ -2347,6 +2428,8 @@ async function refreshAdminTable() {
         '<span class="text-xs text-gray-400 mr-auto ml-3">' + codeList.length + ' student' + (codeList.length !== 1 ? 's' : '') + '</span>' +
         '<div class="flex gap-2">' +
           '<button class="btn-host-quiz jhncc-secondary px-3 py-1 rounded border text-xs" data-class="' + className + '">&#x1F3AE; Host Quiz</button>' +
+          '<button class="btn-host-ap px-3 py-1 rounded border border-yellow-400 text-yellow-700 text-xs hover:bg-yellow-50" data-class="' + className + '">Start AP</button>' +
+          '<button class="btn-export-ap px-3 py-1 rounded border border-purple-300 text-purple-700 text-xs hover:bg-purple-50" data-class="' + className + '">AP Results</button>' +
           '<button class="btn-export-detail px-3 py-1 rounded border border-green-300 text-green-700 text-xs hover:bg-green-50" data-class="' + className + '">&#x2193; Detailed Report</button>' +
           '<button class="btn-export-class jhncc-secondary px-3 py-1 rounded border text-xs" data-class="' + className + '">&#x2193; Codes Sheet</button>' +
           '<button class="btn-delete-class px-3 py-1 rounded border border-red-300 text-red-600 text-xs hover:bg-red-50" data-class="' + className + '">\uD83D\uDDD1 Delete class</button>' +
@@ -2475,6 +2558,14 @@ async function refreshAdminTable() {
     // ── Wire up buttons ──────────────────────────────────────
     container.querySelectorAll('.btn-host-quiz').forEach(function(btn) {
       btn.onclick = function() { openQuizSetup(btn.dataset.class); };
+    });
+
+    container.querySelectorAll('.btn-host-ap').forEach(function(btn) {
+      btn.onclick = function() { openAssessmentSetup(btn.dataset.class); };
+    });
+
+    container.querySelectorAll('.btn-export-ap').forEach(function(btn) {
+      btn.onclick = function() { exportAssessmentResults(btn.dataset.class, 'year7-ap2-scratch'); };
     });
 
     container.querySelectorAll('.btn-export-class').forEach(function(btn) {
@@ -2717,14 +2808,18 @@ async function exportDetailedReport(className) {
           var name = studentName(code) || '';
           var row = [name, code];
           var score = 0;
+          var maxScore = 0;
           qs.forEach(function(q, i) {
+            maxScore += quizQuestionMaxPoints(q);
             var a = answered && answered[i];
             if (!a) { row.push('–'); return; }
-            var correct = a.correct === true;
-            if (correct) score++;
-            row.push(correct ? '✓' : '✗');
+            var points = q.type === 'pybot_level'
+              ? (typeof a.points === 'number' ? a.points : pyBotMedalPoints(a.medal, a.completed === true || a.correct === true))
+              : (a.correct === true ? 1 : 0);
+            score += points;
+            row.push(q.type === 'pybot_level' ? (pyBotMedalLabel(a.medal) + ' (' + points + ' pts)') : (points ? '✓' : '✗'));
           });
-          row.push(score + ' / ' + qs.length);
+          row.push(score + ' / ' + maxScore);
           wsData.push(row);
         });
 
@@ -2968,6 +3063,499 @@ async function genLobbyCode() {
     if (!snap.exists() || !snap.child('hostUid').exists()) return code;
   }
   return String(Math.floor(1000 + Math.random() * 9000)); // fallback
+}
+
+var assessment = {
+  className: null,
+  assessmentId: null,
+  lobbyCode: null,
+  sessionRef: null,
+  responseRef: null,
+  forced: false,
+  completed: false,
+  saveTimer: null,
+  hostListener: null,
+  studentListener: null,
+  clientId: (function(){
+    try {
+      var existing = sessionStorage.getItem('pylearn_ap_client_id');
+      if (existing) return existing;
+      var id = Date.now() + '-' + Math.random().toString(36).slice(2);
+      sessionStorage.setItem('pylearn_ap_client_id', id);
+      return id;
+    } catch(e) { return Date.now() + '-' + Math.random().toString(36).slice(2); }
+  })()
+};
+
+var ASSESSMENTS = {
+  'year7-ap2-scratch': {
+    id: 'year7-ap2-scratch',
+    title: 'Year 7 AP2 Scratch - Underwater Racing Game',
+    maxScore: 21,
+    brief: 'Create an underwater racing game in Scratch. The automated check looks for the project requirements from the assessment brief.',
+    criteria: [
+      { id:'backdrop', text:'Add an underwater background.', marks:2 },
+      { id:'diver', text:'Create a diver sprite.', marks:2 },
+      { id:'movement', text:'Make the diver move up, down, left and right using keys.', marks:4 },
+      { id:'target', text:'Add a sprite for the diver to chase that moves to a random place when caught.', marks:2 },
+      { id:'scorePlus', text:'Create a score variable and add 1 when the diver catches the target sprite.', marks:3 },
+      { id:'shark', text:'Create a shark sprite.', marks:2 },
+      { id:'sharkChase', text:'Make the shark chase the diver.', marks:2 },
+      { id:'yum', text:'Make the shark say Yum Yum for 5 seconds when it touches the diver.', marks:2 },
+      { id:'scoreMinus', text:'Make the score change by -1 when the shark touches the diver.', marks:2 }
+    ]
+  }
+};
+
+function openAssessmentSetup(className) {
+  assessment.className = className;
+  document.getElementById('ap-setup-class').textContent = className;
+  document.getElementById('modal-ap-setup').classList.remove('hidden');
+  document.getElementById('modal-admin').classList.add('hidden');
+}
+
+document.getElementById('btn-ap-setup-close').onclick = function() {
+  document.getElementById('modal-ap-setup').classList.add('hidden');
+  document.getElementById('modal-admin').classList.remove('hidden');
+};
+
+async function genAssessmentCode() {
+  for (var attempt = 0; attempt < 30; attempt++) {
+    var code = String(Math.floor(1000 + Math.random() * 9000));
+    var aSnap = await state.db.ref('assessmentSessions/' + code).get();
+    var qSnap = await state.db.ref('quizSessions/' + code).get();
+    if (!aSnap.exists() && !qSnap.exists()) return code;
+  }
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+document.getElementById('btn-ap-start-host').onclick = async function() {
+  var id = document.getElementById('ap-assessment-select').value;
+  var spec = ASSESSMENTS[id];
+  if (!spec || !assessment.className) return;
+  var code = await genAssessmentCode();
+  var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
+  assessment.assessmentId = id;
+  assessment.lobbyCode = code;
+  assessment.sessionRef = state.db.ref('assessmentSessions/' + code);
+  await assessment.sessionRef.set({
+    hostUid: firebaseUid || null,
+    state: 'active',
+    assessmentId: id,
+    title: spec.title,
+    className: assessment.className,
+    forced: true,
+    startedAt: Date.now()
+  });
+  assessment.sessionRef.onDisconnect().update({
+    state: 'finished',
+    endedAt: firebase.database.ServerValue.TIMESTAMP
+  }).catch(function(){});
+  await state.db.ref('classes/' + assessment.className + '/forcedAssessment').set({
+    active: true,
+    lobbyCode: code,
+    assessmentId: id,
+    hostUid: firebaseUid || null,
+    startedAt: Date.now()
+  });
+  state.db.ref('classes/' + assessment.className + '/forcedAssessment').onDisconnect().update({
+    active: false,
+    endedAt: firebase.database.ServerValue.TIMESTAMP
+  }).catch(function(){});
+  document.getElementById('modal-ap-setup').classList.add('hidden');
+  showAssessmentHostScreen();
+};
+
+function showAssessmentHostScreen() {
+  var spec = ASSESSMENTS[assessment.assessmentId];
+  document.getElementById('ap-host-screen').classList.remove('hidden');
+  document.getElementById('aph-title').textContent = spec ? spec.title : '';
+  document.getElementById('aph-code').textContent = assessment.lobbyCode;
+  if (assessment.hostListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.hostListener);
+  assessment.hostListener = assessment.sessionRef.on('value', function(snap) {
+    renderAssessmentHostStudents(snap.val() || {});
+  });
+}
+
+function renderAssessmentHostStudents(session) {
+  var box = document.getElementById('aph-students');
+  var responses = session.responses || {};
+  var codes = Object.keys(responses);
+  if (!codes.length) {
+    box.innerHTML = '<div class="text-gray-400 text-sm">Waiting for students to join...</div>';
+    return;
+  }
+  box.innerHTML = '';
+  codes.forEach(function(code) {
+    var r = responses[code] || {};
+    var row = document.createElement('div');
+    row.className = 'grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center bg-gray-800 rounded-lg px-4 py-2';
+    row.innerHTML =
+      '<span class="font-mono text-gray-200">' + (studentName(code) || code) + '</span>' +
+      '<span class="text-sm text-gray-400">' + (r.completed ? 'Submitted' : 'Working') + '</span>' +
+      '<span class="font-bold text-yellow-400">' + (r.score != null ? r.score + ' / ' + (r.maxScore || 21) : '-') + '</span>' +
+      '<span class="text-xs text-gray-500">' + (r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleTimeString('en-GB') : '') + '</span>';
+    box.appendChild(row);
+  });
+}
+
+document.getElementById('btn-ap-host-exit').onclick = async function() {
+  if (!confirm('End this AP session for the class?')) return;
+  await endAssessmentHostSession();
+};
+
+document.getElementById('btn-ap-download').onclick = function() {
+  exportAssessmentResults(assessment.className, assessment.assessmentId, assessment.lobbyCode);
+};
+
+async function endAssessmentHostSession() {
+  if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
+  if (assessment.className) {
+    var ref = state.db.ref('classes/' + assessment.className + '/forcedAssessment');
+    var snap = await ref.get();
+    if (snap.child('lobbyCode').val() === assessment.lobbyCode) await ref.update({ active: false, endedAt: Date.now() });
+  }
+  if (assessment.hostListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.hostListener);
+  document.getElementById('ap-host-screen').classList.add('hidden');
+}
+
+function stopForcedAssessmentWatcher() {
+  if (state.forcedAssessmentRef && state.forcedAssessmentListener) {
+    state.forcedAssessmentRef.off('value', state.forcedAssessmentListener);
+  }
+  state.forcedAssessmentRef = null;
+  state.forcedAssessmentListener = null;
+  state.forcedAssessmentCode = null;
+}
+
+function startForcedAssessmentWatcher(className) {
+  stopForcedAssessmentWatcher();
+  if (!className || state.isAdmin || !state.uid) return;
+  state.forcedAssessmentRef = state.db.ref('classes/' + className + '/forcedAssessment');
+  state.forcedAssessmentListener = state.forcedAssessmentRef.on('value', function(snap) {
+    var forced = snap.val() || {};
+    if (!forced.active || !forced.lobbyCode) {
+      state.forcedAssessmentCode = null;
+      return;
+    }
+    if (state.forcedAssessmentCode === forced.lobbyCode && assessment.sessionRef) return;
+    state.forcedAssessmentCode = forced.lobbyCode;
+    joinAssessmentByCode(String(forced.lobbyCode), { forced: true }).catch(function(e) {
+      console.warn('Forced AP join failed:', e.message);
+    });
+  });
+}
+
+async function joinAssessmentByCode(code, opts) {
+  opts = opts || {};
+  if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join an assessment.');
+  var sessionRef = state.db.ref('assessmentSessions/' + code);
+  var snap = await sessionRef.get();
+  if (!snap.exists()) throw new Error('No quiz or assessment found with that code.');
+  if (snap.child('state').val() !== 'active') throw new Error('That assessment is not active.');
+  var assessmentId = snap.child('assessmentId').val();
+  var completedSnap = await state.db.ref('apCompletions/' + assessmentId + '/' + state.uid).get();
+  assessment.assessmentId = assessmentId;
+  assessment.lobbyCode = code;
+  assessment.sessionRef = sessionRef;
+  assessment.responseRef = sessionRef.child('responses/' + state.uid);
+  assessment.forced = !!opts.forced || snap.child('forced').val() === true;
+  if (completedSnap.exists()) {
+    showAssessmentCompleted(completedSnap.val());
+    return;
+  }
+  await assessment.responseRef.update({
+    joinedAt: Date.now(),
+    activeClientId: assessment.clientId,
+    lastSeenAt: Date.now(),
+    completed: false,
+    className: state.className || snap.child('className').val() || null
+  });
+  showAssessmentStudentScreen(snap.val() || {});
+}
+
+function showAssessmentStudentScreen(session) {
+  var spec = ASSESSMENTS[session.assessmentId] || ASSESSMENTS[assessment.assessmentId];
+  document.getElementById('ap-student-screen').classList.remove('hidden');
+  document.getElementById('aps-active').classList.remove('hidden');
+  document.getElementById('aps-finished').classList.add('hidden');
+  document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
+  document.getElementById('aps-title').textContent = spec.title;
+  document.getElementById('aps-brief').textContent = spec.brief;
+  document.getElementById('aps-criteria').innerHTML = spec.criteria.map(function(c) {
+    return '<li>' + c.text + ' <span class="text-gray-500">(' + c.marks + ' marks)</span></li>';
+  }).join('');
+  loadAssessmentScratchEditor();
+  if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
+  assessment.studentListener = assessment.sessionRef.on('value', function(snap) {
+    if (!snap.exists() || snap.child('state').val() !== 'active') {
+      if (!assessment.completed) exitAssessmentStudent({ keepForced: true });
+    }
+  });
+}
+
+function loadAssessmentScratchEditor() {
+  var frame = document.getElementById('aps-scratch-frame');
+  document.getElementById('aps-feedback').innerHTML = '';
+  document.getElementById('aps-save-status').textContent = 'Loading editor...';
+  if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  frame.onload = async function() {
+    await waitForAssessmentVm();
+    var snap = await assessment.responseRef.get();
+    var saved = snap.child('projectData').val();
+    if (saved) {
+      try {
+        var bin = atob(saved);
+        var arr = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        await frame.contentWindow.vm.loadProject(arr.buffer);
+      } catch(e) { console.warn('Could not restore AP project:', e.message); }
+    }
+    startAssessmentAutosave();
+    document.getElementById('aps-save-status').textContent = 'Autosave on';
+  };
+  frame.src = './scratch/editor.html?assessment=' + encodeURIComponent(assessment.lobbyCode || 'ap') + '&suppressBeforeUnload=1&_ap=' + Date.now();
+}
+
+function waitForAssessmentVm() {
+  var frame = document.getElementById('aps-scratch-frame');
+  return new Promise(function(resolve) {
+    var started = Date.now();
+    var timer = setInterval(function() {
+      try {
+        if (frame.contentWindow && frame.contentWindow.vm && frame.contentWindow.vm.runtime) {
+          clearInterval(timer); resolve();
+        } else if (Date.now() - started > 20000) {
+          clearInterval(timer); resolve();
+        }
+      } catch(e) {}
+    }, 250);
+  });
+}
+
+async function saveAssessmentProject() {
+  if (!assessment.responseRef || assessment.completed) return;
+  var frame = document.getElementById('aps-scratch-frame');
+  try {
+    if (!frame.contentWindow || !frame.contentWindow.vm || !frame.contentWindow.vm.saveProjectSb3) return;
+    var blob = await frame.contentWindow.vm.saveProjectSb3();
+    var buffer = await blob.arrayBuffer();
+    var bytes = new Uint8Array(buffer);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    await assessment.responseRef.update({
+      projectData: btoa(binary),
+      savedAt: Date.now(),
+      lastSeenAt: Date.now()
+    });
+    document.getElementById('aps-save-status').textContent = 'Saved ' + new Date().toLocaleTimeString('en-GB');
+  } catch(e) {
+    document.getElementById('aps-save-status').textContent = 'Save failed';
+  }
+}
+
+function startAssessmentAutosave() {
+  if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  assessment.saveTimer = setInterval(saveAssessmentProject, 10000);
+  try {
+    var frame = document.getElementById('aps-scratch-frame');
+    var runtime = frame.contentWindow.vm && frame.contentWindow.vm.runtime;
+    if (runtime && runtime.on && !assessment.projectChangeListener) {
+      assessment.projectChangeListener = function() {
+        clearTimeout(assessment.projectChangeTimer);
+        assessment.projectChangeTimer = setTimeout(saveAssessmentProject, 1200);
+      };
+      runtime.on('PROJECT_CHANGED', assessment.projectChangeListener);
+    }
+  } catch(e) {}
+  setTimeout(saveAssessmentProject, 1500);
+}
+
+document.getElementById('btn-ap-check').onclick = async function() {
+  var result = await validateAssessmentProject();
+  renderAssessmentFeedback(result, false);
+  await saveAssessmentProject();
+};
+
+document.getElementById('btn-ap-finish').onclick = async function() {
+  if (!confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
+  var result = await validateAssessmentProject();
+  await saveAssessmentProject();
+  assessment.completed = true;
+  await assessment.responseRef.update({
+    completed: true,
+    completedAt: Date.now(),
+    score: result.score,
+    maxScore: result.maxScore,
+    rubric: result.criteria
+  });
+  await state.db.ref('apCompletions/' + assessment.assessmentId + '/' + state.uid).set({
+    completedAt: Date.now(),
+    score: result.score,
+    maxScore: result.maxScore,
+    rubric: result.criteria,
+    lobbyCode: assessment.lobbyCode,
+    className: state.className || null
+  });
+  showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
+};
+
+function validateAssessmentProject() {
+  var frame = document.getElementById('aps-scratch-frame');
+  var vm = frame && frame.contentWindow && frame.contentWindow.vm;
+  if (!vm || !vm.runtime) return Promise.resolve({ score: 0, maxScore: 21, criteria: [] });
+  var result = assessYear7Ap2Scratch(vm);
+  return Promise.resolve(result);
+}
+
+function assessYear7Ap2Scratch(vm) {
+  var runtime = vm.runtime;
+  runtime.stopAll();
+  var targets = runtime.targets || [];
+  var sprites = targets.filter(function(t) { return t && !t.isStage; });
+  var stage = targets.filter(function(t) { return t && t.isStage; })[0];
+  var info = collectAssessmentScratchInfo(targets);
+  function hasAny(list) { return list.some(function(op) { return (info.counts[op] || 0) > 0; }); }
+  function hasText(text) { return info.fieldValues.some(function(v) { return v.indexOf(text) !== -1; }); }
+  function criterion(id, text, marks, ok, got) { return { id:id, text:text, marks:marks, awarded: ok ? marks : (got || 0) }; }
+  var backdropCount = 0;
+  try {
+    backdropCount = stage && stage.getCostumes ? stage.getCostumes().length :
+      (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes.length : 0);
+  } catch(e) { backdropCount = 0; }
+  var movement = 0;
+  ['up arrow','down arrow','left arrow','right arrow'].forEach(function(key) {
+    if (info.keyFields.indexOf(key) !== -1) movement++;
+  });
+  var scoreVar = info.variableNames.indexOf('score') !== -1;
+  var plusScore = scoreVar && (info.changeVariableValues.indexOf('1') !== -1 || info.changeVariableValues.indexOf('+1') !== -1);
+  var minusScore = scoreVar && (info.changeVariableValues.indexOf('-1') !== -1);
+  var criteria = [
+    criterion('backdrop', 'Underwater background', 2, backdropCount > 1),
+    criterion('diver', 'Diver sprite created', 2, sprites.length >= 1),
+    criterion('movement', 'Diver moves up, down, left and right with keys', 4, movement >= 4, movement),
+    criterion('target', 'Chase sprite moves to a random place when caught', 2, sprites.length >= 2 && (hasAny(['motion_gotorandom','motion_glideto']) || hasAny(['operator_random']))),
+    criterion('scorePlus', 'Score variable and +1 when target is caught', 3, plusScore, scoreVar ? 1 : 0),
+    criterion('shark', 'Shark sprite created', 2, sprites.length >= 3),
+    criterion('sharkChase', 'Shark chases the diver', 2, sprites.length >= 3 && hasAny(['motion_pointtowards','motion_glideto','motion_movesteps'])),
+    criterion('yum', 'Shark says Yum Yum when touching diver', 2, hasAny(['looks_sayforsecs','looks_say']) && hasText('yum yum')),
+    criterion('scoreMinus', 'Score changes by -1 when shark touches diver', 2, minusScore)
+  ];
+  var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
+  return { score: score, maxScore: 21, criteria: criteria };
+}
+
+function collectAssessmentScratchInfo(targets) {
+  var counts = {}, fieldValues = [], keyFields = [], variableNames = [], changeVariableValues = [];
+  targets.forEach(function(target) {
+    Object.keys(target.variables || {}).forEach(function(id) {
+      var v = target.variables[id];
+      if (v && v.name) variableNames.push(normaliseScratchFieldValue(v.name));
+    });
+    var blocks = target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
+    Object.keys(blocks).forEach(function(id) {
+      var b = blocks[id] || {};
+      if (b.opcode) counts[b.opcode] = (counts[b.opcode] || 0) + 1;
+      Object.keys(b.fields || {}).forEach(function(name) {
+        var val = normaliseScratchFieldValue(scratchFieldValue(b.fields[name]));
+        fieldValues.push(val);
+        if (name === 'KEY_OPTION') keyFields.push(val);
+        if (b.opcode === 'data_changevariableby' && name === 'VARIABLE') variableNames.push(val);
+      });
+      Object.keys(b.inputs || {}).forEach(function(name) {
+        var input = b.inputs[name];
+        var raw = Array.isArray(input) ? input.join(' ') : String(input || '');
+        var val = normaliseScratchFieldValue(raw);
+        fieldValues.push(val);
+        if (b.opcode === 'data_changevariableby' && /-?1/.test(raw)) changeVariableValues.push(raw.indexOf('-') !== -1 ? '-1' : '1');
+      });
+    });
+  });
+  return { counts: counts, fieldValues: fieldValues, keyFields: keyFields, variableNames: variableNames, changeVariableValues: changeVariableValues };
+}
+
+function renderAssessmentFeedback(result, finalMode) {
+  var html = '<div class="font-semibold mb-2">Score: ' + result.score + ' / ' + result.maxScore + '</div>';
+  result.criteria.forEach(function(c) {
+    html += '<div class="flex justify-between gap-3 border-b border-gray-200 py-1"><span>' + c.text + '</span><strong>' + c.awarded + '/' + c.marks + '</strong></div>';
+  });
+  document.getElementById(finalMode ? 'aps-final-rubric' : 'aps-feedback').innerHTML = html;
+}
+
+function showAssessmentCompleted(record) {
+  assessment.completed = true;
+  document.getElementById('ap-student-screen').classList.remove('hidden');
+  document.getElementById('aps-active').classList.add('hidden');
+  document.getElementById('aps-finished').classList.remove('hidden');
+  document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
+  document.getElementById('aps-final-score').textContent = 'Score: ' + (record.score || 0) + ' / ' + (record.maxScore || 21);
+  renderAssessmentFeedback({ score: record.score || 0, maxScore: record.maxScore || 21, criteria: record.rubric || [] }, true);
+}
+
+document.getElementById('btn-ap-student-exit').onclick = function() {
+  exitAssessmentStudent({ removePlayer: false });
+};
+
+function exitAssessmentStudent(opts) {
+  opts = opts || {};
+  if (assessment.forced && !opts.keepForced) return;
+  if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  assessment.saveTimer = null;
+  if (assessment.projectChangeTimer) clearTimeout(assessment.projectChangeTimer);
+  assessment.projectChangeTimer = null;
+  assessment.projectChangeListener = null;
+  if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
+  document.getElementById('ap-student-screen').classList.add('hidden');
+  assessment.sessionRef = null;
+  assessment.responseRef = null;
+  assessment.forced = false;
+}
+
+async function exportAssessmentResults(className, assessmentId, lobbyCode) {
+  assessmentId = assessmentId || 'year7-ap2-scratch';
+  var snap = await state.db.ref('apCompletions/' + assessmentId).get();
+  var classSnap = await state.db.ref('classes/' + className + '/codes').get();
+  var rows = [];
+  var scores = [];
+  var completions = snap.exists() ? snap.val() : {};
+  var codes = classSnap.exists() ? Object.keys(classSnap.val() || {}) : Object.keys(completions);
+  codes.forEach(function(code) {
+    var r = completions[code];
+    if (!r || r.className !== className && codes.indexOf(code) === -1) return;
+    var score = r ? (r.score || 0) : 0;
+    scores.push(score);
+    rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || 21) : 21, completedAt: r && r.completedAt });
+  });
+  rows.sort(function(a, b) { return b.score - a.score; });
+  var grades = definitePurposeGrades(rows.map(function(r) { return r.score; }));
+  var csv = 'Name,Code,Score,Max Score,Percent,Definite Purpose,Completed At\n';
+  rows.forEach(function(r, i) {
+    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
+    csv += [r.name, r.code, r.score, r.maxScore, pct + '%', grades[i], r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : ''].map(csvCell).join(',') + '\n';
+  });
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = className + '-AP-results.csv';
+  a.click();
+}
+
+function definitePurposeGrades(scores) {
+  var n = scores.length;
+  if (!n) return [];
+  return scores.map(function(score, i) {
+    var percentile = n === 1 ? 0.5 : i / (n - 1);
+    if (percentile < 0.10) return 1;
+    if (percentile < 0.30) return 2;
+    if (percentile <= 0.70) return 3;
+    if (percentile < 0.90) return 4;
+    return 5;
+  });
+}
+
+function csvCell(value) {
+  var s = String(value == null ? '' : value);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
 // ── Python question generator ──────────────────────────────────
@@ -3426,10 +4014,7 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
     qiSnap.forEach(function(child) {
       var code = child.key;
       if (!scores[code]) scores[code] = 0;
-      var correct = (qiQ.type && qiQ.type !== 'mcq' && qiQ.type !== 'scratch_mcq')
-        ? child.child('correct').val() === true
-        : child.child('answer').val() === qiQ.answer;
-      if (correct) scores[code]++;
+      scores[code] += quizAnswerPoints(qiQ, child);
     });
   }
 
@@ -3439,15 +4024,22 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
   if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) {
     var codeCorrect = 0, codeTotal = 0;
+    var pyBotPoints = 0;
     if (currentQSnap && currentQSnap.exists()) {
       currentQSnap.forEach(function(child) {
         codeTotal++;
-        if (child.child('correct').val() === true) codeCorrect++;
+        if (isPyBot) {
+          pyBotPoints += quizAnswerPoints(q, child);
+        } else if (child.child('correct').val() === true) {
+          codeCorrect++;
+        }
       });
     }
     var chip = document.createElement('div');
     chip.className = 'rounded-lg px-4 py-2 text-center text-sm bg-green-600 font-bold';
-    chip.textContent = codeCorrect + ' correct / ' + codeTotal + ' submitted';
+    chip.textContent = isPyBot
+      ? pyBotPoints + ' points / ' + codeTotal + ' completed'
+      : codeCorrect + ' correct / ' + codeTotal + ' submitted';
     distEl.appendChild(chip);
   } else {
     var answerCounts = [0,0,0,0];
@@ -3492,7 +4084,7 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
     row.innerHTML =
       '<span class="text-lg w-8 text-center shrink-0">' + lbMedals[i] + '</span>' +
       '<span class="font-mono flex-1 text-gray-200 text-sm truncate">' + (studentName(entry.code) || entry.code) + '</span>' +
-      '<span class="font-bold text-yellow-400 shrink-0">' + entry.score + ' / ' + (qIdx + 1) + '</span>';
+      '<span class="font-bold text-yellow-400 shrink-0">' + entry.score + ' / ' + quizMaxScore(quiz.questions, qIdx + 1) + '</span>';
     lbEl.appendChild(row);
   });
   statsEl.appendChild(lbEl);
@@ -3536,8 +4128,16 @@ async function endQuiz() {
         if (!aSnap.exists()) continue;
         aSnap.forEach(function(child) {
           var code = child.key;
-          if (!historyResults[code]) historyResults[code] = [];
-          historyResults[code][qi] = { correct: child.child('correct').val() === true || child.child('answer').val() === quiz.questions[qi].answer, answerText: child.child('answerText').val() || String(child.child('answer').val() !== null ? child.child('answer').val() : '') };
+        if (!historyResults[code]) historyResults[code] = [];
+          var hq = quiz.questions[qi];
+          var hPoints = quizAnswerPoints(hq, child);
+          historyResults[code][qi] = {
+            correct: hPoints > 0,
+            points: hPoints,
+            medal: child.child('medal').val() || '',
+            completed: child.child('completed').val() === true,
+            answerText: child.child('answerText').val() || child.child('medal').val() || String(child.child('answer').val() !== null ? child.child('answer').val() : '')
+          };
         });
       }
       // Include players who participated but answered nothing
@@ -3578,6 +4178,44 @@ async function clearForcedQuizForCurrentClass() {
   }
 }
 
+function pyBotMedalPoints(medal, completed) {
+  medal = String(medal || '').trim();
+  if (medal === '🥇') return 5;
+  if (medal === '🥈') return 3;
+  if (medal === '🥉') return 2;
+  return completed ? 1 : 0;
+}
+
+function pyBotMedalLabel(medal) {
+  medal = String(medal || '').trim();
+  return medal === '🥇' || medal === '🥈' || medal === '🥉' ? medal : 'No medal';
+}
+
+function quizQuestionMaxPoints(q) {
+  return q && q.type === 'pybot_level' ? 5 : 1;
+}
+
+function quizMaxScore(questions, endExclusive) {
+  questions = questions || [];
+  var end = endExclusive == null ? questions.length : Math.min(endExclusive, questions.length);
+  var total = 0;
+  for (var i = 0; i < end; i++) total += quizQuestionMaxPoints(questions[i]);
+  return total;
+}
+
+function quizAnswerPoints(q, answerSnap) {
+  if (!q || !answerSnap || !answerSnap.exists()) return 0;
+  if (q.type === 'pybot_level') {
+    var stored = answerSnap.child('points').val();
+    if (typeof stored === 'number' && isFinite(stored)) return stored;
+    return pyBotMedalPoints(answerSnap.child('medal').val(), answerSnap.child('completed').val() === true || answerSnap.exists());
+  }
+  if (q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq') {
+    return answerSnap.child('correct').val() === true ? 1 : 0;
+  }
+  return answerSnap.child('answer').val() === q.answer ? 1 : 0;
+}
+
 async function buildLeaderboard() {
   var scores = {};
   for (var qIdx = 0; qIdx < quiz.questions.length; qIdx++) {
@@ -3585,10 +4223,9 @@ async function buildLeaderboard() {
     var snap = await quiz.sessionRef.child('answers/' + qIdx).get();
     if (!snap.exists()) continue;
     snap.forEach(function(child) {
-      var code   = child.key;
-      var answer = child.child('answer').val();
+      var code = child.key;
       if (!scores[code]) scores[code] = 0;
-      if ((q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq') ? child.child('correct').val() === true : answer === q.answer) scores[code]++;
+      scores[code] += quizAnswerPoints(q, child);
     });
   }
   // Add players who answered nothing
@@ -3607,6 +4244,7 @@ async function buildLeaderboard() {
 function renderHostLeaderboard(leaderboard) {
   var el = document.getElementById('qh-final-scores');
   el.innerHTML = '';
+  var maxScore = quizMaxScore(quiz.questions);
   var medals = ['🥇','🥈','🥉'];
   leaderboard.forEach(function(entry, i) {
     var row = document.createElement('div');
@@ -3614,7 +4252,7 @@ function renderHostLeaderboard(leaderboard) {
     row.innerHTML =
       '<span class="text-lg">' + (medals[i] || (i+1)+'.') + '</span>' +
       '<span class="font-mono text-gray-300 flex-1 text-left ml-2">' + (studentName(entry.code) || entry.code) + '</span>' +
-      '<span class="font-bold text-yellow-400 text-lg">' + entry.score + ' / ' + quiz.questions.length + '</span>';
+      '<span class="font-bold text-yellow-400 text-lg">' + entry.score + ' / ' + maxScore + '</span>';
     el.appendChild(row);
   });
 }
@@ -3675,7 +4313,13 @@ document.getElementById('btn-join-quiz-submit').onclick = async function() {
     await joinQuizByCode(lobbyCode, { forced: false, allowLate: true });
     document.getElementById('modal-join-quiz').classList.add('hidden');
   } catch(e) {
-    errEl.textContent = e.message || 'Error joining quiz.'; errEl.classList.remove('hidden');
+    try {
+      await joinAssessmentByCode(lobbyCode, { forced: false });
+      document.getElementById('modal-join-quiz').classList.add('hidden');
+    } catch(apErr) {
+      errEl.textContent = apErr.message || e.message || 'Error joining quiz.';
+      errEl.classList.remove('hidden');
+    }
   }
   joinInProgress = false;
   document.getElementById('btn-join-quiz-submit').disabled = false;
@@ -3852,7 +4496,7 @@ function showStudentScreen(lobbyCode, questions, opts) {
       updateForcedQuizChrome();
       setStudentView('finished');
       document.getElementById('qs-final-score').textContent =
-        'You scored ' + quiz.myScore + ' / ' + quiz.questions.length;
+        'You scored ' + quiz.myScore + ' / ' + quizMaxScore(quiz.questions);
       // Show leaderboard if available
       var lb = snap.child('leaderboard').val();
       if (lb) renderStudentLeaderboard(lb);
@@ -4199,7 +4843,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
 
 function renderStudentLeaderboard(lb) {
   var el = document.getElementById('qs-final-score');
-  var total = quiz.questions.length;
+  var total = quizMaxScore(quiz.questions);
   var medals = ['🥇','🥈','🥉'];
   var html = '<div class="space-y-2 mt-4 w-full max-w-xs">';
   var lbArr = Array.isArray(lb) ? lb : Object.values(lb);
@@ -4405,14 +5049,17 @@ function toggleQsPyBotFullscreen() {
 
 async function submitStudentPyBotAnswer(qIdx, medal, lines) {
   if (quiz.myAnswered) return;
-  // PyBot sends emoji strings directly: '🥇','🥈','🥉', or '🤷‍♂️' for no medal
-  var correct = medal === '🥇' || medal === '🥈' || medal === '🥉';
+  // PyBot sends emoji strings directly: gold, silver, bronze, or no medal.
+  var points = pyBotMedalPoints(medal, true);
+  var correct = points > 0;
   quiz.myAnswered = true;
   lockStudentAnswers();
   var fb = document.getElementById('qs-pybot-feedback');
-  if (fb) fb.textContent = correct ? medal + ' Level complete! ' + lines + ' line' + (lines === 1 ? '' : 's') + ' used.' : 'Level complete — no medal.';
+  if (fb) fb.textContent = pyBotMedalLabel(medal) + ' - level complete! ' + points + ' point' + (points === 1 ? '' : 's') + ' - ' + lines + ' line' + (lines === 1 ? '' : 's') + ' used.';
   await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
     correct: correct,
+    completed: true,
+    points: points,
     medal: medal || '',
     lines: lines || 0,
     answeredAt: Date.now()
@@ -4821,18 +5468,18 @@ function renderStudentReveal(q, qIdx) {
     var isScratch = q.type === 'scratch_build';
     var isPyBot = q.type === 'pybot_level';
     var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
-    var correct = snap.exists() && ((isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) ? snap.child('correct').val() === true : snap.child('answer').val() === q.answer);
-    if (correct && !quiz.myScored[qIdx]) {
-      quiz.myScore++;
+    var points = snap.exists() ? quizAnswerPoints(q, snap) : 0;
+    var correct = points > 0;
+    if (points > 0 && !quiz.myScored[qIdx]) {
+      quiz.myScore += points;
       quiz.myScored[qIdx] = true;
     }
-    document.getElementById('qs-reveal-result').textContent = correct ? 'Correct!' : 'Wrong';
+    document.getElementById('qs-reveal-result').textContent = isPyBot && snap.exists() ? ('Scored ' + points + ' point' + (points === 1 ? '' : 's')) : (correct ? 'Correct!' : 'Wrong');
     var revealEl = document.getElementById('qs-reveal-answer');
     if (isPyBot) {
       var medal = snap.exists() ? snap.child('medal').val() : '';
       var lines = snap.exists() ? snap.child('lines').val() : 0;
-      var correct2 = medal === '🥇' || medal === '🥈' || medal === '🥉';
-      revealEl.textContent = correct2 ? medal + ' ' + lines + ' line' + (lines === 1 ? '' : 's') : (snap.exists() ? 'No medal' : 'Not completed');
+      revealEl.textContent = snap.exists() ? (pyBotMedalLabel(medal) + ' - ' + points + ' point' + (points === 1 ? '' : 's') + ' - ' + lines + ' line' + (lines === 1 ? '' : 's')) : 'Not completed';
     } else if (isTextInput || isWidget) {
       revealEl.textContent = 'Answer: ' + q.answer;
     } else if (isScratch) {
