@@ -3122,9 +3122,8 @@ document.getElementById('btn-ap-setup-close').onclick = function() {
 async function genAssessmentCode() {
   for (var attempt = 0; attempt < 30; attempt++) {
     var code = String(Math.floor(1000 + Math.random() * 9000));
-    var aSnap = await state.db.ref('assessmentSessions/' + code).get();
-    var qSnap = await state.db.ref('quizSessions/' + code).get();
-    if (!aSnap.exists() && !qSnap.exists()) return code;
+    var snap = await state.db.ref('quizSessions/' + code).get();
+    if (!snap.exists()) return code;
   }
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -3137,28 +3136,28 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
   var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
   assessment.assessmentId = id;
   assessment.lobbyCode = code;
-  assessment.sessionRef = state.db.ref('assessmentSessions/' + code);
+  assessment.sessionRef = state.db.ref('quizSessions/' + code);
   await assessment.sessionRef.set({
     hostUid: firebaseUid || null,
-    state: 'active',
-    assessmentId: id,
-    title: spec.title,
+    state: 'lobby',
+    questionIdx: -1,
+    lessonId: 'AP:' + id,
     className: assessment.className,
     forced: true,
-    startedAt: Date.now()
+    questions: []
   });
   assessment.sessionRef.onDisconnect().update({
     state: 'finished',
     endedAt: firebase.database.ServerValue.TIMESTAMP
   }).catch(function(){});
-  await state.db.ref('classes/' + assessment.className + '/forcedAssessment').set({
+  await state.db.ref('classes/' + assessment.className + '/forcedQuiz').set({
     active: true,
     lobbyCode: code,
-    assessmentId: id,
     hostUid: firebaseUid || null,
+    lessonId: 'AP:' + id,
     startedAt: Date.now()
   });
-  state.db.ref('classes/' + assessment.className + '/forcedAssessment').onDisconnect().update({
+  state.db.ref('classes/' + assessment.className + '/forcedQuiz').onDisconnect().update({
     active: false,
     endedAt: firebase.database.ServerValue.TIMESTAMP
   }).catch(function(){});
@@ -3179,7 +3178,7 @@ function showAssessmentHostScreen() {
 
 function renderAssessmentHostStudents(session) {
   var box = document.getElementById('aph-students');
-  var responses = session.responses || {};
+  var responses = session.answers && session.answers[0] ? session.answers[0] : {};
   var codes = Object.keys(responses);
   if (!codes.length) {
     box.innerHTML = '<div class="text-gray-400 text-sm">Waiting for students to join...</div>';
@@ -3211,7 +3210,7 @@ document.getElementById('btn-ap-download').onclick = function() {
 async function endAssessmentHostSession() {
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
   if (assessment.className) {
-    var ref = state.db.ref('classes/' + assessment.className + '/forcedAssessment');
+    var ref = state.db.ref('classes/' + assessment.className + '/forcedQuiz');
     var snap = await ref.get();
     if (snap.child('lobbyCode').val() === assessment.lobbyCode) await ref.update({ active: false, endedAt: Date.now() });
   }
@@ -3231,10 +3230,10 @@ function stopForcedAssessmentWatcher() {
 function startForcedAssessmentWatcher(className) {
   stopForcedAssessmentWatcher();
   if (!className || state.isAdmin || !state.uid) return;
-  state.forcedAssessmentRef = state.db.ref('classes/' + className + '/forcedAssessment');
+  state.forcedAssessmentRef = state.db.ref('classes/' + className + '/forcedQuiz');
   state.forcedAssessmentListener = state.forcedAssessmentRef.on('value', function(snap) {
     var forced = snap.val() || {};
-    if (!forced.active || !forced.lobbyCode) {
+    if (!forced.active || !forced.lobbyCode || String(forced.lessonId || '').indexOf('AP:') !== 0) {
       state.forcedAssessmentCode = null;
       return;
     }
@@ -3249,16 +3248,17 @@ function startForcedAssessmentWatcher(className) {
 async function joinAssessmentByCode(code, opts) {
   opts = opts || {};
   if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join an assessment.');
-  var sessionRef = state.db.ref('assessmentSessions/' + code);
+  var sessionRef = state.db.ref('quizSessions/' + code);
   var snap = await sessionRef.get();
   if (!snap.exists()) throw new Error('No quiz or assessment found with that code.');
-  if (snap.child('state').val() !== 'active') throw new Error('That assessment is not active.');
-  var assessmentId = snap.child('assessmentId').val();
-  var completedSnap = await state.db.ref('apCompletions/' + assessmentId + '/' + state.uid).get();
+  if (String(snap.child('lessonId').val() || '').indexOf('AP:') !== 0) throw new Error('No assessment found with that code.');
+  if (snap.child('state').val() === 'finished') throw new Error('That assessment is not active.');
+  var assessmentId = String(snap.child('lessonId').val() || '').replace(/^AP:/, '');
+  var completedSnap = await state.db.ref('progress/' + state.uid + '/assessments/' + assessmentId).get();
   assessment.assessmentId = assessmentId;
   assessment.lobbyCode = code;
   assessment.sessionRef = sessionRef;
-  assessment.responseRef = sessionRef.child('responses/' + state.uid);
+  assessment.responseRef = sessionRef.child('answers/0/' + state.uid);
   assessment.forced = !!opts.forced || snap.child('forced').val() === true;
   if (completedSnap.exists()) {
     showAssessmentCompleted(completedSnap.val());
@@ -3288,7 +3288,7 @@ function showAssessmentStudentScreen(session) {
   loadAssessmentScratchEditor();
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
   assessment.studentListener = assessment.sessionRef.on('value', function(snap) {
-    if (!snap.exists() || snap.child('state').val() !== 'active') {
+    if (!snap.exists() || snap.child('state').val() === 'finished') {
       if (!assessment.completed) exitAssessmentStudent({ keepForced: true });
     }
   });
@@ -3389,7 +3389,7 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     maxScore: result.maxScore,
     rubric: result.criteria
   });
-  await state.db.ref('apCompletions/' + assessment.assessmentId + '/' + state.uid).set({
+  await state.db.ref('progress/' + state.uid + '/assessments/' + assessment.assessmentId).set({
     completedAt: Date.now(),
     score: result.score,
     maxScore: result.maxScore,
@@ -3513,15 +3513,14 @@ function exitAssessmentStudent(opts) {
 
 async function exportAssessmentResults(className, assessmentId, lobbyCode) {
   assessmentId = assessmentId || 'year7-ap2-scratch';
-  var snap = await state.db.ref('apCompletions/' + assessmentId).get();
+  var snap = await state.db.ref('progress').get();
   var classSnap = await state.db.ref('classes/' + className + '/codes').get();
   var rows = [];
   var scores = [];
-  var completions = snap.exists() ? snap.val() : {};
+  var progressRows = snap.exists() ? snap.val() : {};
   var codes = classSnap.exists() ? Object.keys(classSnap.val() || {}) : Object.keys(completions);
   codes.forEach(function(code) {
-    var r = completions[code];
-    if (!r || r.className !== className && codes.indexOf(code) === -1) return;
+    var r = progressRows[code] && progressRows[code].assessments && progressRows[code].assessments[assessmentId];
     var score = r ? (r.score || 0) : 0;
     scores.push(score);
     rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || 21) : 21, completedAt: r && r.completedAt });
@@ -4286,7 +4285,7 @@ function startForcedQuizWatcher(className) {
   state.forcedQuizRef = state.db.ref('classes/' + className + '/forcedQuiz');
   state.forcedQuizListener = state.forcedQuizRef.on('value', function(snap) {
     var forced = snap.val() || {};
-    if (!forced.active || !forced.lobbyCode) {
+    if (!forced.active || !forced.lobbyCode || String(forced.lessonId || '').indexOf('AP:') === 0) {
       state.forcedQuizCode = null;
       return;
     }
@@ -4336,6 +4335,7 @@ async function joinQuizByCode(lobbyCode, opts) {
   var sessionRef = state.db.ref('quizSessions/' + lobbyCode);
   var snap = await sessionRef.get();
   if (!snap.exists()) throw new Error('No quiz found with that code.');
+  if (String(snap.child('lessonId').val() || '').indexOf('AP:') === 0) throw new Error('That code is for an assessment.');
   var sessionState = snap.child('state').val();
   if (sessionState === 'finished') throw new Error('That quiz has already finished.');
   if (!opts.allowLate && sessionState !== 'lobby') throw new Error('No open lobby found with that code.');
