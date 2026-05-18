@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -406,7 +406,7 @@
 
 <!-- ── ADMIN MODAL ────────────────────────────────────────── -->
 <div id="modal-admin" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-6xl max-h-[92vh] flex flex-col">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-semibold">Admin Panel</h2>
       <button id="btn-admin-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
@@ -450,9 +450,25 @@
       <p id="gen-status" class="text-xs mt-1 text-gray-500 hidden"></p>
     </div>
 
-    <!-- Classes table -->
-    <div class="overflow-y-auto flex-1" id="admin-classes-container">
-      <p class="text-gray-400 text-sm text-center py-4">Loading&#8230;</p>
+    <!-- Class selector + action buttons -->
+    <div class="flex flex-wrap items-center gap-3 mb-0 border-t border-gray-200 pt-4">
+      <label class="text-sm font-medium text-gray-700 whitespace-nowrap">View class:</label>
+      <select id="admin-class-select" class="jhncc-focus border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none min-w-[110px]">
+        <option value="">&#x2014; select class &#x2014;</option>
+      </select>
+      <div class="ml-auto flex flex-wrap gap-2 hidden" id="admin-class-actions">
+        <button id="btn-admin-host-quiz"    class="jhncc-secondary px-3 py-1 rounded border text-xs">&#x1F3AE; Host Quiz</button>
+        <button id="btn-admin-host-ap"      class="px-3 py-1 rounded border border-yellow-400 text-yellow-700 text-xs hover:bg-yellow-50">Start AP</button>
+        <button id="btn-admin-export-ap"    class="px-3 py-1 rounded border border-purple-300 text-purple-700 text-xs hover:bg-purple-50">AP Results</button>
+        <button id="btn-admin-export-detail" class="px-3 py-1 rounded border border-green-300 text-green-700 text-xs hover:bg-green-50">&#x2193; Report</button>
+        <button id="btn-admin-export-codes"  class="jhncc-secondary px-3 py-1 rounded border text-xs">&#x2193; Codes</button>
+        <button id="btn-admin-delete-class"  class="px-3 py-1 rounded border border-red-300 text-red-600 text-xs hover:bg-red-50">&#x1F5D1; Delete</button>
+      </div>
+    </div>
+
+    <!-- Dashboard (fills remaining height) -->
+    <div class="overflow-y-auto flex-1 mt-4" id="admin-dashboard">
+      <p class="text-gray-400 text-sm text-center py-8">Select a class above to view the dashboard.</p>
     </div>
   </div>
 </div>
@@ -2358,7 +2374,316 @@ function updateAuthUI(first, last, isAdmin) {
 // ── Admin ─────────────────────────────────────────────────────
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
-  await refreshAdminTable();
+  await loadAdminClassList();
+}
+
+async function loadAdminClassList() {
+  var sel  = document.getElementById('admin-class-select');
+  var prev = sel ? sel.value : '';
+  if (sel) sel.innerHTML = '<option value="">— select class —</option>';
+  try {
+    var snap = await state.db.ref('classes').get();
+    if (snap.exists()) {
+      snap.forEach(function(child) {
+        var opt = document.createElement('option');
+        opt.value = child.key; opt.textContent = child.key;
+        if (sel) sel.appendChild(opt);
+      });
+    }
+    if (sel) {
+      if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+      sel.onchange = function() {
+        if (sel.value) {
+          loadClassDashboard(sel.value);
+        } else {
+          var d = document.getElementById('admin-dashboard');
+          if (d) d.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Select a class above to view the dashboard.</p>';
+          document.getElementById('admin-class-actions').classList.add('hidden');
+        }
+      };
+    }
+  } catch(e) {
+    var d = document.getElementById('admin-dashboard');
+    if (d) d.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Error loading classes: ' + e.message + '</p>';
+  }
+}
+
+async function refreshAdminTable() {
+  await loadAdminClassList();
+  var sel = document.getElementById('admin-class-select');
+  if (sel && sel.value) await loadClassDashboard(sel.value);
+}
+
+async function loadClassDashboard(className) {
+  var dash = document.getElementById('admin-dashboard');
+  dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Loading ' + className + '…</p>';
+  document.getElementById('admin-class-actions').classList.add('hidden');
+  try {
+    var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
+    if (!codesSnap.exists()) {
+      dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">No codes found for ' + className + '.</p>';
+      return;
+    }
+    var codes = Object.keys(codesSnap.val());
+    // Fetch each student's progress individually — avoids pulling the entire progress tree
+    var progSnaps = await Promise.all(codes.map(function(c) {
+      return state.db.ref('progress/' + c).get();
+    }));
+    var progMap = {};
+    codes.forEach(function(c, i) { progMap[c] = progSnaps[i].exists() ? progSnaps[i].val() : {}; });
+
+    // Wire action buttons for this class
+    var actions = document.getElementById('admin-class-actions');
+    actions.classList.remove('hidden');
+    document.getElementById('btn-admin-host-quiz').onclick    = function() { openQuizSetup(className); };
+    document.getElementById('btn-admin-host-ap').onclick      = function() { openAssessmentSetup(className); };
+    document.getElementById('btn-admin-export-ap').onclick    = function() { exportAssessmentResults(className, 'year7-ap2-scratch'); };
+    document.getElementById('btn-admin-export-detail').onclick = function() { exportDetailedReport(className); };
+    document.getElementById('btn-admin-export-codes').onclick  = function() { exportCodesSheet(className); };
+    document.getElementById('btn-admin-delete-class').onclick  = async function() {
+      if (!confirm('Delete all codes for ' + className + '? This cannot be undone.')) return;
+      try {
+        await state.db.ref('classes/' + className).remove();
+        actions.classList.add('hidden');
+        dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Class deleted.</p>';
+        document.getElementById('admin-class-select').value = '';
+        await loadAdminClassList();
+      } catch(e) { alert('Error: ' + e.message); }
+    };
+
+    renderAdminDashboard(className, codes, progMap);
+  } catch(e) {
+    document.getElementById('admin-dashboard').innerHTML =
+      '<p class="text-red-400 text-sm text-center py-4">Error: ' + e.message + '</p>';
+  }
+}
+
+function renderAdminDashboard(className, codes, progMap) {
+  var dash = document.getElementById('admin-dashboard');
+
+  // ── Summary stats ─────────────────────────────────────────────
+  var n = codes.length;
+  var activeCount = codes.filter(function(c) {
+    var p = progMap[c];
+    return Object.keys(p).some(function(lid) {
+      return p[lid] && Object.keys(p[lid]).some(function(sid) {
+        return p[lid][sid] && p[lid][sid].completed;
+      });
+    });
+  }).length;
+
+  var totalPossible = state.allLessons.reduce(function(s, l) { return s + l.data.steps.length; }, 0);
+  var totalDoneAll = 0, totalTimeAll = 0;
+  codes.forEach(function(c) {
+    var p = progMap[c];
+    state.allLessons.forEach(function(l) {
+      l.data.steps.forEach(function(step) {
+        var s = (p[l.meta.id] && p[l.meta.id][step.id]) || {};
+        if (s.completed) totalDoneAll++;
+        if (s.totalMs)   totalTimeAll += s.totalMs;
+      });
+    });
+  });
+  var avgPct = (n && totalPossible) ? Math.round(totalDoneAll / (n * totalPossible) * 100) : 0;
+  var avgMs  = n ? Math.round(totalTimeAll / n) : 0;
+
+  // ── Course/lesson structure from yearGroups ────────────────────
+  var courseList = [];
+  state.yearGroups.forEach(function(yg) {
+    (yg.courses || []).forEach(function(course) {
+      var lessons = [];
+      (course.lessons || []).forEach(function(lm) {
+        var found = state.allLessons.find(function(l) { return l.meta.id === lm.id; });
+        if (found) lessons.push(found);
+      });
+      if (lessons.length) courseList.push({ label: yg.label + ' — ' + course.label, lessons: lessons });
+    });
+  });
+
+  // ── Build static HTML ──────────────────────────────────────────
+  function sc(val, lbl, bg, border, tv, tl) {
+    return '<div class="' + bg + ' border ' + border + ' rounded-lg p-3 text-center">' +
+      '<div class="text-2xl font-bold ' + tv + '">' + val + '</div>' +
+      '<div class="text-xs ' + tl + ' mt-0.5">' + lbl + '</div></div>';
+  }
+
+  var h = '';
+
+  // Stat cards
+  h += '<div class="grid grid-cols-4 gap-3 mb-5">';
+  h += sc(n,             'Students',      'bg-blue-50',   'border-blue-100',   'text-blue-700',   'text-blue-500');
+  h += sc(activeCount,   'Active',        'bg-green-50',  'border-green-100',  'text-green-700',  'text-green-500');
+  h += sc(avgPct + '%',  'Avg completion','bg-purple-50', 'border-purple-100', 'text-purple-700', 'text-purple-500');
+  h += sc(fmtMs(avgMs),  'Avg time',      'bg-orange-50', 'border-orange-100', 'text-orange-700', 'text-orange-500');
+  h += '</div>';
+
+  // Lesson selector bar
+  h += '<div class="flex flex-wrap items-center gap-3 mb-5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-200">';
+  h += '<span class="text-sm font-medium text-gray-600">Lesson view:</span>';
+  h += '<select id="admin-course-select" class="jhncc-focus border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none">';
+  courseList.forEach(function(c, i) { h += '<option value="' + i + '">' + c.label + '</option>'; });
+  h += '</select>';
+  h += '<select id="admin-lesson-select" class="jhncc-focus border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none min-w-[180px]"></select>';
+  h += '</div>';
+
+  // Lesson drill-down panel (filled dynamically below)
+  h += '<div id="admin-lesson-panel" class="mb-5"></div>';
+
+  // All-students overview table
+  var rows = codes.map(function(c) {
+    var p = progMap[c], done = 0, ms = 0;
+    state.allLessons.forEach(function(l) {
+      l.data.steps.forEach(function(step) {
+        var s = (p[l.meta.id] && p[l.meta.id][step.id]) || {};
+        if (s.completed) done++;
+        if (s.totalMs)   ms += s.totalMs;
+      });
+    });
+    return { code: c, name: studentName(c), done: done, ms: ms };
+  }).sort(function(a, b) { return b.ms - a.ms; });
+
+  h += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
+  h += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center gap-2">';
+  h += '<span class="text-sm font-medium text-gray-700">All Students</span>';
+  h += '<span class="text-xs text-gray-400">— ' + n + ' total, sorted by time on task</span></div>';
+  h += '<div class="overflow-x-auto"><table class="w-full text-xs"><thead>';
+  h += '<tr class="bg-gray-50 text-left text-gray-500">';
+  h += '<th class="border border-gray-200 px-2 py-1.5 font-medium">Name</th>';
+  h += '<th class="border border-gray-200 px-2 py-1.5 font-medium font-mono">Code</th>';
+  h += '<th class="border border-gray-200 px-2 py-1.5 font-medium text-center">Steps</th>';
+  h += '<th class="border border-gray-200 px-2 py-1.5 font-medium">Time</th>';
+  h += '<th class="border border-gray-200 px-2 py-1.5"></th>';
+  h += '</tr></thead><tbody>';
+
+  rows.forEach(function(r) {
+    var inactive = r.done === 0 && r.ms === 0;
+    h += '<tr class="border-b border-gray-100 hover:bg-gray-50' + (inactive ? ' opacity-40' : '') + '">';
+    h += '<td class="border border-gray-100 px-2 py-1.5' + (r.name ? ' font-medium text-gray-800' : ' text-gray-400') + '">' + (r.name || '—') + '</td>';
+    h += '<td class="border border-gray-100 px-2 py-1.5 font-mono text-gray-500">' + r.code + '</td>';
+    h += '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.done || '—') + '</td>';
+    h += '<td class="border border-gray-100 px-2 py-1.5">' + (r.ms ? fmtMs(r.ms) : '—') + '</td>';
+    h += '<td class="border border-gray-100 px-1 py-1"><button class="btn-rm-code text-xs text-red-400 hover:text-red-600" data-class="' + className + '" data-code="' + r.code + '">Remove</button></td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div></div>';
+
+  dash.innerHTML = h;
+
+  // Wire remove-code buttons
+  dash.querySelectorAll('.btn-rm-code').forEach(function(btn) {
+    btn.onclick = async function() {
+      if (!confirm('Remove code ' + btn.dataset.code + ' from ' + btn.dataset.class + '?')) return;
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        await state.db.ref('classes/' + btn.dataset.class + '/codes/' + btn.dataset.code).remove();
+        await loadClassDashboard(btn.dataset.class);
+      } catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = 'Remove'; }
+    };
+  });
+
+  // ── Lesson selector logic ──────────────────────────────────────
+  var courseEl = document.getElementById('admin-course-select');
+  var lessonEl = document.getElementById('admin-lesson-select');
+
+  function populateLessons() {
+    var ci     = parseInt(courseEl.value, 10);
+    var course = courseList[ci];
+    lessonEl.innerHTML = '';
+    (course ? course.lessons : []).forEach(function(l, i) {
+      var o = document.createElement('option');
+      o.value = i; o.textContent = l.meta.title || l.data.title;
+      lessonEl.appendChild(o);
+    });
+    renderLessonPanel();
+  }
+
+  function renderLessonPanel() {
+    var ci    = parseInt(courseEl.value, 10);
+    var li    = parseInt(lessonEl.value, 10);
+    var entry = courseList[ci] && courseList[ci].lessons[li];
+    var panel = document.getElementById('admin-lesson-panel');
+    if (!entry || !panel) return;
+
+    var lid   = entry.meta.id;
+    var steps = entry.data.steps;
+
+    // Per-step completion counts
+    var stepData = steps.map(function(step) {
+      var done = 0, started = 0;
+      codes.forEach(function(c) {
+        var s = (progMap[c][lid] && progMap[c][lid][step.id]) || {};
+        if (s.completed) done++;
+        else if (s.started || s.startedAt) started++;
+      });
+      return { step: step, done: done, started: started };
+    });
+
+    var ph = '<div class="grid gap-4 mb-1" style="grid-template-columns:1fr 1fr">';
+
+    // ── Left: student progress table ──────────────────────────
+    ph += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
+    ph += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200">';
+    ph += '<span class="text-sm font-medium text-gray-700">Student Progress</span> ';
+    ph += '<span class="text-xs text-gray-400">' + (entry.data.title || entry.meta.title) + '</span></div>';
+    ph += '<div class="overflow-x-auto"><table class="w-full text-xs"><thead>';
+    ph += '<tr class="bg-gray-50 text-gray-500">';
+    ph += '<th class="border border-gray-200 px-2 py-1 text-left">Student</th>';
+    steps.forEach(function(step) {
+      var abbr = step.title.length > 8 ? step.title.slice(0, 7) + '…' : step.title;
+      ph += '<th class="border border-gray-200 px-1 py-1 text-center" title="' + step.title + '">' + abbr + '</th>';
+    });
+    ph += '</tr></thead><tbody>';
+    codes.forEach(function(c) {
+      var p    = progMap[c];
+      var name = studentName(c);
+      ph += '<tr class="border-b border-gray-100 hover:bg-gray-50">';
+      ph += '<td class="border border-gray-100 px-2 py-1">';
+      ph += name ? '<span class="font-medium">' + name + '</span>'
+                 : '<span class="font-mono text-gray-400">' + c + '</span>';
+      ph += '</td>';
+      steps.forEach(function(step) {
+        var s  = (p[lid] && p[lid][step.id]) || {};
+        var ms = s.totalMs ? ' · ' + fmtMs(s.totalMs) : '';
+        if (s.completed)
+          ph += '<td class="border border-gray-100 text-center py-1" title="Complete' + ms + '"><span class="text-green-600 font-bold">✓</span></td>';
+        else if (s.started || s.startedAt)
+          ph += '<td class="border border-gray-100 text-center py-1" title="Started' + ms + '"><span class="text-yellow-500">○</span></td>';
+        else
+          ph += '<td class="border border-gray-100 text-center py-1"><span class="text-gray-200">–</span></td>';
+      });
+      ph += '</tr>';
+    });
+    ph += '</tbody></table></div></div>';
+
+    // ── Right: step completion bar chart ──────────────────────
+    ph += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
+    ph += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200">';
+    ph += '<span class="text-sm font-medium text-gray-700">Step Completion</span></div>';
+    ph += '<div class="p-3 space-y-2.5">';
+    stepData.forEach(function(sd) {
+      var pDone    = n ? Math.round(sd.done    / n * 100) : 0;
+      var pStarted = n ? Math.round(sd.started / n * 100) : 0;
+      ph += '<div>';
+      ph += '<div class="flex justify-between text-xs mb-1">';
+      ph += '<span class="text-gray-700 truncate pr-2">' + sd.step.title + '</span>';
+      ph += '<span class="text-gray-400 whitespace-nowrap">' + sd.done + '/' + n + ' &nbsp;' + pDone + '%</span></div>';
+      ph += '<div class="flex h-3 w-full rounded-full overflow-hidden bg-gray-100">';
+      ph += '<div class="bg-green-500 h-3 transition-all" style="width:' + pDone + '%"></div>';
+      ph += '<div class="bg-yellow-400 h-3 transition-all" style="width:' + pStarted + '%"></div>';
+      ph += '</div></div>';
+    });
+    ph += '<div class="flex gap-4 mt-3 text-xs text-gray-400">';
+    ph += '<span><span class="inline-block w-3 h-2.5 bg-green-500 rounded mr-1 align-middle"></span>Complete</span>';
+    ph += '<span><span class="inline-block w-3 h-2.5 bg-yellow-400 rounded mr-1 align-middle"></span>Started</span>';
+    ph += '</div></div></div>';
+
+    ph += '</div>'; // close grid
+    panel.innerHTML = ph;
+  }
+
+  courseEl.onchange = populateLessons;
+  lessonEl.onchange = renderLessonPanel;
+  if (courseList.length) populateLessons();
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -2398,210 +2723,6 @@ function stepStatus(prog, lid, sid) {
   return 'not started';
 }
 
-// ── Admin table ───────────────────────────────────────────────
-async function refreshAdminTable() {
-  var container = document.getElementById('admin-classes-container');
-  container.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Loading\u2026</p>';
-  try {
-    var results = await Promise.all([
-      state.db.ref('classes').get(),
-      state.db.ref('progress').get(),
-    ]);
-    var classesSnap = results[0];
-    var allProg     = results[1].exists() ? results[1].val() : {};
-
-    if (!classesSnap.exists()) {
-      container.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">No classes yet. Generate some codes above.</p>';
-      return;
-    }
-
-    container.innerHTML = '';
-    classesSnap.forEach(function(classSnap) {
-      var className = classSnap.key;
-      var codes     = classSnap.child('codes').val() || {};
-      var codeList  = Object.keys(codes);
-      var hasNames  = codeList.some(function(c) { return !!state.nameMap[c]; });
-
-      // Section header
-      var header = document.createElement('div');
-      header.className = 'flex items-center justify-between py-2 px-1 mb-2 mt-4 border-b-2 border-gray-200';
-      header.innerHTML =
-        '<span class="font-semibold text-gray-800">' + className + '</span>' +
-        '<span class="text-xs text-gray-400 mr-auto ml-3">' + codeList.length + ' student' + (codeList.length !== 1 ? 's' : '') + '</span>' +
-        '<div class="flex gap-2">' +
-          '<button class="btn-host-quiz jhncc-secondary px-3 py-1 rounded border text-xs" data-class="' + className + '">&#x1F3AE; Host Quiz</button>' +
-          '<button class="btn-host-ap px-3 py-1 rounded border border-yellow-400 text-yellow-700 text-xs hover:bg-yellow-50" data-class="' + className + '">Start AP</button>' +
-          '<button class="btn-export-ap px-3 py-1 rounded border border-purple-300 text-purple-700 text-xs hover:bg-purple-50" data-class="' + className + '">AP Results</button>' +
-          '<button class="btn-export-detail px-3 py-1 rounded border border-green-300 text-green-700 text-xs hover:bg-green-50" data-class="' + className + '">&#x2193; Detailed Report</button>' +
-          '<button class="btn-export-class jhncc-secondary px-3 py-1 rounded border text-xs" data-class="' + className + '">&#x2193; Codes Sheet</button>' +
-          '<button class="btn-delete-class px-3 py-1 rounded border border-red-300 text-red-600 text-xs hover:bg-red-50" data-class="' + className + '">\uD83D\uDDD1 Delete class</button>' +
-        '</div>';
-      container.appendChild(header);
-
-      // Build columns: Name (if names loaded), Code, then per-lesson columns
-      var table = document.createElement('table');
-      table.className = 'w-full text-xs mb-4 border-collapse';
-
-      // Header row
-      var thead = document.createElement('thead');
-      var htr   = document.createElement('tr');
-      htr.className = 'text-left text-gray-500 bg-gray-50';
-
-      function th(text, cls) {
-        var cell = document.createElement('th');
-        cell.className = 'border border-gray-200 px-2 py-1.5 font-medium ' + (cls || '');
-        cell.textContent = text;
-        return cell;
-      }
-
-      if (hasNames) htr.appendChild(th('Name', 'min-w-[120px]'));
-      htr.appendChild(th('Code', 'font-mono'));
-      htr.appendChild(th('Steps done'));
-      htr.appendChild(th('Time'));
-
-      // One column per lesson
-      state.allLessons.forEach(function(lesson) {
-        var cell = th(lesson.data.title, 'text-center');
-        cell.colSpan = lesson.data.steps.length;
-        htr.appendChild(cell);
-      });
-
-      thead.appendChild(htr);
-
-      // Sub-header: step names
-      var htr2 = document.createElement('tr');
-      htr2.className = 'text-left text-gray-400 bg-gray-50';
-      if (hasNames) htr2.appendChild(th(''));
-      htr2.appendChild(th(''));
-      htr2.appendChild(th(''));
-      htr2.appendChild(th(''));
-      state.allLessons.forEach(function(lesson) {
-        lesson.data.steps.forEach(function(step) {
-          var cell = document.createElement('th');
-          cell.className = 'border border-gray-200 px-1 py-1 font-normal text-center text-gray-400 whitespace-nowrap';
-          cell.style.maxWidth = '80px';
-          cell.style.overflow = 'hidden';
-          cell.style.textOverflow = 'ellipsis';
-          cell.title = step.title;
-          cell.textContent = step.title.length > 10 ? step.title.slice(0, 9) + '\u2026' : step.title;
-          htr2.appendChild(cell);
-        });
-      });
-      thead.appendChild(htr2);
-      table.appendChild(thead);
-
-      // Data rows
-      var tbody = document.createElement('tbody');
-      codeList.forEach(function(code) {
-        var prog = allProg[code] || {};
-        var name = studentName(code);
-
-        // Compute totals
-        var stepsDone = 0, totalMs = 0;
-        Object.keys(prog).forEach(function(lid) {
-          Object.keys(prog[lid]).forEach(function(sid) {
-            var s = prog[lid][sid];
-            if (s.completed) stepsDone++;
-            if (s.totalMs)   totalMs += s.totalMs;
-          });
-        });
-
-        var tr = document.createElement('tr');
-        tr.className = 'border-b border-gray-100 hover:bg-gray-50';
-
-        function td(text, cls) {
-          var cell = document.createElement('td');
-          cell.className = 'border border-gray-100 px-2 py-1.5 ' + (cls || '');
-          cell.textContent = text;
-          return cell;
-        }
-
-        if (hasNames) tr.appendChild(td(name || '—', name ? 'font-medium text-gray-800' : 'text-gray-400'));
-        tr.appendChild(td(code, 'font-mono text-gray-500'));
-        tr.appendChild(td(stepsDone || '—', 'text-center'));
-        tr.appendChild(td(totalMs ? fmtMs(totalMs) : '—'));
-
-        // Per-step cells
-        state.allLessons.forEach(function(lesson) {
-          lesson.data.steps.forEach(function(step) {
-            var status = stepStatus(prog, lesson.meta.id, step.id);
-            var cell   = document.createElement('td');
-            cell.className = 'border border-gray-100 text-center px-1 py-1';
-            var ms = (prog[lesson.meta.id] && prog[lesson.meta.id][step.id] && prog[lesson.meta.id][step.id].totalMs) || 0;
-            if (status === 'complete') {
-              cell.innerHTML = '<span title="Complete' + (ms ? ' \u00b7 ' + fmtMs(ms) : '') + '" class="text-green-600 font-bold">\u2713</span>';
-            } else if (status === 'started') {
-              cell.innerHTML = '<span title="Started' + (ms ? ' \u00b7 ' + fmtMs(ms) : '') + '" class="text-yellow-500">\u25CB</span>';
-            } else {
-              cell.innerHTML = '<span class="text-gray-200">\u2013</span>';
-            }
-            tr.appendChild(cell);
-          });
-        });
-
-        // Delete button cell
-        var delTd = document.createElement('td');
-        delTd.className = 'border border-gray-100 px-2 py-1';
-        var delBtn = document.createElement('button');
-        delBtn.className = 'btn-delete-code text-red-400 hover:text-red-600';
-        delBtn.dataset.class = className;
-        delBtn.dataset.code  = code;
-        delBtn.textContent   = 'Remove';
-        delTd.appendChild(delBtn);
-        tr.appendChild(delTd);
-
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      container.appendChild(table);
-    });
-
-    // ── Wire up buttons ──────────────────────────────────────
-    container.querySelectorAll('.btn-host-quiz').forEach(function(btn) {
-      btn.onclick = function() { openQuizSetup(btn.dataset.class); };
-    });
-
-    container.querySelectorAll('.btn-host-ap').forEach(function(btn) {
-      btn.onclick = function() { openAssessmentSetup(btn.dataset.class); };
-    });
-
-    container.querySelectorAll('.btn-export-ap').forEach(function(btn) {
-      btn.onclick = function() { exportAssessmentResults(btn.dataset.class, 'year7-ap2-scratch'); };
-    });
-
-    container.querySelectorAll('.btn-export-class').forEach(function(btn) {
-      btn.onclick = function() { exportCodesSheet(btn.dataset.class); };
-    });
-
-    container.querySelectorAll('.btn-export-detail').forEach(function(btn) {
-      btn.onclick = function() { exportDetailedReport(btn.dataset.class); };
-    });
-
-    container.querySelectorAll('.btn-delete-class').forEach(function(btn) {
-      btn.onclick = async function() {
-        var cn = btn.dataset.class;
-        if (!confirm('Delete all codes for class ' + cn + '? This cannot be undone.')) return;
-        btn.disabled = true; btn.textContent = 'Deleting\u2026';
-        try { await state.db.ref('classes/' + cn).remove(); await refreshAdminTable(); }
-        catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = '\uD83D\uDDD1 Delete class'; }
-      };
-    });
-
-    container.querySelectorAll('.btn-delete-code').forEach(function(btn) {
-      btn.onclick = async function() {
-        var code = btn.dataset.code, cn = btn.dataset.class;
-        if (!confirm('Remove code ' + code + ' from ' + cn + '?')) return;
-        btn.disabled = true; btn.textContent = '\u2026';
-        try { await state.db.ref('classes/' + cn + '/codes/' + code).remove(); await refreshAdminTable(); }
-        catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = 'Remove'; }
-      };
-    });
-
-  } catch(e) {
-    container.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Error loading data: ' + e.message + '</p>';
-  }
-}
 
 // ── Export: codes-only sheet (for handing out to students) ─────
 function exportCodesSheet(className) {
@@ -5338,6 +5459,8 @@ async function runScratchRuntimeTest(q, vm) {
     target.setXY(0, 0);
     var startX = target.x;
     var startY = target.y;
+    runtime.greenFlag();
+    await waitMs(50);
     postScratchKey(runtime, test.key || 'ArrowRight', true);
     await waitMs(test.holdMs || 220);
     postScratchKey(runtime, test.key || 'ArrowRight', false);
@@ -5347,6 +5470,82 @@ async function runScratchRuntimeTest(q, vm) {
       return test.direction === 'negative' ? target.y < startY : target.y > startY;
     }
     return test.direction === 'negative' ? target.x < startX : target.x > startX;
+  }
+
+  if (test.kind === 'keyMoves4Directions') {
+    var dirTests = [
+      {key:'ArrowRight',axis:'x',dir:1},{key:'ArrowLeft',axis:'x',dir:-1},
+      {key:'ArrowUp',axis:'y',dir:1},{key:'ArrowDown',axis:'y',dir:-1}
+    ];
+    for (var di = 0; di < dirTests.length; di++) {
+      var dt = dirTests[di];
+      target.setXY(0, 0);
+      runtime.stopAll();
+      runtime.greenFlag();
+      await waitMs(50);
+      postScratchKey(runtime, dt.key, true);
+      await waitMs(220);
+      postScratchKey(runtime, dt.key, false);
+      await waitMs(80);
+      runtime.stopAll();
+      var dtOk = dt.axis === 'x' ? (dt.dir > 0 ? target.x > 0 : target.x < 0) : (dt.dir > 0 ? target.y > 0 : target.y < 0);
+      if (!dtOk) return false;
+    }
+    return true;
+  }
+
+  if (test.kind === 'greenFlagChangesCostume') {
+    var startCostume = target.currentCostume;
+    runtime.greenFlag();
+    await waitMs(test.waitMs || 600);
+    runtime.stopAll();
+    return target.currentCostume !== startCostume;
+  }
+
+  if (test.kind === 'keyChangesVariable') {
+    runtime.greenFlag();
+    await waitMs(test.initMs || 300);
+    runtime.stopAll();
+    var kvBefore = {};
+    (runtime.targets || []).forEach(function(t) {
+      Object.keys(t.variables || {}).forEach(function(id) {
+        var v = t.variables[id]; if (v) kvBefore[id] = v.value;
+      });
+    });
+    postScratchKey(runtime, test.key || ' ', true);
+    await waitMs(test.holdMs || 250);
+    postScratchKey(runtime, test.key || ' ', false);
+    await waitMs(100);
+    runtime.stopAll();
+    var kvChanged = false;
+    (runtime.targets || []).forEach(function(t) {
+      Object.keys(t.variables || {}).forEach(function(id) {
+        var v = t.variables[id];
+        if (id in kvBefore && v && String(v.value) !== String(kvBefore[id])) kvChanged = true;
+      });
+    });
+    return kvChanged;
+  }
+
+  if (test.kind === 'greenFlagChangesVariable') {
+    var gvBefore = {};
+    (runtime.targets || []).forEach(function(t) {
+      Object.keys(t.variables || {}).forEach(function(id) {
+        var v = t.variables[id]; if (v) gvBefore[id] = v.value;
+      });
+    });
+    target.setXY(0, 0);
+    runtime.greenFlag();
+    await waitMs(test.waitMs || 1500);
+    runtime.stopAll();
+    var gvChanged = false;
+    (runtime.targets || []).forEach(function(t) {
+      Object.keys(t.variables || {}).forEach(function(id) {
+        var v = t.variables[id];
+        if (id in gvBefore && v && String(v.value) !== String(gvBefore[id])) gvChanged = true;
+      });
+    });
+    return gvChanged;
   }
 
   if (test.kind === 'greenFlagMoves') {
@@ -5401,6 +5600,32 @@ async function runScratchRuntimeTest(q, vm) {
   }
 
   return null;
+}
+
+function runStepRuntimeTest(testConfig, successMsg, failMsg) {
+  var f = document.getElementById('y7-scratch-frame');
+  var r = document.getElementById('y7-check-result');
+  var btn = document.getElementById('y7-check-btn');
+  if (!f || !r) return;
+  var vm = f.contentWindow && f.contentWindow.vm;
+  if (!vm || !vm.runtime) { r.style.color='#fca5a5'; r.textContent='Editor still loading — wait a moment.'; return; }
+  f.style.pointerEvents = 'none';
+  if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; }
+  r.style.color = '#94a3b8'; r.textContent = 'Running test…';
+  runScratchRuntimeTest({runtimeTest: testConfig}, vm).then(function(result) {
+    f.style.pointerEvents = '';
+    if (btn) { btn.disabled = false; btn.textContent = 'Check My Work'; }
+    if (result) {
+      r.style.color = '#86efac'; r.textContent = successMsg || '✓ Test passed!';
+      if (window.__markStepComplete) __markStepComplete();
+    } else {
+      r.style.color = '#fca5a5'; r.textContent = failMsg || 'Not working yet — check your blocks and try again.';
+    }
+  }).catch(function(e) {
+    f.style.pointerEvents = '';
+    if (btn) { btn.disabled = false; btn.textContent = 'Check My Work'; }
+    r.style.color = '#fca5a5'; r.textContent = 'Error: ' + e.message;
+  });
 }
 
 function getScratchMainSprite(runtime) {

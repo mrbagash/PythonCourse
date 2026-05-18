@@ -5,14 +5,6 @@
       "label": "Year 7",
       "courses": [
         {
-          "id": "algorithms",
-          "label": "Algorithms",
-          "lessons": [
-            { "id": "year7-algorithms", "title": "Algorithms", "file": "lessons/year7-algorithms.json", "order": 1 },
-            { "id": "year7-flowcharts", "title": "Flowcharts & Pseudocode", "file": "lessons/year7-flowcharts.json", "order": 2 }
-          ]
-        },
-        {
           "id": "scratch",
           "label": "Scratch",
           "lessons": [
