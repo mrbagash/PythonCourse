@@ -412,10 +412,13 @@
       <button id="btn-admin-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
     </div>
 
-    <!-- Rejoin active session banner -->
-    <div id="admin-rejoin-banner" class="hidden bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
-      <span class="text-amber-800 font-medium text-sm">Active session detected:</span>
-      <div id="admin-rejoin-items" class="flex gap-2 flex-wrap"></div>
+    <!-- Active sessions panel -->
+    <div id="admin-sessions-panel" class="hidden border border-gray-200 rounded-lg mb-4 overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+        <span class="text-sm font-medium text-gray-700">Active sessions</span>
+        <button id="btn-refresh-sessions" class="text-xs text-gray-500 hover:text-gray-700 underline">Refresh</button>
+      </div>
+      <div id="admin-sessions-list"></div>
     </div>
 
     <!-- Top toolbar: generate / add / import -->
@@ -2381,58 +2384,95 @@ function updateAuthUI(first, last, isAdmin) {
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
   await loadAdminClassList();
-  checkAdminRejoin();
+  loadActiveSessions();
 }
 
-async function checkAdminRejoin() {
-  var banner = document.getElementById('admin-rejoin-banner');
-  var itemsDiv = document.getElementById('admin-rejoin-items');
-  var quizCode = localStorage.getItem('pylearn_host_quiz');
-  var apCode   = localStorage.getItem('pylearn_host_ap');
-  var items = [];
-  if (quizCode) {
+async function loadActiveSessions() {
+  var panel = document.getElementById('admin-sessions-panel');
+  var list  = document.getElementById('admin-sessions-list');
+  list.innerHTML = '<p class="text-gray-400 text-xs px-4 py-2">Checking…</p>';
+  try {
+    var snap = await state.db.ref('quizSessions').get();
+    var sessions = [];
+    if (snap.exists()) {
+      snap.forEach(function(child) {
+        var s = child.val() || {};
+        if (s.state && s.state !== 'finished') {
+          var isAP = String(s.lessonId || '').indexOf('AP:') === 0;
+          var playerCount = 0;
+          if (s.players) {
+            Object.keys(s.players).forEach(function(k) {
+              if (!s.players[k].kicked) playerCount++;
+            });
+          }
+          var answerCount = (s.answers && s.answers[0]) ? Object.keys(s.answers[0]).length : 0;
+          sessions.push({
+            code: child.key,
+            state: s.state,
+            isAP: isAP,
+            className: s.className || '—',
+            playerCount: isAP ? answerCount : playerCount
+          });
+        }
+      });
+    }
+    if (!sessions.length) { panel.classList.add('hidden'); return; }
+    list.innerHTML = '';
+    sessions.forEach(function(sess) {
+      var typeLabel  = sess.isAP ? 'AP' : 'Quiz';
+      var stateLabel = ({ lobby:'Lobby', question:'In progress', reveal:'Revealing' })[sess.state] || sess.state;
+      var countLabel = sess.isAP ? sess.playerCount + ' submitted' : sess.playerCount + ' players';
+      var row = document.createElement('div');
+      row.className = 'flex flex-wrap items-center gap-2 px-4 py-2 text-sm border-t border-gray-100';
+      row.innerHTML =
+        '<span class="font-semibold text-gray-700 w-10">' + typeLabel + '</span>' +
+        '<span class="font-mono text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-0.5 text-xs">' + sess.code + '</span>' +
+        '<span class="text-gray-600">Class: <strong>' + sess.className + '</strong></span>' +
+        '<span class="text-gray-400 text-xs">' + stateLabel + ' · ' + countLabel + '</span>' +
+        '<div class="ml-auto flex gap-2">' +
+          '<button class="btn-sess-rejoin px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Rejoin</button>' +
+          '<button class="btn-sess-end    px-2 py-1 text-xs bg-red-600  text-white rounded hover:bg-red-700">Force End</button>' +
+        '</div>';
+      row.querySelector('.btn-sess-rejoin').onclick = function() {
+        document.getElementById('modal-admin').classList.add('hidden');
+        if (sess.isAP) rejoinAPSession(sess.code);
+        else           rejoinQuizSession(sess.code);
+      };
+      row.querySelector('.btn-sess-end').onclick = async function() {
+        if (!confirm('Force-end this ' + typeLabel + ' for class ' + sess.className + '? Students will be released.')) return;
+        await forceEndSession(sess.code, sess.className);
+        loadActiveSessions();
+        var sel = document.getElementById('admin-class-select');
+        if (sel && sel.value) loadClassDashboard(sel.value);
+      };
+      list.appendChild(row);
+    });
+    panel.classList.remove('hidden');
+  } catch(e) {
+    list.innerHTML = '<p class="text-red-400 text-xs px-4 py-2">Could not load sessions: ' + e.message + '</p>';
+    panel.classList.remove('hidden');
+  }
+}
+
+async function forceEndSession(code, className) {
+  await state.db.ref('quizSessions/' + code).update({ state: 'finished', endedAt: Date.now() });
+  if (className && className !== '—') {
     try {
-      var qSnap = await state.db.ref('quizSessions/' + quizCode).get();
-      if (qSnap.exists() && qSnap.child('state').val() !== 'finished') {
-        items.push({ type: 'quiz', code: quizCode,
-          label: 'Quiz (code ' + quizCode + ')' });
-      } else {
-        localStorage.removeItem('pylearn_host_quiz');
+      var forcedRef = state.db.ref('classes/' + className + '/forcedQuiz');
+      var fSnap = await forcedRef.get();
+      if (fSnap.child('lobbyCode').val() === code) {
+        await forcedRef.update({ active: false, endedAt: Date.now() });
       }
     } catch(e) {}
   }
-  if (apCode) {
-    try {
-      var aSnap = await state.db.ref('quizSessions/' + apCode).get();
-      if (aSnap.exists() && aSnap.child('state').val() !== 'finished') {
-        items.push({ type: 'ap', code: apCode,
-          label: 'AP (code ' + apCode + ')' });
-      } else {
-        localStorage.removeItem('pylearn_host_ap');
-      }
-    } catch(e) {}
-  }
-  if (!items.length) { banner.classList.add('hidden'); return; }
-  itemsDiv.innerHTML = '';
-  items.forEach(function(item) {
-    var btn = document.createElement('button');
-    btn.className = 'px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 font-medium';
-    btn.textContent = 'Rejoin ' + item.label;
-    btn.onclick = function() {
-      document.getElementById('modal-admin').classList.add('hidden');
-      if (item.type === 'quiz') rejoinQuizSession(item.code);
-      else rejoinAPSession(item.code);
-    };
-    itemsDiv.appendChild(btn);
-  });
-  banner.classList.remove('hidden');
+  if (localStorage.getItem('pylearn_host_quiz') === code) localStorage.removeItem('pylearn_host_quiz');
+  if (localStorage.getItem('pylearn_host_ap')   === code) localStorage.removeItem('pylearn_host_ap');
 }
 
 async function rejoinQuizSession(code) {
   try {
     var snap = await state.db.ref('quizSessions/' + code).get();
     if (!snap.exists() || snap.child('state').val() === 'finished') {
-      localStorage.removeItem('pylearn_host_quiz');
       alert('That quiz session has already ended.');
       return;
     }
@@ -2454,15 +2494,14 @@ async function rejoinAPSession(code) {
   try {
     var snap = await state.db.ref('quizSessions/' + code).get();
     if (!snap.exists() || snap.child('state').val() === 'finished') {
-      localStorage.removeItem('pylearn_host_ap');
       alert('That AP session has already ended.');
       return;
     }
     var session = snap.val();
-    assessment.lobbyCode     = code;
-    assessment.sessionRef    = state.db.ref('quizSessions/' + code);
-    assessment.className     = session.className || null;
-    assessment.assessmentId  = String(session.lessonId || '').replace(/^AP:/, '');
+    assessment.lobbyCode    = code;
+    assessment.sessionRef   = state.db.ref('quizSessions/' + code);
+    assessment.className    = session.className || null;
+    assessment.assessmentId = String(session.lessonId || '').replace(/^AP:/, '');
     if (assessment.hostListener && assessment.sessionRef) {
       assessment.sessionRef.off('value', assessment.hostListener);
     }
@@ -2471,7 +2510,6 @@ async function rejoinAPSession(code) {
     alert('Could not rejoin AP: ' + e.message);
   }
 }
-
 async function loadAdminClassList() {
   var sel  = document.getElementById('admin-class-select');
   var prev = sel ? sel.value : '';
@@ -3197,6 +3235,7 @@ document.getElementById('btn-gen-codes').onclick = async function() {
 };
 
 document.getElementById('btn-refresh-codes').onclick = refreshAdminTable;
+document.getElementById('btn-refresh-sessions').onclick = loadActiveSessions;
 
 document.getElementById('btn-add-single').onclick = async function() {
   var className = document.getElementById('input-single-class').value.trim().toUpperCase();
