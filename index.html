@@ -2514,7 +2514,14 @@ async function loadClassDashboard(className) {
   dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Loading ' + className + '…</p>';
   document.getElementById('admin-class-actions').classList.add('hidden');
   try {
-    var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
+    var results = await Promise.all([
+      state.db.ref('classes/' + className + '/codes').get(),
+      state.db.ref('classes/' + className + '/forcedQuiz').get()
+    ]);
+    var codesSnap  = results[0];
+    var forcedSnap = results[1];
+    var forced = forcedSnap.exists() ? forcedSnap.val() : null;
+
     if (!codesSnap.exists()) {
       dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">No codes found for ' + className + '.</p>';
       return;
@@ -2546,15 +2553,46 @@ async function loadClassDashboard(className) {
       } catch(e) { alert('Error: ' + e.message); }
     };
 
-    renderAdminDashboard(className, codes, progMap);
+    renderAdminDashboard(className, codes, progMap, forced);
   } catch(e) {
     document.getElementById('admin-dashboard').innerHTML =
       '<p class="text-red-400 text-sm text-center py-4">Error: ' + e.message + '</p>';
   }
 }
 
-function renderAdminDashboard(className, codes, progMap) {
+function renderAdminDashboard(className, codes, progMap, forced) {
   var dash = document.getElementById('admin-dashboard');
+  dash.innerHTML = '';
+
+  // ── Active session banner ─────────────────────────────────────
+  if (forced && forced.active && forced.lobbyCode) {
+    var lobbyCode  = forced.lobbyCode;
+    var isAP       = String(forced.lessonId || '').indexOf('AP:') === 0;
+    var sessionLabel = (isAP ? 'AP' : 'Quiz') + ' — code ' + lobbyCode;
+    var banner = document.createElement('div');
+    banner.className = 'bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-4 flex flex-wrap items-center gap-3';
+    banner.innerHTML =
+      '<span class="text-amber-800 font-medium text-sm">Active session: ' + sessionLabel + '</span>' +
+      '<button id="btn-dash-rejoin" class="px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 font-medium">Rejoin as Host</button>' +
+      '<button id="btn-dash-force-end" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 font-medium">Force End</button>';
+    dash.appendChild(banner);
+
+    document.getElementById('btn-dash-rejoin').onclick = function() {
+      document.getElementById('modal-admin').classList.add('hidden');
+      if (isAP) rejoinAPSession(lobbyCode);
+      else       rejoinQuizSession(lobbyCode);
+    };
+
+    document.getElementById('btn-dash-force-end').onclick = async function() {
+      if (!confirm('Force-end the active ' + (isAP ? 'AP' : 'quiz') + ' for ' + className + '? Students will be released.')) return;
+      try {
+        await state.db.ref('classes/' + className + '/forcedQuiz').update({ active: false, endedAt: Date.now() });
+        await state.db.ref('quizSessions/' + lobbyCode).update({ state: 'finished', endedAt: Date.now() });
+        localStorage.removeItem(isAP ? 'pylearn_host_ap' : 'pylearn_host_quiz');
+        loadClassDashboard(className);
+      } catch(e) { alert('Error: ' + e.message); }
+    };
+  }
 
   // ── Summary stats ─────────────────────────────────────────────
   var n = codes.length;
