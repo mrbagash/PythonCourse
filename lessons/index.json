@@ -8,12 +8,42 @@
           "id": "scratch",
           "label": "Scratch",
           "lessons": [
-            { "id": "year7-scratch-basics", "title": "Scratch Basics", "file": "lessons/year7-scratch-basics.json", "order": 1 },
-            { "id": "year7-scratch-conditionals", "title": "Conditionals & Variables", "file": "lessons/year7-scratch-conditionals.json", "order": 2 },
-            { "id": "year7-scratch-iteration", "title": "Iteration", "file": "lessons/year7-scratch-iteration.json", "order": 3 },
-            { "id": "year7-scratch-games", "title": "Game Creation", "file": "lessons/year7-scratch-games.json", "order": 4 },
-            { "id": "year7-scratch-project", "title": "Own Game Project", "file": "lessons/year7-scratch-project.json", "order": 5 },
-            { "id": "year7-ap2-revision", "title": "AP2 Revision", "file": "lessons/year7-ap2-revision.json", "order": 6 }
+            {
+              "id": "year7-scratch-basics",
+              "title": "L1: Scratch Basics",
+              "file": "lessons/year7-scratch-basics.json",
+              "order": 1
+            },
+            {
+              "id": "year7-scratch-conditionals",
+              "title": "L2: Conditionals & Variables",
+              "file": "lessons/year7-scratch-conditionals.json",
+              "order": 2
+            },
+            {
+              "id": "year7-scratch-iteration",
+              "title": "L3: Iteration",
+              "file": "lessons/year7-scratch-iteration.json",
+              "order": 3
+            },
+            {
+              "id": "year7-scratch-games",
+              "title": "L4: Game Creation",
+              "file": "lessons/year7-scratch-games.json",
+              "order": 4
+            },
+            {
+              "id": "year7-scratch-project",
+              "title": "L5: Own Game Project",
+              "file": "lessons/year7-scratch-project.json",
+              "order": 5
+            },
+            {
+              "id": "year7-ap2-revision",
+              "title": "L6: AP2 Revision",
+              "file": "lessons/year7-ap2-revision.json",
+              "order": 6
+            }
           ]
         }
       ]
@@ -26,20 +56,102 @@
           "id": "python",
           "label": "Python",
           "lessons": [
-            { "id": "print-lesson",    "title": "print() and Comments",  "file": "lessons/print-lesson.json",    "order": 1 },
-            { "id": "variables",       "title": "Variables & Output",     "file": "lessons/variables.json",       "order": 2 },
-            { "id": "input-lesson",    "title": "Input & Data Types",     "file": "lessons/input-lesson.json",    "order": 3 },
-            { "id": "selection-lesson","title": "Selection",              "file": "lessons/selection-lesson.json","order": 4 },
-            { "id": "selection-part-2","title": "Selection Part 2",       "file": "lessons/selection-part-2.json","order": 5 },
-            { "id": "for-loops",       "title": "For Loops",              "file": "lessons/for-loops.json",       "order": 6 },
-            { "id": "while-loops",     "title": "While Loops",            "file": "lessons/while-loops.json",     "order": 7 }
+            {
+              "id": "print-lesson",
+              "title": "L1: print() and Comments",
+              "file": "lessons/print-lesson.json",
+              "order": 1
+            },
+            {
+              "id": "variables",
+              "title": "L2: Variables & Output",
+              "file": "lessons/variables.json",
+              "order": 2
+            },
+            {
+              "id": "input-lesson",
+              "title": "L3: Input & Data Types",
+              "file": "lessons/input-lesson.json",
+              "order": 3
+            },
+            {
+              "id": "selection-lesson",
+              "title": "L4: Selection",
+              "file": "lessons/selection-lesson.json",
+              "order": 4
+            },
+            {
+              "id": "selection-part-2",
+              "title": "L5: Selection Part 2",
+              "file": "lessons/selection-part-2.json",
+              "order": 5
+            },
+            {
+              "id": "for-loops",
+              "title": "L6: For Loops",
+              "file": "lessons/for-loops.json",
+              "order": 6
+            },
+            {
+              "id": "while-loops",
+              "title": "L7: While Loops",
+              "file": "lessons/while-loops.json",
+              "order": 7
+            }
           ]
         },
         {
           "id": "pybot",
           "label": "PyBot",
           "lessons": [
-            { "id": "pybot-loops", "title": "PyBot Loops", "file": "lessons/pybot-loops.json", "order": 1 }
+            {
+              "id": "pybot-loops",
+              "title": "L1: PyBot Loops",
+              "file": "lessons/pybot-loops.json",
+              "order": 1
+            }
+          ]
+        },
+        {
+          "id": "data-representation",
+          "label": "Data Representation",
+          "lessons": [
+            {
+              "id": "year8-representation-time-space",
+              "title": "L1: Across Time and Space",
+              "file": "lessons/year8-representation-time-space.json",
+              "order": 1
+            },
+            {
+              "id": "year8-lights-drums",
+              "title": "L2: Lights and Drums",
+              "file": "lessons/year8-lights-drums.json",
+              "order": 2
+            },
+            {
+              "id": "year8-binary-digits",
+              "title": "L3: Binary Digits",
+              "file": "lessons/year8-binary-digits.json",
+              "order": 3
+            },
+            {
+              "id": "year8-numbers-in-binary",
+              "title": "L4: Numbers in Binary",
+              "file": "lessons/year8-numbers-in-binary.json",
+              "order": 4
+            },
+            {
+              "id": "year8-large-quantities",
+              "title": "L5: Large Quantities",
+              "file": "lessons/year8-large-quantities.json",
+              "order": 5
+            },
+            {
+              "id": "year8-turings-mug",
+              "title": "L6: Turing's Mug",
+              "file": "lessons/year8-turings-mug.json",
+              "order": 6
+            }
           ]
         }
       ]
@@ -52,10 +164,30 @@
           "id": "binary-hex",
           "label": "Binary & Hex",
           "lessons": [
-            { "id": "year9-binary-place-values","title": "Binary Place Values","file": "lessons/year9-binary-place-values.json","order": 1 },
-            { "id": "year9-binary-denary",      "title": "Binary and Denary",  "file": "lessons/year9-binary-denary.json",      "order": 2 },
-            { "id": "year9-binary-addition",    "title": "Binary Addition",    "file": "lessons/year9-binary-addition.json",    "order": 3 },
-            { "id": "year9-hexadecimal",        "title": "Hexadecimal",        "file": "lessons/year9-hexadecimal.json",        "order": 4 }
+            {
+              "id": "year9-binary-place-values",
+              "title": "L1: Binary Place Values",
+              "file": "lessons/year9-binary-place-values.json",
+              "order": 1
+            },
+            {
+              "id": "year9-binary-denary",
+              "title": "L2: Binary and Denary",
+              "file": "lessons/year9-binary-denary.json",
+              "order": 2
+            },
+            {
+              "id": "year9-binary-addition",
+              "title": "L3: Binary Addition",
+              "file": "lessons/year9-binary-addition.json",
+              "order": 3
+            },
+            {
+              "id": "year9-hexadecimal",
+              "title": "L4: Hexadecimal",
+              "file": "lessons/year9-hexadecimal.json",
+              "order": 4
+            }
           ]
         }
       ]
@@ -68,7 +200,12 @@
           "id": "component-2-spreadsheets",
           "label": "Component 2 - Spreadsheets",
           "lessons": [
-            { "id": "btec-dit-spreadsheets-lesson-1", "title": "Spreadsheet Basics", "file": "lessons/btec-dit-spreadsheets-lesson-1.json", "order": 1 }
+            {
+              "id": "btec-dit-spreadsheets-lesson-1",
+              "title": "L1: Spreadsheet Basics",
+              "file": "lessons/btec-dit-spreadsheets-lesson-1.json",
+              "order": 1
+            }
           ]
         }
       ]
@@ -81,7 +218,12 @@
           "id": "exam-practice",
           "label": "Exam Practice",
           "lessons": [
-            { "id": "gcse-loops","title": "GCSE Loops","file": "lessons/gcse-loops.json","order": 1 }
+            {
+              "id": "gcse-loops",
+              "title": "L1: GCSE Loops",
+              "file": "lessons/gcse-loops.json",
+              "order": 1
+            }
           ]
         }
       ]

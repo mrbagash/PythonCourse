@@ -1,0 +1,170 @@
+{
+  "id": "year8-lights-drums",
+  "title": "L2: Lights and Drums",
+  "description": "Representing characters as sequences of symbols and carrying those symbols on physical media.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from Lesson 1. Each question gives the choices you need.</p><div id='y8dr2-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-dna',questions:[{\"prompt\":\"What is a representation?\",\"answers\":[\"a way of showing information\",\"way of showing information\",\"showing information\"],\"right\":\"Correct.\"},{\"prompt\":\"A = keep, B = send, C = use. A message tells someone the room number. Type A, B or C.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = warning sign. Which is best for rows of names and scores?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"A = keep, B = send, C = use. A saved note is checked tomorrow. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "intro",
+      "title": "Characters as Symbols",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Characters as sequences of symbols</h2><p class='text-gray-700 mb-4'>A character is one letter, digit, space or punctuation mark. A coding scheme gives each character a symbol sequence. The sequence must be agreed so the sender and receiver understand the same message.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Coding scheme</th><th>Symbols used</th><th>Example to read</th></tr></thead><tbody><tr><td>Morse code</td><td>Dots and dashes</td><td>S = ... and O = ---</td></tr><tr><td>Braille</td><td>Raised dot patterns</td><td>Different raised dots mean different characters</td></tr><tr><td>ASCII</td><td>Binary number codes</td><td>A character is stored as a number</td></tr><tr><td>Unicode</td><td>Binary number codes</td><td>More characters and languages can be represented</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>To measure length, count the symbols in the representation you are looking at. For example, 101101 has six binary symbols.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr2-intro-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-intro-check',questions:[{\"prompt\":\"A = character, B = coding scheme, C = physical medium. Morse code is which one?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: Morse code is a coding scheme.\"},{\"prompt\":\"A = character, B = coding scheme, C = physical medium. A light flash is which one?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: light can carry symbols physically.\"}]});"
+    },
+    {
+      "id": "vocabulary-builder",
+      "title": "Key Ideas: Characters, Codes and Media",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key ideas</h2><p class='text-gray-700 mb-4'>A character is a single letter, digit, punctuation mark or space. A coding scheme tells us which sequence of symbols represents each character. A physical medium carries those symbols in the real world.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Idea</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td>Character</td><td>One item of text</td><td>A, 7, ? or a space</td></tr><tr><td>Symbol sequence</td><td>Symbols placed in order</td><td>... or 1010</td></tr><tr><td>Coding scheme</td><td>Rules that match characters to sequences</td><td>Morse code, Braille, ASCII, Unicode</td></tr><tr><td>Physical medium</td><td>How the symbols are carried</td><td>Light, sound, ink, raised dots, voltage</td></tr></tbody></table></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr2-vocab-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-vocab-check',questions:[{\"prompt\":\"A = character, B = symbol sequence, C = physical medium. The letter A is which one?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: A is a character.\"},{\"prompt\":\"A = character, B = symbol sequence, C = physical medium. The pattern .- is which one?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: .- is a sequence of symbols.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: SOS",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through Morse code</h2><p class='text-gray-700 mb-4'>Click through slowly: start with characters, change them into symbols, then count the symbols.</p><div id='y8dr2-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr2-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr2-stepper-1',steps:[{\"title\":\"Start with characters\",\"html\":\"<p class=\\\"bb-answer-line\\\">S O S</p>\",\"note\":\"There are three characters: S, O and S.\"},{\"title\":\"Use the coding scheme\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Character</th><th>Morse sequence</th></tr></thead><tbody><tr><td>S</td><td>...</td></tr><tr><td>O</td><td>---</td></tr><tr><td>S</td><td>...</td></tr></tbody></table></div>\",\"note\":\"Morse code changes each character into dots and dashes.\"},{\"title\":\"Join the sequences\",\"html\":\"<p class=\\\"bb-answer-line\\\">... --- ...</p>\",\"note\":\"The full message is now represented using dot and dash symbols.\"},{\"title\":\"Count the symbols\",\"html\":\"<p class=\\\"bb-answer-line\\\">3 dots + 3 dashes + 3 dots = 9 symbols</p>\",\"note\":\"Spaces help humans read the message, but here we are counting only dots and dashes.\"},{\"title\":\"Choose a physical medium\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Medium</th><th>How it carries the symbols</th></tr></thead><tbody><tr><td>Light</td><td>Short and long flashes</td></tr><tr><td>Sound</td><td>Short and long beeps</td></tr><tr><td>Drum</td><td>Short and long beats</td></tr></tbody></table></div>\",\"note\":\"The same dot and dash sequence can be carried in different physical ways.\"}]});BinaryLesson.createPractice({containerId:'y8dr2-guided1-check',questions:[{\"prompt\":\"In Morse code, S is ... and O is ---. How many dot/dash symbols are in SOS?\",\"answer\":\"9\",\"right\":\"Correct: 3 + 3 + 3 = 9.\"},{\"prompt\":\"A = light, B = coding rule, C = character. Which can carry Morse code physically?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: light can carry the symbols.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: From Character to Medium",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through the full journey</h2><p class='text-gray-700 mb-4'>Follow the journey from a letter to a physical signal.</p><div id='y8dr2-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr2-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr2-stepper-2',steps:[{\"title\":\"Start with a character\",\"html\":\"<p class=\\\"bb-answer-line\\\">A</p>\",\"note\":\"The character is what we want to represent.\"},{\"title\":\"Choose a coding scheme\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Coding scheme</th><th>Example idea</th></tr></thead><tbody><tr><td>Morse code</td><td>A is dot dash</td></tr><tr><td>ASCII</td><td>A has a number code</td></tr></tbody></table></div>\",\"note\":\"The coding scheme gives the rule.\"},{\"title\":\"Write the symbol sequence\",\"html\":\"<p class=\\\"bb-answer-line\\\">.-</p>\",\"note\":\"In Morse code, A can be represented by dot dash.\"},{\"title\":\"Carry it physically\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Medium</th><th>What happens</th></tr></thead><tbody><tr><td>Light</td><td>Short flash then long flash</td></tr><tr><td>Sound</td><td>Short beep then long beep</td></tr></tbody></table></div>\",\"note\":\"The same symbols can travel using light or sound.\"}]});BinaryLesson.createPractice({containerId:'y8dr2-guided2-check',questions:[{\"prompt\":\"A = character, B = code sequence, C = medium. In the example, .- is which one?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: it is the symbol sequence.\"},{\"prompt\":\"A = light, B = ASCII, C = Braille. Which one is a physical medium?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: light is a medium.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: Count Before You Answer",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check: counting symbols</h2><p class='text-gray-700 mb-4'>Count exactly what the question asks for. If it asks for characters, count letters. If it asks for binary symbols, count 0s and 1s. If it asks for dot/dash symbols, count dots and dashes.</p><div id='y8dr2-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-mini-check',questions:[{\"prompt\":\"How many characters are in CAT?\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"How many dot/dash symbols are in .- ?\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"How many binary symbols are in 0101?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"How many characters are in A7?\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"How many dot/dash symbols are in --... ?\",\"answer\":\"5\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: count symbols</h2><p class='text-gray-700 mb-4'>Count the symbols shown in the question. Type only the number.</p><div id='y8dr2-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-practice-a',questions:[{\"prompt\":\"How many dot/dash symbols are in ... ?\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"How many dot/dash symbols are in --- ?\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"How many dot/dash symbols are in ...---... ?\",\"answer\":\"9\",\"right\":\"Correct: 3 + 3 + 3 = 9.\"},{\"prompt\":\"How many characters are in HELLO?\",\"answer\":\"5\",\"right\":\"Correct.\"},{\"prompt\":\"How many binary symbols are in 101101?\",\"answer\":\"6\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: schemes and media</h2><p class='text-gray-700 mb-4'>Use the labelled options. Type A, B or C.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Answer</th></tr></thead><tbody><tr><td>A</td><td>Morse code</td></tr><tr><td>B</td><td>Braille</td></tr><tr><td>C</td><td>ASCII or Unicode</td></tr></tbody></table></div><div id='y8dr2-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-practice-b',questions:[{\"prompt\":\"Which option uses dots and dashes?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: Morse code uses dots and dashes.\"},{\"prompt\":\"Which option uses raised dot patterns?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: Braille uses raised dots.\"},{\"prompt\":\"Which option uses binary number codes for characters?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: ASCII and Unicode use binary number codes.\"},{\"prompt\":\"A = light flashes, B = written rules, C = number of symbols. Which one is a physical medium?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: light flashes can carry symbols.\"},{\"prompt\":\"A = coding scheme, B = physical medium, C = character. What is Morse code?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: Morse code is a coding scheme.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Match Code to Medium",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>These questions mix the lesson ideas. Use A, B or C where choices are given.</p><div id='y8dr2-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-extension',questions:[{\"prompt\":\"A = coding scheme, B = physical medium, C = character. What is Unicode?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: Unicode is a coding scheme.\"},{\"prompt\":\"A = coding scheme, B = physical medium, C = character. What is a light flash?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: light can physically carry symbols.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which would be read by touch?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: Braille uses raised dots.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which represents characters using binary number codes?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated questions correctly to complete this step.</p><div id='y8dr2-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"How many symbols are in 11001010?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"How many characters are in CODE?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which uses dots and dashes?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which uses raised dot patterns?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"A = light flashes, B = coding rules, C = character length. Which is a physical medium?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr2-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions.</p><div id='y8dr2-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr2-exam',questions:[{\"prompt\":\"A coding scheme is a set of agreed rules for matching characters to what?\",\"answers\":[\"symbols\",\"symbol sequences\",\"sequences of symbols\"],\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which uses binary number codes?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"How many symbols are in --.. ?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"A = light flashes, B = coding scheme, C = character. Which can physically carry symbols?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"How many binary symbols are in 1001?\",\"answer\":\"4\",\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What does a character coding scheme do?",
+      "options": [
+        "It matches characters to symbol sequences",
+        "It deletes all characters",
+        "It only stores pictures",
+        "It measures screen size"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which scheme uses dots and dashes?",
+      "options": [
+        "Morse code",
+        "Decimal",
+        "A spreadsheet formula",
+        "A map key only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many symbols are in 101101?",
+      "answer": "6",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which scheme uses raised dots?",
+      "options": [
+        "Braille",
+        "ASCII",
+        "Morse code",
+        "A barcode only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which option is a character coding scheme?",
+      "options": [
+        "Morse code",
+        "A kilobyte",
+        "A voltage level",
+        "A file size"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which is a physical medium for carrying symbols?",
+      "options": [
+        "Light flashes",
+        "The word character",
+        "A coding rule",
+        "A denary number only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many characters are in DATA?",
+      "answer": "4",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "ASCII and Unicode are examples of...",
+      "options": [
+        "character coding schemes",
+        "binary place value columns",
+        "physical drums",
+        "spreadsheet charts"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

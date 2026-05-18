@@ -1,0 +1,170 @@
+{
+  "id": "year8-turings-mug",
+  "title": "L6: Turing's Mug",
+  "description": "Applying Year 8 data representation ideas in a mixed challenge lesson.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from Large Quantities.</p><div id='y8dr6-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-dna',questions:[{\"prompt\":\"How many bits are in a byte?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 2 KB to bytes.\",\"answer\":\"2000\",\"right\":\"Correct.\"},{\"prompt\":\"A = low/high voltage, B = a lesson title, C = a paragraph heading. Which can physically represent bits?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 16 bits to bytes.\",\"answer\":\"2\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "briefing",
+      "title": "Challenge Briefing",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Turing's mug</h2><p class='text-gray-700 mb-4'>This final lesson is a mixed revision lesson. Each question uses one skill from the unit. Do one step at a time: identify the type of question, then apply the rule you have already practised.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Question type</th><th>What to do</th></tr></thead><tbody><tr><td>Representation choice</td><td>Choose the option that fits the task.</td></tr><tr><td>Symbol length</td><td>Count the visible symbols.</td></tr><tr><td>4-bit binary</td><td>Use 8, 4, 2, 1.</td></tr><tr><td>Units</td><td>Use 1 byte = 8 bits and 1 KB = 1000 bytes.</td></tr></tbody></table></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr6-briefing-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-briefing-check',questions:[{\"prompt\":\"A = representation choice, B = symbol count, C = binary conversion. Which method uses 8, 4, 2, 1?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"A = representation choice, B = symbol count, C = binary conversion. Which method counts visible dots, dashes, 0s or 1s?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "revision-map",
+      "title": "Revision Map",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Revision map</h2><p class='text-gray-700 mb-4'>This lesson is designed to take the whole hour as a mixed application lesson. Use the map below to choose the method before answering.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>If the question mentions...</th><th>Use this method</th></tr></thead><tbody><tr><td>best representation</td><td>Identify the task, then choose the clearest option</td></tr><tr><td>symbols or characters</td><td>Count exactly what is shown</td></tr><tr><td>binary or 4-bit</td><td>Use 8, 4, 2, 1</td></tr><tr><td>bits, bytes or KB</td><td>Use the unit conversion fact in the question</td></tr><tr><td>physical representation</td><td>Choose voltage, light pulse, charge or another real signal</td></tr></tbody></table></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr6-map-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-map-check',questions:[{\"prompt\":\"A = unit conversion, B = representation choice, C = physical representation. A question about bytes and bits uses which method?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = unit conversion, B = representation choice, C = physical representation. A question about voltage or light pulses uses which method?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Decode the Mug",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through the mixed challenge</h2><p class='text-gray-700 mb-4'>Click through each clue and connect it to the correct skill.</p><div id='y8dr6-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr6-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr6-stepper-1',steps:[{\"title\":\"Clue 1: binary digits\",\"html\":BinaryLesson.bitTable([0,1,0,1],[8,4,2,1]),\"note\":\"0101 is a sequence of four bits.\"},{\"title\":\"Convert the number\",\"html\":\"<p class=\\\"bb-answer-line\\\">4 + 1 = 5</p>\",\"note\":\"The active columns are 4 and 1, so 0101 is 5 in denary.\"},{\"title\":\"Clue 2: character symbols\",\"html\":\"<p class=\\\"bb-answer-line\\\">... --- ...</p>\",\"note\":\"This is Morse code. Counting dot and dash symbols gives 9 symbols.\"},{\"title\":\"Clue 3: representation size\",\"html\":\"<p class=\\\"bb-answer-line\\\">8 bits = 1 byte</p>\",\"note\":\"Large quantities are described using units such as bits, nibbles, bytes, KB and MB.\"}]});BinaryLesson.createPractice({containerId:'y8dr6-guided1-check',questions:[{\"prompt\":\"Convert 0101 to denary.\",\"answer\":\"5\",\"right\":\"Correct.\"},{\"prompt\":\"How many dot/dash symbols are in ...---... ?\",\"answer\":\"9\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Choose the Method",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through method choice</h2><p class='text-gray-700 mb-4'>The most important skill in the final lesson is choosing the right method before answering.</p><div id='y8dr6-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr6-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr6-stepper-2',steps:[{\"title\":\"Question: Convert 1010 to denary\",\"html\":\"<p class=\\\"bb-answer-line\\\">Method: 4-bit binary</p>\",\"note\":\"Use 8, 4, 2, 1.\"},{\"title\":\"Apply the method\",\"html\":BinaryLesson.bitTable([1,0,1,0],[8,4,2,1]),\"note\":\"8 + 2 = 10.\"},{\"title\":\"Question: Convert 32 bits to bytes\",\"html\":\"<p class=\\\"bb-answer-line\\\">Method: unit conversion</p>\",\"note\":\"Use 1 byte = 8 bits.\"},{\"title\":\"Apply the method\",\"html\":\"<p class=\\\"bb-answer-line\\\">32 / 8 = 4 bytes</p>\",\"note\":\"Bits to bytes means divide by 8.\"}]});BinaryLesson.createPractice({containerId:'y8dr6-guided2-check',questions:[{\"prompt\":\"Convert 1010 to denary.\",\"answer\":\"10\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 32 bits to bytes.\",\"answer\":\"4\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: Pick the Method",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check: pick the method</h2><p class='text-gray-700 mb-4'>Do not solve yet. Pick the method. Type A, B, C or D.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Method</th></tr></thead><tbody><tr><td>A</td><td>Choose a representation for a task</td></tr><tr><td>B</td><td>Count symbols</td></tr><tr><td>C</td><td>Use 8, 4, 2, 1</td></tr><tr><td>D</td><td>Convert units</td></tr></tbody></table></div><div id='y8dr6-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-mini-check',questions:[{\"prompt\":\"Question: How many bits are in 101100? Which method?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: count symbols.\"},{\"prompt\":\"Question: Convert 0110 to denary. Which method?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: use 8, 4, 2, 1.\"},{\"prompt\":\"Question: Convert 4 bytes to bits. Which method?\",\"answers\":[\"D\",\"d\"],\"right\":\"Correct: convert units.\"},{\"prompt\":\"Question: Which is best for showing a route? Which method?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: choose a representation.\"}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: mixed calculations</h2><p class='text-gray-700 mb-4'>Each question tells you which rule to use. Type only the answer.</p><div id='y8dr6-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-practice-a',questions:[{\"prompt\":\"4-bit binary uses 8, 4, 2, 1. Convert 0111 to denary.\",\"answer\":\"7\",\"right\":\"Correct: 4 + 2 + 1 = 7.\"},{\"prompt\":\"Count dot/dash symbols. How many symbols are in ---- ?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. How many bytes are in 16 bits?\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"4-bit binary uses 8, 4, 2, 1. Convert 12 to binary.\",\"answer\":\"1100\",\"right\":\"Correct.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 2 KB to bytes.\",\"answer\":\"2000\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: mixed choices</h2><p class='text-gray-700 mb-4'>Use the labelled options. Type A, B or C.</p><div id='y8dr6-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-practice-b',questions:[{\"prompt\":\"A = map, B = table, C = warning sound. Which is best for showing a route?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = nibble, C = byte. Which is a character coding scheme?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = voltage, B = table title, C = lesson name. Which can physically represent bits?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = keep, B = send, C = use. A calculator adds two numbers. Type A, B or C.\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"A = 4 bits, B = 8 bits, C = 1000 bytes. Which is one byte?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Full Mixed Challenge",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>Fast finishers can complete this final mixed set. Each question includes enough information to answer it.</p><div id='y8dr6-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-extension',questions:[{\"prompt\":\"4-bit binary uses 8, 4, 2, 1. Convert 1110 to denary.\",\"answer\":\"14\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 56 bits to bytes.\",\"answer\":\"7\",\"right\":\"Correct.\"},{\"prompt\":\"Count the dot/dash symbols in .--.\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = alarm. Which is best for warning people quickly?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"Convert 6 to 4-bit binary.\",\"answer\":\"0110\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated mixed questions correctly to complete this step.</p><div id='y8dr6-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"Convert 1000 to denary.\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 10 to 4-bit binary.\",\"answer\":\"1010\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 00110011?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"How many bytes are in 24 bits?\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"A = sign/alarm, B = table, C = binary number. Which is suitable for communicating a warning quickly?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = KB, C = voltage. Which is a character coding scheme?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 4 KB to bytes.\",\"answer\":\"4000\",\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr6-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Final mixed check for the unit.</p><div id='y8dr6-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr6-exam',questions:[{\"prompt\":\"4-bit binary uses 8, 4, 2, 1. Convert 1100 to denary.\",\"answer\":\"12\",\"right\":\"Correct.\"},{\"prompt\":\"4-bit binary uses 8, 4, 2, 1. Convert 9 to binary.\",\"answer\":\"1001\",\"right\":\"Correct.\"},{\"prompt\":\"Count dot/dash symbols. How many symbols are in ...--- ?\",\"answer\":\"6\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 3 bytes to bits.\",\"answer\":\"24\",\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = warning alarm. Which is best for organised rows and columns?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"A representation is a way of showing what?\",\"answers\":[\"information\",\"data\"],\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "text_input",
+      "q": "Convert 0101 to denary.",
+      "answer": "5",
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which is a character coding scheme?",
+      "options": [
+        "Morse code",
+        "Kilobyte",
+        "Voltage",
+        "Spreadsheet average"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many bits are in 101100?",
+      "answer": "6",
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 11 to 4-bit binary.",
+      "answer": "1011",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "Which option is best for showing a location?",
+      "options": [
+        "A map",
+        "A random binary string",
+        "A file extension",
+        "A byte"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 5 bytes to bits.",
+      "answer": "40",
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which purpose means using information to produce a decision or result?",
+      "options": [
+        "Process",
+        "Store",
+        "Delete",
+        "Decorate"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many symbols are in --..?",
+      "answer": "4",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which could physically represent binary digits in a device?",
+      "options": [
+        "High and low voltage",
+        "A paragraph title",
+        "A table heading",
+        "A lesson name"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 1111 to denary.",
+      "answer": "15",
+      "duration": 60
+    }
+  ]
+}

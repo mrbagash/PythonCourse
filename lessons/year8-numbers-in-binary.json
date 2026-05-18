@@ -1,0 +1,159 @@
+{
+  "id": "year8-numbers-in-binary",
+  "title": "L4: Numbers in Binary",
+  "description": "Using 4-bit place values to convert small denary numbers to binary and back.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from Binary Digits.</p><div id='y8dr4-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-dna',questions:[{\"prompt\":\"What is a bit?\",\"answers\":[\"binary digit\",\"a binary digit\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 1011?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"Is 1002 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "places",
+      "title": "4-bit Place Values",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>4-bit place values</h2><p class='text-gray-700 mb-4'>In this lesson every binary number has four bits. Always place the bits under 8, 4, 2 and 1. A 1 means add the place value. A 0 means do not add it.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead><tbody><tr><td>1</td><td>0</td><td>1</td><td>1</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>For 1011, add only the columns with a 1: 8 + 2 + 1 = 11.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr4-places-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-places-check',questions:[{\"prompt\":\"In 4-bit binary, what are the place values from left to right?\",\"answers\":[\"8 4 2 1\",\"8,4,2,1\",\"8, 4, 2, 1\"],\"right\":\"Correct.\"},{\"prompt\":\"In 1011, which values are active? Type the total.\",\"answer\":\"11\",\"right\":\"Correct: 8 + 2 + 1 = 11.\"}]});"
+    },
+    {
+      "id": "vocabulary-builder",
+      "title": "Key Ideas: 8, 4, 2, 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key ideas</h2><p class='text-gray-700 mb-4'>For this lesson, every binary number uses four columns: 8, 4, 2 and 1. Put one bit under each column.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead><tbody><tr><td>1</td><td>0</td><td>1</td><td>0</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>To convert binary to denary: add only the column values that have a 1. To convert denary to binary: choose the columns that add to the denary number.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr4-vocab-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-vocab-check',questions:[{\"prompt\":\"A 1 in a binary column means A = add it, B = ignore it. Type A or B.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A 0 in a binary column means A = add it, B = ignore it. Type A or B.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Binary to Denary",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through binary to denary</h2><p class='text-gray-700 mb-4'>Click through a small 4-bit conversion.</p><div id='y8dr4-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr4-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr4-stepper-1',steps:[{\"title\":\"We are converting 1011 to denary\",\"html\":\"<div class=\\\"bb-big-number\\\"><span>1011</span></div>\",\"note\":\"Line the bits up under 8, 4, 2 and 1.\"},{\"title\":\"Find the active columns\",\"html\":BinaryLesson.bitTable([1,0,1,1],[8,4,2,1]),\"note\":\"The 1s are under 8, 2 and 1. The 0 under 4 means ignore 4.\"},{\"title\":\"Add the active columns\",\"html\":\"<p class=\\\"bb-answer-line\\\">8 + 2 + 1 = 11</p>\",\"note\":\"1011 in denary is 11.\"}]});BinaryLesson.createPractice({containerId:'y8dr4-guided1-check',questions:[{\"prompt\":\"Convert 1011 to denary.\",\"answer\":\"11\",\"right\":\"Correct.\"},{\"prompt\":\"Which column is ignored in 1011? Type the place value.\",\"answer\":\"4\",\"right\":\"Correct: the 4 column has 0.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Denary to Binary",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through denary to binary</h2><p class='text-gray-700 mb-4'>Click through how to build a 4-bit number.</p><div id='y8dr4-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr4-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr4-stepper-2',steps:[{\"title\":\"We are converting 13 to binary\",\"html\":\"<div class=\\\"bb-big-number\\\"><span>13</span></div>\",\"note\":\"Check the place values from left to right: 8, then 4, then 2, then 1.\"},{\"title\":\"Choose columns that fit\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Place value</th><th>Does it fit?</th><th>Left over</th></tr></thead><tbody><tr><td>8</td><td>Yes: 13 includes 8</td><td>5</td></tr><tr><td>4</td><td>Yes: 5 includes 4</td><td>1</td></tr><tr><td>2</td><td>No: 1 is less than 2</td><td>1</td></tr><tr><td>1</td><td>Yes: 1 includes 1</td><td>0</td></tr></tbody></table></div>\",\"note\":\"Write 1 when a column fits, and 0 when it does not.\"},{\"title\":\"Read off the binary number\",\"html\":BinaryLesson.bitTable([1,1,0,1],[8,4,2,1]),\"note\":\"13 in 4-bit binary is 1101.\"}]});BinaryLesson.createPractice({containerId:'y8dr4-guided2-check',questions:[{\"prompt\":\"Convert 13 to 4-bit binary.\",\"answer\":\"1101\",\"right\":\"Correct.\"},{\"prompt\":\"When building 13, does the 2 column fit? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct: after 8 and 4, only 1 is left.\"}]});"
+    },
+    {
+      "id": "guided-three",
+      "title": "Step Through: Build Smaller Numbers",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through smaller numbers</h2><p class='text-gray-700 mb-4'>These examples show why leading zeros matter in 4-bit binary.</p><div id='y8dr4-stepper-3'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr4-guided3-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr4-stepper-3',steps:[{\"title\":\"Build 2\",\"html\":BinaryLesson.bitTable([0,0,1,0],[8,4,2,1]),\"note\":\"Only the 2 column is used. The answer is 0010, not just 10, because we are using 4 bits.\"},{\"title\":\"Build 5\",\"html\":BinaryLesson.bitTable([0,1,0,1],[8,4,2,1]),\"note\":\"Use 4 and 1. The answer is 0101.\"},{\"title\":\"Build 8\",\"html\":BinaryLesson.bitTable([1,0,0,0],[8,4,2,1]),\"note\":\"Use only the 8 column. The answer is 1000.\"},{\"title\":\"Build 15\",\"html\":BinaryLesson.bitTable([1,1,1,1],[8,4,2,1]),\"note\":\"Use every column. 8 + 4 + 2 + 1 = 15.\"}]});BinaryLesson.createPractice({containerId:'y8dr4-guided3-check',questions:[{\"prompt\":\"Convert 2 to 4-bit binary.\",\"answer\":\"0010\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 5 to 4-bit binary.\",\"answer\":\"0101\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: Active Columns",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check: active columns</h2><p class='text-gray-700 mb-4'>Before converting, practise spotting the active columns. Type the total of the active columns.</p><div id='y8dr4-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-mini-check',questions:[{prompt:'Which total is active?',html:BinaryLesson.bitTable([0,0,0,1],[8,4,2,1]),answer:'1',right:'Correct: only 1 is active.'},{prompt:'Which total is active?',html:BinaryLesson.bitTable([0,1,0,0],[8,4,2,1]),answer:'4',right:'Correct: only 4 is active.'},{prompt:'Which total is active?',html:BinaryLesson.bitTable([1,0,0,0],[8,4,2,1]),answer:'8',right:'Correct: only 8 is active.'},{prompt:'Which total is active?',html:BinaryLesson.bitTable([0,1,1,0],[8,4,2,1]),answer:'6',right:'Correct: 4 + 2 = 6.'},{prompt:'Which total is active?',html:BinaryLesson.bitTable([1,0,1,1],[8,4,2,1]),answer:'11',right:'Correct: 8 + 2 + 1 = 11.'}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary to denary</h2><p class='text-gray-700 mb-4'>Convert each 4-bit binary number to denary.</p><div id='y8dr4-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-practice-a',questions:[{prompt:'Convert 0001 to denary.',html:BinaryLesson.bitTable([0,0,0,1],[8,4,2,1]),answer:'1',right:'Correct: 1 = 1.'},{prompt:'Convert 0101 to denary.',html:BinaryLesson.bitTable([0,1,0,1],[8,4,2,1]),answer:'5',right:'Correct: 4 + 1 = 5.'},{prompt:'Convert 1001 to denary.',html:BinaryLesson.bitTable([1,0,0,1],[8,4,2,1]),answer:'9',right:'Correct: 8 + 1 = 9.'},{prompt:'Convert 1110 to denary.',html:BinaryLesson.bitTable([1,1,1,0],[8,4,2,1]),answer:'14',right:'Correct: 8 + 4 + 2 = 14.'},{prompt:'Convert 0111 to denary.',html:BinaryLesson.bitTable([0,1,1,1],[8,4,2,1]),answer:'7',right:'Correct: 4 + 2 + 1 = 7.'}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: denary to binary</h2><p class='text-gray-700 mb-4'>Convert each denary number to 4-bit binary.</p><div id='y8dr4-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-practice-b',questions:[{\"prompt\":\"Convert 1 to 4-bit binary.\",\"answer\":\"0001\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 3 to 4-bit binary.\",\"answer\":\"0011\",\"right\":\"Correct: 2 + 1 = 3.\"},{\"prompt\":\"Convert 6 to 4-bit binary.\",\"answer\":\"0110\",\"right\":\"Correct: 4 + 2 = 6.\"},{\"prompt\":\"Convert 8 to 4-bit binary.\",\"answer\":\"1000\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 12 to 4-bit binary.\",\"answer\":\"1100\",\"right\":\"Correct: 8 + 4 = 12.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Mixed 4-bit Challenge",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>Fast finishers can complete a mixed set. These stay within 4-bit numbers.</p><div id='y8dr4-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-extension',questions:[{\"prompt\":\"Convert 0000 to denary.\",\"answer\":\"0\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 15 to 4-bit binary.\",\"answer\":\"1111\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 1010 to denary.\",\"answer\":\"10\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 4 to 4-bit binary.\",\"answer\":\"0100\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 13 to 4-bit binary.\",\"answer\":\"1101\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated 4-bit conversion questions correctly to complete this step.</p><div id='y8dr4-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"Convert 0011 to denary.\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 1010 to denary.\",\"answer\":\"10\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 15 to 4-bit binary.\",\"answer\":\"1111\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 8 to 4-bit binary.\",\"answer\":\"1000\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 7 to 4-bit binary.\",\"answer\":\"0111\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 0100 to denary.\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 2 to 4-bit binary.\",\"answer\":\"0010\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 1101 to denary.\",\"answer\":\"13\",\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr4-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions.</p><div id='y8dr4-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr4-exam',questions:[{\"prompt\":\"Convert 0010 to denary.\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 1011 to denary.\",\"answer\":\"11\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 14 to 4-bit binary.\",\"answer\":\"1110\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 0110 to denary.\",\"answer\":\"6\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 9 to 4-bit binary.\",\"answer\":\"1001\",\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What are the 4-bit place values from left to right?",
+      "options": [
+        "8, 4, 2, 1",
+        "1, 2, 4, 8",
+        "16, 8, 4, 2",
+        "4, 3, 2, 1"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 1010 to denary.",
+      "answer": "10",
+      "duration": 60
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 6 to 4-bit binary.",
+      "answer": "0110",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "In 1101, which place value is not active?",
+      "options": [
+        "2",
+        "8",
+        "4",
+        "1"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 1111 to denary.",
+      "answer": "15",
+      "duration": 60
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 12 to 4-bit binary.",
+      "answer": "1100",
+      "duration": 75
+    },
+    {
+      "type": "mcq",
+      "q": "What does a 0 in a binary column mean?",
+      "options": [
+        "Do not include that place value",
+        "Add the place value twice",
+        "The number is invalid",
+        "Always add 1"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 0101 to denary.",
+      "answer": "5",
+      "duration": 60
+    }
+  ]
+}

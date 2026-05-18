@@ -1,6 +1,6 @@
 {
   "id": "year7-ap2-revision",
-  "title": "AP2 Revision",
+  "title": "L6: AP2 Revision",
   "description": "Practise all the key Scratch skills from this year: animation, arrow key controls, collision detection, scoring, chasing, and putting it all together.",
   "steps": [
     {
@@ -61,14 +61,24 @@
     {
       "type": "mcq",
       "q": "Which block makes a sprite animate between two appearances?",
-      "options": ["change x by (10)", "next costume (inside a loop)", "switch backdrop to [1 v]", "set size to (50)%"],
+      "options": [
+        "change x by (10)",
+        "next costume (inside a loop)",
+        "switch backdrop to [1 v]",
+        "set size to (50)%"
+      ],
       "answer": 1,
       "duration": 25
     },
     {
       "type": "mcq",
       "q": "How do you decrease the score by 1 in Scratch?",
-      "options": ["change [score v] by (1)", "set [score v] to (0)", "change [score v] by (-1)", "remove [score v] by (1)"],
+      "options": [
+        "change [score v] by (1)",
+        "set [score v] to (0)",
+        "change [score v] by (-1)",
+        "remove [score v] by (1)"
+      ],
       "answer": 2,
       "duration": 25
     },
@@ -87,31 +97,60 @@
     {
       "type": "mcq",
       "q": "Which block makes a sprite say something for exactly 5 seconds?",
-      "options": ["say [Hello!]", "say [Hello!] for (5) seconds", "wait (5) seconds → say [Hello!]", "broadcast [say 5 seconds v]"],
+      "options": [
+        "say [Hello!]",
+        "say [Hello!] for (5) seconds",
+        "wait (5) seconds → say [Hello!]",
+        "broadcast [say 5 seconds v]"
+      ],
       "answer": 1,
       "duration": 25
     },
     {
       "type": "scratch_build",
       "q": "Build a sprite that moves in all four directions using arrow keys. Click Check & Submit when done.",
-      "check": ["control_forever", "sensing_keypressed"],
-      "checkFields": {"KEY_OPTION": ["right arrow", "left arrow", "up arrow", "down arrow"]},
+      "check": [
+        "control_forever",
+        "sensing_keypressed"
+      ],
+      "checkFields": {
+        "KEY_OPTION": [
+          "right arrow",
+          "left arrow",
+          "up arrow",
+          "down arrow"
+        ]
+      },
       "sampleAnswer": "when flag → forever → if right pressed → change x 5 → if left → change x -5 → if up → change y 5 → if down → change y -5",
       "duration": 120,
-      "runtimeTest": {"kind": "keyMoves4Directions"}
+      "runtimeTest": {
+        "kind": "keyMoves4Directions"
+      }
     },
     {
       "type": "scratch_build",
       "q": "Build a script where a sprite chases another sprite called 'Player' in a forever loop. Click Check & Submit when done.",
-      "check": ["control_forever", "motion_pointtowards", "motion_movesteps"],
+      "check": [
+        "control_forever",
+        "motion_pointtowards",
+        "motion_movesteps"
+      ],
       "sampleAnswer": "when flag clicked → forever → point towards [Player] → move 3 steps",
       "duration": 90,
-      "runtimeTest": {"kind": "greenFlagMoves"}
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
     },
     {
       "type": "scratch_build",
       "q": "Build a sprite that detects touching another sprite and, when it does, goes to a random position and increases the score. Click Check & Submit when done.",
-      "check": ["control_forever", "control_if", "sensing_touchingobject", "motion_gotoxy", "data_changevariableby"],
+      "check": [
+        "control_forever",
+        "control_if",
+        "sensing_touchingobject",
+        "motion_gotoxy",
+        "data_changevariableby"
+      ],
       "sampleAnswer": "when flag clicked → forever → if touching [Player]? → go to x: (random) y: (random) → change [score] by 1",
       "duration": 120
     }

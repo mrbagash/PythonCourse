@@ -1,6 +1,6 @@
 {
   "id": "year7-scratch-project",
-  "title": "Own Game Project",
+  "title": "L5: Own Game Project",
   "description": "Plan and build your own original Scratch game that meets the assessment criteria.",
   "steps": [
     {
@@ -36,21 +36,36 @@
     {
       "type": "mcq",
       "q": "Which block makes a sprite's score go down by 1?",
-      "options": ["change [score v] by (1)", "set [score v] to (0)", "change [score v] by (-1)", "delete [score v]"],
+      "options": [
+        "change [score v] by (1)",
+        "set [score v] to (0)",
+        "change [score v] by (-1)",
+        "delete [score v]"
+      ],
       "answer": 2,
       "duration": 25
     },
     {
       "type": "mcq",
       "q": "Which block animates a sprite by switching between its appearances?",
-      "options": ["move (10) steps", "next costume (in a loop)", "set size to (100)%", "change x by (10)"],
+      "options": [
+        "move (10) steps",
+        "next costume (in a loop)",
+        "set size to (100)%",
+        "change x by (10)"
+      ],
       "answer": 1,
       "duration": 25
     },
     {
       "type": "mcq",
       "q": "What is the best reason to plan your game before building it?",
-      "options": ["Scratch requires a planning file", "A clear plan makes building easier and reduces mistakes", "Planning writes the code for you", "Plans are marked separately"],
+      "options": [
+        "Scratch requires a planning file",
+        "A clear plan makes building easier and reduces mistakes",
+        "Planning writes the code for you",
+        "Plans are marked separately"
+      ],
       "answer": 1,
       "duration": 25
     },
@@ -69,18 +84,37 @@
     {
       "type": "scratch_build",
       "q": "Build a script where the score starts at 0 when the flag is clicked, goes up by 1 when the up arrow is pressed, and goes down by 1 when the down arrow is pressed.",
-      "check": ["data_setvariableto", "data_changevariableby"],
+      "check": [
+        "data_setvariableto",
+        "data_changevariableby"
+      ],
       "sampleAnswer": "when flag → set score 0 | when up pressed → change score +1 | when down pressed → change score -1",
       "duration": 90,
-      "runtimeTest": {"kind": "keyChangesVariable", "key": "ArrowUp"}
+      "runtimeTest": {
+        "kind": "keyChangesVariable",
+        "key": "ArrowUp"
+      }
     },
     {
       "type": "scratch_build",
       "q": "Build a sprite that moves up and down using the up and down arrow keys inside a forever loop.",
-      "checkAlternatives": [{"check": ["control_forever", "sensing_keypressed", "motion_changeyby"]}],
+      "checkAlternatives": [
+        {
+          "check": [
+            "control_forever",
+            "sensing_keypressed",
+            "motion_changeyby"
+          ]
+        }
+      ],
       "sampleAnswer": "when flag → forever → if up pressed → change y 10 → if down pressed → change y -10",
       "duration": 90,
-      "runtimeTest": {"kind": "keyMoves", "key": "ArrowUp", "axis": "y", "direction": "positive"}
+      "runtimeTest": {
+        "kind": "keyMoves",
+        "key": "ArrowUp",
+        "axis": "y",
+        "direction": "positive"
+      }
     }
   ]
 }

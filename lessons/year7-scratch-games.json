@@ -1,6 +1,6 @@
 {
   "id": "year7-scratch-games",
-  "title": "Game Creation",
+  "title": "L4: Game Creation",
   "description": "Build three progressively complex Scratch games applying variables, conditionals, and loops: a Pac-Man style game, an underwater game, and a game of your own choice.",
   "steps": [
     {
@@ -42,12 +42,97 @@
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "Which script makes a sprite chase another called 'Player'?", "options": ["move (3) steps", "forever → point towards [Player v] → move (3) steps", "go to [Player v]", "if touching [Player v] → move"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "How do you make a collectible reappear in a random place when touched?", "options": ["move (10) steps", "go to x: (pick random -240 to 240) y: (pick random -180 to 180)", "set x to (0)", "glide to mouse pointer"], "answer": 1, "duration": 30 },
-    { "type": "mcq", "q": "How do you decrease the score by 1?", "options": ["change [score] by (1)", "set [score] to (0)", "change [score] by (-1)", "delete [score]"], "answer": 2, "duration": 25 },
-    { "type": "scratch_mcq", "q": "Which script adds 1 to score when the sprite touches 'Jewel'?", "options": ["forever → move (5) steps", "when flag → change [score] by (1)", "forever → if touching [Jewel]? → change [score] by (1)", "if touching [Jewel]? → set [score] to (1)"], "answer": 2, "duration": 40 },
-    { "type": "scratch_build", "q": "Build a sprite that chases the mouse pointer in a forever loop. Click Check & Submit.", "check": ["control_forever", "motion_pointtowards", "motion_movesteps"], "sampleAnswer": "when flag clicked → forever → point towards mouse-pointer → move 3 steps", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves"} },
-    { "type": "scratch_build", "q": "Build a collectible sprite that jumps to a random position and increases the score when touched by another sprite. Click Check & Submit.", "check": ["control_forever", "control_if", "sensing_touchingobject", "motion_gotoxy", "data_changevariableby"], "sampleAnswer": "forever → if touching [Player]? → go to x: random y: random → change [score] by 1", "duration": 100 },
-    { "type": "scratch_build", "q": "Build a script with arrow key control: right arrow moves the sprite right, left arrow moves it left, all inside a forever loop. Click Check & Submit.", "check": ["control_forever", "sensing_keypressed", "motion_changexby"], "sampleAnswer": "forever → if right pressed → change x 5 → if left pressed → change x -5", "duration": 90, "runtimeTest": {"kind": "keyMoves", "key": "ArrowRight", "axis": "x", "direction": "positive"} }
+    {
+      "type": "mcq",
+      "q": "Which script makes a sprite chase another called 'Player'?",
+      "options": [
+        "move (3) steps",
+        "forever → point towards [Player v] → move (3) steps",
+        "go to [Player v]",
+        "if touching [Player v] → move"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "How do you make a collectible reappear in a random place when touched?",
+      "options": [
+        "move (10) steps",
+        "go to x: (pick random -240 to 240) y: (pick random -180 to 180)",
+        "set x to (0)",
+        "glide to mouse pointer"
+      ],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "How do you decrease the score by 1?",
+      "options": [
+        "change [score] by (1)",
+        "set [score] to (0)",
+        "change [score] by (-1)",
+        "delete [score]"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which script adds 1 to score when the sprite touches 'Jewel'?",
+      "options": [
+        "forever → move (5) steps",
+        "when flag → change [score] by (1)",
+        "forever → if touching [Jewel]? → change [score] by (1)",
+        "if touching [Jewel]? → set [score] to (1)"
+      ],
+      "answer": 2,
+      "duration": 40
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a sprite that chases the mouse pointer in a forever loop. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "motion_pointtowards",
+        "motion_movesteps"
+      ],
+      "sampleAnswer": "when flag clicked → forever → point towards mouse-pointer → move 3 steps",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a collectible sprite that jumps to a random position and increases the score when touched by another sprite. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "control_if",
+        "sensing_touchingobject",
+        "motion_gotoxy",
+        "data_changevariableby"
+      ],
+      "sampleAnswer": "forever → if touching [Player]? → go to x: random y: random → change [score] by 1",
+      "duration": 100
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script with arrow key control: right arrow moves the sprite right, left arrow moves it left, all inside a forever loop. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "sensing_keypressed",
+        "motion_changexby"
+      ],
+      "sampleAnswer": "forever → if right pressed → change x 5 → if left pressed → change x -5",
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "keyMoves",
+        "key": "ArrowRight",
+        "axis": "x",
+        "direction": "positive"
+      }
+    }
   ]
 }

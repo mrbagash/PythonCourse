@@ -1,6 +1,6 @@
 {
   "id": "pybot-loops",
-  "title": "PyBot Loops",
+  "title": "L1: PyBot Loops",
   "description": "Use for loops and nested loops to control PyBot. Progress from single commands to walking a full square perimeter with nested loops.",
   "steps": [
     {

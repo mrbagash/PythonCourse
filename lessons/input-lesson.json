@@ -1,6 +1,6 @@
 {
   "id": "input-lesson",
-  "title": "Input & Data Types",
+  "title": "L3: Input & Data Types",
   "description": "Using input(), storing user input, converting data types, and printing input values with messages.",
   "steps": [
     {

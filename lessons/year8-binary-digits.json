@@ -1,0 +1,170 @@
+{
+  "id": "year8-binary-digits",
+  "title": "L3: Binary Digits",
+  "description": "Explaining bits as binary digits and measuring the length of bit sequences.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from Lesson 2. Count carefully and use the options given.</p><div id='y8dr3-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-dna',questions:[{\"prompt\":\"How many symbols are in ...--- ?\",\"answer\":\"6\",\"right\":\"Correct.\"},{\"prompt\":\"A = Morse, B = Braille, C = ASCII/Unicode. Which uses dots and dashes?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"How many binary symbols are in 1010?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"A = light flashes, B = coding rules. Which is a physical medium?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "intro",
+      "title": "Bits",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Binary digits</h2><p class='text-gray-700 mb-4'>A bit is one binary digit. Binary means there are only two possible symbols: 0 and 1. A bit is not the value 0 and 1 at the same time. It is one choice: either 0 or 1.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Question</th><th>Answer</th></tr></thead><tbody><tr><td>What symbols can a bit use?</td><td>0 or 1</td></tr><tr><td>How many symbols is one bit?</td><td>1 symbol</td></tr><tr><td>How do you find the length of a bit sequence?</td><td>Count the 0s and 1s</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>A sequence such as 10110 has five bits because it contains five binary digits.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr3-intro-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-intro-check',questions:[{\"prompt\":\"A bit can use A = 0 and 1, B = 0 to 9, C = any letter. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: binary uses 0 and 1.\"},{\"prompt\":\"How many bits are in 10110?\",\"answer\":\"5\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "vocabulary-builder",
+      "title": "Key Ideas: Bits and Sequences",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key ideas</h2><p class='text-gray-700 mb-4'>Binary uses only two symbols: 0 and 1. A bit is one binary digit. A bit sequence is several bits placed in order.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Example</th><th>What to notice</th></tr></thead><tbody><tr><td>0</td><td>One bit</td></tr><tr><td>1</td><td>One bit</td></tr><tr><td>10</td><td>Two bits</td></tr><tr><td>10110</td><td>Five bits</td></tr><tr><td>102</td><td>Not binary because it contains 2</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>A leading zero still counts as a bit. For example, 0011 has four bits.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr3-vocab-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-vocab-check',questions:[{\"prompt\":\"How many bits are in 0?\",\"answer\":\"1\",\"right\":\"Correct: one symbol is one bit.\"},{\"prompt\":\"Is 102 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct: it contains 2.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Count Bits",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a bit sequence</h2><p class='text-gray-700 mb-4'>Click through how to describe and measure a sequence of bits.</p><div id='y8dr3-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr3-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr3-stepper-1',steps:[{\"title\":\"Look at the sequence\",\"html\":\"<div class=\\\"bb-big-number\\\"><span>10110</span></div>\",\"note\":\"Every symbol must be either 0 or 1 for the sequence to be binary.\"},{\"title\":\"Check the symbols\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Position</th><th>Symbol</th></tr></thead><tbody><tr><td>1</td><td>1</td></tr><tr><td>2</td><td>0</td></tr><tr><td>3</td><td>1</td></tr><tr><td>4</td><td>1</td></tr><tr><td>5</td><td>0</td></tr></tbody></table></div>\",\"note\":\"All five symbols are binary digits.\"},{\"title\":\"Measure its length\",\"html\":\"<p class=\\\"bb-answer-line\\\">10110 has 5 bits</p>\",\"note\":\"The length of a bit sequence is the number of binary digits it contains.\"}]});BinaryLesson.createPractice({containerId:'y8dr3-guided1-check',questions:[{\"prompt\":\"In 10110, how many symbols are shown?\",\"answer\":\"5\",\"right\":\"Correct.\"},{\"prompt\":\"Is every symbol in 10110 either 0 or 1? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Is It Binary?",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through valid and invalid sequences</h2><p class='text-gray-700 mb-4'>Click through how to decide whether a sequence is binary.</p><div id='y8dr3-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr3-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr3-stepper-2',steps:[{\"title\":\"Check 10101\",\"html\":\"<p class=\\\"bb-answer-line\\\">1 0 1 0 1</p>\",\"note\":\"Every symbol is 0 or 1, so this is binary.\"},{\"title\":\"Count 10101\",\"html\":\"<p class=\\\"bb-answer-line\\\">5 symbols = 5 bits</p>\",\"note\":\"Count every binary digit.\"},{\"title\":\"Check 1201\",\"html\":\"<p class=\\\"bb-answer-line\\\">1 2 0 1</p>\",\"note\":\"This is not binary because it contains 2.\"},{\"title\":\"Check 0000\",\"html\":\"<p class=\\\"bb-answer-line\\\">0 0 0 0</p>\",\"note\":\"This is binary. Zeros are valid binary digits and each zero still counts.\"}]});BinaryLesson.createPractice({containerId:'y8dr3-guided2-check',questions:[{\"prompt\":\"Is 10101 binary? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"},{\"prompt\":\"Is 1201 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct: it contains 2.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: One Skill at a Time",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check</h2><p class='text-gray-700 mb-4'>First decide whether the sequence is binary. Then count the bits only when it is binary.</p><div id='y8dr3-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-mini-check',questions:[{\"prompt\":\"Is 1010 binary? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 1010?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"Is 1012 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct: it contains 2.\"},{\"prompt\":\"Is 0001 binary? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 0001?\",\"answer\":\"4\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: count bits</h2><p class='text-gray-700 mb-4'>Type the number of bits in each sequence.</p><div id='y8dr3-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-practice-a',questions:[{\"prompt\":\"How many bits are in 1?\",\"answer\":\"1\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 10?\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 101?\",\"answer\":\"3\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 00001111?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 110010?\",\"answer\":\"6\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: binary or not</h2><p class='text-gray-700 mb-4'>A binary sequence can only use 0 and 1. Type yes or no.</p><div id='y8dr3-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-practice-b',questions:[{\"prompt\":\"Is 101010 a binary sequence?\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct. It only uses 0 and 1.\"},{\"prompt\":\"Is 10201 a binary sequence?\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct. It contains 2.\"},{\"prompt\":\"Is 000000 a binary sequence?\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct. 0 is allowed.\"},{\"prompt\":\"Is 11111 a binary sequence?\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct. 1 is allowed.\"},{\"prompt\":\"Is 10A01 a binary sequence?\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct. It contains A.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Longer Sequences",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>Fast finishers can try longer sequences. The method is the same: check the symbols, then count them.</p><div id='y8dr3-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-extension',questions:[{\"prompt\":\"How many bits are in 1010101010?\",\"answer\":\"10\",\"right\":\"Correct.\"},{\"prompt\":\"Is 11110000 binary? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 11110000?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"Is 100A010 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct: it contains A.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated bit questions correctly to complete this step.</p><div id='y8dr3-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"How many bits are in 1111?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 10000001?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"A bit can use A = 0 and 1, B = 0 to 9, C = any letter. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"Is 10012 a valid binary sequence? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct.\"},{\"prompt\":\"Is 010101 valid binary? Type yes or no.\",\"answers\":[\"yes\",\"y\"],\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr3-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions.</p><div id='y8dr3-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr3-exam',questions:[{\"prompt\":\"A bit is one binary what?\",\"answers\":[\"digit\",\"binary digit\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 10110110?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"A bit can use A = 0 and 1, B = 1 and 2, C = A and B. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"Is 2010 binary? Type yes or no.\",\"answers\":[\"no\",\"n\"],\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in 0000?\",\"answer\":\"4\",\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What does bit stand for?",
+      "options": [
+        "Binary digit",
+        "Big integer table",
+        "Basic input type",
+        "Byte item"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many bits are in 10101010?",
+      "answer": "8",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which sequence is binary?",
+      "options": [
+        "101001",
+        "102001",
+        "ABCDE",
+        "9081"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What two symbols can a bit use?",
+      "options": [
+        "0 and 1",
+        "1 and 2",
+        "A and B",
+        "off and red only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which pair matches a binary idea?",
+      "options": [
+        "off/on",
+        "red/green/blue",
+        "one/two/three",
+        "north/east/south/west"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "How many bits are in 111?",
+      "answer": "3",
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Why is 10021 not a binary sequence?",
+      "options": [
+        "It contains a 2",
+        "It starts with 1",
+        "It has five symbols",
+        "It contains zeros"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "The length of a bit sequence is...",
+      "options": [
+        "the number of binary digits it contains",
+        "always 8",
+        "the largest digit",
+        "the number of letters in the word binary"
+      ],
+      "answer": 0,
+      "duration": 60
+    }
+  ]
+}

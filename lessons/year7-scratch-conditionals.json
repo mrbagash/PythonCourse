@@ -1,6 +1,6 @@
 {
   "id": "year7-scratch-conditionals",
-  "title": "Conditionals & Variables",
+  "title": "L2: Conditionals & Variables",
   "description": "What if-blocks and variables are in Scratch, with four hands-on builds: bouncing ball, score counter, if/else check, and a colour-change reaction game.",
   "steps": [
     {
@@ -56,13 +56,115 @@
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "What colour are Control blocks (loops and if/else)?", "options": ["Blue", "Purple", "Orange", "Light blue"], "answer": 2, "duration": 20 },
-    { "type": "mcq", "q": "What does a conditional statement do?", "options": ["Runs forever", "Runs code only if a condition is true", "Stores a value", "Moves a sprite"], "answer": 1, "duration": 25 },
-    { "type": "mcq", "q": "score is 5. 'change [score] by (1)' runs. What is score?", "options": ["1", "5", "6", "51"], "answer": 2, "duration": 25 },
-    { "type": "mcq", "q": "Which block gives a variable its starting value?", "options": ["change [score] by (1)", "set [score] to (0)", "delete [score]", "show [score]"], "answer": 1, "duration": 25 },
-    { "type": "scratch_mcq", "q": "Which script makes a sprite bounce continuously?", "options": ["when flag clicked → move (5) steps", "when flag clicked → forever → move (5) steps → if on edge, bounce", "when flag clicked → if on edge, bounce", "forever → say [bouncing!]"], "answer": 1, "duration": 35 },
-    { "type": "scratch_build", "q": "Build a script using a forever loop that moves the sprite and bounces it off the edge. Click Check & Submit.", "check": ["control_forever", "motion_movesteps", "motion_ifonedgebounce"], "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves"} },
-    { "type": "scratch_build", "q": "Build a script that sets a variable to 0 when the flag is clicked, then changes it by 1 when space is pressed. Click Check & Submit.", "check": ["data_setvariableto", "data_changevariableby"], "sampleAnswer": "when flag → set [score] to 0 | when space → change [score] by 1", "duration": 90, "runtimeTest": {"kind": "keyChangesVariable", "key": " "} },
-    { "type": "scratch_build", "q": "Build a script that uses an if block to check if the sprite is touching the edge, and if so turns it around. Click Check & Submit.", "check": ["control_forever", "control_if", ["sensing_touchingobject","motion_ifonedgebounce"], ["motion_turnright","motion_turnleft"]], "sampleAnswer": "forever → if touching edge → turn 180 degrees", "duration": 90, "runtimeTest": {"kind": "greenFlagMoves", "waitMs": 600} }
+    {
+      "type": "mcq",
+      "q": "What colour are Control blocks (loops and if/else)?",
+      "options": [
+        "Blue",
+        "Purple",
+        "Orange",
+        "Light blue"
+      ],
+      "answer": 2,
+      "duration": 20
+    },
+    {
+      "type": "mcq",
+      "q": "What does a conditional statement do?",
+      "options": [
+        "Runs forever",
+        "Runs code only if a condition is true",
+        "Stores a value",
+        "Moves a sprite"
+      ],
+      "answer": 1,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "score is 5. 'change [score] by (1)' runs. What is score?",
+      "options": [
+        "1",
+        "5",
+        "6",
+        "51"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which block gives a variable its starting value?",
+      "options": [
+        "change [score] by (1)",
+        "set [score] to (0)",
+        "delete [score]",
+        "show [score]"
+      ],
+      "answer": 1,
+      "duration": 25
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which script makes a sprite bounce continuously?",
+      "options": [
+        "when flag clicked → move (5) steps",
+        "when flag clicked → forever → move (5) steps → if on edge, bounce",
+        "when flag clicked → if on edge, bounce",
+        "forever → say [bouncing!]"
+      ],
+      "answer": 1,
+      "duration": 35
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script using a forever loop that moves the sprite and bounces it off the edge. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "motion_movesteps",
+        "motion_ifonedgebounce"
+      ],
+      "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that sets a variable to 0 when the flag is clicked, then changes it by 1 when space is pressed. Click Check & Submit.",
+      "check": [
+        "data_setvariableto",
+        "data_changevariableby"
+      ],
+      "sampleAnswer": "when flag → set [score] to 0 | when space → change [score] by 1",
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "keyChangesVariable",
+        "key": " "
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that uses an if block to check if the sprite is touching the edge, and if so turns it around. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "control_if",
+        [
+          "sensing_touchingobject",
+          "motion_ifonedgebounce"
+        ],
+        [
+          "motion_turnright",
+          "motion_turnleft"
+        ]
+      ],
+      "sampleAnswer": "forever → if touching edge → turn 180 degrees",
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "greenFlagMoves",
+        "waitMs": 600
+      }
+    }
   ]
 }

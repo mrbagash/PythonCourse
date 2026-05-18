@@ -1,6 +1,6 @@
 {
   "id": "year7-scratch-iteration",
-  "title": "Iteration",
+  "title": "L3: Iteration",
   "description": "What loops are, the three loop types in Scratch, and four hands-on builds: repeat loop, forever bounce, key-controlled movement, and a catch game.",
   "steps": [
     {
@@ -42,13 +42,113 @@
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "What is iteration?", "options": ["Storing a value", "Repeating instructions using a loop", "Checking a condition", "Moving a sprite"], "answer": 1, "duration": 25 },
-    { "type": "mcq", "q": "Which loop runs forever without stopping?", "options": ["repeat (10)", "repeat until", "forever", "if/else"], "answer": 2, "duration": 20 },
-    { "type": "mcq", "q": "repeat (6) loop runs 'change score by 2'. Score starts at 0. What is score at the end?", "options": ["2", "6", "12", "8"], "answer": 2, "duration": 35 },
-    { "type": "mcq", "q": "Which loop stops when a condition becomes true?", "options": ["forever", "repeat (10)", "repeat until", "if/else"], "answer": 2, "duration": 25 },
-    { "type": "scratch_mcq", "q": "Which script correctly makes a sprite move right when the right arrow is held?", "options": ["when flag clicked → move steps", "when flag clicked → forever → if key right pressed → change x by 5", "when right arrow pressed → move steps", "forever → change x by 5"], "answer": 1, "duration": 35 },
-    { "type": "scratch_build", "q": "Build a script using a repeat (4) loop that moves the sprite and turns it after each move. Click Check & Submit.", "check": ["control_repeat", "motion_movesteps", ["motion_turnright","motion_turnleft"]], "sampleAnswer": "when flag clicked → repeat (4) → move 100 steps → turn right 90 degrees", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves"} },
-    { "type": "scratch_build", "q": "Build a script that uses a forever loop to move the sprite and bounce off the edge. Click Check & Submit.", "check": ["control_forever", "motion_movesteps", "motion_ifonedgebounce"], "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves"} },
-    { "type": "scratch_build", "q": "Build a sprite that moves right when right arrow is pressed and left when left arrow is pressed (using a forever loop). Click Check & Submit.", "check": ["control_forever", "sensing_keypressed", "motion_changexby"], "sampleAnswer": "forever → if right arrow pressed → change x 5 → if left arrow pressed → change x -5", "duration": 90, "runtimeTest": {"kind": "keyMoves", "key": "ArrowRight", "axis": "x", "direction": "positive"} }
+    {
+      "type": "mcq",
+      "q": "What is iteration?",
+      "options": [
+        "Storing a value",
+        "Repeating instructions using a loop",
+        "Checking a condition",
+        "Moving a sprite"
+      ],
+      "answer": 1,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which loop runs forever without stopping?",
+      "options": [
+        "repeat (10)",
+        "repeat until",
+        "forever",
+        "if/else"
+      ],
+      "answer": 2,
+      "duration": 20
+    },
+    {
+      "type": "mcq",
+      "q": "repeat (6) loop runs 'change score by 2'. Score starts at 0. What is score at the end?",
+      "options": [
+        "2",
+        "6",
+        "12",
+        "8"
+      ],
+      "answer": 2,
+      "duration": 35
+    },
+    {
+      "type": "mcq",
+      "q": "Which loop stops when a condition becomes true?",
+      "options": [
+        "forever",
+        "repeat (10)",
+        "repeat until",
+        "if/else"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which script correctly makes a sprite move right when the right arrow is held?",
+      "options": [
+        "when flag clicked → move steps",
+        "when flag clicked → forever → if key right pressed → change x by 5",
+        "when right arrow pressed → move steps",
+        "forever → change x by 5"
+      ],
+      "answer": 1,
+      "duration": 35
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script using a repeat (4) loop that moves the sprite and turns it after each move. Click Check & Submit.",
+      "check": [
+        "control_repeat",
+        "motion_movesteps",
+        [
+          "motion_turnright",
+          "motion_turnleft"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked → repeat (4) → move 100 steps → turn right 90 degrees",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that uses a forever loop to move the sprite and bounce off the edge. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "motion_movesteps",
+        "motion_ifonedgebounce"
+      ],
+      "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a sprite that moves right when right arrow is pressed and left when left arrow is pressed (using a forever loop). Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "sensing_keypressed",
+        "motion_changexby"
+      ],
+      "sampleAnswer": "forever → if right arrow pressed → change x 5 → if left arrow pressed → change x -5",
+      "duration": 90,
+      "runtimeTest": {
+        "kind": "keyMoves",
+        "key": "ArrowRight",
+        "axis": "x",
+        "direction": "positive"
+      }
+    }
   ]
 }

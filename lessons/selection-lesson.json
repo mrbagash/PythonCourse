@@ -1,6 +1,6 @@
 {
   "id": "selection-lesson",
-  "title": "Selection",
+  "title": "L4: Selection",
   "description": "Using comparison operators, if statements, and logical operators to make decisions in Python.",
   "steps": [
     {

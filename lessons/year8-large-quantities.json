@@ -1,0 +1,171 @@
+{
+  "id": "year8-large-quantities",
+  "title": "L5: Large Quantities",
+  "description": "Converting between simple units of representation size and describing physical ways bits are represented.",
+  "steps": [
+    {
+      "id": "dna",
+      "title": "Do Now Activity",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Quick check from Numbers in Binary.</p><div id='y8dr5-dna'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-dna',questions:[{\"prompt\":\"Convert 1010 to denary.\",\"answer\":\"10\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 5 to 4-bit binary.\",\"answer\":\"0101\",\"right\":\"Correct.\"},{\"prompt\":\"What are the 4-bit place values from left to right?\",\"answers\":[\"8 4 2 1\",\"8,4,2,1\",\"8, 4, 2, 1\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "intro",
+      "title": "Representation Size",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Large quantities</h2><p class='text-gray-700 mb-4'>Bits are very small, so larger files are measured using larger units. Use these facts first, then choose whether to multiply or divide.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Fact</th><th>How to use it</th></tr></thead><tbody><tr><td>1 nibble = 4 bits</td><td>Nibbles to bits: multiply by 4</td></tr><tr><td>1 byte = 8 bits</td><td>Bytes to bits: multiply by 8. Bits to bytes: divide by 8</td></tr><tr><td>1 KB = 1000 bytes</td><td>KB to bytes: multiply by 1000</td></tr><tr><td>1 MB = 1000 KB</td><td>MB to KB: multiply by 1000</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>A real device also needs a physical way to represent 0 and 1, such as low/high voltage, no light/light, or no charge/charge.</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr5-intro-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-intro-check',questions:[{\"prompt\":\"How many bits are in 1 byte?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"How many bytes are in 1 KB in this course?\",\"answer\":\"1000\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "vocabulary-builder",
+      "title": "Key Ideas: Multiply or Divide",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key ideas</h2><p class='text-gray-700 mb-4'>Unit conversion is easier if you decide the direction first. Going from a bigger unit to a smaller unit means multiply. Going from a smaller unit to a bigger unit means divide.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Conversion</th><th>Direction</th><th>Operation</th></tr></thead><tbody><tr><td>bytes to bits</td><td>bigger to smaller</td><td>multiply by 8</td></tr><tr><td>bits to bytes</td><td>smaller to bigger</td><td>divide by 8</td></tr><tr><td>KB to bytes</td><td>bigger to smaller</td><td>multiply by 1000</td></tr><tr><td>bytes to KB</td><td>smaller to bigger</td><td>divide by 1000</td></tr></tbody></table></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr5-vocab-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-vocab-check',questions:[{\"prompt\":\"Bytes to bits: A = multiply by 8, B = divide by 8. Type A or B.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"Bits to bytes: A = multiply by 8, B = divide by 8. Type A or B.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Units",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through unit conversion</h2><p class='text-gray-700 mb-4'>Click through two common representation size conversions.</p><div id='y8dr5-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr5-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr5-stepper-1',steps:[{\"title\":\"Convert 3 bytes to bits\",\"html\":\"<p class=\\\"bb-answer-line\\\">1 byte = 8 bits</p>\",\"note\":\"Start with the conversion fact.\"},{\"title\":\"Multiply by 8\",\"html\":\"<p class=\\\"bb-answer-line\\\">3 bytes = 3 x 8 bits = 24 bits</p>\",\"note\":\"Bytes to bits means multiply by 8.\"},{\"title\":\"Convert 2 KB to bytes\",\"html\":\"<p class=\\\"bb-answer-line\\\">1 KB = 1000 bytes</p><p class=\\\"bb-answer-line\\\">2 KB = 2 x 1000 bytes = 2000 bytes</p>\",\"note\":\"In this course, we use 1000 bytes in a kilobyte.\"}]});BinaryLesson.createPractice({containerId:'y8dr5-guided1-check',questions:[{\"prompt\":\"Convert 3 bytes to bits.\",\"answer\":\"24\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 2 KB to bytes.\",\"answer\":\"2000\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "guided-three",
+      "title": "Step Through: Decide the Operation",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through the operation choice</h2><p class='text-gray-700 mb-4'>Click through how to choose multiply or divide before calculating.</p><div id='y8dr5-stepper-3'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr5-guided3-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr5-stepper-3',steps:[{\"title\":\"Convert 6 bytes to bits\",\"html\":\"<p class=\\\"bb-answer-line\\\">bytes to bits</p>\",\"note\":\"Bits are smaller than bytes, so we are going bigger to smaller.\"},{\"title\":\"Multiply by 8\",\"html\":\"<p class=\\\"bb-answer-line\\\">6 x 8 = 48 bits</p>\",\"note\":\"One byte has 8 bits.\"},{\"title\":\"Convert 4000 bytes to KB\",\"html\":\"<p class=\\\"bb-answer-line\\\">bytes to KB</p>\",\"note\":\"KB is bigger than bytes, so we are going smaller to bigger.\"},{\"title\":\"Divide by 1000\",\"html\":\"<p class=\\\"bb-answer-line\\\">4000 / 1000 = 4 KB</p>\",\"note\":\"In this course, 1 KB = 1000 bytes.\"}]});BinaryLesson.createPractice({containerId:'y8dr5-guided3-check',questions:[{\"prompt\":\"Convert 6 bytes to bits.\",\"answer\":\"48\",\"right\":\"Correct.\"},{\"prompt\":\"Convert 4000 bytes to KB.\",\"answer\":\"4\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: Operation First",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check: operation first</h2><p class='text-gray-700 mb-4'>Do not calculate yet. Choose the operation. Type multiply or divide.</p><div id='y8dr5-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-mini-check',questions:[{\"prompt\":\"Bytes to bits: multiply or divide?\",\"answers\":[\"multiply\",\"x\",\"times\"],\"right\":\"Correct: multiply by 8.\"},{\"prompt\":\"Bits to bytes: multiply or divide?\",\"answers\":[\"divide\",\"/\"],\"right\":\"Correct: divide by 8.\"},{\"prompt\":\"KB to bytes: multiply or divide?\",\"answers\":[\"multiply\",\"x\",\"times\"],\"right\":\"Correct: multiply by 1000.\"},{\"prompt\":\"Bytes to KB: multiply or divide?\",\"answers\":[\"divide\",\"/\"],\"right\":\"Correct: divide by 1000.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Physical Bits",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through physical representation</h2><p class='text-gray-700 mb-4'>A bit is a 0 or 1, but real devices need a physical way to store or carry that 0 or 1.</p><div id='y8dr5-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr5-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr5-stepper-2',steps:[{\"title\":\"The abstract bit\",\"html\":\"<div class=\\\"bb-big-number\\\"><span>1</span></div>\",\"note\":\"This is the representation idea: one binary digit.\"},{\"title\":\"One possible physical form\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Device</th><th>0 could be</th><th>1 could be</th></tr></thead><tbody><tr><td>Wire</td><td>Low voltage</td><td>High voltage</td></tr><tr><td>Optical fibre</td><td>No light pulse</td><td>Light pulse</td></tr><tr><td>Storage</td><td>No stored charge</td><td>Stored charge</td></tr></tbody></table></div>\",\"note\":\"The exact physical form depends on the device.\"},{\"title\":\"Same bit, different media\",\"html\":\"<p class=\\\"bb-answer-line\\\">0 and 1 are ideas. Devices represent them physically.</p>\",\"note\":\"This links back to symbols being carried on physical media.\"}]});BinaryLesson.createPractice({containerId:'y8dr5-guided2-check',questions:[{\"prompt\":\"A = voltage, B = lesson title, C = paragraph. Which can physically represent bits?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = light pulse, B = punctuation mark, C = table row. Which can carry bits in fibre?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: convert units</h2><p class='text-gray-700 mb-4'>Use the rule in the question. Type only the number.</p><div id='y8dr5-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-practice-a',questions:[{\"prompt\":\"1 byte = 8 bits. Convert 2 bytes to bits.\",\"answer\":\"16\",\"right\":\"Correct: 2 x 8 = 16.\"},{\"prompt\":\"1 byte = 8 bits. Convert 5 bytes to bits.\",\"answer\":\"40\",\"right\":\"Correct: 5 x 8 = 40.\"},{\"prompt\":\"1 byte = 8 bits. Convert 24 bits to bytes.\",\"answer\":\"3\",\"right\":\"Correct: 24 / 8 = 3.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 4 KB to bytes.\",\"answer\":\"4000\",\"right\":\"Correct: 4 x 1000 = 4000.\"},{\"prompt\":\"1 nibble = 4 bits. Convert 3 nibbles to bits.\",\"answer\":\"12\",\"right\":\"Correct: 3 x 4 = 12.\"}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: physical bits</h2><p class='text-gray-700 mb-4'>Use the options. Type A, B or C.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Physical representation</th></tr></thead><tbody><tr><td>A</td><td>Low voltage / high voltage in a wire</td></tr><tr><td>B</td><td>No light pulse / light pulse in fibre</td></tr><tr><td>C</td><td>No stored charge / stored charge in memory</td></tr></tbody></table></div><div id='y8dr5-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-practice-b',questions:[{\"prompt\":\"Which option represents bits using voltage in a wire?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"Which option represents bits using light pulses?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"Which option represents bits using stored charge?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"A bit is A = an idea represented physically, B = always a printed number, C = always a sound. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"Which option would be used in fibre optic cable?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Larger Unit Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>Fast finishers can try these extra conversions. The rule is shown in each question.</p><div id='y8dr5-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-extension',questions:[{\"prompt\":\"1 MB = 1000 KB. Convert 2 MB to KB.\",\"answer\":\"2000\",\"right\":\"Correct.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 8000 bytes to KB.\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 10 bytes to bits.\",\"answer\":\"80\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 64 bits to bytes.\",\"answer\":\"8\",\"right\":\"Correct.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated unit and physical representation questions correctly to complete this step.</p><div id='y8dr5-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"1 byte = 8 bits. Convert 2 bytes to bits.\",\"answer\":\"16\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 32 bits to bytes.\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 7 bytes to bits.\",\"answer\":\"56\",\"right\":\"Correct.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 3 KB to bytes.\",\"answer\":\"3000\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in a nibble?\",\"answer\":\"4\",\"right\":\"Correct.\"},{\"prompt\":\"How many bits are in a byte?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"A = voltage, B = lesson title, C = paragraph. Which can physically represent bits?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr5-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer all questions.</p><div id='y8dr5-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr5-exam',questions:[{\"prompt\":\"How many bits are in one byte?\",\"answer\":\"8\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 6 bytes to bits.\",\"answer\":\"48\",\"right\":\"Correct.\"},{\"prompt\":\"1 KB = 1000 bytes. Convert 5 KB to bytes.\",\"answer\":\"5000\",\"right\":\"Correct.\"},{\"prompt\":\"1 byte = 8 bits. Convert 16 bits to bytes.\",\"answer\":\"2\",\"right\":\"Correct.\"},{\"prompt\":\"A = low/high voltage, B = a file name, C = a lesson order. Which can physically represent binary digits?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "How many bits are in one byte?",
+      "options": [
+        "8",
+        "4",
+        "2",
+        "1000"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 4 bytes to bits.",
+      "answer": "32",
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "How many bits are in one nibble?",
+      "options": [
+        "4",
+        "8",
+        "1000",
+        "16"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 40 bits to bytes.",
+      "answer": "5",
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "In this course, 1 KB means...",
+      "options": [
+        "1000 bytes",
+        "8 bytes",
+        "1000 bits",
+        "4 bits"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "text_input",
+      "q": "Convert 3 KB to bytes.",
+      "answer": "3000",
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which could physically represent a 0 or 1 in a wire?",
+      "options": [
+        "Low or high voltage",
+        "A paragraph heading",
+        "A table border",
+        "A decimal point"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which could physically carry bits through fibre optic cable?",
+      "options": [
+        "Light pulses",
+        "Magnetic direction",
+        "Ink marks",
+        "Raised dots only"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "year8-representation-time-space",
+  "title": "L1: Across Time and Space",
+  "description": "Understanding that information can be shown in different ways depending on the task.",
+  "steps": [
+    {
+      "id": "intro",
+      "title": "Representations",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Across time and space</h2><p class='text-gray-700 mb-4'>A representation is a way of showing information. The same information can be represented in more than one way. The best representation depends on what the information is being used for.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Purpose</th><th>Meaning</th></tr></thead><tbody><tr><td>A</td><td>Keep information</td><td>So it can be used later.</td></tr><tr><td>B</td><td>Send information</td><td>So another person or system can receive it.</td></tr><tr><td>C</td><td>Use information</td><td>To work something out or make a decision.</td></tr></tbody></table></div><div class='ex-box'><table class='bb-table'><thead><tr><th>Task</th><th>Helpful representation</th><th>Why it helps</th></tr></thead><tbody><tr><td>Find a room</td><td>Map or written directions</td><td>It shows where to go.</td></tr><tr><td>Keep a list of scores</td><td>Table</td><td>It keeps names and numbers organised.</td></tr><tr><td>Warn someone quickly</td><td>Sign, light or sound</td><td>It can be noticed quickly.</td></tr></tbody></table></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr1-intro-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-intro-check',questions:[{\"prompt\":\"A = information, B = representation. A map is a way of showing information. Type A or B.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: the map is the representation.\"},{\"prompt\":\"A = information, B = representation. The fact Room 12 at 10:30 is being shown. Type A or B.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: that is the information.\"}]});"
+    },
+    {
+      "id": "vocabulary-builder",
+      "title": "Key Ideas: Information and Representation",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Key ideas</h2><p class='text-gray-700 mb-4'>Before answering questions, pupils need three clear ideas: information is the thing we want to show, a representation is the form we use to show it, and the task decides which form is most helpful.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Word</th><th>Simple meaning</th><th>Example</th></tr></thead><tbody><tr><td>Information</td><td>The thing we want to show</td><td>The room is Room 12</td></tr><tr><td>Representation</td><td>The form used to show it</td><td>A map, a note, a table or a sound</td></tr><tr><td>Task</td><td>What we need to do with it</td><td>Keep it, send it, or use it to decide something</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>In this lesson, do not try to find one perfect representation. Always ask: what is the task?</p><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr1-vocab-check'></div></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-vocab-check',questions:[{\"prompt\":\"A = information, B = representation, C = task. Deciding which train to catch is which one?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: deciding is the task.\"},{\"prompt\":\"A = information, B = representation, C = task. A table used to show scores is which one?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: the table is a representation.\"}]});"
+    },
+    {
+      "id": "guided-one",
+      "title": "Step Through: Same Message",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through a representation choice</h2><p class='text-gray-700 mb-4'>Click through one message. Notice that we do not ask whether a representation is always best. We ask whether it fits the task.</p><div id='y8dr1-stepper-1'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr1-guided1-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr1-stepper-1',steps:[{\"title\":\"Start with the information\",\"html\":\"<p class=\\\"bb-answer-line\\\">Room 12 at 10:30</p>\",\"note\":\"This is the information before we choose a representation.\"},{\"title\":\"Task 1: send the information now\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Useful representation</th><th>Why</th></tr></thead><tbody><tr><td>Spoken sentence</td><td>Good if the person is nearby.</td></tr><tr><td>Text message</td><td>Good if the person is not nearby.</td></tr></tbody></table></div>\",\"note\":\"For sending information, choose a representation that another person can receive and understand.\"},{\"title\":\"Task 2: keep the information for tomorrow\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Useful representation</th><th>Why</th></tr></thead><tbody><tr><td>Calendar entry</td><td>It keeps the room and time together.</td></tr><tr><td>Written note</td><td>It can be checked later.</td></tr></tbody></table></div>\",\"note\":\"For keeping information, choose a representation that can be saved and found again.\"},{\"title\":\"Task 3: work out whether you are free\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Useful representation</th><th>Why</th></tr></thead><tbody><tr><td>Calendar data</td><td>A computer can compare it with other events.</td></tr><tr><td>Timetable</td><td>You can check whether the time clashes.</td></tr></tbody></table></div>\",\"note\":\"For using information, choose a representation that helps you work something out.\"}]});BinaryLesson.createPractice({containerId:'y8dr1-guided1-check',questions:[{\"prompt\":\"A = send now, B = keep for later, C = use to decide. A calendar entry for tomorrow fits which task?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: it keeps information for later.\"},{\"prompt\":\"A = send now, B = keep for later, C = use to decide. A text message sent to a friend fits which task?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: it sends information now.\"}]});"
+    },
+    {
+      "id": "guided-two",
+      "title": "Step Through: Pick the Best Form",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Step through another example</h2><p class='text-gray-700 mb-4'>This example uses the same information in three different ways.</p><div id='y8dr1-stepper-2'></div><div class='ex-box' style='margin-top:1rem'><h3 class='text-lg font-bold mb-2 text-gray-800'>Check your understanding</h3><p class='text-gray-700 mb-3'>Complete this short activity before moving on.</p><div id='y8dr1-guided2-check'></div></div>",
+      "js": "BinaryLesson.createStepper({completeOnEnd:false,containerId:'y8dr1-stepper-2',steps:[{\"title\":\"The information\",\"html\":\"<p class=\\\"bb-answer-line\\\">A pupil scored 8 out of 10</p>\",\"note\":\"The information is the score.\"},{\"title\":\"If the task is to keep many scores\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Best form</th><th>Reason</th></tr></thead><tbody><tr><td>Table</td><td>It keeps names and scores lined up.</td></tr></tbody></table></div>\",\"note\":\"A table is useful when there are lots of similar records.\"},{\"title\":\"If the task is to show progress\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Best form</th><th>Reason</th></tr></thead><tbody><tr><td>Graph</td><td>It makes change over time easier to see.</td></tr></tbody></table></div>\",\"note\":\"A graph is useful when the shape or pattern matters.\"},{\"title\":\"If the task is to tell one pupil their mark\",\"html\":\"<div class='ex-box'><table class='bb-table'><thead><tr><th>Best form</th><th>Reason</th></tr></thead><tbody><tr><td>Spoken words or a written comment</td><td>It is direct and easy to understand.</td></tr></tbody></table></div>\",\"note\":\"The best representation changes when the task changes.\"}]});BinaryLesson.createPractice({containerId:'y8dr1-guided2-check',questions:[{\"prompt\":\"A = table, B = graph, C = alarm. Which is best for showing progress over several weeks?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: a graph shows change over time.\"},{\"prompt\":\"A = table, B = graph, C = alarm. Which is best for keeping names and scores organised?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a table keeps records organised.\"}]});"
+    },
+    {
+      "id": "mini-check",
+      "title": "Mini Check: Identify the Parts",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Mini check: identify the parts</h2><p class='text-gray-700 mb-4'>These questions are deliberately small. Work out whether the question is asking about information, representation, or task.</p><div id='y8dr1-mini-check'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-mini-check',questions:[{\"prompt\":\"A question says: The temperature is 18 degrees. Is this information, a representation, or a task?\",\"answers\":[\"information\"],\"right\":\"Correct: 18 degrees is the information.\"},{\"prompt\":\"A question says: The temperature is shown on a line graph. Is the line graph information, a representation, or a task?\",\"answers\":[\"representation\",\"a representation\"],\"right\":\"Correct: the line graph is the representation.\"},{\"prompt\":\"A question says: Decide whether the classroom is warm enough. Is this information, a representation, or a task?\",\"answers\":[\"task\",\"a task\"],\"right\":\"Correct: deciding is the task.\"},{\"prompt\":\"A = map, B = table, C = graph. Which is best for comparing scores over time?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: a graph helps show change.\"},{\"prompt\":\"A = map, B = table, C = graph. Which is best for keeping names and scores organised?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: a table keeps records organised.\"}]});"
+    },
+    {
+      "id": "practice-a",
+      "title": "Checked Practice 1",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: match the task</h2><p class='text-gray-700 mb-4'>Use the table: A = keep information, B = send information, C = use information to work something out. Type A, B or C.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Purpose</th><th>Meaning</th></tr></thead><tbody><tr><td>A</td><td>Keep information</td><td>So it can be used later.</td></tr><tr><td>B</td><td>Send information</td><td>So another person or system can receive it.</td></tr><tr><td>C</td><td>Use information</td><td>To work something out or make a decision.</td></tr></tbody></table></div><div id='y8dr1-practice-a'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-practice-a',questions:[{\"prompt\":\"A pupil saves a homework deadline in a calendar so they can check it tomorrow.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: the information is being kept for later.\"},{\"prompt\":\"A fire alarm makes a loud sound so people know to leave.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: the information is being sent quickly.\"},{\"prompt\":\"A spreadsheet adds marks and calculates a total.\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: the information is being used to work something out.\"},{\"prompt\":\"A teacher emails a room change to the class.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: the information is being sent.\"},{\"prompt\":\"A website sorts prices from lowest to highest.\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: sorting is using information to produce a result.\"}]});"
+    },
+    {
+      "id": "practice-b",
+      "title": "Checked Practice 2",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Checked practice: choose from clear options</h2><p class='text-gray-700 mb-4'>Type A, B or C for the most suitable representation.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Letter</th><th>Representation</th></tr></thead><tbody><tr><td>A</td><td>Map or directions</td></tr><tr><td>B</td><td>Table</td></tr><tr><td>C</td><td>Warning sign or alarm</td></tr></tbody></table></div><div id='y8dr1-practice-b'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-practice-b',questions:[{\"prompt\":\"Which representation would help someone find a classroom?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a map or directions show where to go.\"},{\"prompt\":\"Which representation would keep pupil names and scores organised?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: a table keeps rows and columns organised.\"},{\"prompt\":\"Which representation would quickly tell people there is danger?\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: a warning sign or alarm is quick to notice.\"},{\"prompt\":\"Which representation would help compare several test results?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: a table makes comparison easier.\"},{\"prompt\":\"Which representation would be best for showing a route?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a map or directions show a route.\"}]});"
+    },
+    {
+      "id": "extension",
+      "title": "Extension: Explain Your Choice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension challenge</h2><p class='text-gray-700 mb-4'>Fast finishers should practise explaining why a representation fits the task. Choose the best option, then read the feedback carefully.</p><div id='y8dr1-extension'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-extension',questions:[{\"prompt\":\"A = graph, B = alarm sound, C = table. Which is best for warning people immediately?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: an alarm sound can be noticed straight away.\"},{\"prompt\":\"A = table, B = map, C = spoken sentence. Which is best for keeping 30 pupils and scores organised?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a table handles repeated records clearly.\"},{\"prompt\":\"A = map, B = paragraph, C = random number. Which is best for showing where the library is?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a map shows location.\"},{\"prompt\":\"A = graph, B = single word, C = alarm. Which is best for seeing whether attendance is improving over weeks?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: a graph shows change over time.\"}]});"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 simple representation questions correctly to complete this step. Each question tells you the options to choose from.</p><div id='y8dr1-endless'></div>",
+      "js": "(function(){var bank=[{\"prompt\":\"A = keep, B = send, C = use. A timetable is checked to decide which train to catch. Type A, B or C.\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct: the information is used to make a decision.\"},{\"prompt\":\"A = keep, B = send, C = use. A message is sent to tell someone the room number. Type A, B or C.\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct: the information is sent.\"},{\"prompt\":\"A = keep, B = send, C = use. A file is saved so it can be opened next lesson. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct: the information is kept.\"},{\"prompt\":\"A = map, B = table, C = warning sign. Which helps someone follow a route?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = warning sign. Which keeps scores in rows and columns?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"}];var qs=[];for(var i=0;i<5;i++){qs.push(bank[Math.floor(Math.random()*bank.length)]);}BinaryLesson.createPractice({containerId:'y8dr1-endless',questions:qs});})();"
+    },
+    {
+      "id": "exam",
+      "title": "End of Lesson Exam",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Use what you practised: identify the task, then choose the matching purpose or representation.</p><div id='y8dr1-exam'></div>",
+      "js": "BinaryLesson.createPractice({containerId:'y8dr1-exam',questions:[{\"prompt\":\"What is a representation?\",\"answers\":[\"a way of showing information\",\"way of showing information\",\"showing information\"],\"right\":\"Correct.\"},{\"prompt\":\"A = keep, B = send, C = use. A computer compares two dates to find the earlier one. Type A, B or C.\",\"answers\":[\"C\",\"c\"],\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = warning sound. Which is best for showing a route?\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"},{\"prompt\":\"A = map, B = table, C = warning sound. Which is best for organised names and scores?\",\"answers\":[\"B\",\"b\"],\"right\":\"Correct.\"},{\"prompt\":\"A = keep, B = send, C = use. A note is saved for tomorrow. Type A, B or C.\",\"answers\":[\"A\",\"a\"],\"right\":\"Correct.\"}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "What is a representation?",
+      "options": [
+        "A way of showing information",
+        "A type of computer only",
+        "A password rule",
+        "A broken file"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which is best for showing a route through a building?",
+      "options": [
+        "A map or directions",
+        "A random number",
+        "A sound recording",
+        "A file size"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "A file is saved so it can be opened tomorrow. What is the task?",
+      "options": [
+        "Keep information",
+        "Send information",
+        "Use information to calculate",
+        "Delete information"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "A warning alarm is used so people know to leave. What is the task?",
+      "options": [
+        "Send information quickly",
+        "Keep a list organised",
+        "Calculate a total",
+        "Sort numbers"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "A spreadsheet calculates a total from marks. What is the task?",
+      "options": [
+        "Use information to work something out",
+        "Keep information only",
+        "Send a message only",
+        "Show a route"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Which representation is useful for names and scores in rows and columns?",
+      "options": [
+        "A table",
+        "A route map",
+        "A warning sound",
+        "A spoken sentence only"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "Why might the same information be represented in different ways?",
+      "options": [
+        "Different tasks need different forms",
+        "Only one representation can ever work",
+        "Computers cannot read any symbols",
+        "Representations cannot be saved"
+      ],
+      "answer": 0,
+      "duration": 60
+    },
+    {
+      "type": "mcq",
+      "q": "Which option is a representation?",
+      "options": [
+        "Map",
+        "Login timeout",
+        "Processor speed",
+        "Battery percentage only"
+      ],
+      "answer": 0,
+      "duration": 45
+    }
+  ]
+}

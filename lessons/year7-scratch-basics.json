@@ -1,6 +1,6 @@
 {
   "id": "year7-scratch-basics",
-  "title": "Scratch Basics",
+  "title": "L1: Scratch Basics",
   "description": "What Scratch is, block categories and colours, and how to animate a sprite using sequence — with three hands-on builds.",
   "steps": [
     {
@@ -50,14 +50,126 @@
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "What colour are Motion blocks?", "options": ["Blue", "Purple", "Orange", "Green"], "answer": 0, "duration": 20 },
-    { "type": "mcq", "q": "What colour are Looks blocks?", "options": ["Blue", "Purple", "Orange", "Green"], "answer": 1, "duration": 20 },
-    { "type": "mcq", "q": "What does the 'when green flag clicked' block do?", "options": ["Stops the program", "Changes the sprite colour", "Starts the script running", "Moves the sprite"], "answer": 2, "duration": 25 },
-    { "type": "mcq", "q": "What is sequence in programming?", "options": ["Random execution", "Instructions running top to bottom in order", "Running only loops", "Skipping steps"], "answer": 1, "duration": 25 },
-    { "type": "mcq", "q": "Which block category contains 'next costume'?", "options": ["Motion", "Events", "Looks", "Control"], "answer": 2, "duration": 25 },
-    { "type": "scratch_mcq", "q": "Which script makes a sprite walk and animate?", "options": ["when flag clicked → move (5) steps", "when flag clicked → forever → move (5) steps → next costume", "when flag clicked → next costume", "forever → say [hello]"], "answer": 1, "duration": 35 },
-    { "type": "scratch_build", "q": "Build a script that starts when the green flag is clicked and makes the sprite say hello, then move. Click Check & Submit.", "check": ["event_whenflagclicked", ["looks_say","looks_sayforsecs"], ["motion_movesteps","motion_changexby","motion_changeyby"]], "sampleAnswer": "when flag clicked → say [Hello!] for 2 seconds → move 10 steps", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves", "waitMs": 2600} },
-    { "type": "scratch_build", "q": "Build a script that animates the sprite using a forever loop and next costume. Click Check & Submit.", "check": ["control_forever", "looks_nextcostume"], "sampleAnswer": "when flag clicked → forever → next costume → wait 0.1 seconds", "duration": 75, "runtimeTest": {"kind": "greenFlagChangesCostume"} },
-    { "type": "scratch_build", "q": "Build a sprite that moves and bounces off the edge in a forever loop. Click Check & Submit.", "check": ["control_forever", "motion_movesteps", "motion_ifonedgebounce"], "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce", "duration": 75, "runtimeTest": {"kind": "greenFlagMoves"} }
+    {
+      "type": "mcq",
+      "q": "What colour are Motion blocks?",
+      "options": [
+        "Blue",
+        "Purple",
+        "Orange",
+        "Green"
+      ],
+      "answer": 0,
+      "duration": 20
+    },
+    {
+      "type": "mcq",
+      "q": "What colour are Looks blocks?",
+      "options": [
+        "Blue",
+        "Purple",
+        "Orange",
+        "Green"
+      ],
+      "answer": 1,
+      "duration": 20
+    },
+    {
+      "type": "mcq",
+      "q": "What does the 'when green flag clicked' block do?",
+      "options": [
+        "Stops the program",
+        "Changes the sprite colour",
+        "Starts the script running",
+        "Moves the sprite"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "What is sequence in programming?",
+      "options": [
+        "Random execution",
+        "Instructions running top to bottom in order",
+        "Running only loops",
+        "Skipping steps"
+      ],
+      "answer": 1,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which block category contains 'next costume'?",
+      "options": [
+        "Motion",
+        "Events",
+        "Looks",
+        "Control"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "scratch_mcq",
+      "q": "Which script makes a sprite walk and animate?",
+      "options": [
+        "when flag clicked → move (5) steps",
+        "when flag clicked → forever → move (5) steps → next costume",
+        "when flag clicked → next costume",
+        "forever → say [hello]"
+      ],
+      "answer": 1,
+      "duration": 35
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that starts when the green flag is clicked and makes the sprite say hello, then move. Click Check & Submit.",
+      "check": [
+        "event_whenflagclicked",
+        [
+          "looks_say",
+          "looks_sayforsecs"
+        ],
+        [
+          "motion_movesteps",
+          "motion_changexby",
+          "motion_changeyby"
+        ]
+      ],
+      "sampleAnswer": "when flag clicked → say [Hello!] for 2 seconds → move 10 steps",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves",
+        "waitMs": 2600
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a script that animates the sprite using a forever loop and next costume. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "looks_nextcostume"
+      ],
+      "sampleAnswer": "when flag clicked → forever → next costume → wait 0.1 seconds",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagChangesCostume"
+      }
+    },
+    {
+      "type": "scratch_build",
+      "q": "Build a sprite that moves and bounces off the edge in a forever loop. Click Check & Submit.",
+      "check": [
+        "control_forever",
+        "motion_movesteps",
+        "motion_ifonedgebounce"
+      ],
+      "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce",
+      "duration": 75,
+      "runtimeTest": {
+        "kind": "greenFlagMoves"
+      }
+    }
   ]
 }

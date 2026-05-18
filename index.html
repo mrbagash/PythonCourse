@@ -1372,7 +1372,12 @@ window.BinaryLesson = (() => {
       document.getElementById(opts.containerId + '-prev').onclick = function(){ if (idx > 0) { idx--; render(); } };
       document.getElementById(opts.containerId + '-next').onclick = function(){
         if (idx < opts.steps.length - 1) { idx++; render(); }
-        else { var fb = el.querySelector('.ex-feedback'); fb.className = 'ex-feedback ok'; fb.textContent = 'Example complete. You can now move on.'; window.__markStepComplete && window.__markStepComplete(); }
+        else {
+          var fb = el.querySelector('.ex-feedback');
+          fb.className = 'ex-feedback ok';
+          fb.textContent = opts.completeOnEnd === false ? 'Example complete. Now complete the activity below.' : 'Example complete. You can now move on.';
+          if (opts.completeOnEnd !== false) window.__markStepComplete && window.__markStepComplete();
+        }
       };
     }
     render();
