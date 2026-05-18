@@ -598,6 +598,7 @@
         <div id="qh-opt-2" class="rounded-xl p-4 text-center font-semibold text-lg bg-yellow-500 text-gray-900"></div>
         <div id="qh-opt-3" class="rounded-xl p-4 text-center font-semibold text-lg bg-green-600"></div>
       </div>
+      <div id="qh-unanswered-list" class="mt-5 w-full max-w-2xl rounded-lg bg-gray-800/80 border border-gray-700 px-4 py-3 text-sm text-gray-200"></div>
     </div>
   </div>
 
@@ -4505,6 +4506,7 @@ async function startNextQuestion() {
   document.getElementById('qh-q-progress').textContent =
     'Question ' + (nextIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qh-answered-count').textContent = '';
+  document.getElementById('qh-unanswered-list').innerHTML = '<span class="text-gray-400">Waiting for answers...</span>';
 
   setQuizHostView('question');
   startHostTimer(q.duration, nextIdx, now);
@@ -4552,12 +4554,30 @@ function startHostTimer(duration, qIdx, questionStart) {
     bar.style.width = Math.max(0, pct) + '%';
     bar.className = 'h-2 transition-all ' + (pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-500' : 'bg-red-500');
 
-    // Check how many have answered
-    quiz.sessionRef.child('answers/' + qIdx).get().then(function(snap) {
+    // Check how many have answered and who is still outstanding.
+    Promise.all([
+      quiz.sessionRef.child('answers/' + qIdx).get(),
+      quiz.sessionRef.child('players').get()
+    ]).then(function(results) {
       if (timerToken !== quiz.hostTimerToken || quiz.currentState !== 'question') return;
-      var answered = snap.exists() ? Object.keys(snap.val()).length : 0;
+      var snap = results[0];
+      var playersSnap = results[1];
+      var answeredCodes = snap.exists() ? Object.keys(snap.val()) : [];
+      var answeredSet = {};
+      answeredCodes.forEach(function(code) { answeredSet[code] = true; });
+      var activeCodes = [];
+      if (playersSnap.exists()) {
+        var players = playersSnap.val() || {};
+        activeCodes = Object.keys(players).filter(function(code) {
+          return players[code] && !players[code].kicked;
+        });
+      }
+      var answered = answeredCodes.filter(function(code) { return activeCodes.indexOf(code) !== -1; }).length;
+      var unanswered = activeCodes.filter(function(code) { return !answeredSet[code]; });
+      quiz.playerCount = activeCodes.length;
       document.getElementById('qh-answered-count').textContent =
         answered + ' / ' + quiz.playerCount + ' answered';
+      renderHostUnansweredList(unanswered);
       if (answered >= quiz.playerCount && quiz.playerCount > 0) {
         clearHostQuestionTimer();
         showAnswerReveal(qIdx, questionStart);
@@ -4571,6 +4591,30 @@ function startHostTimer(duration, qIdx, questionStart) {
   }
   tick();
   quiz.timerInterval = setInterval(tick, 500);
+}
+
+function renderHostUnansweredList(codes) {
+  var el = document.getElementById('qh-unanswered-list');
+  if (!el) return;
+  codes = codes || [];
+  if (!codes.length) {
+    el.innerHTML = '<div class="font-semibold text-green-300">Everyone has answered.</div>';
+    return;
+  }
+  var names = codes.map(function(code) { return studentName(code) || code; }).sort();
+  el.innerHTML =
+    '<div class="font-semibold text-yellow-300 mb-2">Still to answer (' + names.length + ')</div>' +
+    '<div class="flex flex-wrap gap-2">' +
+    names.map(function(name) {
+      return '<span class="rounded-full bg-gray-700 px-3 py-1 text-xs text-gray-100">' + escapeHtml(name) + '</span>';
+    }).join('') +
+    '</div>';
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+  });
 }
 
 async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
