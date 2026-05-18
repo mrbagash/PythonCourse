@@ -2391,36 +2391,46 @@ async function loadActiveSessions() {
   var panel = document.getElementById('admin-sessions-panel');
   var list  = document.getElementById('admin-sessions-list');
   list.innerHTML = '<p class="text-gray-400 text-xs px-4 py-2">Checking…</p>';
+  panel.classList.remove('hidden');
   try {
-    var snap = await state.db.ref('quizSessions').get();
-    var sessions = [];
-    if (snap.exists()) {
-      snap.forEach(function(child) {
-        var s = child.val() || {};
-        if (s.state && s.state !== 'finished') {
-          var isAP = String(s.lessonId || '').indexOf('AP:') === 0;
-          var playerCount = 0;
-          if (s.players) {
-            Object.keys(s.players).forEach(function(k) {
-              if (!s.players[k].kicked) playerCount++;
-            });
-          }
-          var answerCount = (s.answers && s.answers[0]) ? Object.keys(s.answers[0]).length : 0;
-          sessions.push({
-            code: child.key,
-            state: s.state,
-            isAP: isAP,
-            className: s.className || '—',
-            playerCount: isAP ? answerCount : playerCount
-          });
-        }
-      });
-    }
+    // Read classes tree — includes forcedQuiz sub-nodes and is permitted for admins
+    var classesSnap = await state.db.ref('classes').get();
+    if (!classesSnap.exists()) { panel.classList.add('hidden'); return; }
+
+    var checks = [];
+    classesSnap.forEach(function(classSnap) {
+      var forced = classSnap.child('forcedQuiz').val();
+      if (forced && forced.active && forced.lobbyCode) {
+        checks.push({ className: classSnap.key, forced: forced });
+      }
+    });
+
+    if (!checks.length) { panel.classList.add('hidden'); return; }
+
+    // Look up each active session individually (permitted by Firebase rules)
+    var sessions = await Promise.all(checks.map(async function(check) {
+      var isAP = String(check.forced.lessonId || '').indexOf('AP:') === 0;
+      var base = { code: check.forced.lobbyCode, isAP: isAP, className: check.className, state: 'lobby', playerCount: 0 };
+      try {
+        var sSnap = await state.db.ref('quizSessions/' + check.forced.lobbyCode).get();
+        if (!sSnap.exists() || sSnap.child('state').val() === 'finished') return null;
+        var s = sSnap.val() || {};
+        var playerCount = 0;
+        if (s.players) Object.keys(s.players).forEach(function(k) { if (!s.players[k].kicked) playerCount++; });
+        var answerCount = (s.answers && s.answers[0]) ? Object.keys(s.answers[0]).length : 0;
+        return Object.assign(base, { state: s.state || 'lobby', playerCount: isAP ? answerCount : playerCount });
+      } catch(e) {
+        return base; // show from forcedQuiz data alone if session read is denied
+      }
+    }));
+
+    sessions = sessions.filter(Boolean);
     if (!sessions.length) { panel.classList.add('hidden'); return; }
+
     list.innerHTML = '';
     sessions.forEach(function(sess) {
       var typeLabel  = sess.isAP ? 'AP' : 'Quiz';
-      var stateLabel = ({ lobby:'Lobby', question:'In progress', reveal:'Revealing' })[sess.state] || sess.state;
+      var stateLabel = ({ lobby:'Lobby', question:'In progress', reveal:'Revealing', unknown:'Active' })[sess.state] || sess.state;
       var countLabel = sess.isAP ? sess.playerCount + ' submitted' : sess.playerCount + ' players';
       var row = document.createElement('div');
       row.className = 'flex flex-wrap items-center gap-2 px-4 py-2 text-sm border-t border-gray-100';
@@ -2428,7 +2438,7 @@ async function loadActiveSessions() {
         '<span class="font-semibold text-gray-700 w-10">' + typeLabel + '</span>' +
         '<span class="font-mono text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-0.5 text-xs">' + sess.code + '</span>' +
         '<span class="text-gray-600">Class: <strong>' + sess.className + '</strong></span>' +
-        '<span class="text-gray-400 text-xs">' + stateLabel + ' · ' + countLabel + '</span>' +
+        '<span class="text-gray-400 text-xs">' + stateLabel + ' &middot; ' + countLabel + '</span>' +
         '<div class="ml-auto flex gap-2">' +
           '<button class="btn-sess-rejoin px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Rejoin</button>' +
           '<button class="btn-sess-end    px-2 py-1 text-xs bg-red-600  text-white rounded hover:bg-red-700">Force End</button>' +
@@ -2447,10 +2457,8 @@ async function loadActiveSessions() {
       };
       list.appendChild(row);
     });
-    panel.classList.remove('hidden');
   } catch(e) {
     list.innerHTML = '<p class="text-red-400 text-xs px-4 py-2">Could not load sessions: ' + e.message + '</p>';
-    panel.classList.remove('hidden');
   }
 }
 
