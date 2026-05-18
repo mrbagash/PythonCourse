@@ -412,6 +412,12 @@
       <button id="btn-admin-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
     </div>
 
+    <!-- Rejoin active session banner -->
+    <div id="admin-rejoin-banner" class="hidden bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="text-amber-800 font-medium text-sm">Active session detected:</span>
+      <div id="admin-rejoin-items" class="flex gap-2 flex-wrap"></div>
+    </div>
+
     <!-- Top toolbar: generate / add / import -->
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
       <!-- Bulk generate -->
@@ -2375,6 +2381,95 @@ function updateAuthUI(first, last, isAdmin) {
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
   await loadAdminClassList();
+  checkAdminRejoin();
+}
+
+async function checkAdminRejoin() {
+  var banner = document.getElementById('admin-rejoin-banner');
+  var itemsDiv = document.getElementById('admin-rejoin-items');
+  var quizCode = localStorage.getItem('pylearn_host_quiz');
+  var apCode   = localStorage.getItem('pylearn_host_ap');
+  var items = [];
+  if (quizCode) {
+    try {
+      var qSnap = await state.db.ref('quizSessions/' + quizCode).get();
+      if (qSnap.exists() && qSnap.child('state').val() !== 'finished') {
+        items.push({ type: 'quiz', code: quizCode,
+          label: 'Quiz (code ' + quizCode + ')' });
+      } else {
+        localStorage.removeItem('pylearn_host_quiz');
+      }
+    } catch(e) {}
+  }
+  if (apCode) {
+    try {
+      var aSnap = await state.db.ref('quizSessions/' + apCode).get();
+      if (aSnap.exists() && aSnap.child('state').val() !== 'finished') {
+        items.push({ type: 'ap', code: apCode,
+          label: 'AP (code ' + apCode + ')' });
+      } else {
+        localStorage.removeItem('pylearn_host_ap');
+      }
+    } catch(e) {}
+  }
+  if (!items.length) { banner.classList.add('hidden'); return; }
+  itemsDiv.innerHTML = '';
+  items.forEach(function(item) {
+    var btn = document.createElement('button');
+    btn.className = 'px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 font-medium';
+    btn.textContent = 'Rejoin ' + item.label;
+    btn.onclick = function() {
+      document.getElementById('modal-admin').classList.add('hidden');
+      if (item.type === 'quiz') rejoinQuizSession(item.code);
+      else rejoinAPSession(item.code);
+    };
+    itemsDiv.appendChild(btn);
+  });
+  banner.classList.remove('hidden');
+}
+
+async function rejoinQuizSession(code) {
+  try {
+    var snap = await state.db.ref('quizSessions/' + code).get();
+    if (!snap.exists() || snap.child('state').val() === 'finished') {
+      localStorage.removeItem('pylearn_host_quiz');
+      alert('That quiz session has already ended.');
+      return;
+    }
+    var session = snap.val();
+    quiz.lobbyCode  = code;
+    quiz.sessionRef = state.db.ref('quizSessions/' + code);
+    quiz.questions  = session.questions || [];
+    quiz.className  = session.className || null;
+    quiz.lessonId   = session.lessonId  || null;
+    quiz.unsubscribers.forEach(function(fn) { try { fn(); } catch(e) {} });
+    quiz.unsubscribers = [];
+    showQuizHostScreen();
+  } catch(e) {
+    alert('Could not rejoin quiz: ' + e.message);
+  }
+}
+
+async function rejoinAPSession(code) {
+  try {
+    var snap = await state.db.ref('quizSessions/' + code).get();
+    if (!snap.exists() || snap.child('state').val() === 'finished') {
+      localStorage.removeItem('pylearn_host_ap');
+      alert('That AP session has already ended.');
+      return;
+    }
+    var session = snap.val();
+    assessment.lobbyCode     = code;
+    assessment.sessionRef    = state.db.ref('quizSessions/' + code);
+    assessment.className     = session.className || null;
+    assessment.assessmentId  = String(session.lessonId || '').replace(/^AP:/, '');
+    if (assessment.hostListener && assessment.sessionRef) {
+      assessment.sessionRef.off('value', assessment.hostListener);
+    }
+    showAssessmentHostScreen();
+  } catch(e) {
+    alert('Could not rejoin AP: ' + e.message);
+  }
 }
 
 async function loadAdminClassList() {
@@ -3284,6 +3379,7 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
     active: false,
     endedAt: firebase.database.ServerValue.TIMESTAMP
   }).catch(function(){});
+  localStorage.setItem('pylearn_host_ap', code);
   document.getElementById('modal-ap-setup').classList.add('hidden');
   showAssessmentHostScreen();
 };
@@ -3473,6 +3569,7 @@ document.getElementById('btn-ap-download').onclick = function() {
 };
 
 async function endAssessmentHostSession() {
+  localStorage.removeItem('pylearn_host_ap');
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
   if (assessment.className) {
     var ref = state.db.ref('classes/' + assessment.className + '/forcedQuiz');
@@ -3669,17 +3766,19 @@ function validateAssessmentProject() {
   var frame = document.getElementById('aps-scratch-frame');
   var vm = frame && frame.contentWindow && frame.contentWindow.vm;
   if (!vm || !vm.runtime) return Promise.resolve({ score: 0, maxScore: 21, criteria: [] });
-  var result = assessYear7Ap2Scratch(vm);
-  return Promise.resolve(result);
+  return assessYear7Ap2Scratch(vm);
 }
 
-function assessYear7Ap2Scratch(vm) {
+async function assessYear7Ap2Scratch(vm) {
   var runtime = vm.runtime;
   runtime.stopAll();
+  await waitMs(100);
+
   var targets = runtime.targets || [];
   var sprites = targets.filter(function(t) { return t && !t.isStage; });
-  var stage = targets.filter(function(t) { return t && t.isStage; })[0];
+  var stage = targets.find(function(t) { return t && t.isStage; });
   var info = collectAssessmentScratchInfo(targets);
+
   var diverSprite = findAssessmentSprite(sprites, ['diver', 'swimmer', 'scuba', 'snorkel']);
   var sharkSprite = findAssessmentSprite(sprites, ['shark']);
   var targetSprite = sprites.find(function(sprite) {
@@ -3688,47 +3787,147 @@ function assessYear7Ap2Scratch(vm) {
   }) || sprites.find(function(sprite) {
     return sprite !== diverSprite && sprite !== sharkSprite;
   });
+
   function hasAny(list) { return list.some(function(op) { return (info.counts[op] || 0) > 0; }); }
-  function hasText(text) { return info.fieldValues.some(function(v) { return v.indexOf(text) !== -1; }); }
   function spriteHasAny(sprite, list) {
     return sprite && sprite.info && list.some(function(op) { return (sprite.info.counts[op] || 0) > 0; });
   }
-  function spriteHasText(sprite, text) {
-    return sprite && sprite.info && sprite.info.fieldValues.some(function(v) { return v.indexOf(text) !== -1; });
-  }
   function criterion(id, text, marks, ok, got) { return { id:id, text:text, marks:marks, awarded: ok ? marks : (got || 0) }; }
-  var backdropCount = 0;
+
+  // ── 1. Backdrop: any backdrop whose name contains an underwater keyword ──
   var underwaterBackdrop = false;
   try {
     var backdrops = stage && stage.getCostumes ? stage.getCostumes() :
       (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes : []);
-    backdropCount = backdrops.length;
-    underwaterBackdrop = backdrops.some(function(backdrop) {
-      var name = normaliseScratchFieldValue((backdrop && (backdrop.name || backdrop.assetId)) || '');
-      return ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'].some(function(word) {
-        return name.indexOf(word) !== -1;
+    underwaterBackdrop = backdrops.some(function(b) {
+      var name = normaliseScratchFieldValue((b && (b.name || b.assetId)) || '');
+      return ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'].some(function(w) {
+        return name.indexOf(w) !== -1;
       });
     });
-  } catch(e) { backdropCount = 0; }
-  var movementInfo = diverSprite && diverSprite.info ? diverSprite.info : info;
-  var movement = 0;
-  ['up arrow','down arrow','left arrow','right arrow'].forEach(function(key) {
-    if (movementInfo.keyFields.indexOf(key) !== -1) movement++;
-  });
+  } catch(e) {}
+
+  // ── 2. Diver sprite (static name check) ─────────────────────────────
+  var hasDiver = !!diverSprite;
+
+  // ── 3. Movement: simulate each arrow key, check diver moves that way ──
+  var movementScore = 0;
+  if (diverSprite) {
+    var dirTests = [
+      { key: 'ArrowRight', axis: 'x', dir: 1 },
+      { key: 'ArrowLeft',  axis: 'x', dir: -1 },
+      { key: 'ArrowUp',    axis: 'y', dir: 1 },
+      { key: 'ArrowDown',  axis: 'y', dir: -1 }
+    ];
+    for (var di = 0; di < dirTests.length; di++) {
+      var dt = dirTests[di];
+      diverSprite.setXY(0, 0);
+      runtime.stopAll();
+      runtime.greenFlag();
+      await waitMs(50);
+      postScratchKey(runtime, dt.key, true);
+      await waitMs(220);
+      postScratchKey(runtime, dt.key, false);
+      await waitMs(80);
+      runtime.stopAll();
+      var moved = dt.axis === 'x'
+        ? (dt.dir > 0 ? diverSprite.x > 1 : diverSprite.x < -1)
+        : (dt.dir > 0 ? diverSprite.y > 1 : diverSprite.y < -1);
+      if (moved) movementScore++;
+    }
+    await waitMs(80);
+  }
+
+  // ── 4. Target random (static — needs sprite collision to trigger) ─────
+  var targetRandom = targetSprite && (
+    spriteHasAny(targetSprite, ['motion_gotorandom', 'motion_glideto', 'operator_random']) ||
+    hasAny(['operator_random'])
+  );
+
+  // ── 5. Score plus (static — needs sprite collision to trigger) ────────
   var scoreVar = info.variableNames.indexOf('score') !== -1;
-  var plusScore = scoreVar && diverSprite && (diverSprite.info.changeVariableValues.indexOf('1') !== -1 || diverSprite.info.changeVariableValues.indexOf('+1') !== -1 || info.changeVariableValues.indexOf('1') !== -1);
-  var minusScore = scoreVar && sharkSprite && (sharkSprite.info.changeVariableValues.indexOf('-1') !== -1 || info.changeVariableValues.indexOf('-1') !== -1);
-  var targetRandom = targetSprite && (spriteHasAny(targetSprite, ['motion_gotorandom','motion_glideto','operator_random']) || hasAny(['operator_random']));
+  var plusScore = scoreVar && diverSprite && (
+    (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('1') !== -1) ||
+    (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('+1') !== -1) ||
+    info.changeVariableValues.indexOf('1') !== -1
+  );
+
+  // ── 6. Shark sprite (static) ─────────────────────────────────────────
+  var hasShark = !!sharkSprite;
+
+  // ── 7. Shark chases diver: place shark at 3 fixed offsets,
+  //        check it gets closer to the diver within 1 second each time ──
+  var sharkChases = false;
+  if (sharkSprite && diverSprite) {
+    diverSprite.setXY(0, 0);
+    runtime.greenFlag();
+    await waitMs(200);
+    var chaseCount = 0;
+    var chasePositions = [[-150, 80], [160, -90], [-100, -100]];
+    for (var ci = 0; ci < chasePositions.length; ci++) {
+      var cp = chasePositions[ci];
+      sharkSprite.setXY(cp[0], cp[1]);
+      var d0 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
+      await waitMs(1000);
+      var d1 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
+      if (d1 < d0 - 5) chaseCount++;
+    }
+    sharkChases = chaseCount >= 2;
+    runtime.stopAll();
+    await waitMs(100);
+  }
+
+  // ── 8. Shark says something when touching diver ───────────────────────
+  //        Teleport shark onto diver, listen for any SAY event from shark
+  var sharkSays = false;
+  if (sharkSprite && diverSprite) {
+    diverSprite.setXY(0, 0);
+    runtime.greenFlag();
+    await waitMs(300);
+    var sayHeard = false;
+    var sayHandler = function(sTarget) { if (sTarget === sharkSprite) sayHeard = true; };
+    runtime.on('SAY', sayHandler);
+    sharkSprite.setXY(diverSprite.x, diverSprite.y);
+    await waitMs(1200);
+    runtime.off('SAY', sayHandler);
+    sharkSays = sayHeard;
+    runtime.stopAll();
+    await waitMs(100);
+  }
+
+  // ── 9. Score decreases when shark touches diver ───────────────────────
+  //        Record score, teleport shark onto diver, check score went down
+  var scoreDecreases = false;
+  if (sharkSprite && diverSprite && scoreVar) {
+    diverSprite.setXY(0, 0);
+    runtime.greenFlag();
+    await waitMs(300);
+    var scoreObj = null;
+    (runtime.targets || []).forEach(function(t) {
+      Object.keys(t.variables || {}).forEach(function(id) {
+        var v = t.variables[id];
+        if (v && v.name && normaliseScratchFieldValue(v.name).indexOf('score') !== -1) scoreObj = v;
+      });
+    });
+    var scoreBefore = scoreObj ? Number(scoreObj.value) : null;
+    sharkSprite.setXY(diverSprite.x, diverSprite.y);
+    await waitMs(1200);
+    var scoreAfter = scoreObj ? Number(scoreObj.value) : null;
+    if (scoreBefore !== null && scoreAfter !== null) scoreDecreases = scoreAfter < scoreBefore;
+    runtime.stopAll();
+    await waitMs(100);
+  }
+
   var criteria = [
-    criterion('backdrop', 'Underwater background', 2, backdropCount > 1 && underwaterBackdrop),
-    criterion('diver', 'Diver sprite created', 2, !!diverSprite),
-    criterion('movement', 'Diver moves up, down, left and right with keys', 4, !!diverSprite && movement >= 4, diverSprite ? movement : 0),
-    criterion('target', 'Chase sprite moves to a random place when caught', 2, !!targetRandom),
-    criterion('scorePlus', 'Score variable and +1 when target is caught', 3, plusScore, scoreVar ? 1 : 0),
-    criterion('shark', 'Shark sprite created', 2, !!sharkSprite),
-    criterion('sharkChase', 'Shark chases the diver', 2, !!sharkSprite && spriteHasAny(sharkSprite, ['motion_pointtowards','motion_glideto','motion_movesteps'])),
-    criterion('yum', 'Shark says Yum Yum when touching diver', 2, !!sharkSprite && spriteHasAny(sharkSprite, ['looks_sayforsecs','looks_say']) && spriteHasText(sharkSprite, 'yum yum')),
-    criterion('scoreMinus', 'Score changes by -1 when shark touches diver', 2, minusScore)
+    criterion('backdrop',   'Underwater background',                            2, underwaterBackdrop),
+    criterion('diver',      'Diver sprite created',                             2, hasDiver),
+    criterion('movement',   'Diver moves in all four directions with keys',      4, movementScore >= 4, movementScore),
+    criterion('target',     'Chase sprite moves to a random place when caught',  2, !!targetRandom),
+    criterion('scorePlus',  'Score variable and +1 when target is caught',       3, !!plusScore, scoreVar ? 1 : 0),
+    criterion('shark',      'Shark sprite created',                              2, hasShark),
+    criterion('sharkChase', 'Shark chases the diver',                            2, sharkChases),
+    criterion('yum',        'Shark says something when touching the diver',      2, sharkSays),
+    criterion('scoreMinus', 'Score decreases when shark touches diver',          2, scoreDecreases)
   ];
   var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
   return { score: score, maxScore: 21, criteria: criteria };
@@ -4061,6 +4260,7 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
   // dropped from Firebase briefly during heavy embedded tasks, so quizzes are
   // cleaned up explicitly when the host ends/finishes them instead.
 
+  localStorage.setItem('pylearn_host_quiz', lobbyCode);
   showQuizHostScreen();
 };
 
@@ -4162,6 +4362,7 @@ function exitHostQuizScreen() {
   quiz.unsubscribers = [];
   quiz.sessionRef = null;
   quiz.currentState = null;
+  localStorage.removeItem('pylearn_host_quiz');
   document.getElementById('quiz-host-screen').classList.add('hidden');
 }
 
@@ -4428,6 +4629,7 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
 
 async function endQuiz() {
   clearAllQuizTimers();
+  localStorage.removeItem('pylearn_host_quiz');
   await clearForcedQuizForCurrentClass();
   // Cancel the onDisconnect removal BEFORE writing finished state,
   // otherwise Firebase deletes the session immediately after the write
