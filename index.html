@@ -829,16 +829,30 @@
     </div>
   </div>
   <div id="aps-active" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4">
-    <aside class="bg-white text-gray-800 rounded-lg p-4 overflow-y-auto">
-      <h2 id="aps-title" class="text-lg font-bold mb-2"></h2>
-      <p id="aps-brief" class="text-sm text-gray-600 mb-4"></p>
-      <ol id="aps-criteria" class="list-decimal pl-5 text-sm space-y-2 mb-4"></ol>
+    <aside id="aps-sidebar" class="bg-white text-gray-800 rounded-lg p-4 overflow-y-auto">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <h2 id="aps-title" class="text-lg font-bold"></h2>
+        <button id="btn-ap-toggle-instructions" class="shrink-0 w-8 h-8 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 font-bold" title="Hide instructions" aria-label="Hide instructions">&#x2039;</button>
+      </div>
+      <div id="aps-instructions">
+        <p id="aps-brief" class="text-sm text-gray-600 mb-4"></p>
+        <ol id="aps-criteria" class="list-decimal pl-5 text-sm space-y-2 mb-4"></ol>
+      </div>
       <button id="btn-ap-check" class="jhncc-primary w-full py-2 rounded font-semibold mb-2">Check My Project</button>
       <button id="btn-ap-finish" class="w-full py-2 rounded border border-green-500 text-green-700 bg-green-50 font-semibold">Submit Final Assessment</button>
       <div id="aps-feedback" class="mt-4 text-sm"></div>
     </aside>
-    <div id="aps-scratch-wrap" class="min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
+    <div id="aps-scratch-wrap" class="relative min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
       <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;width:100%;height:100%"></iframe>
+      <div id="aps-validation-lock" class="hidden absolute inset-0 z-20 bg-gray-950/85 backdrop-blur-sm flex items-center justify-center text-center p-6" tabindex="-1">
+        <div class="bg-gray-900 border border-yellow-500/60 rounded-lg px-6 py-5 max-w-md shadow-xl">
+          <div class="text-yellow-300 font-bold text-lg mb-2">Validation in progress</div>
+          <div id="aps-validation-status" class="text-gray-100 text-sm">Preparing checks...</div>
+          <div class="mt-4 h-2 bg-gray-700 rounded overflow-hidden">
+            <div id="aps-validation-bar" class="h-full bg-yellow-400 transition-all" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div id="aps-finished" class="hidden flex-1 overflow-y-auto p-6">
@@ -3583,6 +3597,7 @@ var assessment = {
   responseRef: null,
   forced: false,
   completed: false,
+  validating: false,
   saveTimer: null,
   hostListener: null,
   studentListener: null,
@@ -3737,7 +3752,7 @@ async function inspectAssessmentProject(code) {
     var summary = summariseScratchProjectVm(vm);
     panel.innerHTML = renderScratchProjectSummary(code, summary);
   } catch(e) {
-    panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect project: ' + e.message + '</p>';
+    panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect project: ' + escapeHtml(errorMessage(e, 'The saved Scratch project could not be loaded.')) + '</p>';
   }
 }
 
@@ -3745,35 +3760,67 @@ function loadSavedProjectIntoInspector(projectData) {
   var frame = document.getElementById('aph-inspector-frame');
   return new Promise(function(resolve, reject) {
     var done = false;
+    var timeoutId = null;
     function fail(msg) {
       if (done) return;
       done = true;
-      reject(new Error(msg));
+      if (timeoutId) clearTimeout(timeoutId);
+      reject(new Error(msg || 'The saved Scratch project could not be loaded.'));
+    }
+    function finish(vm) {
+      if (done) return;
+      done = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      resolve(vm);
     }
     function tryLoad() {
       waitForAssessmentInspectorVm(frame).then(async function(vm) {
         try {
-          var bin = atob(projectData);
+          var cleanData = String(projectData || '').replace(/^data:[^,]+,/, '').replace(/\s/g, '');
+          if (!cleanData) throw new Error('No saved project data was found.');
+          var bin = atob(cleanData);
           var arr = new Uint8Array(bin.length);
           for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-          await vm.loadProject(arr.buffer);
-          if (!done) {
-            done = true;
-            resolve(vm);
-          }
+          await loadScratchProjectBuffer(vm, arr.buffer);
+          finish(vm);
         } catch(e) {
-          fail(e.message);
+          fail(errorMessage(e, 'TurboWarp could not open the saved project data.'));
         }
+      }).catch(function(e) {
+        fail(errorMessage(e, 'Inspector VM was not ready.'));
       });
     }
+    if (!frame) return fail('Inspector frame is missing from the page.');
     frame.onload = tryLoad;
-    if (!frame.src || frame.src === 'about:blank') {
-      frame.src = './scratch/editor.html?assessmentInspector=1&suppressBeforeUnload=1';
-    } else {
-      tryLoad();
-    }
-    setTimeout(function(){ fail('Inspector editor did not load in time.'); }, 20000);
+    frame.src = './scratch/editor.html?assessmentInspector=1&suppressBeforeUnload=1&_inspect=' + Date.now();
+    timeoutId = setTimeout(function(){ fail('Inspector editor did not load in time.'); }, 25000);
   });
+}
+
+async function loadScratchProjectBuffer(vm, buffer) {
+  if (!vm || typeof vm.loadProject !== 'function') throw new Error('Scratch VM cannot load projects.');
+  try {
+    return await vm.loadProject(buffer);
+  } catch(firstError) {
+    try {
+      return await vm.loadProject(new Blob([buffer], { type: 'application/x.scratch.sb3' }));
+    } catch(secondError) {
+      throw secondError || firstError;
+    }
+  }
+}
+
+function errorMessage(error, fallback) {
+  if (!error) return fallback || 'Unknown error.';
+  if (typeof error === 'string') return error || fallback || 'Unknown error.';
+  if (error.message) return error.message;
+  if (error.name) return error.name;
+  try {
+    var text = JSON.stringify(error);
+    return text && text !== '{}' ? text : (fallback || 'Unknown error.');
+  } catch(e) {
+    return fallback || 'Unknown error.';
+  }
 }
 
 function waitForAssessmentInspectorVm(frame) {
@@ -4033,6 +4080,7 @@ function showAssessmentStudentScreen(session) {
   document.getElementById('aps-criteria').innerHTML = spec.criteria.map(function(c) {
     return '<li>' + c.text + ' <span class="text-gray-500">(' + c.marks + ' marks)</span></li>';
   }).join('');
+  setAssessmentInstructionsCollapsed(false);
   loadAssessmentScratchEditor();
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
   assessment.studentListener = assessment.sessionRef.on('value', function(snap) {
@@ -4056,7 +4104,7 @@ function loadAssessmentScratchEditor() {
         var bin = atob(saved);
         var arr = new Uint8Array(bin.length);
         for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-        await frame.contentWindow.vm.loadProject(arr.buffer);
+        await loadScratchProjectBuffer(frame.contentWindow.vm, arr.buffer);
       } catch(e) { console.warn('Could not restore AP project:', e.message); }
     }
     startAssessmentAutosave();
@@ -4120,42 +4168,98 @@ function startAssessmentAutosave() {
 }
 
 document.getElementById('btn-ap-check').onclick = async function() {
-  var result = await validateAssessmentProject();
-  renderAssessmentFeedback(result, false);
-  await saveAssessmentProject();
+  if (assessment.validating) return;
+  await runAssessmentValidation('Checking your project...', async function() {
+    await saveAssessmentProject();
+    var result = await validateAssessmentProject(function(label, index, total) {
+      updateAssessmentValidationStatus(label, index, total);
+    });
+    renderAssessmentFeedback(result, false);
+  });
 };
 
 document.getElementById('btn-ap-finish').onclick = async function() {
+  if (assessment.validating) return;
   if (!confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
-  var result = await validateAssessmentProject();
-  await saveAssessmentProject();
-  assessment.completed = true;
-  await assessment.responseRef.update({
-    completed: true,
-    completedAt: Date.now(),
-    score: result.score,
-    maxScore: result.maxScore,
-    rubric: result.criteria
+  await runAssessmentValidation('Final validation before submitting...', async function() {
+    await saveAssessmentProject();
+    var result = await validateAssessmentProject(function(label, index, total) {
+      updateAssessmentValidationStatus(label, index, total);
+    });
+    assessment.completed = true;
+    await assessment.responseRef.update({
+      completed: true,
+      completedAt: Date.now(),
+      score: result.score,
+      maxScore: result.maxScore,
+      rubric: result.criteria
+    });
+    await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+      completedAt: Date.now(),
+      score: result.score,
+      maxScore: result.maxScore,
+      rubric: result.criteria,
+      className: assessment.className || state.className || null
+    });
+    showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
   });
-  await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
-    completedAt: Date.now(),
-    score: result.score,
-    maxScore: result.maxScore,
-    rubric: result.criteria,
-    className: assessment.className || state.className || null
-  });
-  showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
 };
 
-function validateAssessmentProject() {
+async function runAssessmentValidation(initialStatus, task) {
+  setAssessmentValidationLocked(true, initialStatus, 0, 1);
+  try {
+    return await task();
+  } finally {
+    setAssessmentValidationLocked(false);
+  }
+}
+
+function setAssessmentValidationLocked(locked, status, index, total) {
+  assessment.validating = !!locked;
+  var lock = document.getElementById('aps-validation-lock');
+  var frame = document.getElementById('aps-scratch-frame');
+  var sidebar = document.getElementById('aps-sidebar');
+  var checkBtn = document.getElementById('btn-ap-check');
+  var finishBtn = document.getElementById('btn-ap-finish');
+  var exitBtn = document.getElementById('btn-ap-student-exit');
+  var toggleBtn = document.getElementById('btn-ap-toggle-instructions');
+  if (lock) lock.classList.toggle('hidden', !locked);
+  if (frame) frame.style.pointerEvents = locked ? 'none' : '';
+  if (sidebar) sidebar.style.pointerEvents = locked ? 'none' : '';
+  [checkBtn, finishBtn, exitBtn, toggleBtn].forEach(function(btn) {
+    if (btn) btn.disabled = !!locked;
+    if (btn) btn.classList.toggle('opacity-60', !!locked);
+  });
+  if (locked) {
+    try { if (document.activeElement) document.activeElement.blur(); } catch(e) {}
+    try { if (frame && frame.contentWindow) frame.contentWindow.blur(); } catch(e) {}
+    if (lock) lock.focus();
+    updateAssessmentValidationStatus(status || 'Preparing checks...', index || 0, total || 1);
+  }
+}
+
+function updateAssessmentValidationStatus(label, index, total) {
+  var status = document.getElementById('aps-validation-status');
+  var bar = document.getElementById('aps-validation-bar');
+  if (status) status.textContent = label || 'Validating...';
+  if (bar) {
+    var pct = total ? Math.max(0, Math.min(100, Math.round((index / total) * 100))) : 0;
+    bar.style.width = pct + '%';
+  }
+}
+
+function validateAssessmentProject(onProgress) {
   var frame = document.getElementById('aps-scratch-frame');
   var vm = frame && frame.contentWindow && frame.contentWindow.vm;
   if (!vm || !vm.runtime) return Promise.resolve({ score: 0, maxScore: 21, criteria: [] });
-  return assessYear7Ap2Scratch(vm);
+  return assessYear7Ap2Scratch(vm, onProgress);
 }
 
-async function assessYear7Ap2Scratch(vm) {
+async function assessYear7Ap2Scratch(vm, onProgress) {
   var runtime = vm.runtime;
+  function progress(label, index) {
+    if (onProgress) onProgress('Validating: ' + label, index, 9);
+  }
   runtime.stopAll();
   await waitMs(100);
 
@@ -4230,78 +4334,103 @@ async function assessYear7Ap2Scratch(vm) {
   );
 
   // ── 5. Score plus (static — needs sprite collision to trigger) ────────
-  var scoreVar = info.variableNames.indexOf('score') !== -1;
+  progress('underwater background', 1);
+
+  var scoreVar = info.variableNames.some(function(name) {
+    return name.indexOf('score') !== -1 || name.indexOf('point') !== -1;
+  });
+  progress('diver sprite', 2);
   var plusScore = scoreVar && diverSprite && (
     (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('1') !== -1) ||
     (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('+1') !== -1) ||
-    info.changeVariableValues.indexOf('1') !== -1
+    info.changeVariableValues.indexOf('1') !== -1 ||
+    targetHasChangeVariableBy(diverSprite, ['score', 'point'], 1) ||
+    (targetSprite && targetHasChangeVariableBy(targetSprite, ['score', 'point'], 1))
   );
 
   // ── 6. Shark sprite (static) ─────────────────────────────────────────
+  progress('diver movement with arrow keys', 3);
   var hasShark = !!sharkSprite;
+  progress('target random movement and score increase', 4);
 
   // ── 7. Shark chases diver: place shark at 3 fixed offsets,
   //        check it gets closer to the diver within 1 second each time ──
   var sharkChases = false;
+  var sharkChaseStatic = sharkSprite && diverSprite && targetHasChaseTowardsSprite(sharkSprite, diverSprite);
   if (sharkSprite && diverSprite) {
-    diverSprite.setXY(0, 0);
-    runtime.greenFlag();
-    await waitMs(200);
+    progress('shark sprite', 5);
     var chaseCount = 0;
     var chasePositions = [[-150, 80], [160, -90], [-100, -100]];
     for (var ci = 0; ci < chasePositions.length; ci++) {
       var cp = chasePositions[ci];
+      runtime.stopAll();
+      diverSprite.setXY(0, 0);
       sharkSprite.setXY(cp[0], cp[1]);
+      runtime.greenFlag();
+      await waitMs(150);
       var d0 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
-      await waitMs(1000);
+      await waitMs(1300);
       var d1 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
       if (d1 < d0 - 5) chaseCount++;
     }
-    sharkChases = chaseCount >= 2;
+    sharkChases = chaseCount >= 2 || sharkChaseStatic;
     runtime.stopAll();
     await waitMs(100);
   }
+  progress('shark chasing the diver', 6);
 
   // ── 8. Shark says something when touching diver ───────────────────────
   //        Teleport shark onto diver, listen for any SAY event from shark
   var sharkSays = false;
+  var sharkSaysStatic = sharkSprite && diverSprite && targetHasTouchingSprite(sharkSprite, diverSprite) && targetHasAnyOpcode(sharkSprite, ['looks_say', 'looks_sayforsecs', 'looks_think', 'looks_thinkforsecs']);
   if (sharkSprite && diverSprite) {
+    runtime.stopAll();
     diverSprite.setXY(0, 0);
+    sharkSprite.setXY(120, 0);
     runtime.greenFlag();
     await waitMs(300);
     var sayHeard = false;
-    var sayHandler = function(sTarget) { if (sTarget === sharkSprite) sayHeard = true; };
+    var sayHandler = function(sTarget) {
+      if (sTarget === sharkSprite || (sTarget && sharkSprite && sTarget.id === sharkSprite.id)) sayHeard = true;
+    };
     runtime.on('SAY', sayHandler);
     sharkSprite.setXY(diverSprite.x, diverSprite.y);
-    await waitMs(1200);
+    await waitMs(5600);
     runtime.off('SAY', sayHandler);
-    sharkSays = sayHeard;
+    sharkSays = sayHeard || sharkSaysStatic;
     runtime.stopAll();
     await waitMs(100);
   }
+  progress('shark message when touching the diver', 7);
 
   // ── 9. Score decreases when shark touches diver ───────────────────────
   //        Record score, teleport shark onto diver, check score went down
   var scoreDecreases = false;
+  var scoreDecreasesStatic = sharkSprite && diverSprite && targetHasTouchingSprite(sharkSprite, diverSprite) && targetHasChangeVariableBy(sharkSprite, ['score', 'point'], -1);
   if (sharkSprite && diverSprite && scoreVar) {
+    runtime.stopAll();
     diverSprite.setXY(0, 0);
+    sharkSprite.setXY(120, 0);
     runtime.greenFlag();
     await waitMs(300);
     var scoreObj = null;
     (runtime.targets || []).forEach(function(t) {
       Object.keys(t.variables || {}).forEach(function(id) {
         var v = t.variables[id];
-        if (v && v.name && normaliseScratchFieldValue(v.name).indexOf('score') !== -1) scoreObj = v;
+        var name = v && v.name ? normaliseScratchFieldValue(v.name) : '';
+        if (name.indexOf('score') !== -1 || name.indexOf('point') !== -1) scoreObj = v;
       });
     });
     var scoreBefore = scoreObj ? Number(scoreObj.value) : null;
     sharkSprite.setXY(diverSprite.x, diverSprite.y);
-    await waitMs(1200);
+    await waitMs(1800);
     var scoreAfter = scoreObj ? Number(scoreObj.value) : null;
     if (scoreBefore !== null && scoreAfter !== null) scoreDecreases = scoreAfter < scoreBefore;
+    scoreDecreases = scoreDecreases || scoreDecreasesStatic;
     runtime.stopAll();
     await waitMs(100);
   }
+  progress('score decreasing when shark touches the diver', 8);
 
   var criteria = [
     criterion('backdrop',   'Underwater background',                            2, underwaterBackdrop),
@@ -4315,6 +4444,7 @@ async function assessYear7Ap2Scratch(vm) {
     criterion('scoreMinus', 'Score decreases when shark touches diver',          2, scoreDecreases)
   ];
   var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
+  progress('final score', 9);
   return { score: score, maxScore: 21, criteria: criteria };
 }
 
@@ -4362,6 +4492,104 @@ function mergeAssessmentScratchInfo(total, part) {
   total.keyFields.push.apply(total.keyFields, part.keyFields || []);
   total.variableNames.push.apply(total.variableNames, part.variableNames || []);
   total.changeVariableValues.push.apply(total.changeVariableValues, part.changeVariableValues || []);
+}
+
+function targetBlocks(target) {
+  return target && target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
+}
+
+function targetHasAnyOpcode(target, opcodes) {
+  var wanted = {};
+  opcodes.forEach(function(op) { wanted[op] = true; });
+  var blocks = targetBlocks(target);
+  return Object.keys(blocks).some(function(id) {
+    return !!wanted[(blocks[id] || {}).opcode];
+  });
+}
+
+function scratchTargetNames(target) {
+  var names = [];
+  try {
+    if (target.name) names.push(target.name);
+    if (target.sprite && target.sprite.name) names.push(target.sprite.name);
+    var costumes = target.getCostumes ? target.getCostumes() : ((target.sprite && target.sprite.costumes) || []);
+    costumes.forEach(function(costume) { if (costume && costume.name) names.push(costume.name); });
+  } catch(e) {}
+  return names.map(normaliseScratchFieldValue).filter(Boolean);
+}
+
+function blockReadableText(target, block) {
+  var parts = [block && block.opcode];
+  Object.keys((block && block.fields) || {}).forEach(function(name) {
+    parts.push(scratchFieldValue(block.fields[name]));
+  });
+  Object.keys((block && block.inputs) || {}).forEach(function(name) {
+    parts.push(scratchInputReadableValue(target, block.inputs[name]));
+  });
+  return normaliseScratchFieldValue(parts.join(' '));
+}
+
+function scratchInputReadableValue(target, input) {
+  var parts = [];
+  var blocks = targetBlocks(target);
+  function addBlock(id) {
+    var b = blocks[id];
+    if (!b) return;
+    Object.keys(b.fields || {}).forEach(function(name) { parts.push(scratchFieldValue(b.fields[name])); });
+    Object.keys(b.inputs || {}).forEach(function(name) { parts.push(scratchInputReadableValue(target, b.inputs[name])); });
+  }
+  if (Array.isArray(input)) {
+    input.forEach(function(part) {
+      if (typeof part === 'string' && blocks[part]) addBlock(part);
+      else if (Array.isArray(part)) parts.push(part.join(' '));
+      else if (part != null && typeof part !== 'object') parts.push(part);
+    });
+  } else if (input != null) {
+    parts.push(input);
+  }
+  return parts.join(' ');
+}
+
+function targetMentionsSprite(target, sprite) {
+  var names = scratchTargetNames(sprite);
+  if (!names.length) return false;
+  var blocks = targetBlocks(target);
+  return Object.keys(blocks).some(function(id) {
+    var text = blockReadableText(target, blocks[id]);
+    return names.some(function(name) { return name && text.indexOf(name) !== -1; });
+  });
+}
+
+function targetHasTouchingSprite(target, sprite) {
+  var names = scratchTargetNames(sprite);
+  var blocks = targetBlocks(target);
+  return Object.keys(blocks).some(function(id) {
+    var block = blocks[id] || {};
+    if (String(block.opcode || '').indexOf('sensing_touchingobject') !== 0) return false;
+    var text = blockReadableText(target, block);
+    return names.some(function(name) { return name && text.indexOf(name) !== -1; });
+  });
+}
+
+function targetHasChaseTowardsSprite(target, sprite) {
+  if (!targetMentionsSprite(target, sprite)) return false;
+  var hasDirection = targetHasAnyOpcode(target, ['motion_pointtowards', 'motion_goto', 'motion_glideto']);
+  var hasMovement = targetHasAnyOpcode(target, ['motion_movesteps', 'motion_goto', 'motion_glideto', 'motion_changexby', 'motion_changeyby', 'motion_setx', 'motion_sety']);
+  return hasDirection && hasMovement;
+}
+
+function targetHasChangeVariableBy(target, variableWords, sign) {
+  var blocks = targetBlocks(target);
+  return Object.keys(blocks).some(function(id) {
+    var block = blocks[id] || {};
+    if (block.opcode !== 'data_changevariableby') return false;
+    var variableName = normaliseScratchFieldValue(scratchFieldValue(block.fields && block.fields.VARIABLE));
+    var variableOk = !variableWords || variableWords.some(function(word) { return variableName.indexOf(word) !== -1; });
+    var valueText = normaliseScratchFieldValue(scratchInputReadableValue(target, block.inputs && block.inputs.VALUE));
+    var num = Number(String(valueText).match(/-?\d+(\.\d+)?/) && String(valueText).match(/-?\d+(\.\d+)?/)[0]);
+    var signOk = sign < 0 ? num < 0 || valueText.indexOf('-') !== -1 : num > 0 || valueText.indexOf('+') !== -1 || valueText === '1';
+    return variableOk && signOk;
+  });
 }
 
 function findAssessmentSprite(sprites, words) {
@@ -4527,6 +4755,30 @@ function populateAssessmentResultsFilters() {
     opt.textContent = (studentName(code) || 'Unnamed student') + ' - ' + code;
     studentEl.appendChild(opt);
   });
+}
+
+document.getElementById('btn-ap-toggle-instructions').onclick = function() {
+  setAssessmentInstructionsCollapsed(!document.getElementById('aps-active').classList.contains('ap-instructions-collapsed'));
+};
+
+function setAssessmentInstructionsCollapsed(collapsed) {
+  var active = document.getElementById('aps-active');
+  var instructions = document.getElementById('aps-instructions');
+  var toggle = document.getElementById('btn-ap-toggle-instructions');
+  if (!active || !instructions || !toggle) return;
+  active.classList.toggle('ap-instructions-collapsed', !!collapsed);
+  instructions.classList.toggle('hidden', !!collapsed);
+  if (collapsed) {
+    active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 p-4 ap-instructions-collapsed';
+    toggle.innerHTML = '&#x203A;';
+    toggle.title = 'Show instructions';
+    toggle.setAttribute('aria-label', 'Show instructions');
+  } else {
+    active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
+    toggle.innerHTML = '&#x2039;';
+    toggle.title = 'Hide instructions';
+    toggle.setAttribute('aria-label', 'Hide instructions');
+  }
 }
 
 function assessmentRowsForClass(className, assessmentId) {
