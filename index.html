@@ -361,6 +361,7 @@
       <button id="btn-login"  class="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">Login</button>
       <button id="btn-logout" class="hidden text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">Logout</button>
       <button id="btn-join-quiz" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">&#x1F3AE; Join Quiz/AP</button>
+      <button id="btn-ap-feedback" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">AP Feedback</button>
       <button id="btn-report" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">Export Report</button>
       <button id="btn-admin"  class="jhncc-primary hidden text-sm px-3 py-1 rounded">Admin</button>
     </div>
@@ -845,8 +846,23 @@
       <h2 class="text-2xl font-bold mb-2">Assessment Submitted</h2>
       <p id="aps-final-score" class="text-lg font-semibold text-yellow-700 mb-4"></p>
       <div id="aps-final-rubric" class="space-y-2"></div>
+      <button id="btn-ap-student-home" class="jhncc-primary mt-5 px-6 py-2 rounded font-semibold">Back to lessons</button>
       <div id="aps-class-feedback" class="hidden mt-6 border-t border-gray-200 pt-5"></div>
     </div>
+  </div>
+</div>
+
+<!-- AP FEEDBACK VIEWER (student) -->
+<div id="modal-student-ap-feedback" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-6xl max-h-[92vh] flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 class="text-lg font-semibold">Whole Class AP Feedback</h2>
+        <p id="student-ap-feedback-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
+      </div>
+      <button id="btn-student-ap-feedback-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
+    </div>
+    <div id="student-ap-feedback-content" class="overflow-y-auto flex-1 text-sm text-gray-700"></div>
   </div>
 </div>
 
@@ -2420,6 +2436,7 @@ function updateAuthUI(first, last, isAdmin) {
   document.getElementById('btn-login').classList.toggle('hidden',  show);
   document.getElementById('btn-logout').classList.toggle('hidden', !show);
   document.getElementById('btn-report').classList.toggle('hidden', !show||isAdmin);
+  document.getElementById('btn-ap-feedback').classList.toggle('hidden', !show||isAdmin);
   document.getElementById('btn-admin').classList.toggle('hidden',  !isAdmin);
   document.getElementById('user-label').textContent = show ? first+' '+last : '';
 }
@@ -3438,6 +3455,60 @@ function exportReport() {
   a.click();
 }
 
+document.getElementById('btn-ap-feedback').onclick = openStudentApFeedback;
+document.getElementById('btn-student-ap-feedback-close').onclick = function() {
+  document.getElementById('modal-student-ap-feedback').classList.add('hidden');
+};
+
+async function openStudentApFeedback() {
+  var modal = document.getElementById('modal-student-ap-feedback');
+  var content = document.getElementById('student-ap-feedback-content');
+  document.getElementById('student-ap-feedback-subtitle').textContent = state.className ? 'Class: ' + state.className : '';
+  content.innerHTML = '<p class="text-gray-400 text-center py-8">Loading AP feedback...</p>';
+  modal.classList.remove('hidden');
+  try {
+    if (!state.uid || !state.className) throw new Error('You need to be logged into a class.');
+    var progressSnap = await state.db.ref('progress/' + state.uid + '/assessments').get();
+    var feedbackSnap = await state.db.ref('classes/' + state.className + '/apFeedback').get();
+    var assessments = progressSnap.exists() ? progressSnap.val() : {};
+    var feedbacks = feedbackSnap.exists() ? feedbackSnap.val() : {};
+    var ids = Object.keys(assessments).sort(function(a, b) {
+      return ((assessments[b] && assessments[b].completedAt) || 0) - ((assessments[a] && assessments[a].completedAt) || 0);
+    });
+    if (!ids.length) {
+      content.innerHTML = '<p class="text-gray-500 text-center py-8">No completed APs found yet.</p>';
+      return;
+    }
+    assessment.assessmentId = ids[0];
+    assessment.className = state.className;
+    var html = '<div class="mb-4 flex flex-wrap items-end gap-3"><div><label class="block text-xs text-gray-500 mb-1">Completed AP</label><select id="student-ap-feedback-select" class="jhncc-focus border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none min-w-[320px]">';
+    ids.forEach(function(id) {
+      var rec = assessments[id] || {};
+      var when = rec.completedAt ? ' - ' + new Date(rec.completedAt).toLocaleString('en-GB') : '';
+      var status = feedbacks[id] && feedbacks[id].released ? '' : ' - feedback not released yet';
+      html += '<option value="' + escapeHtml(id) + '">' + escapeHtml(((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + when + status) + '</option>';
+    });
+    html += '</select></div></div><div id="student-ap-feedback-body"></div>';
+    content.innerHTML = html;
+    function renderSelected() {
+      var id = document.getElementById('student-ap-feedback-select').value;
+      assessment.assessmentId = id;
+      var body = document.getElementById('student-ap-feedback-body');
+      var rec = assessments[id];
+      var feedback = feedbacks[id];
+      if (!feedback || !feedback.released) {
+        body.innerHTML = '<div class="border border-gray-200 rounded-lg p-4"><h3 class="text-lg font-bold mb-2">' + escapeHtml((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + '</h3><p class="text-sm text-gray-600 mb-3">Completed: ' + (rec.completedAt ? new Date(rec.completedAt).toLocaleString('en-GB') : '-') + '</p><p class="text-gray-500">Your teacher has not released whole class feedback for this AP yet.</p></div>';
+        return;
+      }
+      renderReleasedAssessmentFeedback(body, feedback, rec);
+    }
+    document.getElementById('student-ap-feedback-select').onchange = renderSelected;
+    renderSelected();
+  } catch(e) {
+    content.innerHTML = '<p class="text-red-500 text-center py-8">' + escapeHtml(e.message) + '</p>';
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 //  QUIZ SYSTEM
 // ════════════════════════════════════════════════════════════════
@@ -3763,7 +3834,7 @@ function renderScratchProjectSummary(code, summary) {
 }
 
 document.getElementById('btn-ap-host-exit').onclick = async function() {
-  if (!confirm('End this AP session for the class?')) return;
+  if (!confirm('End this AP session for the class? Any students still working will be automatically checked and submitted.')) return;
   await endAssessmentHostSession();
 };
 
@@ -3782,6 +3853,7 @@ document.getElementById('btn-ap-release-feedback').onclick = async function() {
 
 async function endAssessmentHostSession() {
   localStorage.removeItem('pylearn_host_ap');
+  await finaliseIncompleteAssessmentResponses();
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
   if (assessment.className) {
     var ref = state.db.ref('classes/' + assessment.className + '/forcedQuiz');
@@ -3790,6 +3862,59 @@ async function endAssessmentHostSession() {
   }
   if (assessment.hostListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.hostListener);
   document.getElementById('ap-host-screen').classList.add('hidden');
+}
+
+async function finaliseIncompleteAssessmentResponses() {
+  if (!assessment.sessionRef || !assessment.assessmentId) return;
+  var snap = await assessment.sessionRef.child('answers/0').get();
+  if (!snap.exists()) return;
+  var items = [];
+  snap.forEach(function(child) {
+    var rec = child.val() || {};
+    if (!rec.completed) items.push({ code: child.key, rec: rec });
+  });
+  for (var i = 0; i < items.length; i++) {
+    var code = items[i].code;
+    var rec = items[i].rec;
+    var result;
+    try {
+      result = rec.projectData
+        ? await assessSavedAssessmentProjectData(rec.projectData)
+        : { score: 0, maxScore: (ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
+    } catch(e) {
+      result = { score: 0, maxScore: (ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
+    }
+    var completedAt = Date.now();
+    await assessment.sessionRef.child('answers/0/' + code).update({
+      completed: true,
+      autoSubmitted: true,
+      completedAt: completedAt,
+      score: result.score,
+      maxScore: result.maxScore,
+      rubric: result.criteria
+    });
+    await state.db.ref('progress/' + code + '/assessments/' + assessment.assessmentId).set({
+      completedAt: completedAt,
+      autoSubmitted: true,
+      score: result.score,
+      maxScore: result.maxScore,
+      rubric: result.criteria,
+      lobbyCode: assessment.lobbyCode,
+      className: assessment.className || rec.className || null
+    });
+  }
+}
+
+function zeroAssessmentCriteria(assessmentId) {
+  var spec = ASSESSMENTS[assessmentId] || {};
+  return (spec.criteria || []).map(function(c) {
+    return { id: c.id, text: c.text, marks: c.marks, awarded: 0 };
+  });
+}
+
+async function assessSavedAssessmentProjectData(projectData) {
+  var vm = await loadSavedProjectIntoInspector(projectData);
+  return assessYear7Ap2Scratch(vm);
 }
 
 function stopForcedAssessmentWatcher() {
@@ -4238,6 +4363,21 @@ document.getElementById('btn-ap-student-exit').onclick = function() {
   exitAssessmentStudent({ removePlayer: false });
 };
 
+document.getElementById('btn-ap-student-home').onclick = function() {
+  returnToLessonsFromCompletedAssessment();
+};
+
+function returnToLessonsFromCompletedAssessment() {
+  if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  assessment.saveTimer = null;
+  if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
+  if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
+  assessment.studentListener = null;
+  assessment.feedbackListener = null;
+  assessment.feedbackRef = null;
+  document.getElementById('ap-student-screen').classList.add('hidden');
+}
+
 function exitAssessmentStudent(opts) {
   opts = opts || {};
   if (assessment.forced && !opts.keepForced) return;
@@ -4616,6 +4756,7 @@ function renderReleasedAssessmentFeedback(box, feedback, record) {
   box.innerHTML = html;
   box.classList.remove('hidden');
   wireAssessmentPracticeChoices(box);
+  setupAssessmentPracticeWorkspace(box, record);
 }
 
 function feedbackListHtml(items) {
@@ -4652,7 +4793,7 @@ function renderIndividualPractice(record) {
     cards.push({ id: fallback.id, text: fallback.text, prompt: assessmentPracticePrompt(fallback.id), choice: true });
   }
   var html = '<div class="border border-blue-200 bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-900 mb-2">Your additional practice</h4>' +
-    '<p class="text-sm text-blue-800 mb-3">Complete at least three practice tasks. They are based on your AP result. If you had fewer than three areas to improve, choose the extra focus areas yourself.</p><div class="space-y-3">';
+    '<p class="text-sm text-blue-800 mb-3">Complete at least three practice tasks. They are based on your AP result. If you had fewer than three areas to improve, choose the extra focus areas yourself. Use the Scratch workspace below, then check your practice project locally.</p><div class="space-y-3">';
   cards.forEach(function(card, i) {
     html += '<div class="bg-white border border-blue-100 rounded-lg p-3">';
     if (card.choice) {
@@ -4665,10 +4806,17 @@ function renderIndividualPractice(record) {
       html += '<div class="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-1">Practice ' + (i + 1) + '</div>';
       html += '<div class="font-semibold text-gray-800 mb-1">' + escapeHtml(card.text || '') + '</div>';
     }
-    html += '<p id="ap-practice-prompt-' + i + '" class="text-sm text-gray-700 mb-2">' + escapeHtml(card.prompt) + '</p>' +
-      '<label class="inline-flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="accent-[rgb(176,28,35)]"> I have completed this practice task</label></div>';
+    html += '<p id="ap-practice-prompt-' + i + '" class="text-sm text-gray-700 mb-2">' + escapeHtml(card.prompt) + '</p></div>';
   });
-  html += '</div></div>';
+  html += '</div><div class="mt-4 bg-white border border-blue-100 rounded-lg overflow-hidden">' +
+    '<div class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-blue-100 border-b border-blue-200">' +
+      '<span class="font-semibold text-blue-900">Practice workspace</span>' +
+      '<button class="btn-ap-practice-check jhncc-primary px-4 py-1.5 rounded text-sm">Check Practice Project</button>' +
+    '</div>' +
+    '<div class="grid lg:grid-cols-[1fr_320px] gap-0 min-h-[520px]">' +
+      '<iframe class="ap-practice-frame border-0 w-full h-[520px]" src="about:blank"></iframe>' +
+      '<div class="ap-practice-feedback border-l border-blue-100 p-3 text-sm overflow-y-auto"><p class="text-gray-500">Build your practice project, then click Check Practice Project. These checks are local practice only and do not change your AP score.</p></div>' +
+    '</div></div></div>';
   return html;
 }
 
@@ -4678,6 +4826,68 @@ function wireAssessmentPracticeChoices(box) {
       var target = document.getElementById(sel.dataset.target);
       if (target) target.textContent = assessmentPracticePrompt(sel.value);
     };
+  });
+}
+
+function selectedAssessmentPracticeIds(box) {
+  var ids = [];
+  box.querySelectorAll('.ap-practice-choice').forEach(function(sel) { ids.push(sel.value); });
+  var rubric = [];
+  try {
+    var record = box.__apPracticeRecord || {};
+    rubric = record.rubric || [];
+  } catch(e) {}
+  rubric.filter(function(c) { return (c.awarded || 0) < (c.marks || 0); }).slice(0, 5).forEach(function(c) {
+    if (ids.indexOf(c.id) === -1) ids.push(c.id);
+  });
+  while (ids.length > 3 && ids[ids.length - 1] == null) ids.pop();
+  return ids.slice(0, Math.max(3, ids.length));
+}
+
+function setupAssessmentPracticeWorkspace(box, record) {
+  box.__apPracticeRecord = record || {};
+  var frame = box.querySelector('.ap-practice-frame');
+  var feedback = box.querySelector('.ap-practice-feedback');
+  var button = box.querySelector('.btn-ap-practice-check');
+  if (!frame || !button) return;
+  frame.src = './scratch/editor.html?assessmentPractice=1&suppressBeforeUnload=1&_apPractice=' + Date.now();
+  button.onclick = async function() {
+    button.disabled = true;
+    button.textContent = 'Checking...';
+    try {
+      var vm = await waitForFrameScratchVm(frame);
+      var result = await assessYear7Ap2Scratch(vm);
+      var ids = selectedAssessmentPracticeIds(box);
+      var subset = result.criteria.filter(function(c) { return ids.indexOf(c.id) !== -1; });
+      feedback.innerHTML = '<div class="font-semibold text-gray-800 mb-2">Practice check: ' +
+        subset.reduce(function(t, c) { return t + (c.awarded || 0); }, 0) + ' / ' +
+        subset.reduce(function(t, c) { return t + (c.marks || 0); }, 0) + '</div>' +
+        subset.map(function(c) {
+          var ok = (c.awarded || 0) >= (c.marks || 0);
+          return '<div class="border-b border-gray-100 py-2"><div class="flex justify-between gap-3"><span>' + escapeHtml(c.text) + '</span><strong class="' + (ok ? 'text-green-700' : 'text-red-700') + '">' + c.awarded + '/' + c.marks + '</strong></div><p class="text-xs text-gray-500 mt-1">' + escapeHtml(assessmentPracticePrompt(c.id)) + '</p></div>';
+        }).join('');
+    } catch(e) {
+      feedback.innerHTML = '<p class="text-red-600">Could not check the practice project: ' + escapeHtml(e.message) + '</p>';
+    }
+    button.disabled = false;
+    button.textContent = 'Check Practice Project';
+  };
+}
+
+function waitForFrameScratchVm(frame) {
+  return new Promise(function(resolve, reject) {
+    var started = Date.now();
+    var timer = setInterval(function() {
+      try {
+        if (frame.contentWindow && frame.contentWindow.vm && frame.contentWindow.vm.runtime) {
+          clearInterval(timer);
+          resolve(frame.contentWindow.vm);
+        } else if (Date.now() - started > 20000) {
+          clearInterval(timer);
+          reject(new Error('Scratch editor did not finish loading.'));
+        }
+      } catch(e) {}
+    }, 250);
   });
 }
 
