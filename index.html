@@ -3472,31 +3472,33 @@ async function openStudentApFeedback() {
     var feedbackSnap = await state.db.ref('classes/' + state.className + '/apFeedback').get();
     var assessments = progressSnap.exists() ? progressSnap.val() : {};
     var feedbacks = feedbackSnap.exists() ? feedbackSnap.val() : {};
-    var ids = Object.keys(assessments).sort(function(a, b) {
-      return ((assessments[b] && assessments[b].completedAt) || 0) - ((assessments[a] && assessments[a].completedAt) || 0);
+    var attempts = completedAssessmentAttempts(assessments);
+    attempts.sort(function(a, b) {
+      return (b.completedAt || 0) - (a.completedAt || 0);
     });
-    if (!ids.length) {
+    if (!attempts.length) {
       content.innerHTML = '<p class="text-gray-500 text-center py-8">No completed APs found yet.</p>';
       return;
     }
-    assessment.assessmentId = ids[0];
+    assessment.assessmentId = attempts[0].assessmentId;
     assessment.className = state.className;
     var html = '<div class="mb-4 flex flex-wrap items-end gap-3"><div><label class="block text-xs text-gray-500 mb-1">Completed AP</label><select id="student-ap-feedback-select" class="jhncc-focus border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none min-w-[320px]">';
-    ids.forEach(function(id) {
-      var rec = assessments[id] || {};
+    attempts.forEach(function(rec, idx) {
+      var id = rec.assessmentId;
       var when = rec.completedAt ? ' - ' + new Date(rec.completedAt).toLocaleString('en-GB') : '';
-      var status = feedbacks[id] && feedbacks[id].released ? '' : ' - feedback not released yet';
-      html += '<option value="' + escapeHtml(id) + '">' + escapeHtml(((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + when + status) + '</option>';
+      var feedback = releasedFeedbackForAssessmentAttempt(feedbacks, rec);
+      var status = feedback ? '' : ' - feedback not released yet';
+      html += '<option value="' + idx + '">' + escapeHtml(((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + when + status) + '</option>';
     });
     html += '</select></div></div><div id="student-ap-feedback-body"></div>';
     content.innerHTML = html;
     function renderSelected() {
-      var id = document.getElementById('student-ap-feedback-select').value;
+      var rec = attempts[Number(document.getElementById('student-ap-feedback-select').value)] || attempts[0];
+      var id = rec.assessmentId;
       assessment.assessmentId = id;
       var body = document.getElementById('student-ap-feedback-body');
-      var rec = assessments[id];
-      var feedback = feedbacks[id];
-      if (!feedback || !feedback.released) {
+      var feedback = releasedFeedbackForAssessmentAttempt(feedbacks, rec);
+      if (!feedback) {
         body.innerHTML = '<div class="border border-gray-200 rounded-lg p-4"><h3 class="text-lg font-bold mb-2">' + escapeHtml((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + '</h3><p class="text-sm text-gray-600 mb-3">Completed: ' + (rec.completedAt ? new Date(rec.completedAt).toLocaleString('en-GB') : '-') + '</p><p class="text-gray-500">Your teacher has not released whole class feedback for this AP yet.</p></div>';
         return;
       }
@@ -3507,6 +3509,30 @@ async function openStudentApFeedback() {
   } catch(e) {
     content.innerHTML = '<p class="text-red-500 text-center py-8">' + escapeHtml(e.message) + '</p>';
   }
+}
+
+function completedAssessmentAttempts(assessments) {
+  var attempts = [];
+  Object.keys(assessments || {}).forEach(function(assessmentId) {
+    var rec = assessments[assessmentId] || {};
+    Object.keys(rec.attempts || {}).forEach(function(lobbyCode) {
+      var attempt = Object.assign({}, rec.attempts[lobbyCode] || {});
+      attempt.assessmentId = attempt.assessmentId || assessmentId;
+      attempt.lobbyCode = attempt.lobbyCode || lobbyCode;
+      if (attempt.completedAt) attempts.push(attempt);
+    });
+    if (rec.completedAt && !rec.attempts) {
+      attempts.push(Object.assign({}, rec, { assessmentId: assessmentId }));
+    }
+  });
+  return attempts;
+}
+
+function releasedFeedbackForAssessmentAttempt(feedbacks, rec) {
+  var feedback = feedbacks && feedbacks[rec.assessmentId];
+  if (feedback && rec.lobbyCode && feedback[rec.lobbyCode] && feedback[rec.lobbyCode].released) return feedback[rec.lobbyCode];
+  if (feedback && feedback.released) return feedback;
+  return null;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3893,16 +3919,30 @@ async function finaliseIncompleteAssessmentResponses() {
       maxScore: result.maxScore,
       rubric: result.criteria
     });
-    await state.db.ref('progress/' + code + '/assessments/' + assessment.assessmentId).set({
+    await saveAssessmentProgressRecord(code, assessment.assessmentId, assessment.lobbyCode, {
       completedAt: completedAt,
       autoSubmitted: true,
       score: result.score,
       maxScore: result.maxScore,
       rubric: result.criteria,
-      lobbyCode: assessment.lobbyCode,
       className: assessment.className || rec.className || null
     });
   }
+}
+
+async function saveAssessmentProgressRecord(uid, assessmentId, lobbyCode, rec) {
+  if (!uid || !assessmentId || !lobbyCode) return;
+  var record = Object.assign({}, rec, {
+    assessmentId: assessmentId,
+    lobbyCode: lobbyCode
+  });
+  var base = 'progress/' + uid + '/assessments/' + assessmentId;
+  var updates = {};
+  Object.keys(record).forEach(function(key) {
+    updates[base + '/' + key] = record[key];
+  });
+  updates[base + '/attempts/' + lobbyCode] = record;
+  await state.db.ref().update(updates);
 }
 
 function zeroAssessmentCriteria(assessmentId) {
@@ -3953,7 +3993,14 @@ async function joinAssessmentByCode(code, opts) {
   if (String(snap.child('lessonId').val() || '').indexOf('AP:') !== 0) throw new Error('No assessment found with that code.');
   if (snap.child('state').val() === 'finished') throw new Error('That assessment is not active.');
   var assessmentId = String(snap.child('lessonId').val() || '').replace(/^AP:/, '');
-  var completedSnap = await state.db.ref('progress/' + state.uid + '/assessments/' + assessmentId).get();
+  var progressRef = state.db.ref('progress/' + state.uid + '/assessments/' + assessmentId);
+  var completedSnap = await progressRef.child('attempts/' + code).get();
+  if (!completedSnap.exists()) {
+    var legacySnap = await progressRef.get();
+    if (legacySnap.exists() && legacySnap.child('lobbyCode').val() === code && legacySnap.child('completedAt').exists()) {
+      completedSnap = legacySnap;
+    }
+  }
   assessment.assessmentId = assessmentId;
   assessment.lobbyCode = code;
   assessment.sessionRef = sessionRef;
@@ -3964,6 +4011,7 @@ async function joinAssessmentByCode(code, opts) {
     showAssessmentCompleted(completedSnap.val());
     return;
   }
+  assessment.completed = false;
   await assessment.responseRef.update({
     joinedAt: Date.now(),
     activeClientId: assessment.clientId,
@@ -4089,12 +4137,11 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     maxScore: result.maxScore,
     rubric: result.criteria
   });
-  await state.db.ref('progress/' + state.uid + '/assessments/' + assessment.assessmentId).set({
+  await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
     completedAt: Date.now(),
     score: result.score,
     maxScore: result.maxScore,
     rubric: result.criteria,
-    lobbyCode: assessment.lobbyCode,
     className: assessment.className || state.className || null
   });
   showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
