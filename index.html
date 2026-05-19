@@ -2069,11 +2069,8 @@ async function loadStep(lessonIdx, stepIdx) {
     try {
       var __twVm = __twOut.contentWindow && __twOut.contentWindow.vm;
       if (__twVm && typeof __twVm.saveProjectSb3 === 'function') {
-        var __twBuf = await __twVm.saveProjectSb3();
-        var __twU8 = new Uint8Array(__twBuf);
-        var __twStr = '';
-        for (var __twI = 0; __twI < __twU8.length; __twI++) __twStr += String.fromCharCode(__twU8[__twI]);
-        sessionStorage.setItem('y7proj_' + window.__pylearnCurrentLessonId + '::' + window.__pylearnCurrentStepId, btoa(__twStr));
+        var __twBuf = await scratchProjectExportToArrayBuffer(await __twVm.saveProjectSb3());
+        sessionStorage.setItem('y7proj_' + window.__pylearnCurrentLessonId + '::' + window.__pylearnCurrentStepId, arrayBufferToBase64(__twBuf));
       }
     } catch(__twE) {}
   }
@@ -3830,6 +3827,31 @@ async function loadScratchProjectBuffer(vm, buffer) {
   }
 }
 
+async function scratchProjectExportToArrayBuffer(exported) {
+  if (!exported) throw new Error('Scratch project export was empty.');
+  if (exported instanceof ArrayBuffer) return exported;
+  if (ArrayBuffer.isView(exported)) {
+    return exported.buffer.slice(exported.byteOffset, exported.byteOffset + exported.byteLength);
+  }
+  if (typeof Blob !== 'undefined' && exported instanceof Blob) {
+    return await exported.arrayBuffer();
+  }
+  if (exported.arrayBuffer && typeof exported.arrayBuffer === 'function') {
+    return await exported.arrayBuffer();
+  }
+  throw new Error('Scratch project export had an unsupported format.');
+}
+
+function arrayBufferToBase64(buffer) {
+  var bytes = new Uint8Array(buffer);
+  var binary = '';
+  var chunkSize = 0x8000;
+  for (var i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
 function errorMessage(error, fallback) {
   if (!error) return fallback || 'Unknown error.';
   if (typeof error === 'string') return error || fallback || 'Unknown error.';
@@ -4154,13 +4176,9 @@ async function saveAssessmentProject() {
   var frame = document.getElementById('aps-scratch-frame');
   try {
     if (!frame.contentWindow || !frame.contentWindow.vm || !frame.contentWindow.vm.saveProjectSb3) return;
-    var blob = await frame.contentWindow.vm.saveProjectSb3();
-    var buffer = await blob.arrayBuffer();
-    var bytes = new Uint8Array(buffer);
-    var binary = '';
-    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    var buffer = await scratchProjectExportToArrayBuffer(await frame.contentWindow.vm.saveProjectSb3());
     await assessment.responseRef.update({
-      projectData: btoa(binary),
+      projectData: arrayBufferToBase64(buffer),
       savedAt: Date.now(),
       lastSeenAt: Date.now()
     });
@@ -4287,7 +4305,7 @@ function assessmentValidationConfig(assessmentId) {
       ? ['space', 'galaxy', 'planet', 'star', 'moon', 'mars', 'asteroid', 'cosmos', 'nebula']
       : ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'],
     playerWords: practice
-      ? ['astronaut', 'rocket', 'spaceship', 'space ship', 'ship', 'player', 'explorer']
+      ? ['astronaut', 'rocket', 'spaceship', 'space ship', 'ship', 'player', 'explorer', 'dot', 'kiran', 'ripley']
       : ['diver', 'swimmer', 'scuba', 'snorkel'],
     targetWords: practice
       ? ['crystal', 'star', 'coin', 'fuel', 'battery', 'gem', 'collectible', 'moon', 'planet']
@@ -4392,11 +4410,35 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
     await waitMs(80);
   }
 
-  // ── 4. Target random (static — needs sprite collision to trigger) ─────
-  var targetRandom = targetSprite && (
-    spriteHasAny(targetSprite, ['motion_gotorandom', 'motion_glideto', 'operator_random']) ||
-    hasAny(['operator_random'])
+  // ── 4. Target/collectible moves when collected ───────────────────────
+  //        Hiding and showing is not enough: the target must change position.
+  var targetMovesStatic = targetSprite && diverSprite &&
+    targetHasTouchingSprite(targetSprite, diverSprite) &&
+    targetHasRandomPositionChange(targetSprite);
+  var targetCollectionLinked = targetSprite && diverSprite && (
+    targetHasTouchingSprite(targetSprite, diverSprite) ||
+    targetHasChangeVariableBy(targetSprite, ['score', 'point'], 1) ||
+    targetHasTouchingSprite(diverSprite, targetSprite)
   );
+  var targetMovedDynamic = false;
+  if (targetSprite && diverSprite) {
+    var targetTests = [[0, 0], [80, -40], [-90, 70]];
+    for (var ti = 0; ti < targetTests.length; ti++) {
+      runtime.stopAll();
+      var tp = targetTests[ti];
+      targetSprite.setXY(tp[0], tp[1]);
+      diverSprite.setXY(tp[0], tp[1]);
+      runtime.greenFlag();
+      await waitMs(1800);
+      runtime.stopAll();
+      if (Math.hypot(targetSprite.x - tp[0], targetSprite.y - tp[1]) > 8) {
+        targetMovedDynamic = true;
+        break;
+      }
+    }
+    await waitMs(80);
+  }
+  var targetRandom = targetMovesStatic || (targetMovedDynamic && targetCollectionLinked);
 
   // ── 5. Score plus (static — needs sprite collision to trigger) ────────
   progress(config.labels.backdrop, 1);
@@ -4606,6 +4648,7 @@ function scratchInputReadableValue(target, input) {
   function addBlock(id) {
     var b = blocks[id];
     if (!b) return;
+    if (b.opcode) parts.push(b.opcode);
     Object.keys(b.fields || {}).forEach(function(name) { parts.push(scratchFieldValue(b.fields[name])); });
     Object.keys(b.inputs || {}).forEach(function(name) { parts.push(scratchInputReadableValue(target, b.inputs[name])); });
   }
@@ -4647,6 +4690,22 @@ function targetHasChaseTowardsSprite(target, sprite) {
   var hasDirection = targetHasAnyOpcode(target, ['motion_pointtowards', 'motion_goto', 'motion_glideto']);
   var hasMovement = targetHasAnyOpcode(target, ['motion_movesteps', 'motion_goto', 'motion_glideto', 'motion_changexby', 'motion_changeyby', 'motion_setx', 'motion_sety']);
   return hasDirection && hasMovement;
+}
+
+function targetHasRandomPositionChange(target) {
+  var blocks = targetBlocks(target);
+  return Object.keys(blocks).some(function(id) {
+    var block = blocks[id] || {};
+    var opcode = block.opcode || '';
+    var text = blockReadableText(target, block);
+    if (opcode === 'motion_goto' || opcode === 'motion_glideto') {
+      return text.indexOf('random') !== -1 || text.indexOf('operator random') !== -1;
+    }
+    if (opcode === 'motion_gotoxy' || opcode === 'motion_glidesecstoxy') {
+      return text.indexOf('operator random') !== -1 || text.indexOf('pick random') !== -1;
+    }
+    return opcode === 'motion_gotorandom';
+  });
 }
 
 function targetHasChangeVariableBy(target, variableWords, sign) {
