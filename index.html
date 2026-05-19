@@ -747,6 +747,7 @@
     <label class="block text-xs text-gray-500 mb-1">Assessment</label>
     <select id="ap-assessment-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none">
       <option value="year7-ap2-scratch">Year 7 AP2 Scratch - Underwater Racing Game</option>
+      <option value="year7-ap2-practice-scratch">Practice Year 7 AP2 Scratch - Space Collector Game</option>
     </select>
     <label class="flex items-start gap-2 border border-red-200 bg-red-50 rounded-lg p-3 mb-4 cursor-pointer">
       <input id="ap-force-class" type="checkbox" class="mt-0.5 accent-[rgb(176,28,35)]" />
@@ -3615,11 +3616,30 @@ var assessment = {
 };
 
 var ASSESSMENTS = {
+  'year7-ap2-practice-scratch': {
+    id: 'year7-ap2-practice-scratch',
+    title: 'Practice Year 7 AP2 Scratch - Space Collector Game',
+    maxScore: 21,
+    brief: 'Create a space collector game in Scratch. This practice assessment checks the same kinds of Scratch skills as AP2, but uses a different theme and different objects.',
+    validation: 'scratch-ap2-practice',
+    criteria: [
+      { id:'backdrop', text:'Add a space-themed background.', marks:2 },
+      { id:'diver', text:'Create a player sprite such as an astronaut or spaceship.', marks:2 },
+      { id:'movement', text:'Make the player move up, down, left and right using keys.', marks:4 },
+      { id:'target', text:'Add a collectible sprite that moves to a random place when caught.', marks:2 },
+      { id:'scorePlus', text:'Create a score or points variable and add 1 when the collectible is caught.', marks:3 },
+      { id:'shark', text:'Create an obstacle sprite such as an alien, meteor or robot.', marks:2 },
+      { id:'sharkChase', text:'Make the obstacle chase the player.', marks:2 },
+      { id:'yum', text:'Make the obstacle say or think something when it touches the player.', marks:2 },
+      { id:'scoreMinus', text:'Make the score or points change by -1 when the obstacle touches the player.', marks:2 }
+    ]
+  },
   'year7-ap2-scratch': {
     id: 'year7-ap2-scratch',
     title: 'Year 7 AP2 Scratch - Underwater Racing Game',
     maxScore: 21,
     brief: 'Create an underwater racing game in Scratch. The automated check looks for the project requirements from the assessment brief.',
+    validation: 'scratch-ap2-real',
     criteria: [
       { id:'backdrop', text:'Add an underwater background.', marks:2 },
       { id:'diver', text:'Create a diver sprite.', marks:2 },
@@ -4001,7 +4021,7 @@ function zeroAssessmentCriteria(assessmentId) {
 
 async function assessSavedAssessmentProjectData(projectData) {
   var vm = await loadSavedProjectIntoInspector(projectData);
-  return assessYear7Ap2Scratch(vm);
+  return validateAssessmentScratchVm(vm, assessment.assessmentId);
 }
 
 function stopForcedAssessmentWatcher() {
@@ -4252,10 +4272,55 @@ function validateAssessmentProject(onProgress) {
   var frame = document.getElementById('aps-scratch-frame');
   var vm = frame && frame.contentWindow && frame.contentWindow.vm;
   if (!vm || !vm.runtime) return Promise.resolve({ score: 0, maxScore: 21, criteria: [] });
-  return assessYear7Ap2Scratch(vm, onProgress);
+  return validateAssessmentScratchVm(vm, assessment.assessmentId, onProgress);
 }
 
-async function assessYear7Ap2Scratch(vm, onProgress) {
+function validateAssessmentScratchVm(vm, assessmentId, onProgress) {
+  return assessYear7Ap2Scratch(vm, onProgress, assessmentValidationConfig(assessmentId));
+}
+
+function assessmentValidationConfig(assessmentId) {
+  var practice = assessmentId === 'year7-ap2-practice-scratch';
+  return {
+    assessmentId: assessmentId || 'year7-ap2-scratch',
+    backdropWords: practice
+      ? ['space', 'galaxy', 'planet', 'star', 'moon', 'mars', 'asteroid', 'cosmos', 'nebula']
+      : ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'],
+    playerWords: practice
+      ? ['astronaut', 'rocket', 'spaceship', 'space ship', 'ship', 'player', 'explorer']
+      : ['diver', 'swimmer', 'scuba', 'snorkel'],
+    targetWords: practice
+      ? ['crystal', 'star', 'coin', 'fuel', 'battery', 'gem', 'collectible', 'moon', 'planet']
+      : ['fish', 'coin', 'star', 'shell', 'target', 'food', 'gem', 'crab', 'octopus', 'treasure', 'pearl'],
+    hazardWords: practice
+      ? ['alien', 'meteor', 'asteroid', 'robot', 'comet', 'enemy', 'obstacle']
+      : ['shark'],
+    labels: practice
+      ? {
+          backdrop: 'space background',
+          player: 'player sprite',
+          movement: 'player movement with arrow keys',
+          target: 'collectible random movement and score increase',
+          hazard: 'obstacle sprite',
+          chase: 'obstacle chasing the player',
+          message: 'obstacle message when touching the player',
+          scoreMinus: 'score decreasing when obstacle touches the player'
+        }
+      : {
+          backdrop: 'underwater background',
+          player: 'diver sprite',
+          movement: 'diver movement with arrow keys',
+          target: 'target random movement and score increase',
+          hazard: 'shark sprite',
+          chase: 'shark chasing the diver',
+          message: 'shark message when touching the diver',
+          scoreMinus: 'score decreasing when shark touches the diver'
+        }
+  };
+}
+
+async function assessYear7Ap2Scratch(vm, onProgress, config) {
+  config = config || assessmentValidationConfig('year7-ap2-scratch');
   var runtime = vm.runtime;
   function progress(label, index) {
     if (onProgress) onProgress('Validating: ' + label, index, 9);
@@ -4268,11 +4333,11 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
   var stage = targets.find(function(t) { return t && t.isStage; });
   var info = collectAssessmentScratchInfo(targets);
 
-  var diverSprite = findAssessmentSprite(sprites, ['diver', 'swimmer', 'scuba', 'snorkel']);
-  var sharkSprite = findAssessmentSprite(sprites, ['shark']);
+  var diverSprite = findAssessmentSprite(sprites, config.playerWords);
+  var sharkSprite = findAssessmentSprite(sprites, config.hazardWords);
   var targetSprite = sprites.find(function(sprite) {
     if (sprite === diverSprite || sprite === sharkSprite) return false;
-    return spriteHasAnyWord(sprite, ['fish', 'coin', 'star', 'shell', 'target', 'food', 'gem', 'crab', 'octopus', 'treasure', 'pearl']);
+    return spriteHasAnyWord(sprite, config.targetWords);
   }) || sprites.find(function(sprite) {
     return sprite !== diverSprite && sprite !== sharkSprite;
   });
@@ -4290,7 +4355,7 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
       (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes : []);
     underwaterBackdrop = backdrops.some(function(b) {
       var name = normaliseScratchFieldValue((b && (b.name || b.assetId)) || '');
-      return ['underwater', 'ocean', 'sea', 'reef', 'water', 'seabed', 'coral'].some(function(w) {
+      return config.backdropWords.some(function(w) {
         return name.indexOf(w) !== -1;
       });
     });
@@ -4334,12 +4399,12 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
   );
 
   // ── 5. Score plus (static — needs sprite collision to trigger) ────────
-  progress('underwater background', 1);
+  progress(config.labels.backdrop, 1);
 
   var scoreVar = info.variableNames.some(function(name) {
     return name.indexOf('score') !== -1 || name.indexOf('point') !== -1;
   });
-  progress('diver sprite', 2);
+  progress(config.labels.player, 2);
   var plusScore = scoreVar && diverSprite && (
     (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('1') !== -1) ||
     (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('+1') !== -1) ||
@@ -4349,16 +4414,16 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
   );
 
   // ── 6. Shark sprite (static) ─────────────────────────────────────────
-  progress('diver movement with arrow keys', 3);
+  progress(config.labels.movement, 3);
   var hasShark = !!sharkSprite;
-  progress('target random movement and score increase', 4);
+  progress(config.labels.target, 4);
 
   // ── 7. Shark chases diver: place shark at 3 fixed offsets,
   //        check it gets closer to the diver within 1 second each time ──
   var sharkChases = false;
   var sharkChaseStatic = sharkSprite && diverSprite && targetHasChaseTowardsSprite(sharkSprite, diverSprite);
   if (sharkSprite && diverSprite) {
-    progress('shark sprite', 5);
+    progress(config.labels.hazard, 5);
     var chaseCount = 0;
     var chasePositions = [[-150, 80], [160, -90], [-100, -100]];
     for (var ci = 0; ci < chasePositions.length; ci++) {
@@ -4377,7 +4442,7 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
     runtime.stopAll();
     await waitMs(100);
   }
-  progress('shark chasing the diver', 6);
+  progress(config.labels.chase, 6);
 
   // ── 8. Shark says something when touching diver ───────────────────────
   //        Teleport shark onto diver, listen for any SAY event from shark
@@ -4401,7 +4466,7 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
     runtime.stopAll();
     await waitMs(100);
   }
-  progress('shark message when touching the diver', 7);
+  progress(config.labels.message, 7);
 
   // ── 9. Score decreases when shark touches diver ───────────────────────
   //        Record score, teleport shark onto diver, check score went down
@@ -4430,22 +4495,28 @@ async function assessYear7Ap2Scratch(vm, onProgress) {
     runtime.stopAll();
     await waitMs(100);
   }
-  progress('score decreasing when shark touches the diver', 8);
+  progress(config.labels.scoreMinus, 8);
 
+  var specCriteria = (ASSESSMENTS[config.assessmentId] && ASSESSMENTS[config.assessmentId].criteria) || (ASSESSMENTS['year7-ap2-scratch'] && ASSESSMENTS['year7-ap2-scratch'].criteria) || [];
+  function criterionFromSpec(id, ok, got) {
+    var item = specCriteria.find(function(c) { return c.id === id; }) || { id: id, text: id, marks: 1 };
+    return criterion(id, item.text, item.marks, ok, got);
+  }
   var criteria = [
-    criterion('backdrop',   'Underwater background',                            2, underwaterBackdrop),
-    criterion('diver',      'Diver sprite created',                             2, hasDiver),
-    criterion('movement',   'Diver moves in all four directions with keys',      4, movementScore >= 4, movementScore),
-    criterion('target',     'Chase sprite moves to a random place when caught',  2, !!targetRandom),
-    criterion('scorePlus',  'Score variable and +1 when target is caught',       3, !!plusScore, scoreVar ? 1 : 0),
-    criterion('shark',      'Shark sprite created',                              2, hasShark),
-    criterion('sharkChase', 'Shark chases the diver',                            2, sharkChases),
-    criterion('yum',        'Shark says something when touching the diver',      2, sharkSays),
-    criterion('scoreMinus', 'Score decreases when shark touches diver',          2, scoreDecreases)
+    criterionFromSpec('backdrop', underwaterBackdrop),
+    criterionFromSpec('diver', hasDiver),
+    criterionFromSpec('movement', movementScore >= 4, movementScore),
+    criterionFromSpec('target', !!targetRandom),
+    criterionFromSpec('scorePlus', !!plusScore, scoreVar ? 1 : 0),
+    criterionFromSpec('shark', hasShark),
+    criterionFromSpec('sharkChase', sharkChases),
+    criterionFromSpec('yum', sharkSays),
+    criterionFromSpec('scoreMinus', scoreDecreases)
   ];
   var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
   progress('final score', 9);
-  return { score: score, maxScore: 21, criteria: criteria };
+  var maxScore = (ASSESSMENTS[config.assessmentId] && ASSESSMENTS[config.assessmentId].maxScore) || 21;
+  return { score: score, maxScore: maxScore, criteria: criteria };
 }
 
 function collectAssessmentScratchInfo(targets) {
@@ -5065,8 +5136,19 @@ function feedbackListHtml(items) {
   }).join('') + '</ul>';
 }
 
-function assessmentPracticePrompt(id) {
-  var prompts = {
+function assessmentPracticePrompt(id, assessmentId) {
+  var practice = assessmentId === 'year7-ap2-practice-scratch';
+  var prompts = practice ? {
+    backdrop: 'Add or rename a backdrop so it clearly shows a space setting. Check that the backdrop name includes a clue such as space, galaxy, planet, star or moon.',
+    diver: 'Create or rename the main player sprite so it is clearly an astronaut, rocket, spaceship or space explorer.',
+    movement: 'Make the player move with all four arrow keys. Test each arrow key and check the player moves in the correct direction.',
+    target: 'Add a collectible sprite for the player to catch. When it is caught, make it move to a random position.',
+    scorePlus: 'Create a score or points variable. When the player catches the collectible, change the score by 1.',
+    shark: 'Create or rename an obstacle sprite so the project clearly has an alien, meteor, robot or similar hazard.',
+    sharkChase: 'Make the obstacle chase the player. Test that the distance between the obstacle and player gets smaller over time.',
+    yum: 'When the obstacle touches the player, make it say or think a short message.',
+    scoreMinus: 'When the obstacle touches the player, make the score or points go down by 1.'
+  } : {
     backdrop: 'Add or rename a backdrop so it clearly shows an underwater setting. Check that the backdrop name includes a clue such as underwater, ocean, sea, reef or coral.',
     diver: 'Create or rename the main player sprite so it is clearly a diver, swimmer or scuba character.',
     movement: 'Make the diver move with all four arrow keys. Test each arrow key and check the diver moves in the correct direction.',
@@ -5082,14 +5164,15 @@ function assessmentPracticePrompt(id) {
 
 function renderIndividualPractice(record) {
   var rubric = record.rubric || [];
+  var practiceAssessmentId = record.assessmentId || assessment.assessmentId;
   var weak = rubric.filter(function(c) { return (c.awarded || 0) < (c.marks || 0); });
   var cards = weak.slice(0, 5).map(function(c) {
-    return { id: c.id, text: c.text, prompt: assessmentPracticePrompt(c.id), choice: false };
+    return { id: c.id, text: c.text, prompt: assessmentPracticePrompt(c.id, practiceAssessmentId), choice: false };
   });
-  var allCriteria = rubric.length ? rubric : ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].criteria) || []);
+  var allCriteria = rubric.length ? rubric : ((ASSESSMENTS[practiceAssessmentId] && ASSESSMENTS[practiceAssessmentId].criteria) || []);
   while (cards.length < 3) {
     var fallback = allCriteria[cards.length % Math.max(1, allCriteria.length)] || { id: 'choice', text: 'Choose a focus' };
-    cards.push({ id: fallback.id, text: fallback.text, prompt: assessmentPracticePrompt(fallback.id), choice: true });
+    cards.push({ id: fallback.id, text: fallback.text, prompt: assessmentPracticePrompt(fallback.id, practiceAssessmentId), choice: true });
   }
   var html = '<div class="border border-blue-200 bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-900 mb-2">Your additional practice</h4>' +
     '<p class="text-sm text-blue-800 mb-3">Complete at least three practice tasks. They are based on your AP result. If you had fewer than three areas to improve, choose the extra focus areas yourself. Use the Scratch workspace below, then check your practice project locally.</p><div class="space-y-3">';
@@ -5123,7 +5206,8 @@ function wireAssessmentPracticeChoices(box) {
   box.querySelectorAll('.ap-practice-choice').forEach(function(sel) {
     sel.onchange = function() {
       var target = document.getElementById(sel.dataset.target);
-      if (target) target.textContent = assessmentPracticePrompt(sel.value);
+      var record = box.__apPracticeRecord || {};
+      if (target) target.textContent = assessmentPracticePrompt(sel.value, record.assessmentId || assessment.assessmentId);
     };
   });
 }
@@ -5155,7 +5239,7 @@ function setupAssessmentPracticeWorkspace(box, record) {
     button.textContent = 'Checking...';
     try {
       var vm = await waitForFrameScratchVm(frame);
-      var result = await assessYear7Ap2Scratch(vm);
+      var result = await validateAssessmentScratchVm(vm, (record && record.assessmentId) || assessment.assessmentId);
       var ids = selectedAssessmentPracticeIds(box);
       var subset = result.criteria.filter(function(c) { return ids.indexOf(c.id) !== -1; });
       feedback.innerHTML = '<div class="font-semibold text-gray-800 mb-2">Practice check: ' +
@@ -5163,7 +5247,7 @@ function setupAssessmentPracticeWorkspace(box, record) {
         subset.reduce(function(t, c) { return t + (c.marks || 0); }, 0) + '</div>' +
         subset.map(function(c) {
           var ok = (c.awarded || 0) >= (c.marks || 0);
-          return '<div class="border-b border-gray-100 py-2"><div class="flex justify-between gap-3"><span>' + escapeHtml(c.text) + '</span><strong class="' + (ok ? 'text-green-700' : 'text-red-700') + '">' + c.awarded + '/' + c.marks + '</strong></div><p class="text-xs text-gray-500 mt-1">' + escapeHtml(assessmentPracticePrompt(c.id)) + '</p></div>';
+          return '<div class="border-b border-gray-100 py-2"><div class="flex justify-between gap-3"><span>' + escapeHtml(c.text) + '</span><strong class="' + (ok ? 'text-green-700' : 'text-red-700') + '">' + c.awarded + '/' + c.marks + '</strong></div><p class="text-xs text-gray-500 mt-1">' + escapeHtml(assessmentPracticePrompt(c.id, (record && record.assessmentId) || assessment.assessmentId)) + '</p></div>';
         }).join('');
     } catch(e) {
       feedback.innerHTML = '<p class="text-red-600">Could not check the practice project: ' + escapeHtml(e.message) + '</p>';
