@@ -360,7 +360,7 @@
       <span id="user-label" class="text-sm text-gray-500"></span>
       <button id="btn-login"  class="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">Login</button>
       <button id="btn-logout" class="hidden text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-50">Logout</button>
-      <button id="btn-join-quiz" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">&#x1F3AE; Join Quiz</button>
+      <button id="btn-join-quiz" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">&#x1F3AE; Join Quiz/AP</button>
       <button id="btn-report" class="jhncc-secondary hidden text-sm px-3 py-1 rounded border">Export Report</button>
       <button id="btn-admin"  class="jhncc-primary hidden text-sm px-3 py-1 rounded">Admin</button>
     </div>
@@ -747,11 +747,47 @@
     <select id="ap-assessment-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none">
       <option value="year7-ap2-scratch">Year 7 AP2 Scratch - Underwater Racing Game</option>
     </select>
-    <div class="border border-red-200 bg-red-50 rounded-lg p-3 mb-4">
-      <p class="text-sm font-semibold text-red-800">Force AP for this class</p>
-      <p class="text-xs text-red-700">Students in this class will be taken straight into the assessment, including after refreshing. Other classes are not affected.</p>
-    </div>
+    <label class="flex items-start gap-2 border border-red-200 bg-red-50 rounded-lg p-3 mb-4 cursor-pointer">
+      <input id="ap-force-class" type="checkbox" class="mt-0.5 accent-[rgb(176,28,35)]" />
+      <span>
+        <span class="block text-sm font-semibold text-red-800">Force AP for this class</span>
+        <span class="block text-xs text-red-700">Optional. If unchecked, students can join using the 4-digit code without being forced in.</span>
+      </span>
+    </label>
     <button id="btn-ap-start-host" class="jhncc-primary w-full py-2 rounded font-medium">Create AP Session</button>
+  </div>
+</div>
+
+<!-- ASSESSMENT POINT RESULTS MODAL (admin) -->
+<div id="modal-ap-results" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-5xl max-h-[88vh] flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 class="text-lg font-semibold">Assessment Point Results</h2>
+        <p id="ap-results-class" class="text-xs text-gray-500 mt-0.5"></p>
+      </div>
+      <button id="btn-ap-results-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">View</label>
+        <select id="ap-results-mode" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none">
+          <option value="class">Whole class</option>
+          <option value="student">One student</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Assessment</label>
+        <select id="ap-results-assessment" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Student</label>
+        <select id="ap-results-student" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+      </div>
+      <button id="btn-ap-results-download" class="jhncc-primary px-4 py-1.5 rounded text-sm">Download CSV</button>
+      <button id="btn-ap-results-release" class="px-4 py-1.5 rounded border border-green-500 text-green-700 bg-green-50 text-sm font-medium">Release Feedback</button>
+    </div>
+    <div id="ap-results-content" class="overflow-y-auto flex-1 text-sm text-gray-700"></div>
   </div>
 </div>
 
@@ -768,6 +804,7 @@
     </div>
     <div class="flex gap-2">
       <button id="btn-ap-download" class="jhncc-secondary px-3 py-1 rounded border text-sm">Download Results</button>
+      <button id="btn-ap-release-feedback" class="px-3 py-1 rounded border border-green-400 text-green-300 text-sm hover:bg-green-900/30">Release Feedback</button>
       <button id="btn-ap-host-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">End AP</button>
     </div>
   </div>
@@ -808,14 +845,15 @@
       <h2 class="text-2xl font-bold mb-2">Assessment Submitted</h2>
       <p id="aps-final-score" class="text-lg font-semibold text-yellow-700 mb-4"></p>
       <div id="aps-final-rubric" class="space-y-2"></div>
+      <div id="aps-class-feedback" class="hidden mt-6 border-t border-gray-200 pt-5"></div>
     </div>
   </div>
 </div>
 
 <div id="modal-join-quiz" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-80">
-    <h2 class="text-lg font-semibold mb-4">&#x1F3AE; Join a Quiz</h2>
-    <label class="block text-sm text-gray-600 mb-1">4-digit lobby code</label>
+    <h2 class="text-lg font-semibold mb-4">&#x1F3AE; Join a Quiz or AP</h2>
+    <label class="block text-sm text-gray-600 mb-1">4-digit join code</label>
     <input id="input-lobby-code" type="text" maxlength="4"
       class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-3xl font-mono tracking-widest text-center mb-3 focus:outline-none uppercase"
       placeholder="0000" />
@@ -2591,7 +2629,7 @@ async function loadClassDashboard(className) {
     actions.classList.remove('hidden');
     document.getElementById('btn-admin-host-quiz').onclick    = function() { openQuizSetup(className); };
     document.getElementById('btn-admin-host-ap').onclick      = function() { openAssessmentSetup(className); };
-    document.getElementById('btn-admin-export-ap').onclick    = function() { exportAssessmentResults(className, 'year7-ap2-scratch'); };
+    document.getElementById('btn-admin-export-ap').onclick    = function() { openAssessmentResults(className); };
     document.getElementById('btn-admin-export-detail').onclick = function() { exportDetailedReport(className); };
     document.getElementById('btn-admin-export-codes').onclick  = function() { exportCodesSheet(className); };
     document.getElementById('btn-admin-delete-class').onclick  = async function() {
@@ -2747,12 +2785,43 @@ function renderAdminDashboard(className, codes, progMap, forced) {
     h += '<td class="border border-gray-100 px-2 py-1.5 font-mono text-gray-500">' + r.code + '</td>';
     h += '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.done || '—') + '</td>';
     h += '<td class="border border-gray-100 px-2 py-1.5">' + (r.ms ? fmtMs(r.ms) : '—') + '</td>';
-    h += '<td class="border border-gray-100 px-1 py-1"><button class="btn-rm-code text-xs text-red-400 hover:text-red-600" data-class="' + className + '" data-code="' + r.code + '">Remove</button></td>';
+    h += '<td class="border border-gray-100 px-1 py-1 whitespace-nowrap">' +
+      '<button class="btn-move-code text-xs text-blue-500 hover:text-blue-700 mr-2" data-class="' + className + '" data-code="' + r.code + '">Move</button>' +
+      '<button class="btn-rm-code text-xs text-red-400 hover:text-red-600" data-class="' + className + '" data-code="' + r.code + '">Remove</button>' +
+      '</td>';
     h += '</tr>';
   });
   h += '</tbody></table></div></div>';
 
   dash.innerHTML = h;
+
+  // Wire move-code buttons
+  dash.querySelectorAll('.btn-move-code').forEach(function(btn) {
+    btn.onclick = async function() {
+      var code = btn.dataset.code;
+      var sourceClass = btn.dataset.class;
+      var currentName = studentName(code) || code;
+      var targetClass = prompt('Move ' + currentName + ' to which class?');
+      if (targetClass === null) return;
+      targetClass = normaliseClassName(targetClass);
+      if (!targetClass) { alert('Please enter a class name.'); return; }
+      if (targetClass === sourceClass) { alert(currentName + ' is already in ' + sourceClass + '.'); return; }
+      if (!isSafeFirebaseKey(targetClass)) {
+        alert('Class names cannot contain . # $ / [ or ].');
+        return;
+      }
+      if (!confirm('Move ' + currentName + ' from ' + sourceClass + ' to ' + targetClass + '? Their progress will stay with their code.')) return;
+      btn.disabled = true; btn.textContent = 'Moving...';
+      try {
+        await moveStudentToClass(code, sourceClass, targetClass);
+        await loadAdminClassList();
+        await loadClassDashboard(sourceClass);
+      } catch(e) {
+        alert('Move failed: ' + e.message);
+        btn.disabled = false; btn.textContent = 'Move';
+      }
+    };
+  });
 
   // Wire remove-code buttons
   dash.querySelectorAll('.btn-rm-code').forEach(function(btn) {
@@ -2884,6 +2953,14 @@ function studentName(code) {
   return null;
 }
 
+function normaliseClassName(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function isSafeFirebaseKey(value) {
+  return !!value && !(/[.#$/\[\]]/.test(value));
+}
+
 async function findClassForCode(code) {
   if (!code || !state.db) return null;
   var classesSnap = await state.db.ref('classes').get();
@@ -2899,6 +2976,33 @@ async function findClassForCode(code) {
     });
   });
   return foundClass;
+}
+
+async function moveStudentToClass(code, sourceClass, targetClass) {
+  if (!code || !sourceClass || !targetClass) throw new Error('Missing code or class name.');
+  sourceClass = normaliseClassName(sourceClass);
+  targetClass = normaliseClassName(targetClass);
+  if (!isSafeFirebaseKey(sourceClass) || !isSafeFirebaseKey(targetClass)) {
+    throw new Error('Class names cannot contain . # $ / [ or ].');
+  }
+
+  var sourceRef = state.db.ref('classes/' + sourceClass + '/codes/' + code);
+  var targetRef = state.db.ref('classes/' + targetClass + '/codes/' + code);
+  var snaps = await Promise.all([sourceRef.get(), targetRef.get()]);
+  var sourceSnap = snaps[0];
+  var targetSnap = snaps[1];
+  if (!sourceSnap.exists()) throw new Error('That student code is no longer in ' + sourceClass + '.');
+  if (targetSnap.exists()) throw new Error('That student code is already in ' + targetClass + '.');
+
+  var codeData = sourceSnap.val() || {};
+  if (typeof codeData !== 'object') codeData = { value: codeData };
+  codeData.movedAt = Date.now();
+  codeData.movedFrom = sourceClass;
+
+  var updates = {};
+  updates['classes/' + sourceClass + '/codes/' + code] = null;
+  updates['classes/' + targetClass + '/codes/' + code] = codeData;
+  await state.db.ref().update(updates);
 }
 
 function stepStatus(prog, lid, sid) {
@@ -3385,6 +3489,8 @@ var assessment = {
   saveTimer: null,
   hostListener: null,
   studentListener: null,
+  feedbackRef: null,
+  feedbackListener: null,
   clientId: (function(){
     try {
       var existing = sessionStorage.getItem('pylearn_ap_client_id');
@@ -3419,6 +3525,7 @@ var ASSESSMENTS = {
 function openAssessmentSetup(className) {
   assessment.className = className;
   document.getElementById('ap-setup-class').textContent = className;
+  document.getElementById('ap-force-class').checked = false;
   document.getElementById('modal-ap-setup').classList.remove('hidden');
   document.getElementById('modal-admin').classList.add('hidden');
 }
@@ -3441,35 +3548,40 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
   var id = document.getElementById('ap-assessment-select').value;
   var spec = ASSESSMENTS[id];
   if (!spec || !assessment.className) return;
+  var forceClass = document.getElementById('ap-force-class').checked;
   var code = await genAssessmentCode();
   var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
   assessment.assessmentId = id;
   assessment.lobbyCode = code;
   assessment.sessionRef = state.db.ref('quizSessions/' + code);
+  assessment.forced = !!forceClass;
   await assessment.sessionRef.set({
     hostUid: firebaseUid || null,
     state: 'lobby',
     questionIdx: -1,
     lessonId: 'AP:' + id,
+    assessmentId: id,
     className: assessment.className,
-    forced: true,
+    forced: !!forceClass,
     questions: []
   });
   assessment.sessionRef.onDisconnect().update({
     state: 'finished',
     endedAt: firebase.database.ServerValue.TIMESTAMP
   }).catch(function(){});
-  await state.db.ref('classes/' + assessment.className + '/forcedQuiz').set({
-    active: true,
-    lobbyCode: code,
-    hostUid: firebaseUid || null,
-    lessonId: 'AP:' + id,
-    startedAt: Date.now()
-  });
-  state.db.ref('classes/' + assessment.className + '/forcedQuiz').onDisconnect().update({
-    active: false,
-    endedAt: firebase.database.ServerValue.TIMESTAMP
-  }).catch(function(){});
+  if (forceClass) {
+    await state.db.ref('classes/' + assessment.className + '/forcedQuiz').set({
+      active: true,
+      lobbyCode: code,
+      hostUid: firebaseUid || null,
+      lessonId: 'AP:' + id,
+      startedAt: Date.now()
+    });
+    state.db.ref('classes/' + assessment.className + '/forcedQuiz').onDisconnect().update({
+      active: false,
+      endedAt: firebase.database.ServerValue.TIMESTAMP
+    }).catch(function(){});
+  }
   localStorage.setItem('pylearn_host_ap', code);
   document.getElementById('modal-ap-setup').classList.add('hidden');
   showAssessmentHostScreen();
@@ -3659,6 +3771,15 @@ document.getElementById('btn-ap-download').onclick = function() {
   exportAssessmentResults(assessment.className, assessment.assessmentId, assessment.lobbyCode);
 };
 
+document.getElementById('btn-ap-release-feedback').onclick = async function() {
+  try {
+    await releaseAssessmentFeedbackFromCurrentSession();
+    alert('Whole class AP feedback has been released to students.');
+  } catch(e) {
+    alert('Could not release feedback: ' + e.message);
+  }
+};
+
 async function endAssessmentHostSession() {
   localStorage.removeItem('pylearn_host_ap');
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
@@ -3712,6 +3833,7 @@ async function joinAssessmentByCode(code, opts) {
   assessment.lobbyCode = code;
   assessment.sessionRef = sessionRef;
   assessment.responseRef = sessionRef.child('answers/0/' + state.uid);
+  assessment.className = snap.child('className').val() || state.className || null;
   assessment.forced = !!opts.forced || snap.child('forced').val() === true;
   if (completedSnap.exists()) {
     showAssessmentCompleted(completedSnap.val());
@@ -3722,7 +3844,7 @@ async function joinAssessmentByCode(code, opts) {
     activeClientId: assessment.clientId,
     lastSeenAt: Date.now(),
     completed: false,
-    className: state.className || snap.child('className').val() || null
+    className: assessment.className
   });
   showAssessmentStudentScreen(snap.val() || {});
 }
@@ -3848,7 +3970,7 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     maxScore: result.maxScore,
     rubric: result.criteria,
     lobbyCode: assessment.lobbyCode,
-    className: state.className || null
+    className: assessment.className || state.className || null
   });
   showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
 };
@@ -4109,6 +4231,7 @@ function showAssessmentCompleted(record) {
   document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
   document.getElementById('aps-final-score').textContent = 'Score: ' + (record.score || 0) + ' / ' + (record.maxScore || 21);
   renderAssessmentFeedback({ score: record.score || 0, maxScore: record.maxScore || 21, criteria: record.rubric || [] }, true);
+  watchReleasedAssessmentFeedback(record);
 }
 
 document.getElementById('btn-ap-student-exit').onclick = function() {
@@ -4124,10 +4247,438 @@ function exitAssessmentStudent(opts) {
   assessment.projectChangeTimer = null;
   assessment.projectChangeListener = null;
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
+  if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
+  assessment.feedbackRef = null;
+  assessment.feedbackListener = null;
   document.getElementById('ap-student-screen').classList.add('hidden');
   assessment.sessionRef = null;
   assessment.responseRef = null;
   assessment.forced = false;
+}
+
+var apResultsState = { className: null, rows: [], students: [], progressRows: {} };
+
+document.getElementById('btn-ap-results-close').onclick = function() {
+  document.getElementById('modal-ap-results').classList.add('hidden');
+  document.getElementById('modal-admin').classList.remove('hidden');
+};
+
+document.getElementById('ap-results-mode').onchange = renderAssessmentResultsPanel;
+document.getElementById('ap-results-assessment').onchange = renderAssessmentResultsPanel;
+document.getElementById('ap-results-student').onchange = renderAssessmentResultsPanel;
+document.getElementById('btn-ap-results-download').onclick = function() {
+  downloadAssessmentRows(currentAssessmentResultRows(), apResultsState.className);
+};
+document.getElementById('btn-ap-results-release').onclick = async function() {
+  try {
+    var assessmentId = document.getElementById('ap-results-assessment').value || 'all';
+    if (assessmentId === 'all') {
+      alert('Choose a specific assessment before releasing feedback.');
+      return;
+    }
+    await releaseAssessmentFeedbackForClass(apResultsState.className, assessmentId, currentAssessmentResultRows());
+    alert('Whole class AP feedback has been released to students.');
+  } catch(e) {
+    alert('Could not release feedback: ' + e.message);
+  }
+};
+
+async function openAssessmentResults(className) {
+  apResultsState.className = className;
+  document.getElementById('ap-results-class').textContent = 'Class: ' + className;
+  document.getElementById('ap-results-content').innerHTML = '<p class="text-gray-400 text-center py-8">Loading AP results...</p>';
+  document.getElementById('modal-admin').classList.add('hidden');
+  document.getElementById('modal-ap-results').classList.remove('hidden');
+
+  try {
+    var results = await Promise.all([
+      state.db.ref('progress').get(),
+      state.db.ref('classes/' + className + '/codes').get()
+    ]);
+    apResultsState.progressRows = results[0].exists() ? results[0].val() : {};
+    var classCodes = results[1].exists() ? Object.keys(results[1].val() || {}) : [];
+    var codeSet = {};
+    classCodes.forEach(function(code) { codeSet[code] = true; });
+
+    Object.keys(apResultsState.progressRows).forEach(function(code) {
+      var assessments = apResultsState.progressRows[code] && apResultsState.progressRows[code].assessments;
+      if (!assessments) return;
+      Object.keys(assessments).forEach(function(aid) {
+        var rec = assessments[aid] || {};
+        if (rec.className === className) codeSet[code] = true;
+      });
+    });
+
+    apResultsState.students = Object.keys(codeSet).sort(function(a, b) {
+      return (studentName(a) || a).localeCompare(studentName(b) || b);
+    });
+
+    populateAssessmentResultsFilters();
+    renderAssessmentResultsPanel();
+  } catch(e) {
+    document.getElementById('ap-results-content').innerHTML =
+      '<p class="text-red-500 text-center py-8">Could not load AP results: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+function populateAssessmentResultsFilters() {
+  var assessmentEl = document.getElementById('ap-results-assessment');
+  assessmentEl.innerHTML = '<option value="all">All assessments</option>';
+  Object.keys(ASSESSMENTS).forEach(function(id) {
+    var opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = ASSESSMENTS[id].title || id;
+    assessmentEl.appendChild(opt);
+  });
+  if (Object.keys(ASSESSMENTS).length === 1) assessmentEl.value = Object.keys(ASSESSMENTS)[0];
+
+  var studentEl = document.getElementById('ap-results-student');
+  studentEl.innerHTML = '';
+  apResultsState.students.forEach(function(code) {
+    var opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = (studentName(code) || 'Unnamed student') + ' - ' + code;
+    studentEl.appendChild(opt);
+  });
+}
+
+function assessmentRowsForClass(className, assessmentId) {
+  var rows = [];
+  apResultsState.students.forEach(function(code) {
+    var assessments = apResultsState.progressRows[code] && apResultsState.progressRows[code].assessments;
+    if (!assessments) {
+      if (assessmentId !== 'all') rows.push(emptyAssessmentRow(code, assessmentId));
+      return;
+    }
+    if (assessmentId === 'all') {
+      Object.keys(assessments).forEach(function(aid) {
+        var rec = assessments[aid] || {};
+        if (rec.className === className || apResultsState.students.indexOf(code) !== -1) rows.push(assessmentRow(code, aid, rec));
+      });
+    } else {
+      rows.push(assessmentRow(code, assessmentId, assessments[assessmentId]));
+    }
+  });
+  return rows;
+}
+
+function emptyAssessmentRow(code, assessmentId) {
+  return assessmentRow(code, assessmentId, null);
+}
+
+function assessmentRow(code, assessmentId, rec) {
+  rec = rec || null;
+  var maxScore = rec ? (rec.maxScore || (ASSESSMENTS[assessmentId] && ASSESSMENTS[assessmentId].maxScore) || 21) : ((ASSESSMENTS[assessmentId] && ASSESSMENTS[assessmentId].maxScore) || 21);
+  return {
+    code: code,
+    name: studentName(code) || '',
+    assessmentId: assessmentId,
+    assessmentTitle: (ASSESSMENTS[assessmentId] && ASSESSMENTS[assessmentId].title) || assessmentId,
+    score: rec ? (rec.score || 0) : 0,
+    maxScore: maxScore,
+    completedAt: rec && rec.completedAt,
+    lobbyCode: rec && rec.lobbyCode,
+    className: rec && rec.className,
+    rubric: rec && rec.rubric ? rec.rubric : [],
+    completed: !!(rec && rec.completedAt)
+  };
+}
+
+function currentAssessmentResultRows() {
+  var mode = document.getElementById('ap-results-mode').value;
+  var assessmentId = document.getElementById('ap-results-assessment').value || 'all';
+  var rows = assessmentRowsForClass(apResultsState.className, assessmentId);
+  if (mode === 'student') {
+    var code = document.getElementById('ap-results-student').value;
+    rows = rows.filter(function(r) { return r.code === code; });
+  }
+  return rows;
+}
+
+function renderAssessmentResultsPanel() {
+  var content = document.getElementById('ap-results-content');
+  var mode = document.getElementById('ap-results-mode').value;
+  var studentEl = document.getElementById('ap-results-student');
+  studentEl.disabled = mode !== 'student';
+  if (!apResultsState.students.length) {
+    content.innerHTML = '<p class="text-gray-400 text-center py-8">No students or AP results found for this class.</p>';
+    return;
+  }
+  var rows = currentAssessmentResultRows();
+  if (!rows.length) {
+    content.innerHTML = '<p class="text-gray-400 text-center py-8">No AP results match this filter.</p>';
+    return;
+  }
+  if (mode === 'student') renderStudentAssessmentResults(content, rows);
+  else renderClassAssessmentResults(content, rows);
+}
+
+function renderClassAssessmentResults(content, rows) {
+  var sorted = rows.slice().sort(function(a, b) {
+    if (a.completed !== b.completed) return a.completed ? -1 : 1;
+    return b.score - a.score;
+  });
+  var grades = definitePurposeGrades(sorted.map(function(r) { return r.score; }));
+  var completed = sorted.filter(function(r) { return r.completed; }).length;
+  var avg = sorted.length ? Math.round(sorted.reduce(function(t, r) { return t + r.score; }, 0) / sorted.length) : 0;
+  var html = '<div class="grid grid-cols-3 gap-3 mb-4">' +
+    '<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-blue-700">' + sorted.length + '</div><div class="text-xs text-blue-500">Students/records</div></div>' +
+    '<div class="bg-green-50 border border-green-100 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-green-700">' + completed + '</div><div class="text-xs text-green-500">Completed</div></div>' +
+    '<div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-purple-700">' + avg + '</div><div class="text-xs text-purple-500">Average score</div></div>' +
+    '</div>';
+  html += '<div class="border border-gray-200 rounded-lg overflow-hidden"><table class="w-full text-xs"><thead><tr class="bg-gray-50 text-left text-gray-500">' +
+    '<th class="border border-gray-200 px-2 py-1.5">Name</th><th class="border border-gray-200 px-2 py-1.5">Code</th><th class="border border-gray-200 px-2 py-1.5">Assessment</th><th class="border border-gray-200 px-2 py-1.5 text-center">Score</th><th class="border border-gray-200 px-2 py-1.5 text-center">Percent</th><th class="border border-gray-200 px-2 py-1.5 text-center">DP</th><th class="border border-gray-200 px-2 py-1.5">Completed</th></tr></thead><tbody>';
+  sorted.forEach(function(r, i) {
+    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
+    html += '<tr class="border-b border-gray-100' + (!r.completed ? ' opacity-50' : '') + '">' +
+      '<td class="border border-gray-100 px-2 py-1.5 font-medium">' + escapeHtml(r.name || '-') + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 font-mono text-gray-500">' + escapeHtml(r.code) + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5">' + escapeHtml(r.assessmentTitle) + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center font-semibold">' + r.score + ' / ' + r.maxScore + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + pct + '%</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + grades[i] + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : 'Not completed') + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table></div>';
+  content.innerHTML = html;
+}
+
+function renderStudentAssessmentResults(content, rows) {
+  var code = document.getElementById('ap-results-student').value;
+  var name = studentName(code) || code;
+  var completedRows = rows.filter(function(r) { return r.completed; });
+  var html = '<div class="mb-4"><h3 class="text-lg font-semibold text-gray-800">' + escapeHtml(name) + '</h3><p class="text-xs text-gray-500 font-mono">' + escapeHtml(code) + '</p></div>';
+  if (!completedRows.length) {
+    html += '<p class="text-gray-400 py-6">No completed AP results for this student with the current filter.</p>';
+  }
+  completedRows.sort(function(a, b) { return (b.completedAt || 0) - (a.completedAt || 0); }).forEach(function(r) {
+    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
+    html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
+      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div></div>' +
+      '<div class="p-3 space-y-1">';
+    (r.rubric || []).forEach(function(c) {
+      html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
+    });
+    html += '</div></div>';
+  });
+  content.innerHTML = html;
+}
+
+function downloadAssessmentRows(rows, className) {
+  if (!rows.length) { alert('No AP results to download.'); return; }
+  var sorted = rows.slice().sort(function(a, b) { return b.score - a.score; });
+  var grades = definitePurposeGrades(sorted.map(function(r) { return r.score; }));
+  var csv = 'Name,Code,Assessment,Score,Max Score,Percent,Definite Purpose,Completed At,Lobby Code,Class At Completion\n';
+  sorted.forEach(function(r, i) {
+    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
+    csv += [r.name, r.code, r.assessmentTitle, r.score, r.maxScore, pct + '%', grades[i], r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '', r.lobbyCode || '', r.className || ''].map(csvCell).join(',') + '\n';
+  });
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (className || 'AP') + '-AP-results.csv';
+  a.click();
+}
+
+async function releaseAssessmentFeedbackFromCurrentSession() {
+  if (!assessment.sessionRef || !assessment.className || !assessment.assessmentId) {
+    throw new Error('No active AP session to release feedback for.');
+  }
+  var snap = await assessment.sessionRef.child('answers/0').get();
+  var rows = [];
+  if (snap.exists()) {
+    snap.forEach(function(child) {
+      var rec = child.val() || {};
+      if (!rec.completed) return;
+      rows.push({
+        code: child.key,
+        name: studentName(child.key) || '',
+        assessmentId: assessment.assessmentId,
+        assessmentTitle: (ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].title) || assessment.assessmentId,
+        score: rec.score || 0,
+        maxScore: rec.maxScore || (ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21,
+        completedAt: rec.completedAt,
+        lobbyCode: assessment.lobbyCode,
+        className: assessment.className,
+        rubric: rec.rubric || [],
+        completed: true
+      });
+    });
+  }
+  await releaseAssessmentFeedbackForClass(assessment.className, assessment.assessmentId, rows);
+}
+
+async function releaseAssessmentFeedbackForClass(className, assessmentId, rows) {
+  var completedRows = (rows || []).filter(function(r) { return r.completed && r.rubric && r.rubric.length; });
+  if (!className) throw new Error('No class selected.');
+  if (!assessmentId || assessmentId === 'all') throw new Error('Choose a specific assessment.');
+  if (!completedRows.length) throw new Error('No completed AP submissions found yet.');
+  var feedback = buildAssessmentFeedbackSummary(className, assessmentId, completedRows);
+  await state.db.ref('classes/' + className + '/apFeedback/' + assessmentId).set(feedback);
+}
+
+function buildAssessmentFeedbackSummary(className, assessmentId, rows) {
+  var spec = ASSESSMENTS[assessmentId] || {};
+  var criteriaOrder = (spec.criteria || []).map(function(c) { return c.id; });
+  var byId = {};
+  rows.forEach(function(row) {
+    (row.rubric || []).forEach(function(c) {
+      var id = c.id || c.text;
+      if (!byId[id]) byId[id] = { id: id, text: c.text || id, marks: c.marks || 0, awarded: 0, possible: 0 };
+      byId[id].awarded += c.awarded || 0;
+      byId[id].possible += c.marks || 0;
+      byId[id].marks = c.marks || byId[id].marks;
+      byId[id].text = c.text || byId[id].text;
+    });
+  });
+  var criteriaStats = Object.keys(byId).map(function(id) {
+    var c = byId[id];
+    c.percent = c.possible ? Math.round(c.awarded / c.possible * 100) : 0;
+    return c;
+  }).sort(function(a, b) {
+    var ai = criteriaOrder.indexOf(a.id), bi = criteriaOrder.indexOf(b.id);
+    if (ai === -1) ai = 999;
+    if (bi === -1) bi = 999;
+    return ai - bi;
+  });
+  var sortedScores = rows.slice().sort(function(a, b) {
+    if (b.score !== a.score) return b.score - a.score;
+    return String(a.code).localeCompare(String(b.code));
+  });
+  return {
+    released: true,
+    releasedAt: Date.now(),
+    className: className,
+    assessmentId: assessmentId,
+    assessmentTitle: spec.title || assessmentId,
+    studentCount: rows.length,
+    topCodes: sortedScores.slice(0, 3).map(function(r) {
+      return { code: r.code, score: r.score || 0, maxScore: r.maxScore || spec.maxScore || 21 };
+    }),
+    best: criteriaStats.slice().sort(function(a, b) { return b.percent - a.percent; }).slice(0, 3),
+    struggle: criteriaStats.slice().sort(function(a, b) { return a.percent - b.percent; }).slice(0, 3),
+    criteriaStats: criteriaStats
+  };
+}
+
+function watchReleasedAssessmentFeedback(record) {
+  var box = document.getElementById('aps-class-feedback');
+  if (!box) return;
+  box.classList.add('hidden');
+  box.innerHTML = '';
+  if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
+  var className = record.className || assessment.className || state.className;
+  var assessmentId = assessment.assessmentId;
+  if (!className || !assessmentId) return;
+  assessment.feedbackRef = state.db.ref('classes/' + className + '/apFeedback/' + assessmentId);
+  assessment.feedbackListener = assessment.feedbackRef.on('value', function(snap) {
+    var feedback = snap.val();
+    if (!feedback || !feedback.released) {
+      box.classList.remove('hidden');
+      box.innerHTML = '<h3 class="text-lg font-bold mb-2">Whole class feedback</h3><p class="text-sm text-gray-500">Your teacher has not released whole class feedback yet. Check back later.</p>';
+      return;
+    }
+    renderReleasedAssessmentFeedback(box, feedback, record);
+  });
+}
+
+function renderReleasedAssessmentFeedback(box, feedback, record) {
+  var stats = feedback.criteriaStats || [];
+  var topCodes = feedback.topCodes || [];
+  var html = '<h3 class="text-lg font-bold mb-2">Whole class feedback</h3>' +
+    '<p class="text-sm text-gray-600 mb-4">' + escapeHtml(feedback.assessmentTitle || 'Assessment Point') + ' · released ' + new Date(feedback.releasedAt || Date.now()).toLocaleString('en-GB') + '</p>';
+
+  html += '<div class="grid md:grid-cols-2 gap-4 mb-5">';
+  html += '<div class="border border-gray-200 rounded-lg p-3"><h4 class="font-semibold text-gray-800 mb-3">Class performance by question</h4><div class="space-y-3">';
+  stats.forEach(function(c) {
+    var colour = c.percent >= 70 ? 'bg-green-500' : c.percent >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+    html += '<div><div class="flex justify-between gap-3 text-xs mb-1"><span class="font-medium text-gray-700">' + escapeHtml(c.text) + '</span><span class="text-gray-500">' + c.percent + '%</span></div>' +
+      '<div class="h-3 rounded-full bg-gray-100 overflow-hidden"><div class="' + colour + ' h-3" style="width:' + Math.max(2, c.percent) + '%"></div></div></div>';
+  });
+  html += '</div></div>';
+  html += '<div class="space-y-4">';
+  html += '<div class="border border-green-200 bg-green-50 rounded-lg p-3"><h4 class="font-semibold text-green-800 mb-2">Best class areas</h4>' + feedbackListHtml(feedback.best || []) + '</div>';
+  html += '<div class="border border-red-200 bg-red-50 rounded-lg p-3"><h4 class="font-semibold text-red-800 mb-2">Most difficult areas</h4>' + feedbackListHtml(feedback.struggle || []) + '</div>';
+  html += '<div class="border border-yellow-200 bg-yellow-50 rounded-lg p-3"><h4 class="font-semibold text-yellow-800 mb-2">Top scores</h4>';
+  if (topCodes.length) {
+    html += '<div class="flex flex-wrap gap-2">';
+    topCodes.forEach(function(t, i) {
+      html += '<span class="rounded-full bg-white border border-yellow-300 px-3 py-1 text-sm font-mono text-yellow-800">' + (i + 1) + '. ' + escapeHtml(t.code) + ' · ' + t.score + '/' + t.maxScore + '</span>';
+    });
+    html += '</div>';
+  } else {
+    html += '<p class="text-sm text-yellow-700">No submitted scores yet.</p>';
+  }
+  html += '</div></div></div>';
+
+  html += renderIndividualPractice(record);
+  box.innerHTML = html;
+  box.classList.remove('hidden');
+  wireAssessmentPracticeChoices(box);
+}
+
+function feedbackListHtml(items) {
+  if (!items.length) return '<p class="text-sm text-gray-500">Not enough data yet.</p>';
+  return '<ul class="list-disc pl-5 text-sm space-y-1">' + items.map(function(c) {
+    return '<li>' + escapeHtml(c.text) + ' <span class="text-gray-500">(' + c.percent + '%)</span></li>';
+  }).join('') + '</ul>';
+}
+
+function assessmentPracticePrompt(id) {
+  var prompts = {
+    backdrop: 'Add or rename a backdrop so it clearly shows an underwater setting. Check that the backdrop name includes a clue such as underwater, ocean, sea, reef or coral.',
+    diver: 'Create or rename the main player sprite so it is clearly a diver, swimmer or scuba character.',
+    movement: 'Make the diver move with all four arrow keys. Test each arrow key and check the diver moves in the correct direction.',
+    target: 'Add a target sprite for the diver to catch. When it is caught, make it move to a random position.',
+    scorePlus: 'Create a score variable. When the diver catches the target, change the score by 1.',
+    shark: 'Create or rename a shark sprite so the project clearly has a shark obstacle.',
+    sharkChase: 'Make the shark chase the diver. Test that the distance between the shark and diver gets smaller over time.',
+    yum: 'When the shark touches the diver, make the shark say a short message such as Yum Yum.',
+    scoreMinus: 'When the shark touches the diver, make the score go down by 1.'
+  };
+  return prompts[id] || 'Choose one part of your AP project and improve it using the rubric.';
+}
+
+function renderIndividualPractice(record) {
+  var rubric = record.rubric || [];
+  var weak = rubric.filter(function(c) { return (c.awarded || 0) < (c.marks || 0); });
+  var cards = weak.slice(0, 5).map(function(c) {
+    return { id: c.id, text: c.text, prompt: assessmentPracticePrompt(c.id), choice: false };
+  });
+  var allCriteria = rubric.length ? rubric : ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].criteria) || []);
+  while (cards.length < 3) {
+    var fallback = allCriteria[cards.length % Math.max(1, allCriteria.length)] || { id: 'choice', text: 'Choose a focus' };
+    cards.push({ id: fallback.id, text: fallback.text, prompt: assessmentPracticePrompt(fallback.id), choice: true });
+  }
+  var html = '<div class="border border-blue-200 bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-900 mb-2">Your additional practice</h4>' +
+    '<p class="text-sm text-blue-800 mb-3">Complete at least three practice tasks. They are based on your AP result. If you had fewer than three areas to improve, choose the extra focus areas yourself.</p><div class="space-y-3">';
+  cards.forEach(function(card, i) {
+    html += '<div class="bg-white border border-blue-100 rounded-lg p-3">';
+    if (card.choice) {
+      html += '<label class="block text-xs text-gray-500 mb-1">Choose practice focus ' + (i + 1) + '</label><select class="ap-practice-choice jhncc-focus border border-gray-300 rounded px-2 py-1 text-sm mb-2" data-target="ap-practice-prompt-' + i + '">';
+      allCriteria.forEach(function(c) {
+        html += '<option value="' + escapeHtml(c.id) + '"' + (c.id === card.id ? ' selected' : '') + '>' + escapeHtml(c.text) + '</option>';
+      });
+      html += '</select>';
+    } else {
+      html += '<div class="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-1">Practice ' + (i + 1) + '</div>';
+      html += '<div class="font-semibold text-gray-800 mb-1">' + escapeHtml(card.text || '') + '</div>';
+    }
+    html += '<p id="ap-practice-prompt-' + i + '" class="text-sm text-gray-700 mb-2">' + escapeHtml(card.prompt) + '</p>' +
+      '<label class="inline-flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" class="accent-[rgb(176,28,35)]"> I have completed this practice task</label></div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function wireAssessmentPracticeChoices(box) {
+  box.querySelectorAll('.ap-practice-choice').forEach(function(sel) {
+    sel.onchange = function() {
+      var target = document.getElementById(sel.dataset.target);
+      if (target) target.textContent = assessmentPracticePrompt(sel.value);
+    };
+  });
 }
 
 async function exportAssessmentResults(className, assessmentId, lobbyCode) {
@@ -4137,7 +4688,7 @@ async function exportAssessmentResults(className, assessmentId, lobbyCode) {
   var rows = [];
   var scores = [];
   var progressRows = snap.exists() ? snap.val() : {};
-  var codes = classSnap.exists() ? Object.keys(classSnap.val() || {}) : Object.keys(completions);
+  var codes = classSnap.exists() ? Object.keys(classSnap.val() || {}) : [];
   codes.forEach(function(code) {
     var r = progressRows[code] && progressRows[code].assessments && progressRows[code].assessments[assessmentId];
     var score = r ? (r.score || 0) : 0;
