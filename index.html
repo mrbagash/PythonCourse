@@ -438,6 +438,13 @@
       <div id="admin-sessions-list"></div>
     </div>
 
+    <!-- Admin tabs -->
+    <div class="flex gap-2 border-b border-gray-200 mb-4">
+      <button id="admin-tab-classes" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]">Classes</button>
+      <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
+    </div>
+
+    <div id="admin-classes-tab" class="flex-1 min-h-0 flex flex-col">
     <!-- Top toolbar: generate / add / import -->
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
       <!-- Bulk generate -->
@@ -486,6 +493,7 @@
         <button id="btn-admin-host-quiz"    class="jhncc-secondary px-3 py-1 rounded border text-xs">&#x1F3AE; Host Quiz</button>
         <button id="btn-admin-host-ap"      class="px-3 py-1 rounded border border-yellow-400 text-yellow-700 text-xs hover:bg-yellow-50">Start AP</button>
         <button id="btn-admin-export-ap"    class="px-3 py-1 rounded border border-purple-300 text-purple-700 text-xs hover:bg-purple-50">AP Results</button>
+        <button id="btn-admin-wipe-sb3"     class="px-3 py-1 rounded border border-red-400 text-red-700 text-xs hover:bg-red-50">Wipe SB3 Data</button>
         <button id="btn-admin-export-detail" class="px-3 py-1 rounded border border-green-300 text-green-700 text-xs hover:bg-green-50">&#x2193; Report</button>
         <button id="btn-admin-export-codes"  class="jhncc-secondary px-3 py-1 rounded border text-xs">&#x2193; Codes</button>
         <button id="btn-admin-delete-class"  class="px-3 py-1 rounded border border-red-300 text-red-600 text-xs hover:bg-red-50">&#x1F5D1; Delete</button>
@@ -495,6 +503,23 @@
     <!-- Dashboard (fills remaining height) -->
     <div class="overflow-y-auto flex-1 mt-4" id="admin-dashboard">
       <p class="text-gray-400 text-sm text-center py-8">Select a class above to view the dashboard.</p>
+    </div>
+    </div>
+
+    <div id="admin-debug-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
+      <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+        <h3 class="font-semibold text-red-800 mb-2">Database cleanup</h3>
+        <p class="text-sm text-red-700 mb-3">This only targets legacy Scratch project blobs at <code>quizSessions/[code]/answers/0/[student]/projectData</code>. It uses shallow key reads so it does not download the SB3 data.</p>
+        <label class="block text-xs font-semibold text-red-800 mb-1">Manual quiz/AP codes</label>
+        <textarea id="debug-projectdata-codes" class="w-full min-h-[86px] rounded border border-red-200 bg-white p-2 text-sm text-gray-800 mb-2" placeholder="Optional: paste quiz/AP codes here, one per line or separated by commas. Use this when Firebase rules block scanning all quizSessions."></textarea>
+        <p class="text-xs text-red-700 mb-3">If codes are entered, cleanup only scans those sessions. Leave blank to try scanning all sessions automatically.</p>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-debug-scan-projectdata" class="px-3 py-1.5 rounded border border-red-300 text-red-700 bg-white text-sm hover:bg-red-50">Scan projectData fields</button>
+          <button id="btn-debug-delete-projectdata" class="px-3 py-1.5 rounded bg-red-700 text-white text-sm hover:bg-red-800">Delete all projectData fields</button>
+        </div>
+        <div id="debug-projectdata-status" class="mt-3 text-sm text-red-800"></div>
+        <pre id="debug-projectdata-log" class="mt-3 hidden max-h-80 overflow-y-auto bg-gray-950 text-gray-100 rounded p-3 text-xs whitespace-pre-wrap"></pre>
+      </div>
     </div>
   </div>
 </div>
@@ -2086,18 +2111,6 @@ async function loadStep(lessonIdx, stepIdx) {
     state.stepInjectedStyle = null;
   }
 
-  // ── Auto-save outgoing TurboWarp step ──────────────────────
-  var __twOut = document.getElementById('y7-scratch-frame');
-  if (__twOut && window.__pylearnCurrentLessonId && window.__pylearnCurrentStepId) {
-    try {
-      var __twVm = __twOut.contentWindow && __twOut.contentWindow.vm;
-      if (__twVm && typeof __twVm.saveProjectSb3 === 'function') {
-        var __twBuf = await scratchProjectExportToArrayBuffer(await __twVm.saveProjectSb3());
-        sessionStorage.setItem('y7proj_' + window.__pylearnCurrentLessonId + '::' + window.__pylearnCurrentStepId, arrayBufferToBase64(__twBuf));
-      }
-    } catch(__twE) {}
-  }
-
   // Content
   document.getElementById('step-content').innerHTML = step.content;
   if (window.scratchblocks) {
@@ -2531,9 +2544,25 @@ function updateAuthUI(first, last, isAdmin) {
 // ── Admin ─────────────────────────────────────────────────────
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
+  setAdminTab('classes');
   await loadAdminClassList();
   loadActiveSessions();
 }
+
+function setAdminTab(tab) {
+  var classesTab = tab === 'classes';
+  document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
+  document.getElementById('admin-debug-tab').classList.toggle('hidden', classesTab);
+  document.getElementById('admin-tab-classes').className = classesTab
+    ? 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]'
+    : 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
+  document.getElementById('admin-tab-debug').className = !classesTab
+    ? 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]'
+    : 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
+}
+
+document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
+document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 
 async function loadActiveSessions() {
   var panel = document.getElementById('admin-sessions-panel');
@@ -2541,32 +2570,54 @@ async function loadActiveSessions() {
   list.innerHTML = '<p class="text-gray-400 text-xs px-4 py-2">Checking…</p>';
   panel.classList.remove('hidden');
   try {
-    // Read classes tree — includes forcedQuiz sub-nodes and is permitted for admins
+    var byCode = {};
+    function addCandidate(code, className, lessonId) {
+      if (!code) return;
+      byCode[code] = Object.assign(byCode[code] || {}, {
+        code: code,
+        className: className || (byCode[code] && byCode[code].className) || '—',
+        lessonId: lessonId || (byCode[code] && byCode[code].lessonId) || ''
+      });
+    }
+
+    // Read classes tree — includes forcedQuiz sub-nodes and is permitted for admins.
     var classesSnap = await state.db.ref('classes').get();
-    if (!classesSnap.exists()) { panel.classList.add('hidden'); return; }
+    if (classesSnap.exists()) {
+      classesSnap.forEach(function(classSnap) {
+        var forced = classSnap.child('forcedQuiz').val();
+        if (forced && forced.active && forced.lobbyCode) {
+          addCandidate(forced.lobbyCode, classSnap.key, forced.lessonId || '');
+        }
+      });
+    }
 
-    var checks = [];
-    classesSnap.forEach(function(classSnap) {
-      var forced = classSnap.child('forcedQuiz').val();
-      if (forced && forced.active && forced.lobbyCode) {
-        checks.push({ className: classSnap.key, forced: forced });
+    // Also find active unforced sessions, so a teacher can rejoin after closing the tab.
+    try {
+      var sessionKeysSnap = await state.db.ref('quizSessions').get();
+      if (sessionKeysSnap.exists()) {
+        sessionKeysSnap.forEach(function(sSnap) {
+          var s = sSnap.val() || {};
+          if (s.state !== 'finished') addCandidate(sSnap.key, s.className || null, s.lessonId || '');
+        });
       }
-    });
+    } catch(e) {}
 
+    var checks = Object.keys(byCode).map(function(code) { return byCode[code]; });
     if (!checks.length) { panel.classList.add('hidden'); return; }
 
-    // Look up each active session individually (permitted by Firebase rules)
+    // Look up each active session individually.
     var sessions = await Promise.all(checks.map(async function(check) {
-      var isAP = String(check.forced.lessonId || '').indexOf('AP:') === 0;
-      var base = { code: check.forced.lobbyCode, isAP: isAP, className: check.className, state: 'lobby', playerCount: 0 };
+      var isAP = String(check.lessonId || '').indexOf('AP:') === 0;
+      var base = { code: check.code, isAP: isAP, className: check.className, state: 'lobby', playerCount: 0 };
       try {
-        var sSnap = await state.db.ref('quizSessions/' + check.forced.lobbyCode).get();
+        var sSnap = await state.db.ref('quizSessions/' + check.code).get();
         if (!sSnap.exists() || sSnap.child('state').val() === 'finished') return null;
         var s = sSnap.val() || {};
+        isAP = String(s.lessonId || check.lessonId || '').indexOf('AP:') === 0;
         var playerCount = 0;
         if (s.players) Object.keys(s.players).forEach(function(k) { if (!s.players[k].kicked) playerCount++; });
         var answerCount = (s.answers && s.answers[0]) ? Object.keys(s.answers[0]).length : 0;
-        return Object.assign(base, { state: s.state || 'lobby', playerCount: isAP ? answerCount : playerCount });
+        return Object.assign(base, { isAP: isAP, className: s.className || check.className || '—', state: s.state || 'lobby', playerCount: isAP ? answerCount : playerCount });
       } catch(e) {
         return base; // show from forcedQuiz data alone if session read is denied
       }
@@ -2598,7 +2649,7 @@ async function loadActiveSessions() {
       };
       row.querySelector('.btn-sess-end').onclick = async function() {
         if (!confirm('Force-end this ' + typeLabel + ' for class ' + sess.className + '? Students will be released.')) return;
-        await forceEndSession(sess.code, sess.className);
+        await forceEndSession(sess.code, sess.className, sess.isAP);
         loadActiveSessions();
         var sel = document.getElementById('admin-class-select');
         if (sel && sel.value) loadClassDashboard(sel.value);
@@ -2610,7 +2661,18 @@ async function loadActiveSessions() {
   }
 }
 
-async function forceEndSession(code, className) {
+async function forceEndSession(code, className, isAP) {
+  if (isAP) {
+    var snap = await state.db.ref('quizSessions/' + code).get();
+    if (snap.exists()) {
+      var session = snap.val() || {};
+      assessment.lobbyCode = code;
+      assessment.sessionRef = state.db.ref('quizSessions/' + code);
+      assessment.assessmentId = String(session.lessonId || '').replace(/^AP:/, '');
+      assessment.className = session.className || className || null;
+      await finaliseIncompleteAssessmentResponses();
+    }
+  }
   await state.db.ref('quizSessions/' + code).update({ state: 'finished', endedAt: Date.now() });
   if (className && className !== '—') {
     try {
@@ -2661,6 +2723,7 @@ async function rejoinAPSession(code) {
     if (assessment.hostListener && assessment.sessionRef) {
       assessment.sessionRef.off('value', assessment.hostListener);
     }
+    localStorage.setItem('pylearn_host_ap', code);
     showAssessmentHostScreen();
   } catch(e) {
     alert('Could not rejoin AP: ' + e.message);
@@ -3668,7 +3731,6 @@ var assessment = {
   lobbyCode: null,
   sessionRef: null,
   responseRef: null,
-  projectDataRef: null,
   forced: false,
   completed: false,
   validating: false,
@@ -3883,10 +3945,6 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
     forced: !!forceClass,
     questions: spec.questions || []
   });
-  assessment.sessionRef.onDisconnect().update({
-    state: 'finished',
-    endedAt: firebase.database.ServerValue.TIMESTAMP
-  }).catch(function(){});
   if (forceClass) {
     await state.db.ref('classes/' + assessment.className + '/forcedQuiz').set({
       active: true,
@@ -3895,10 +3953,6 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
       lessonId: 'AP:' + id,
       startedAt: Date.now()
     });
-    state.db.ref('classes/' + assessment.className + '/forcedQuiz').onDisconnect().update({
-      active: false,
-      endedAt: firebase.database.ServerValue.TIMESTAMP
-    }).catch(function(){});
   }
   localStorage.setItem('pylearn_host_ap', code);
   document.getElementById('modal-ap-setup').classList.add('hidden');
@@ -3969,147 +4023,6 @@ async function inspectAssessmentProject(code) {
     return;
   }
   panel.innerHTML = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Project inspection: ' + escapeHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div><p class="text-yellow-300 text-sm">Remote SB3 inspection is disabled to keep Firebase usage under the daily limit. Use the student screen or their submitted rubric/score instead.</p>';
-  return;
-  try {
-    if (!assessment.sessionRef) throw new Error('No active assessment session.');
-    var snap = await assessment.sessionRef.child('answers/0/' + code).get();
-    var projectDataSnap = await state.db.ref('apProjectData/' + assessment.lobbyCode + '/' + code + '/projectData').get();
-    var projectData = projectDataSnap.val() || snap.child('projectData').val();
-    if (!projectData) {
-      panel.innerHTML = '<p class="text-yellow-300 text-sm">No saved project available yet for ' + (studentName(code) || code) + '.</p>';
-      return;
-    }
-    var vm = await loadSavedProjectIntoInspector(projectData);
-    var summary = summariseScratchProjectVm(vm);
-    panel.innerHTML = renderScratchProjectSummary(code, summary, !!projectData);
-    var downloadBtn = panel.querySelector('.btn-ap-download-sb3');
-    if (downloadBtn) {
-      downloadBtn.onclick = function() {
-        downloadAssessmentSb3(code, projectData);
-      };
-    }
-  } catch(e) {
-    panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect project: ' + escapeHtml(errorMessage(e, 'The saved Scratch project could not be loaded.')) + '</p>';
-  }
-}
-
-function downloadAssessmentSb3(code, projectData) {
-  try {
-    var cleanData = String(projectData || '').replace(/^data:[^,]+,/, '').replace(/\s/g, '');
-    if (!cleanData) throw new Error('No saved project data was found.');
-    var bin = atob(cleanData);
-    var bytes = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    var blob = new Blob([bytes], { type: 'application/x.scratch.sb3' });
-    var a = document.createElement('a');
-    var name = (studentName(code) || code || 'student').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'student';
-    a.href = URL.createObjectURL(blob);
-    a.download = name + '-' + (assessment.lobbyCode || 'ap') + '.sb3';
-    a.click();
-    setTimeout(function() { URL.revokeObjectURL(a.href); }, 2000);
-  } catch(e) {
-    alert('Could not download SB3: ' + errorMessage(e, 'Unknown error.'));
-  }
-}
-
-async function downloadAssessmentSb3ForRow(row) {
-  try {
-    if (!row || !row.lobbyCode) throw new Error('No AP session code is available for this result.');
-    var snap = await state.db.ref('apProjectData/' + row.lobbyCode + '/' + row.code + '/projectData').get();
-    var projectData = snap.val();
-    if (!projectData) throw new Error('No saved SB3 is available for this result.');
-    downloadAssessmentSb3(row.code, projectData);
-  } catch(e) {
-    alert('Could not download SB3: ' + errorMessage(e, 'Unknown error.'));
-  }
-}
-
-function loadSavedProjectIntoInspector(projectData) {
-  var frame = document.getElementById('aph-inspector-frame');
-  return new Promise(function(resolve, reject) {
-    var done = false;
-    var timeoutId = null;
-    function fail(msg) {
-      if (done) return;
-      done = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      reject(new Error(msg || 'The saved Scratch project could not be loaded.'));
-    }
-    function finish(vm) {
-      if (done) return;
-      done = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      resolve(vm);
-    }
-    function tryLoad() {
-      waitForAssessmentInspectorVm(frame).then(async function(vm) {
-        try {
-          var cleanData = String(projectData || '').replace(/^data:[^,]+,/, '').replace(/\s/g, '');
-          if (!cleanData) throw new Error('No saved project data was found.');
-          var bin = atob(cleanData);
-          var arr = new Uint8Array(bin.length);
-          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-          await loadScratchProjectBuffer(vm, arr.buffer);
-          finish(vm);
-        } catch(e) {
-          fail(errorMessage(e, 'TurboWarp could not open the saved project data.'));
-        }
-      }).catch(function(e) {
-        fail(errorMessage(e, 'Inspector VM was not ready.'));
-      });
-    }
-    if (!frame) return fail('Inspector frame is missing from the page.');
-    frame.onload = tryLoad;
-    frame.src = './scratch/editor.html?assessmentInspector=1&suppressBeforeUnload=1&_inspect=' + Date.now();
-    timeoutId = setTimeout(function(){ fail('Inspector editor did not load in time.'); }, 25000);
-  });
-}
-
-async function loadScratchProjectBuffer(vm, buffer) {
-  if (!vm || typeof vm.loadProject !== 'function') throw new Error('Scratch VM cannot load projects.');
-  try {
-    return await vm.loadProject(buffer);
-  } catch(firstError) {
-    try {
-      return await vm.loadProject(new Blob([buffer], { type: 'application/x.scratch.sb3' }));
-    } catch(secondError) {
-      throw secondError || firstError;
-    }
-  }
-}
-
-async function scratchProjectExportToArrayBuffer(exported) {
-  if (!exported) throw new Error('Scratch project export was empty.');
-  if (exported instanceof ArrayBuffer) return exported;
-  if (ArrayBuffer.isView(exported)) {
-    return exported.buffer.slice(exported.byteOffset, exported.byteOffset + exported.byteLength);
-  }
-  if (typeof Blob !== 'undefined' && exported instanceof Blob) {
-    return await exported.arrayBuffer();
-  }
-  if (exported.arrayBuffer && typeof exported.arrayBuffer === 'function') {
-    return await exported.arrayBuffer();
-  }
-  throw new Error('Scratch project export had an unsupported format.');
-}
-
-function arrayBufferToBase64(buffer) {
-  var bytes = new Uint8Array(buffer);
-  var binary = '';
-  var chunkSize = 0x8000;
-  for (var i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-}
-
-function simpleStringHash(text) {
-  var hash = 0;
-  text = String(text || '');
-  for (var i = 0; i < text.length; i++) {
-    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
-  }
-  return String(hash);
 }
 
 function errorMessage(error, fallback) {
@@ -4123,91 +4036,6 @@ function errorMessage(error, fallback) {
   } catch(e) {
     return fallback || 'Unknown error.';
   }
-}
-
-function waitForAssessmentInspectorVm(frame) {
-  return new Promise(function(resolve, reject) {
-    var started = Date.now();
-    var timer = setInterval(function() {
-      try {
-        if (frame.contentWindow && frame.contentWindow.vm && frame.contentWindow.vm.runtime) {
-          clearInterval(timer);
-          resolve(frame.contentWindow.vm);
-        } else if (Date.now() - started > 15000) {
-          clearInterval(timer);
-          reject(new Error('Inspector VM not ready.'));
-        }
-      } catch(e) {}
-    }, 250);
-  });
-}
-
-function summariseScratchProjectVm(vm) {
-  var targets = vm.runtime && vm.runtime.targets ? vm.runtime.targets : [];
-  var info = collectAssessmentScratchInfo(targets);
-  var targetsSummary = targets.map(function(target) {
-    var costumes = [];
-    try {
-      costumes = target.getCostumes ? target.getCostumes() : ((target.sprite && target.sprite.costumes) || []);
-    } catch(e) { costumes = []; }
-    var variables = Object.keys(target.variables || {}).map(function(id) {
-      var v = target.variables[id];
-      return v && v.name ? v.name : id;
-    });
-    var blocks = target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
-    var localCounts = {};
-    Object.keys(blocks).forEach(function(id) {
-      var opcode = blocks[id] && blocks[id].opcode;
-      if (opcode) localCounts[opcode] = (localCounts[opcode] || 0) + 1;
-    });
-    return {
-      name: target.isStage ? 'Stage' : (target.sprite && target.sprite.name) || target.name || 'Sprite',
-      isStage: !!target.isStage,
-      x: target.x,
-      y: target.y,
-      direction: target.direction,
-      costumes: costumes.map(function(c) { return c.name || c.assetId || 'costume'; }),
-      variables: variables,
-      opcodes: localCounts
-    };
-  });
-  return { targets: targetsSummary, opcodeCounts: info.counts, keyFields: info.keyFields, variableNames: info.variableNames };
-}
-
-function renderScratchProjectSummary(code, summary, hasProjectData) {
-  function escHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
-    });
-  }
-  var opcodes = Object.keys(summary.opcodeCounts || {}).sort(function(a, b) {
-    return summary.opcodeCounts[b] - summary.opcodeCounts[a];
-  });
-  var html = '<div class="flex items-center justify-between gap-3 mb-3"><h3 class="font-bold text-white">Project inspection: ' + escHtml(studentName(code) || code) + '</h3><div class="flex gap-2">' +
-    (hasProjectData ? '<button class="btn-ap-download-sb3 px-2 py-1 rounded border border-yellow-500 text-xs text-yellow-200 hover:bg-yellow-900/30">Download SB3</button>' : '') +
-    '<button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div></div>';
-  html += '<div class="grid md:grid-cols-2 gap-4">';
-  html += '<div><h4 class="font-semibold text-yellow-300 mb-2">Sprites, costumes and variables</h4><div class="space-y-2">';
-  summary.targets.forEach(function(t) {
-    html += '<div class="bg-gray-900 rounded p-3 text-sm">';
-    html += '<div class="font-semibold text-gray-100">' + escHtml(t.name) + (t.isStage ? ' (stage)' : '') + '</div>';
-    if (!t.isStage) html += '<div class="text-gray-400">Position: x ' + Math.round(t.x || 0) + ', y ' + Math.round(t.y || 0) + ', direction ' + Math.round(t.direction || 0) + '</div>';
-    html += '<div class="text-gray-300 mt-1">Costumes/backdrops: ' + (t.costumes.length ? escHtml(t.costumes.join(', ')) : '<span class="text-gray-500">none listed</span>') + '</div>';
-    html += '<div class="text-gray-300">Variables: ' + (t.variables.length ? escHtml(t.variables.join(', ')) : '<span class="text-gray-500">none</span>') + '</div>';
-    html += '</div>';
-  });
-  html += '</div></div>';
-  html += '<div><h4 class="font-semibold text-yellow-300 mb-2">Opcodes present</h4>';
-  html += '<div class="bg-gray-900 rounded p-3 text-xs font-mono max-h-96 overflow-y-auto">';
-  if (!opcodes.length) html += '<div class="text-gray-500">No blocks found.</div>';
-  opcodes.forEach(function(op) {
-    html += '<div class="flex justify-between gap-3 border-b border-gray-800 py-1"><span class="text-gray-300">' + escHtml(op) + '</span><span class="text-yellow-300">' + summary.opcodeCounts[op] + '</span></div>';
-  });
-  html += '</div>';
-  html += '<div class="mt-3 text-sm text-gray-300">Keys used: ' + (summary.keyFields.length ? escHtml(summary.keyFields.join(', ')) : '<span class="text-gray-500">none detected</span>') + '</div>';
-  html += '<div class="text-sm text-gray-300">Variables detected: ' + (summary.variableNames.length ? escHtml(Array.from(new Set(summary.variableNames)).join(', ')) : '<span class="text-gray-500">none detected</span>') + '</div>';
-  html += '</div></div>';
-  return html;
 }
 
 document.getElementById('btn-ap-host-exit').onclick = async function() {
@@ -4315,11 +4143,6 @@ function zeroAssessmentCriteria(assessmentId) {
   });
 }
 
-async function assessSavedAssessmentProjectData(projectData) {
-  var vm = await loadSavedProjectIntoInspector(projectData);
-  return validateAssessmentScratchVm(vm, assessment.assessmentId);
-}
-
 function stopForcedAssessmentWatcher() {
   if (state.forcedAssessmentRef && state.forcedAssessmentListener) {
     state.forcedAssessmentRef.off('value', state.forcedAssessmentListener);
@@ -4368,7 +4191,6 @@ async function joinAssessmentByCode(code, opts) {
   assessment.lobbyCode = code;
   assessment.sessionRef = sessionRef;
   assessment.responseRef = sessionRef.child('answers/0/' + state.uid);
-  assessment.projectDataRef = state.db.ref('apProjectData/' + code + '/' + state.uid);
   assessment.className = snap.child('className').val() || state.className || null;
   assessment.forced = !!opts.forced || snap.child('forced').val() === true;
   if (completedSnap.exists()) {
@@ -4745,7 +4567,7 @@ document.getElementById('btn-ap-finish').onclick = async function() {
   if (assessment.validating) return;
   if (!confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
   await runAssessmentValidation('Final validation before submitting...', async function() {
-    var projectData = await saveAssessmentProject({ force: true });
+    await saveAssessmentProject({ force: true });
     var result = await validateAssessmentProject(function(label, index, total) {
       updateAssessmentValidationStatus(label, index, total);
     });
@@ -4756,8 +4578,7 @@ document.getElementById('btn-ap-finish').onclick = async function() {
       score: result.score,
       maxScore: result.maxScore,
       rubric: result.criteria,
-      projectSavedAt: assessment.lastProjectSaveAt || Date.now(),
-      projectSizeBytes: projectData ? Math.ceil(projectData.length * 0.75) : null
+      projectSavedAt: assessment.lastProjectSaveAt || Date.now()
     });
     await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
       completedAt: Date.now(),
@@ -5335,7 +5156,6 @@ function exitAssessmentStudent(opts) {
   document.getElementById('ap-student-screen').classList.add('hidden');
   assessment.sessionRef = null;
   assessment.responseRef = null;
-  assessment.projectDataRef = null;
   assessment.forced = false;
 }
 
@@ -5352,6 +5172,156 @@ document.getElementById('ap-results-student').onchange = renderAssessmentResults
 document.getElementById('btn-ap-results-download').onclick = function() {
   downloadAssessmentRows(currentAssessmentResultRows(), apResultsState.className);
 };
+
+var wipeSb3InFlight = false;
+
+function debugLogProjectData(message, reset) {
+  var log = document.getElementById('debug-projectdata-log');
+  if (!log) return;
+  log.classList.remove('hidden');
+  log.textContent = reset ? message : ((log.textContent ? log.textContent + '\n' : '') + message);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setDebugProjectDataStatus(message, isError) {
+  var status = document.getElementById('debug-projectdata-status');
+  if (!status) return;
+  status.className = 'mt-3 text-sm ' + (isError ? 'text-red-700 font-semibold' : 'text-red-800');
+  status.textContent = message || '';
+}
+
+async function getDebugFirebaseContext() {
+  if (!state.auth || !state.db) throw new Error('Firebase is not initialised yet.');
+  var user = state.auth.currentUser;
+  if (!user) {
+    user = await new Promise(function(resolve) {
+      var done = false;
+      var off = state.auth.onAuthStateChanged(function(authUser) {
+        if (done) return;
+        done = true;
+        off && off();
+        resolve(authUser || null);
+      });
+      setTimeout(function() {
+        if (done) return;
+        done = true;
+        off && off();
+        resolve(state.auth.currentUser || null);
+      }, 3000);
+    });
+  }
+  var databaseURL = (state.config && state.config.firebase && state.config.firebase.databaseURL) || '';
+  if (!databaseURL && firebase.apps && firebase.apps.length) {
+    databaseURL = firebase.app().options && firebase.app().options.databaseURL || '';
+  }
+  if (!user) throw new Error('Firebase auth is not ready yet. Close and reopen the admin panel, or refresh and log in as admin again.');
+  if (!databaseURL) throw new Error('Firebase database URL is missing from config.');
+  return { token: await user.getIdToken(), root: databaseURL.replace(/\/$/, '') };
+}
+
+function debugManualQuizCodes() {
+  var box = document.getElementById('debug-projectdata-codes');
+  if (!box) return [];
+  var text = box.value || '';
+  var seen = {};
+  return text.split(/[\s,;]+/).map(function(code) {
+    return code.trim();
+  }).filter(function(code) {
+    if (!code || seen[code]) return false;
+    seen[code] = true;
+    return true;
+  });
+}
+
+async function listQuizProjectDataRefs(onProgress, manualCodes) {
+  var ctx = await getDebugFirebaseContext();
+  var sessionIds = manualCodes && manualCodes.length ? manualCodes : null;
+  if (!sessionIds) {
+    var sessionsRes = await fetch(ctx.root + '/quizSessions.json?shallow=true&auth=' + encodeURIComponent(ctx.token));
+    if (!sessionsRes.ok) throw new Error('Could not read quiz session keys: ' + sessionsRes.status + '. Paste quiz/AP codes into the manual box and scan again.');
+    var sessions = await sessionsRes.json() || {};
+    sessionIds = Object.keys(sessions);
+  }
+  var refs = [];
+  for (var i = 0; i < sessionIds.length; i++) {
+    var sid = sessionIds[i];
+    if (onProgress) onProgress('Scanning quiz ' + (i + 1) + ' / ' + sessionIds.length + ': ' + sid);
+    var answersRes = await fetch(ctx.root + '/quizSessions/' + encodeURIComponent(sid) + '/answers/0.json?shallow=true&auth=' + encodeURIComponent(ctx.token));
+    if (!answersRes.ok) continue;
+    var answerKeys = await answersRes.json() || {};
+    Object.keys(answerKeys).forEach(function(code) {
+      refs.push({ sessionId: sid, code: code, path: 'quizSessions/' + sid + '/answers/0/' + code + '/projectData' });
+    });
+  }
+  return refs;
+}
+
+async function scanQuizProjectDataFields() {
+  if (wipeSb3InFlight) return;
+  wipeSb3InFlight = true;
+  setDebugProjectDataStatus('Scanning...');
+  var manualCodes = debugManualQuizCodes();
+  debugLogProjectData(manualCodes.length ? 'Starting manual-code shallow scan...' : 'Starting shallow scan...', true);
+  try {
+    var refs = await listQuizProjectDataRefs(function(msg) { debugLogProjectData(msg); }, manualCodes);
+    setDebugProjectDataStatus('Found ' + refs.length + ' possible projectData fields.');
+    debugLogProjectData(refs.length ? refs.map(function(r) { return r.path; }).join('\n') : 'No projectData paths found.');
+  } catch(e) {
+    setDebugProjectDataStatus('Scan failed: ' + errorMessage(e, 'Unknown error.'), true);
+    debugLogProjectData('ERROR: ' + errorMessage(e, 'Unknown error.'));
+  } finally {
+    wipeSb3InFlight = false;
+  }
+}
+
+async function deleteQuizProjectDataFields() {
+  if (wipeSb3InFlight) return;
+  if (!confirm('Delete every quizSessions/[code]/answers/0/[student]/projectData field? This does not delete scores, rubrics, answers, classes or quiz sessions.')) return;
+  wipeSb3InFlight = true;
+  var btn = document.getElementById('btn-debug-delete-projectdata') || document.getElementById('btn-admin-wipe-sb3');
+  var oldText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+  }
+  setDebugProjectDataStatus('Scanning before delete...');
+  var manualCodes = debugManualQuizCodes();
+  debugLogProjectData(manualCodes.length ? 'Starting manual-code projectData cleanup...' : 'Starting projectData cleanup...', true);
+  try {
+    var refs = await listQuizProjectDataRefs(function(msg) { debugLogProjectData(msg); }, manualCodes);
+    var deleted = 0;
+    var failed = 0;
+    for (var i = 0; i < refs.length; i++) {
+      try {
+        await state.db.ref(refs[i].path).remove();
+        deleted++;
+        debugLogProjectData('Deleted ' + refs[i].path);
+      } catch(e) {
+        failed++;
+        debugLogProjectData('FAILED ' + refs[i].path + ': ' + errorMessage(e, 'Permission denied or unknown error.'));
+      }
+      setDebugProjectDataStatus('Deleted ' + deleted + ' / ' + refs.length + (failed ? ' (' + failed + ' failed)' : '') + '.');
+    }
+    setDebugProjectDataStatus('Finished. Deleted ' + deleted + ' projectData fields' + (failed ? '; ' + failed + ' failed.' : '.'));
+  } catch(e) {
+    setDebugProjectDataStatus('Cleanup failed: ' + errorMessage(e, 'Unknown error.'), true);
+    debugLogProjectData('ERROR: ' + errorMessage(e, 'Unknown error.'));
+  } finally {
+    wipeSb3InFlight = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText || 'Delete all projectData fields';
+    }
+  }
+}
+
+document.getElementById('btn-debug-scan-projectdata').onclick = scanQuizProjectDataFields;
+document.getElementById('btn-debug-delete-projectdata').onclick = deleteQuizProjectDataFields;
+document.getElementById('btn-admin-wipe-sb3').onclick = function() {
+  setAdminTab('debug');
+  deleteQuizProjectDataFields();
+};
+
 document.getElementById('btn-ap-results-release').onclick = async function() {
   try {
     var assessmentId = document.getElementById('ap-results-assessment').value || 'all';
@@ -5565,7 +5535,7 @@ function renderClassAssessmentResults(content, rows) {
       '<td class="border border-gray-100 px-2 py-1.5 text-center">' + pct + '%</td>' +
       '<td class="border border-gray-100 px-2 py-1.5 text-center">' + grades[i] + '</td>' +
       '<td class="border border-gray-100 px-2 py-1.5">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : 'Not completed') + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.completed ? '<div class="flex justify-center gap-1"><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' + (r.lobbyCode && (!ASSESSMENTS[r.assessmentId] || ASSESSMENTS[r.assessmentId].type !== 'binary-hex') ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">SB3</button>' : '') + '</div>' : '-') + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.completed ? '<div class="flex justify-center gap-1"><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button></div>' : '-') + '</td>' +
       '</tr>';
   });
   html += '</tbody></table></div>';
@@ -5574,12 +5544,6 @@ function renderClassAssessmentResults(content, rows) {
     btn.onclick = function() {
       var row = sorted.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
       openAssessmentScoreEditor(btn.dataset.code, btn.dataset.assessment, row, { results: true });
-    };
-  });
-  content.querySelectorAll('.btn-ap-result-sb3').forEach(function(btn) {
-    btn.onclick = function() {
-      var row = sorted.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
-      if (row) downloadAssessmentSb3ForRow(row);
     };
   });
 }
@@ -5595,7 +5559,7 @@ function renderStudentAssessmentResults(content, rows) {
   completedRows.sort(function(a, b) { return (b.completedAt || 0) - (a.completedAt || 0); }).forEach(function(r) {
     var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
-      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div>' + (r.lobbyCode && (!ASSESSMENTS[r.assessmentId] || ASSESSMENTS[r.assessmentId].type !== 'binary-hex') ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Download SB3</button>' : '') + '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
+      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
       '<div class="p-3 space-y-1">';
     (r.rubric || []).forEach(function(c) {
       html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
@@ -5608,12 +5572,6 @@ function renderStudentAssessmentResults(content, rows) {
     btn.onclick = function() {
       var row = completedRows.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
       openAssessmentScoreEditor(btn.dataset.code, btn.dataset.assessment, row, { results: true });
-    };
-  });
-  content.querySelectorAll('.btn-ap-result-sb3').forEach(function(btn) {
-    btn.onclick = function() {
-      var row = completedRows.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
-      if (row) downloadAssessmentSb3ForRow(row);
     };
   });
 }
