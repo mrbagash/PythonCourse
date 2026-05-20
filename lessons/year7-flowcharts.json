@@ -7,14 +7,14 @@
       "id": "do-now",
       "title": "Do Now Activity",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><div id='fc-dna'></div>",
-      "js": "createMCQ('fc-dna',['A set of step-by-step instructions to solve a problem','A type of hardware','A spreadsheet program','A list of files'],0,'Correct — you remembered from last lesson!','An algorithm is a set of step-by-step instructions to solve a problem.');"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-4'>Answer these five quick questions from the algorithms lesson.</p><div id='fc-dna'></div>",
+      "js": "createMCQSet('fc-dna',[{q:'What is an algorithm?',opts:['A set of step-by-step instructions to solve a problem','A type of hardware','A spreadsheet program','A list of files'],correct:0,feedback:'Correct - that is the key definition.',wrongFeedback:'An algorithm is a set of step-by-step instructions to solve a problem.'},{q:'Which word means the steps are clear and not vague?',opts:['Precise','Random','Colourful','Hidden'],correct:0,feedback:'Correct - precise steps are clear and exact.',wrongFeedback:'Precise means clear, exact and not vague.'},{q:'Which step is too vague for a good algorithm?',opts:['Cook it until it looks right','Boil for 10 minutes','Click the green Start button','Write your name in the box'],correct:0,feedback:'Correct - looks right is not precise enough.',wrongFeedback:'A vague instruction does not give enough exact detail.'},{q:'Why should an algorithm be finite?',opts:['So it has a clear end','So it can be drawn in blue','So it never stops','So the first step is ignored'],correct:0,feedback:'Correct - a finite algorithm eventually finishes.',wrongFeedback:'Finite means the algorithm has a clear stopping point.'},{q:'Which pair best describes a good algorithm?',opts:['Ordered and precise','Random and vague','Endless and unclear','Colourful and hidden'],correct:0,feedback:'Correct - good algorithms are ordered and precise.',wrongFeedback:'Good algorithms need clear steps in the correct order.'}]);"
     },
     {
       "id": "two-representations",
       "title": "Two Ways to Show an Algorithm",
       "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Two ways to represent an algorithm</h2><p class='text-gray-700 mb-4'>Before writing code you can plan the logic in one of two ways:</p><div class='ex-box'><p class='bb-question-title'>Flowchart — shapes and arrows</p><p class='text-gray-200'>Visual. Each shape has a specific meaning. Easy to see decisions and flow.</p></div><div class='ex-box'><p class='bb-question-title'>Pseudocode — English-like text</p><p class='text-gray-200'>Written. Reads like code but is not a real language. Good for planning logic.</p><pre class='scratch-blocks'>START\nASK \"What is your name?\"\nSTORE answer in name\nOUTPUT \"Hello \" + name\nEND</pre></div>"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Two ways to represent an algorithm</h2><p class='text-gray-700 mb-4'>Before writing code you can plan the logic in one of two ways:</p><div class='ex-box'><p class='bb-question-title'>Flowchart — shapes and arrows</p><p class='text-gray-200'>Visual. Each shape has a specific meaning. Easy to see decisions and flow.</p></div><div class='ex-box'><p class='bb-question-title'>Pseudocode — English-like text</p><p class='text-gray-200'>Written. Reads like code but is not a real language. Good for planning logic.</p><pre class='plain-pre' style='background:#1e1e2e;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem 1rem;font-family:Courier New,monospace;font-size:0.875rem;color:#cdd6f4;white-space:pre;overflow-x:auto;margin:0.75rem 0'>START\nASK \"What is your name?\"\nSTORE answer in name\nOUTPUT \"Hello \" + name\nEND</pre></div>"
     },
     {
       "id": "flowchart-symbols",
@@ -27,17 +27,88 @@
       "id": "trace-flowchart",
       "title": "Trace a Flowchart",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Trace a flowchart</h2><p class='text-gray-700 mb-3'>Tracing means following a flowchart step by step. Read this one carefully, then answer the questions.</p><div class='ex-box'><pre class='scratch-blocks'>START\n↓\nINPUT: number\n↓\nDecision: Is number ÷ 2 a whole number?\n  Yes → OUTPUT: \"Even\"\n  No  → OUTPUT: \"Odd\"\n↓\nEND</pre></div><div id='fc-trace'></div>",
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Trace a flowchart</h2><p class='text-gray-700 mb-3'>Tracing means following a flowchart step by step. Read this one carefully, then answer the questions.</p><div class='ex-box'><pre class='plain-pre' style='background:#1e1e2e;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem 1rem;font-family:Courier New,monospace;font-size:0.875rem;color:#cdd6f4;white-space:pre;overflow-x:auto;margin:0.75rem 0'>START\n↓\nINPUT: number\n↓\nDecision: Is number ÷ 2 a whole number?\n  Yes → OUTPUT: \"Even\"\n  No  → OUTPUT: \"Odd\"\n↓\nEND</pre></div><div id='fc-trace'></div>",
       "js": "createMCQSet('fc-trace',[{q:'The user inputs 6. What does the flowchart output?',opts:['Odd','Even','6','Nothing'],correct:1,feedback:'Correct — 6 ÷ 2 = 3 (whole), so Yes → \"Even\".',wrongFeedback:'6 ÷ 2 = 3, a whole number. Decision is Yes → output \"Even\".'},{q:'The user inputs 7. What does the flowchart output?',opts:['Even','7','Odd','Nothing'],correct:2,feedback:'Correct — 7 ÷ 2 = 3.5 (not whole), so No → \"Odd\".',wrongFeedback:'7 ÷ 2 = 3.5, not a whole number. Decision is No → output \"Odd\".'},{q:'Which shape is used for the yes/no question in this flowchart?',opts:['Rectangle','Oval','Parallelogram','Diamond'],correct:3,feedback:'Correct — decisions are always shown as a diamond.',wrongFeedback:'Decisions are always diamonds — the two exit paths (yes/no) come out of the two sides.'}]);"
     }
   ],
   "quizQuestions": [
-    { "type": "mcq", "q": "What are the two main ways to represent an algorithm?", "options": ["Flowchart and pseudocode", "Python and Scratch", "Spreadsheet and database", "Diagram and essay"], "answer": 0, "duration": 25 },
-    { "type": "mcq", "q": "Which flowchart shape is used for Start or End?", "options": ["Rectangle", "Diamond", "Oval", "Arrow"], "answer": 2, "duration": 25 },
-    { "type": "mcq", "q": "Which flowchart shape is used for a Decision?", "options": ["Rectangle", "Diamond", "Oval", "Parallelogram"], "answer": 1, "duration": 25 },
-    { "type": "mcq", "q": "Which flowchart shape is used for a Process (an action)?", "options": ["Diamond", "Oval", "Parallelogram", "Rectangle"], "answer": 3, "duration": 25 },
-    { "type": "text_input", "q": "What shape in a flowchart always has two exit paths (yes and no)?", "answer": "DIAMOND", "duration": 25 },
-    { "type": "mcq", "q": "A flowchart processes the number 4. It asks 'Is number ÷ 2 a whole number?' Which path?", "options": ["No — Odd", "Yes — Even", "No — 4", "Yes — Whole"], "answer": 1, "duration": 35 },
-    { "type": "mcq", "q": "Pseudocode uses...", "options": ["Shapes and arrows", "Plain English structured like code", "Python syntax", "Binary numbers"], "answer": 1, "duration": 25 }
+    {
+      "type": "mcq",
+      "q": "What are the two main ways to represent an algorithm?",
+      "options": [
+        "Flowchart and pseudocode",
+        "Python and Scratch",
+        "Spreadsheet and database",
+        "Diagram and essay"
+      ],
+      "answer": 0,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which flowchart shape is used for Start or End?",
+      "options": [
+        "Rectangle",
+        "Diamond",
+        "Oval",
+        "Arrow"
+      ],
+      "answer": 2,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which flowchart shape is used for a Decision?",
+      "options": [
+        "Rectangle",
+        "Diamond",
+        "Oval",
+        "Parallelogram"
+      ],
+      "answer": 1,
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "Which flowchart shape is used for a Process (an action)?",
+      "options": [
+        "Diamond",
+        "Oval",
+        "Parallelogram",
+        "Rectangle"
+      ],
+      "answer": 3,
+      "duration": 25
+    },
+    {
+      "type": "text_input",
+      "q": "What shape in a flowchart always has two exit paths (yes and no)?",
+      "answer": "DIAMOND",
+      "duration": 25
+    },
+    {
+      "type": "mcq",
+      "q": "A flowchart processes the number 4. It asks 'Is number ÷ 2 a whole number?' Which path?",
+      "options": [
+        "No — Odd",
+        "Yes — Even",
+        "No — 4",
+        "Yes — Whole"
+      ],
+      "answer": 1,
+      "duration": 35
+    },
+    {
+      "type": "mcq",
+      "q": "Pseudocode uses...",
+      "options": [
+        "Shapes and arrows",
+        "Plain English structured like code",
+        "Python syntax",
+        "Binary numbers"
+      ],
+      "answer": 1,
+      "duration": 25
+    }
   ]
 }

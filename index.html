@@ -142,32 +142,39 @@
       margin-bottom: 0.75rem;
     }
     .ex-prompt {
-      color: #cdd6f4;
+      color: #374151;
     }
     .ex-progress {
-      color: #94a3b8;
+      color: #64748b;
       font-size: 0.8rem;
       margin-bottom: 0.25rem;
       font-family: 'Segoe UI', system-ui, sans-serif;
     }
     .ex-score {
-      color: #c4b5fd;
+      color: #6d28d9;
       font-size: 0.85rem;
       font-weight: 600;
       margin-bottom: 0.6rem;
       font-family: 'Segoe UI', system-ui, sans-serif;
     }
     .ex-feedback {
-      color: #cdd6f4;
+      color: #374151;
       margin-top: 0.65rem;
       font-size: 0.85rem;
       min-height: 1.25rem;
       font-family: 'Segoe UI', system-ui, sans-serif;
       line-height: 1.4;
     }
-    .ex-feedback.ok { color: #86efac; }
-    .ex-feedback.err { color: #fca5a5; }
-    .ex-feedback.hint { color: #fde68a; }
+    .ex-feedback.ok { color: #166534; }
+    .ex-feedback.err { color: #991b1b; }
+    .ex-feedback.hint { color: #92400e; }
+    .ex-box .ex-prompt { color: #cdd6f4; }
+    .ex-box .ex-progress { color: #94a3b8; }
+    .ex-box .ex-score { color: #c4b5fd; }
+    .ex-box .ex-feedback { color: #cdd6f4; }
+    .ex-box .ex-feedback.ok { color: #86efac; }
+    .ex-box .ex-feedback.err { color: #fca5a5; }
+    .ex-box .ex-feedback.hint { color: #fde68a; }
     .bb-table {
       width: 100%;
       border-collapse: separate;
@@ -342,6 +349,15 @@
     .scratch-blocks svg { display: block; max-width: 100%; height: auto; }
     .scratch-blocks-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem 1.25rem; margin: 0.75rem 0; overflow-x: auto; }
     .scratch-blocks-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    #step-content .y7-check-bar { background: #0f172a !important; border-top-color: #334155 !important; color: #cdd6f4; }
+    #step-content .y7-check-result { color: #cdd6f4; }
+    #step-content .y7-fs-btn { background: #1e293b !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+    #step-content .y7-fs-btn:hover { background: #334155 !important; color: #fff !important; }
+    .ap-qnav-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:0.35rem; }
+    .ap-qnav { border:1px solid #cbd5e1; border-radius:0.35rem; background:#fff; color:#475569; padding:0.35rem 0; font-size:0.8rem; font-weight:700; }
+    .ap-qnav.answered { background:#dcfce7; border-color:#86efac; color:#166534; }
+    .ap-qnav.active { background:rgb(176,28,35); border-color:rgb(176,28,35); color:#fff; }
+    .ap-qnav:focus-visible { outline:2px solid rgba(245,186,41,0.9); outline-offset:2px; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -748,6 +764,8 @@
     <select id="ap-assessment-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none">
       <option value="year7-ap2-scratch">Year 7 AP2 Scratch - Underwater Racing Game</option>
       <option value="year7-ap2-practice-scratch">Practice Year 7 AP2 Scratch - Space Collector Game</option>
+      <option value="year8-ap2-python">Year 8 AP2 Python</option>
+      <option value="year8-ap2-binary-hex">Year 8 AP2 Binary & Hexadecimal</option>
     </select>
     <label class="flex items-start gap-2 border border-red-200 bg-red-50 rounded-lg p-3 mb-4 cursor-pointer">
       <input id="ap-force-class" type="checkbox" class="mt-0.5 accent-[rgb(176,28,35)]" />
@@ -845,6 +863,7 @@
     </aside>
     <div id="aps-scratch-wrap" class="relative min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
       <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;width:100%;height:100%"></iframe>
+      <div id="aps-question-ap" class="hidden h-full overflow-y-auto bg-gray-100 text-gray-800 p-4"></div>
       <div id="aps-validation-lock" class="hidden absolute inset-0 z-20 bg-gray-950/85 backdrop-blur-sm flex items-center justify-center text-center p-6" tabindex="-1">
         <div class="bg-gray-900 border border-yellow-500/60 rounded-lg px-6 py-5 max-w-md shadow-xl">
           <div class="text-yellow-300 font-bold text-lg mb-2">Validation in progress</div>
@@ -1358,7 +1377,7 @@ window.BinaryLesson = (() => {
   // Returns { getAnswer(), reset() }
   function mountBitInput(el, opts) {
     opts = opts || {};
-    var bits = [0,0,0,0,0,0,0,0];
+    var bits = /^[01]{8}$/.test(String(opts.initialAnswer || '')) ? String(opts.initialAnswer).split('').map(Number) : [0,0,0,0,0,0,0,0];
     function calcValue() { return bits.reduce(function(s, b, i) { return s + b * POWERS[i]; }, 0); }
     function render() {
       var headers = opts.headers || (opts.useNibbles ? NIBBLE : POWERS);
@@ -1372,10 +1391,11 @@ window.BinaryLesson = (() => {
         '<table class="bb-table"><thead><tr>' + headHtml + '</tr></thead>' +
         '<tbody><tr>' + cellHtml + '</tr></tbody></table>' +
         (opts.showTotal ? '<div class="bb-live-total">Value: <span class="bb-ltv">' + calcValue() + '</span></div>' : '');
-      bindBitCells(el, bits, opts.showTotal ? function() {
+      bindBitCells(el, bits, function() {
         var ltv = el.querySelector('.bb-ltv');
         if (ltv) ltv.textContent = calcValue();
-      } : null);
+        if (opts.onChange) opts.onChange(bits.join(''));
+      });
     }
     render();
     return {
@@ -1386,8 +1406,9 @@ window.BinaryLesson = (() => {
 
   // Mount an addition table with interactive answer row into el.
   // Returns { getAnswer(), reset() }
-  function mountAddInput(el, aBits, bBits) {
-    var ansBits = [0,0,0,0,0,0,0,0];
+  function mountAddInput(el, aBits, bBits, opts) {
+    opts = opts || {};
+    var ansBits = /^[01]{8}$/.test(String(opts.initialAnswer || '')) ? String(opts.initialAnswer).split('').map(Number) : [0,0,0,0,0,0,0,0];
     var carryBits = [0,0,0,0,0,0,0,0];
     function staticCells(arr) {
       return arr.map(function(b) { return '<td class="' + (b ? 'bb-on' : 'bb-off') + '">' + b + '</td>'; }).join('');
@@ -1406,7 +1427,9 @@ window.BinaryLesson = (() => {
         '<tr><td class="bb-add-label">+</td>' + staticCells(bBits) + '</tr>' +
         '<tr><td class="bb-add-label">=</td>' + interactive + '</tr>' +
         '</tbody></table>';
-      bindBitCells(el, ansBits, null);
+      bindBitCells(el, ansBits, function() {
+        if (opts.onChange) opts.onChange(ansBits.join(''));
+      });
       el.querySelectorAll('[data-c]').forEach(function(cell) {
         var i = parseInt(cell.dataset.c, 10);
         function toggle() {
@@ -2224,12 +2247,55 @@ document.getElementById('btn-next').onclick = async function() {
 };
 
 // ── MCQ helpers ───────────────────────────────────────────────
+function renderMCQOption(btn, option) {
+  var isScratch = option && typeof option === 'object' && typeof option.scratch === 'string';
+  var text = isScratch ? option.scratch : String(option == null ? '' : option);
+  btn.innerHTML = '';
+  if (isScratch && window.scratchblocks) {
+    try {
+      var script = scratchblocks.parse(text, { style: 'scratch3' });
+      var svg = scratchblocks.render(script, { style: 'scratch3' });
+      var natW = parseFloat(svg.getAttribute('width')) || 220;
+      var natH = parseFloat(svg.getAttribute('height')) || 60;
+      svg.removeAttribute('width');
+      svg.removeAttribute('height');
+      svg.style.display = 'block';
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
+      svg.style.maxWidth = natW + 'px';
+      svg.style.aspectRatio = (natW / natH).toFixed(4);
+      svg.style.pointerEvents = 'none';
+      svg.style.margin = '0 auto';
+      btn.style.paddingTop = '0.75rem';
+      btn.style.paddingBottom = '0.75rem';
+      btn.style.whiteSpace = '';
+      btn.appendChild(svg);
+      return;
+    } catch(e) {
+      console.warn('[createMCQ scratch option]', e);
+    }
+  }
+  btn.style.paddingTop = '';
+  btn.style.paddingBottom = '';
+  btn.style.whiteSpace = isScratch ? 'pre-wrap' : '';
+  btn.textContent = text;
+}
+
 function createMCQ(containerId, opts, correctIdx, rightMsg, wrongMsg) {
   var c = document.getElementById(containerId);
   if (!c) return;
-  c.innerHTML = opts.map(function(o, i) {
-    return '<button class="ex-mcq-btn" data-i="' + i + '">' + o + '</button>';
-  }).join('') + '<div class="ex-feedback" id="' + containerId + '-fb"></div>';
+  c.innerHTML = '';
+  opts.forEach(function(o, i) {
+    var btn = document.createElement('button');
+    btn.className = 'ex-mcq-btn';
+    btn.dataset.i = i;
+    renderMCQOption(btn, o);
+    c.appendChild(btn);
+  });
+  var feedback = document.createElement('div');
+  feedback.className = 'ex-feedback';
+  feedback.id = containerId + '-fb';
+  c.appendChild(feedback);
   c.querySelectorAll('.ex-mcq-btn').forEach(function(btn) {
     btn.onclick = function() {
       var i = parseInt(this.dataset.i);
@@ -2284,11 +2350,11 @@ function createMCQSet(containerId, questions) {
       }
     }
 
-    (q.opts || []).forEach(function(o, i) {
+    (q.opts || q.options || []).forEach(function(o, i) {
       var btn = document.createElement('button');
       btn.className = 'ex-mcq-btn';
       btn.dataset.i = i;
-      btn.textContent = o;
+      renderMCQOption(btn, o);
       c.appendChild(btn);
     });
 
@@ -2301,16 +2367,25 @@ function createMCQSet(containerId, questions) {
         var i = parseInt(this.dataset.i);
         var fb = document.getElementById(containerId + '-fb');
         c.querySelectorAll('.ex-mcq-btn').forEach(function(b) { b.disabled = true; });
-        if (i === q.correct) {
+        var options = q.opts || q.options || [];
+        var correct = q.correct;
+        if (correct == null && typeof q.answer === 'number') correct = q.answer;
+        if (correct == null && q.answer != null) {
+          correct = options.findIndex(function(option) {
+            var value = option && typeof option === 'object' && typeof option.scratch === 'string' ? option.scratch : option;
+            return value === q.answer;
+          });
+        }
+        if (i === correct) {
           score++;
           this.classList.add('ex-mcq-correct');
           fb.className = 'ex-feedback ok';
-          fb.textContent = q.feedback || 'Correct!';
+          fb.textContent = q.feedback || q.right || 'Correct!';
         } else {
           this.classList.add('ex-mcq-wrong');
-          c.querySelectorAll('.ex-mcq-btn')[q.correct].classList.add('ex-mcq-correct');
+          if (correct >= 0 && c.querySelectorAll('.ex-mcq-btn')[correct]) c.querySelectorAll('.ex-mcq-btn')[correct].classList.add('ex-mcq-correct');
           fb.className = 'ex-feedback err';
-          fb.textContent = q.wrongFeedback || 'Not quite.';
+          fb.textContent = q.wrongFeedback || q.wrong || 'Not quite.';
         }
         setTimeout(function() { idx++; show(); }, 1800);
       };
@@ -3606,6 +3681,10 @@ var assessment = {
   studentListener: null,
   feedbackRef: null,
   feedbackListener: null,
+  questionAnswers: {},
+  questionCurrentIdx: 0,
+  questionAutosaveTimer: null,
+  questionWidget: null,
   clientId: (function(){
     try {
       var existing = sessionStorage.getItem('pylearn_ap_client_id');
@@ -3617,7 +3696,112 @@ var assessment = {
   })()
 };
 
+function buildYear8BinaryHexAp2Criteria() {
+  return buildYear8BinaryHexAp2Questions().map(function(q, i) {
+    return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
+  });
+}
+
+function buildYear8BinaryHexAp2Questions() {
+  function bits(n) { return Number(n).toString(2).padStart(8, '0'); }
+  function hex(n) { return Number(n).toString(16).toUpperCase().padStart(2, '0'); }
+  function bitArray(n) { return bits(n).split('').map(function(b) { return Number(b); }); }
+  function q(id, family, title, prompt, answer, opts) {
+    return Object.assign({ id: id, family: family, title: title, prompt: prompt, answer: String(answer).toUpperCase(), marks: 1 }, opts || {});
+  }
+  var rows = [];
+  [
+    [1, '00000001'], [5, '00000101'], [18, '00010010'], [73, '01001001'], [170, '10101010']
+  ].forEach(function(pair, i) {
+    var n = pair[0], b = pair[1];
+    rows.push(q('bd' + (i + 1), 'binary_to_denary', 'Binary to denary', 'Convert this 8-bit binary number to denary.', String(n), { type:'text', html: BinaryLesson.bitTable(bitArray(n)) }));
+  });
+  [3, 9, 24, 96, 201].forEach(function(n, i) {
+    rows.push(q('db' + (i + 1), 'denary_to_binary', 'Denary to binary', 'Convert ' + n + ' to 8-bit binary.', bits(n), { type:'bit_input', useNibbles:false }));
+  });
+  [
+    [1, 2], [3, 4], [9, 6], [15, 17], [48, 73]
+  ].forEach(function(pair, i) {
+    var total = pair[0] + pair[1];
+    rows.push(q('ba' + (i + 1), 'binary_addition', 'Binary addition', 'Add these two binary numbers.', bits(total), { type:'addition_input', rowA: bitArray(pair[0]), rowB: bitArray(pair[1]), right: pair[0] + ' + ' + pair[1] + ' = ' + total + '.' }));
+  });
+  [10, 15, 31, 64, 175].forEach(function(n, i) {
+    rows.push(q('hd' + (i + 1), 'hex_to_denary', 'Hex to denary', 'Convert ' + hex(n) + ' to denary.', String(n), { type:'text', html:'<div class="bb-hex-pair"><div>' + hex(n)[0] + '</div><div>' + hex(n)[1] + '</div></div>' }));
+  });
+  [11, 16, 42, 127, 230].forEach(function(n, i) {
+    rows.push(q('dh' + (i + 1), 'denary_to_hex', 'Denary to hex', 'Convert ' + n + ' to hexadecimal.', hex(n), { type:'text', html:'<div class="bb-hex-pair"><div>?</div><div>?</div></div>' }));
+  });
+  [12, 30, 47, 128, 255].forEach(function(n, i) {
+    rows.push(q('bh' + (i + 1), 'binary_hex_conversion', 'Binary and hex conversion', i % 2 === 0 ? 'Convert this binary number to hexadecimal.' : 'Convert ' + hex(n) + ' to 8-bit binary.', i % 2 === 0 ? hex(n) : bits(n), i % 2 === 0
+      ? { type:'text', html: BinaryLesson.bitTable(bitArray(n), [8, 4, 2, 1, 8, 4, 2, 1], true) }
+      : { type:'bit_input', useNibbles:true, html:'<div class="bb-hex-pair"><div>' + hex(n)[0] + '</div><div>' + hex(n)[1] + '</div></div>' }));
+  });
+  return rows;
+}
+
+function buildYear8PythonAp2Questions() {
+  function mcq(id, family, title, prompt, options, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'mcq', options:options, answer:String(answer), marks:1 };
+  }
+  function text(id, family, title, prompt, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
+  }
+  function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
+    return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
+  }
+  return [
+    mcq('p1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Hello")</pre>', ['Hello', '"Hello"', 'print', 'Nothing'], 0),
+    text('p2', 'print_comments', 'One print statement', 'Write the output of this code exactly.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Cat")\nprint("Dog")</pre>', 'Cat\nDog'),
+    mcq('p3', 'print_comments', 'Comments', 'Which line is a comment in Python?', ['print("Hi")', '# print("Hi")', 'comment("Hi")', '// print("Hi")'], 1),
+    code('p4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Welcome</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Welcome['\\\"]\\s*\\)"], 'print("Welcome")'),
+    code('p5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>Start</strong> on one line and <strong>End</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]Start['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]End['\\\"]\\s*\\)"], 'print("Start")\nprint("End")'),
+
+    text('v1', 'variables', 'Variable tracing', 'What is the value of <code>score</code> after this code runs?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">score = 4\nscore = score + 3</pre>', '7'),
+    mcq('v2', 'variables', 'Variable purpose', 'Why is a variable useful?', ['It stores a value so it can be used later', 'It always prints text', 'It makes code run forever', 'It only works with comments'], 0),
+    code('v3', 'variables', 'Create and print a variable', 'Create a variable called <code>name</code>, store <code>"Sam"</code> in it, then print the variable.', ["\\bname\\s*=\\s*['\\\"]Sam['\\\"]", '\\bprint\\s*\\(\\s*name\\s*\\)'], 'name = "Sam"\nprint(name)'),
+    code('v4', 'variables', 'Update a number variable', 'Create a variable called <code>score</code> with the value <code>10</code>, add <code>5</code> to it, then print <code>score</code>.', ['\\bscore\\s*=\\s*10\\b', '\\bscore\\s*=\\s*score\\s*\\+\\s*5\\b|\\bscore\\s*\\+=\\s*5\\b', '\\bprint\\s*\\(\\s*score\\s*\\)'], 'score = 10\nscore = score + 5\nprint(score)'),
+
+    code('i1', 'input', 'Store user input', 'Ask the user for their name and store the answer in a variable called <code>name</code>.', ['\\bname\\s*=\\s*input\\s*\\('], 'name = input("What is your name? ")'),
+    code('i2', 'input', 'Input then output', 'Ask the user for their favourite colour, store it in <code>colour</code>, then print <code>colour</code>.', ['\\bcolour\\s*=\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*colour\\s*\\)'], 'colour = input("Favourite colour? ")\nprint(colour)'),
+    mcq('i3', 'input', 'Integer input', 'Which code correctly lets the user type a whole number and stores it as an integer?', ['age = input(int("Age?"))', 'age = int(input("Age?"))', 'int = input("Age?")', 'age = input("Age?") + int'], 1),
+    code('i4', 'input', 'Number input calculation', 'Ask the user for a whole number, store it as an integer in <code>num</code>, then print <code>num + 1</code>.', ['\\bnum\\s*=\\s*int\\s*\\(\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*num\\s*\\+\\s*1\\s*\\)'], 'num = int(input("Number: "))\nprint(num + 1)'),
+
+    mcq('s1', 'selection', 'Selection condition', 'Which comparison checks whether <code>score</code> is at least 10?', ['score = 10', 'score > 10', 'score >= 10', 'score <= 10'], 2),
+    code('s2', 'selection', 'Simple if statement', 'Write an if statement that prints <code>Win</code> when <code>score</code> is greater than <code>20</code>.', ['\\bif\\s+score\\s*>\\s*20\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Win['\\\"]\\s*\\)"], 'if score > 20:\n    print("Win")'),
+    code('s3', 'selection', 'if and else', 'Write selection code that prints <code>Pass</code> if <code>mark</code> is at least <code>50</code>, otherwise prints <code>Try again</code>.', ['\\bif\\s+mark\\s*>=\\s*50\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Pass['\\\"]\\s*\\)", '\\belse\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Try again['\\\"]\\s*\\)"], 'if mark >= 50:\n    print("Pass")\nelse:\n    print("Try again")'),
+    code('s4', 'selection', 'elif choice', 'Write code that prints <code>Gold</code> if <code>place</code> is 1, <code>Silver</code> if <code>place</code> is 2, otherwise <code>Keep trying</code>.', ['\\bif\\s+place\\s*==\\s*1\\s*:', '\\belif\\s+place\\s*==\\s*2\\s*:', '\\belse\\s*:', 'Gold', 'Silver', 'Keep trying'], 'if place == 1:\n    print("Gold")\nelif place == 2:\n    print("Silver")\nelse:\n    print("Keep trying")'),
+
+    mcq('l1', 'loops', 'Loop count', 'How many times will this loop print <code>Hello</code>?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">for i in range(3):\n    print("Hello")</pre>', ['1', '2', '3', '4'], 2),
+    code('l2', 'loops', 'For loop', 'Write a for loop that prints <code>Hi</code> five times.', ['\\bfor\\s+\\w+\\s+in\\s+range\\s*\\(\\s*5\\s*\\)\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Hi['\\\"]\\s*\\)"], 'for i in range(5):\n    print("Hi")'),
+    code('l3', 'loops', 'While loop counter', 'Write a while loop that starts <code>count</code> at 1, prints it while it is less than or equal to 3, and increases it by 1 each time.', ['\\bcount\\s*=\\s*1\\b', '\\bwhile\\s+count\\s*<=\\s*3\\s*:', '\\n\\s+print\\s*\\(\\s*count\\s*\\)', '\\bcount\\s*=\\s*count\\s*\\+\\s*1\\b|\\bcount\\s*\\+=\\s*1\\b'], 'count = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1')
+  ];
+}
+
+function buildYear8PythonAp2Criteria() {
+  return buildYear8PythonAp2Questions().map(function(q, i) {
+    return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
+  });
+}
+
 var ASSESSMENTS = {
+  'year8-ap2-python': {
+    id: 'year8-ap2-python',
+    title: 'Year 8 AP2 Python',
+    type: 'python-code',
+    maxScore: 20,
+    brief: 'Answer 20 self-paced Python questions. The assessment is front loaded towards print, variables, input and selection, with only the final three questions on loops.',
+    criteria: buildYear8PythonAp2Criteria(),
+    questions: buildYear8PythonAp2Questions()
+  },
+  'year8-ap2-binary-hex': {
+    id: 'year8-ap2-binary-hex',
+    title: 'Year 8 AP2 Binary & Hexadecimal',
+    type: 'binary-hex',
+    maxScore: 30,
+    brief: 'Answer 30 self-paced conversion questions. There are five questions from each type, and each set gets gradually harder.',
+    criteria: buildYear8BinaryHexAp2Criteria(),
+    questions: buildYear8BinaryHexAp2Questions()
+  },
   'year7-ap2-practice-scratch': {
     id: 'year7-ap2-practice-scratch',
     title: 'Practice Year 7 AP2 Scratch - Space Collector Game',
@@ -3697,7 +3881,7 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
     assessmentId: id,
     className: assessment.className,
     forced: !!forceClass,
-    questions: []
+    questions: spec.questions || []
   });
   assessment.sessionRef.onDisconnect().update({
     state: 'finished',
@@ -3748,7 +3932,7 @@ function renderAssessmentHostStudents(session) {
     row.innerHTML =
       '<span class="font-mono text-gray-200">' + (studentName(code) || code) + '</span>' +
       '<span class="text-sm text-gray-400">' + (r.completed ? 'Submitted' : 'Working') + '</span>' +
-      '<span class="font-bold text-yellow-400">' + (r.score != null ? r.score + ' / ' + (r.maxScore || 21) : '-') + '</span>' +
+      '<span class="font-bold text-yellow-400">' + (r.score != null ? r.score + ' / ' + (r.maxScore || 21) : (r.draftScore != null ? r.draftScore + ' / ' + (r.draftMaxScore || ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21)) + ' draft' : '-')) + '</span>' +
       '<span class="text-xs text-gray-500">' + (r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleTimeString('en-GB') : '') + '</span>' +
       '<button class="btn-ap-inspect px-2 py-1 rounded border border-gray-600 text-xs text-gray-200 hover:bg-gray-700" data-code="' + code + '">Inspect</button>' +
       '<button class="btn-ap-edit-score px-2 py-1 rounded border border-yellow-500 text-xs text-yellow-200 hover:bg-yellow-900/30" data-code="' + code + '">Edit marks</button>';
@@ -3764,7 +3948,26 @@ function renderAssessmentHostStudents(session) {
 
 async function inspectAssessmentProject(code) {
   var panel = document.getElementById('aph-inspector');
+  var spec = ASSESSMENTS[assessment.assessmentId];
   panel.classList.remove('hidden');
+  if (spec && spec.questions && spec.questions.length) {
+    try {
+      var answerSnap = await assessment.sessionRef.child('answers/0/' + code).get();
+      var rec = answerSnap.val() || {};
+      var result = assessQuestionAssessment(spec, rec.answers || {});
+      var html = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Answer inspection: ' + escapeHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div>';
+      html += '<p class="text-sm text-gray-300 mb-3">Current score: <strong class="text-yellow-300">' + result.score + ' / ' + result.maxScore + '</strong></p><div class="grid gap-1 text-xs">';
+      result.criteria.forEach(function(c, i) {
+        html += '<div class="grid grid-cols-[42px_1fr_1fr_50px] gap-2 items-center bg-gray-900 border border-gray-700 rounded px-2 py-1">' +
+          '<span class="font-mono text-gray-400">Q' + (i + 1) + '</span><span class="text-gray-200">' + escapeHtml(c.text.replace(/^Q\\d+:\\s*/, '')) + '</span>' +
+          '<span class="font-mono text-gray-300">Answer: ' + escapeHtml(c.answer || '-') + '</span><strong class="' + (c.awarded ? 'text-green-300' : 'text-red-300') + '">' + c.awarded + '/1</strong></div>';
+      });
+      panel.innerHTML = html + '</div>';
+    } catch(e) {
+      panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect answers: ' + escapeHtml(e.message || String(e)) + '</p>';
+    }
+    return;
+  }
   panel.innerHTML = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Project inspection: ' + escapeHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div><p class="text-yellow-300 text-sm">Remote SB3 inspection is disabled to keep Firebase usage under the daily limit. Use the student screen or their submitted rubric/score instead.</p>';
   return;
   try {
@@ -4050,21 +4253,24 @@ async function finaliseIncompleteAssessmentResponses() {
   for (var i = 0; i < items.length; i++) {
     var code = items[i].code;
     var rec = items[i].rec;
+    var spec = ASSESSMENTS[assessment.assessmentId] || {};
     var result;
-    if (rec.rubric && rec.rubric.length) {
+    if (spec.questions && spec.questions.length) {
+      result = assessQuestionAssessment(spec, rec.answers || {});
+    } else if (rec.rubric && rec.rubric.length) {
       result = {
         score: rec.score || rec.draftScore || rec.rubric.reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0),
-        maxScore: rec.maxScore || rec.draftMaxScore || ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21),
+        maxScore: rec.maxScore || rec.draftMaxScore || (spec.maxScore || 21),
         criteria: rec.rubric
       };
     } else if (rec.draftRubric && rec.draftRubric.length) {
       result = {
         score: rec.draftScore || rec.draftRubric.reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0),
-        maxScore: rec.draftMaxScore || ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21),
+        maxScore: rec.draftMaxScore || (spec.maxScore || 21),
         criteria: rec.draftRubric
       };
     } else {
-      result = { score: 0, maxScore: (ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
+      result = { score: 0, maxScore: spec.maxScore || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
     }
     var completedAt = Date.now();
     await assessment.sessionRef.child('answers/0/' + code).update({
@@ -4081,6 +4287,7 @@ async function finaliseIncompleteAssessmentResponses() {
       score: result.score,
       maxScore: result.maxScore,
       rubric: result.criteria,
+      answers: rec.answers || null,
       className: assessment.className || rec.className || null
     });
   }
@@ -4191,7 +4398,11 @@ function showAssessmentStudentScreen(session) {
     return '<li>' + c.text + ' <span class="text-gray-500">(' + c.marks + ' marks)</span></li>';
   }).join('');
   setAssessmentInstructionsCollapsed(false);
-  loadAssessmentScratchEditor();
+  if (spec.questions && spec.questions.length) {
+    loadAssessmentQuestionPaper(spec);
+  } else {
+    loadAssessmentScratchEditor();
+  }
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
   assessment.studentListener = assessment.sessionRef.on('value', function(snap) {
     if (!snap.exists() || snap.child('state').val() === 'finished') {
@@ -4201,6 +4412,9 @@ function showAssessmentStudentScreen(session) {
 }
 
 function loadAssessmentScratchEditor() {
+  document.getElementById('aps-question-ap').classList.add('hidden');
+  document.getElementById('aps-scratch-frame').classList.remove('hidden');
+  document.getElementById('btn-ap-check').textContent = 'Check My Project';
   var frame = document.getElementById('aps-scratch-frame');
   document.getElementById('aps-feedback').innerHTML = '';
   document.getElementById('aps-save-status').textContent = 'Loading editor...';
@@ -4211,6 +4425,243 @@ function loadAssessmentScratchEditor() {
     document.getElementById('aps-save-status').textContent = 'Autosave on';
   };
   frame.src = './scratch/editor.html?assessment=' + encodeURIComponent(assessment.lobbyCode || 'ap') + '&suppressBeforeUnload=1&_ap=' + Date.now();
+}
+
+async function loadAssessmentQuestionPaper(spec) {
+  var frame = document.getElementById('aps-scratch-frame');
+  var panel = document.getElementById('aps-question-ap');
+  frame.src = 'about:blank';
+  frame.classList.add('hidden');
+  panel.classList.remove('hidden');
+  document.getElementById('btn-ap-check').textContent = 'Save Current Answer';
+  document.getElementById('aps-save-status').textContent = 'Loading answers...';
+  document.getElementById('aps-feedback').innerHTML = '<div class="text-xs text-gray-500">Answers save automatically. You can move between questions at your own pace.</div>';
+  if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  assessment.questionAnswers = {};
+  assessment.questionCurrentIdx = 0;
+  try {
+    var snap = await assessment.responseRef.get();
+    var rec = snap.val() || {};
+    assessment.questionAnswers = rec.answers || {};
+    assessment.questionCurrentIdx = Math.max(0, Math.min((spec.questions || []).length - 1, rec.currentQuestionIdx || 0));
+  } catch(e) {}
+  renderAssessmentQuestionPaper(spec);
+  document.getElementById('aps-save-status').textContent = 'Autosave on';
+}
+
+function normaliseAssessmentAnswer(value) {
+  return String(value == null ? '' : value).trim().replace(/\s+/g, '').toUpperCase();
+}
+
+function renderAssessmentQuestionPaper(spec) {
+  var panel = document.getElementById('aps-question-ap');
+  var questions = spec.questions || [];
+  var idx = Math.max(0, Math.min(questions.length - 1, assessment.questionCurrentIdx || 0));
+  assessment.questionCurrentIdx = idx;
+  var q = questions[idx];
+  var answered = Object.keys(assessment.questionAnswers || {}).filter(function(id) {
+    return normaliseAssessmentAnswer(assessment.questionAnswers[id]).length > 0;
+  }).length;
+  var nav = questions.map(function(item, i) {
+    var has = normaliseAssessmentAnswer(assessment.questionAnswers[item.id]).length > 0;
+    var active = i === idx;
+    return '<button type="button" class="ap-qnav ' + (active ? 'active ' : '') + (has ? 'answered' : '') + '" data-i="' + i + '">' + (i + 1) + '</button>';
+  }).join('');
+  panel.innerHTML =
+    '<div class="max-w-5xl mx-auto">' +
+      '<div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">' +
+        '<div class="flex flex-wrap items-center justify-between gap-3 mb-3">' +
+          '<div><div class="text-xs uppercase tracking-wide text-gray-500 font-semibold">' + escapeHtml(q.title) + '</div>' +
+          '<h3 class="text-xl font-bold text-gray-900">Question ' + (idx + 1) + ' of ' + questions.length + '</h3></div>' +
+          '<div class="text-sm font-semibold text-gray-600">Answered: ' + answered + ' / ' + questions.length + '</div>' +
+        '</div>' +
+        '<div class="ap-qnav-grid mb-4">' + nav + '</div>' +
+        '<div class="bb-question-card bg-gray-900 text-gray-100 rounded-lg p-4">' +
+          '<div class="bb-question-title mb-3">' + (q.prompt || '') + '</div>' + (q.html || '') +
+          '<div id="ap-question-widget" class="mt-3"></div>' +
+          '<div id="ap-question-feedback" class="mt-3 text-sm text-gray-300"></div>' +
+        '</div>' +
+        '<div class="flex flex-wrap justify-between gap-2 mt-4">' +
+          '<button id="ap-prev-q" class="px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 bg-white hover:bg-gray-50" ' + (idx === 0 ? 'disabled' : '') + '>Previous</button>' +
+          '<button id="ap-next-q" class="jhncc-primary px-5 py-2 rounded text-sm font-semibold">' + (idx === questions.length - 1 ? 'Review' : 'Next') + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  panel.querySelectorAll('.ap-qnav').forEach(function(btn) {
+    btn.onclick = function() {
+      saveCurrentQuestionAnswer(spec, { silent: true });
+      assessment.questionCurrentIdx = parseInt(btn.dataset.i, 10);
+      renderAssessmentQuestionPaper(spec);
+    };
+  });
+  document.getElementById('ap-prev-q').onclick = function() {
+    saveCurrentQuestionAnswer(spec, { silent: true });
+    assessment.questionCurrentIdx = Math.max(0, idx - 1);
+    renderAssessmentQuestionPaper(spec);
+  };
+  document.getElementById('ap-next-q').onclick = function() {
+    saveCurrentQuestionAnswer(spec, { silent: true });
+    assessment.questionCurrentIdx = Math.min(questions.length - 1, idx + 1);
+    renderAssessmentQuestionPaper(spec);
+  };
+
+  var widgetEl = document.getElementById('ap-question-widget');
+  var saved = assessment.questionAnswers[q.id] || '';
+  assessment.questionWidget = null;
+  if (q.type === 'bit_input') {
+    widgetEl.innerHTML = '<div id="ap-bit-widget"></div>';
+    assessment.questionWidget = BinaryLesson.mountBitInput(document.getElementById('ap-bit-widget'), {
+      useNibbles: !!q.useNibbles,
+      showTotal: !q.useNibbles,
+      initialAnswer: saved,
+      onChange: function(value) { setQuestionAnswer(spec, q.id, value, { defer: true }); }
+    });
+  } else if (q.type === 'addition_input') {
+    widgetEl.innerHTML = '<div id="ap-add-widget"></div>';
+    assessment.questionWidget = BinaryLesson.mountAddInput(document.getElementById('ap-add-widget'), q.rowA, q.rowB, {
+      initialAnswer: saved,
+      onChange: function(value) { setQuestionAnswer(spec, q.id, value, { defer: true }); }
+    });
+  } else if (q.type === 'code_input') {
+    widgetEl.innerHTML = '<textarea id="ap-code-answer" class="quiz-code-area w-full min-h-[220px]" spellcheck="false" placeholder="Write your Python code here">' + escapeHtml(saved || '') + '</textarea>';
+    var codeInput = document.getElementById('ap-code-answer');
+    codeInput.oninput = function() { setQuestionAnswer(spec, q.id, codeInput.value, { defer: true }); };
+    codeInput.onkeydown = function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        var start = codeInput.selectionStart;
+        var end = codeInput.selectionEnd;
+        codeInput.value = codeInput.value.substring(0, start) + '    ' + codeInput.value.substring(end);
+        codeInput.selectionStart = codeInput.selectionEnd = start + 4;
+        setQuestionAnswer(spec, q.id, codeInput.value, { defer: true });
+      }
+    };
+    setTimeout(function() { codeInput.focus(); }, 0);
+  } else if (q.type === 'mcq') {
+    widgetEl.innerHTML = '<div class="grid gap-2">' + (q.options || []).map(function(opt, i) {
+      var checked = String(saved) === String(i) ? ' checked' : '';
+      return '<label class="flex items-start gap-2 bg-gray-800 border border-gray-700 rounded p-2 cursor-pointer"><input type="radio" name="ap-mcq-answer" value="' + i + '" class="mt-1 accent-[rgb(245,186,41)]"' + checked + '><span>' + escapeHtml(opt) + '</span></label>';
+    }).join('') + '</div>';
+    widgetEl.querySelectorAll('input[name="ap-mcq-answer"]').forEach(function(radio) {
+      radio.onchange = function() { setQuestionAnswer(spec, q.id, radio.value, { defer: true }); };
+    });
+  } else {
+    widgetEl.innerHTML = '<input id="ap-text-answer" class="ex-input mt-2" autocomplete="off" spellcheck="false" placeholder="Type your answer" value="' + escapeHtml(saved || '') + '">';
+    var input = document.getElementById('ap-text-answer');
+    input.oninput = function() { setQuestionAnswer(spec, q.id, input.value, { defer: true }); };
+    input.onkeydown = function(e) { if (e.key === 'Enter') saveCurrentQuestionAnswer(spec); };
+    setTimeout(function() { input.focus(); }, 0);
+  }
+}
+
+function setQuestionAnswer(spec, id, value, opts) {
+  opts = opts || {};
+  assessment.questionAnswers[id] = String(value == null ? '' : value);
+  if (opts.defer) {
+    clearTimeout(assessment.questionAutosaveTimer);
+    assessment.questionAutosaveTimer = setTimeout(function() { saveQuestionAssessmentDraft(spec, { silent: true }); }, 500);
+  }
+}
+
+function saveCurrentQuestionAnswer(spec, opts) {
+  opts = opts || {};
+  var q = (spec.questions || [])[assessment.questionCurrentIdx || 0];
+  if (!q) return;
+  var value = '';
+  if (assessment.questionWidget && assessment.questionWidget.getAnswer) value = assessment.questionWidget.getAnswer();
+  else {
+    var codeInput = document.getElementById('ap-code-answer');
+    var input = document.getElementById('ap-text-answer');
+    var radio = document.querySelector('input[name="ap-mcq-answer"]:checked');
+    value = codeInput ? codeInput.value : (input ? input.value : (radio ? radio.value : (assessment.questionAnswers[q.id] || '')));
+  }
+  setQuestionAnswer(spec, q.id, value);
+  saveQuestionAssessmentDraft(spec, opts);
+}
+
+async function saveQuestionAssessmentDraft(spec, opts) {
+  opts = opts || {};
+  if (!assessment.responseRef || assessment.completed) return;
+  var result = assessQuestionAssessment(spec, assessment.questionAnswers || {});
+  try {
+    await assessment.responseRef.update({
+      answers: assessment.questionAnswers || {},
+      currentQuestionIdx: assessment.questionCurrentIdx || 0,
+      savedAt: Date.now(),
+      lastSeenAt: Date.now(),
+      draftScore: result.score,
+      draftMaxScore: result.maxScore,
+      draftRubric: result.criteria
+    });
+    document.getElementById('aps-save-status').textContent = 'Saved ' + new Date().toLocaleTimeString('en-GB');
+    if (!opts.silent) document.getElementById('aps-feedback').innerHTML = '<div class="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2">Current answer saved.</div>';
+  } catch(e) {
+    document.getElementById('aps-save-status').textContent = 'Save failed';
+  }
+}
+
+function assessQuestionAssessment(spec, answers) {
+  answers = answers || {};
+  var score = 0;
+  var criteria = (spec.questions || []).map(function(q, i) {
+    var check = validateAssessmentQuestionAnswer(q, answers[q.id]);
+    var ok = check.correct;
+    if (ok) score += 1;
+    return {
+      id: q.id,
+      text: 'Q' + (i + 1) + ': ' + q.title,
+      marks: 1,
+      awarded: ok ? 1 : 0,
+      family: q.family,
+      answer: answers[q.id] || '',
+      expected: check.expected
+    };
+  });
+  return { score: score, maxScore: spec.maxScore || (spec.questions || []).length, criteria: criteria };
+}
+
+function validateAssessmentQuestionAnswer(q, value) {
+  var raw = String(value == null ? '' : value);
+  if (q.type === 'code_input') {
+    var patterns = q.patterns || (q.pattern ? [q.pattern] : []);
+    var ok = raw.trim().length > 0 && patterns.every(function(pattern) {
+      try { return new RegExp(pattern, q.flags || 'im').test(raw); }
+      catch(e) { return false; }
+    });
+    return { correct: ok, expected: q.sampleAnswer || 'Valid Python code' };
+  }
+  if (q.type === 'mcq') {
+    return { correct: normaliseAssessmentAnswer(raw) === normaliseAssessmentAnswer(q.answer), expected: (q.options && q.options[Number(q.answer)]) || q.answer };
+  }
+  return { correct: !!normaliseAssessmentAnswer(raw) && normaliseAssessmentAnswer(raw) === normaliseAssessmentAnswer(q.answer), expected: q.answer };
+}
+
+async function submitQuestionAssessmentFinal() {
+  var spec = ASSESSMENTS[assessment.assessmentId];
+  saveCurrentQuestionAnswer(spec, { silent: true });
+  var result = assessQuestionAssessment(spec, assessment.questionAnswers || {});
+  assessment.completed = true;
+  var completedAt = Date.now();
+  await assessment.responseRef.update({
+    answers: assessment.questionAnswers || {},
+    completed: true,
+    completedAt: completedAt,
+    score: result.score,
+    maxScore: result.maxScore,
+    rubric: result.criteria,
+    savedAt: completedAt,
+    lastSeenAt: completedAt
+  });
+  await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+    completedAt: completedAt,
+    score: result.score,
+    maxScore: result.maxScore,
+    rubric: result.criteria,
+    answers: assessment.questionAnswers || {},
+    className: assessment.className || state.className || null
+  });
+  showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria, className: assessment.className || state.className || null });
 }
 
 function waitForAssessmentVm() {
@@ -4269,6 +4720,11 @@ function startAssessmentAutosave() {
 }
 
 document.getElementById('btn-ap-check').onclick = async function() {
+  var spec = ASSESSMENTS[assessment.assessmentId];
+  if (spec && spec.questions && spec.questions.length) {
+    saveCurrentQuestionAnswer(spec);
+    return;
+  }
   if (assessment.validating) return;
   await runAssessmentValidation('Checking your project...', async function() {
     await saveAssessmentProject({ force: false });
@@ -4280,6 +4736,12 @@ document.getElementById('btn-ap-check').onclick = async function() {
 };
 
 document.getElementById('btn-ap-finish').onclick = async function() {
+  var spec = ASSESSMENTS[assessment.assessmentId];
+  if (spec && spec.questions && spec.questions.length) {
+    if (!confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
+    await submitQuestionAssessmentFinal();
+    return;
+  }
   if (assessment.validating) return;
   if (!confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
   await runAssessmentValidation('Final validation before submitting...', async function() {
@@ -4813,19 +5275,25 @@ function scratchSpriteSearchText(sprite) {
 function renderAssessmentFeedback(result, finalMode) {
   var html = '<div class="font-semibold mb-2">Score: ' + result.score + ' / ' + result.maxScore + '</div>';
   result.criteria.forEach(function(c) {
-    html += '<div class="flex justify-between gap-3 border-b border-gray-200 py-1"><span>' + c.text + '</span><strong>' + c.awarded + '/' + c.marks + '</strong></div>';
+    html += '<div class="border-b border-gray-200 py-1"><div class="flex justify-between gap-3"><span>' + c.text + '</span><strong>' + c.awarded + '/' + c.marks + '</strong></div>';
+    if (c.expected != null) {
+      html += '<div class="text-xs text-gray-500 mt-1">Your answer: <span class="font-mono">' + escapeHtml(c.answer || '-') + '</span> · Expected: <span class="font-mono">' + escapeHtml(c.expected || '-') + '</span></div>';
+    }
+    html += '</div>';
   });
   document.getElementById(finalMode ? 'aps-final-rubric' : 'aps-feedback').innerHTML = html;
 }
 
 function showAssessmentCompleted(record) {
+  var spec = ASSESSMENTS[assessment.assessmentId] || {};
+  var maxScore = record.maxScore || spec.maxScore || 21;
   assessment.completed = true;
   document.getElementById('ap-student-screen').classList.remove('hidden');
   document.getElementById('aps-active').classList.add('hidden');
   document.getElementById('aps-finished').classList.remove('hidden');
   document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
-  document.getElementById('aps-final-score').textContent = 'Score: ' + (record.score || 0) + ' / ' + (record.maxScore || 21);
-  renderAssessmentFeedback({ score: record.score || 0, maxScore: record.maxScore || 21, criteria: record.rubric || [] }, true);
+  document.getElementById('aps-final-score').textContent = 'Score: ' + (record.score || 0) + ' / ' + maxScore;
+  renderAssessmentFeedback({ score: record.score || 0, maxScore: maxScore, criteria: record.rubric || [] }, true);
   watchReleasedAssessmentFeedback(record);
 }
 
@@ -4840,6 +5308,8 @@ document.getElementById('btn-ap-student-home').onclick = function() {
 function returnToLessonsFromCompletedAssessment() {
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
   assessment.saveTimer = null;
+  if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
+  assessment.questionAutosaveTimer = null;
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
   if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
   assessment.studentListener = null;
@@ -4855,6 +5325,8 @@ function exitAssessmentStudent(opts) {
   assessment.saveTimer = null;
   if (assessment.projectChangeTimer) clearTimeout(assessment.projectChangeTimer);
   assessment.projectChangeTimer = null;
+  if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
+  assessment.questionAutosaveTimer = null;
   assessment.projectChangeListener = null;
   if (assessment.studentListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.studentListener);
   if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
@@ -5093,7 +5565,7 @@ function renderClassAssessmentResults(content, rows) {
       '<td class="border border-gray-100 px-2 py-1.5 text-center">' + pct + '%</td>' +
       '<td class="border border-gray-100 px-2 py-1.5 text-center">' + grades[i] + '</td>' +
       '<td class="border border-gray-100 px-2 py-1.5">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : 'Not completed') + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.completed ? '<div class="flex justify-center gap-1"><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' + (r.lobbyCode ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">SB3</button>' : '') + '</div>' : '-') + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.completed ? '<div class="flex justify-center gap-1"><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' + (r.lobbyCode && (!ASSESSMENTS[r.assessmentId] || ASSESSMENTS[r.assessmentId].type !== 'binary-hex') ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">SB3</button>' : '') + '</div>' : '-') + '</td>' +
       '</tr>';
   });
   html += '</tbody></table></div>';
@@ -5123,7 +5595,7 @@ function renderStudentAssessmentResults(content, rows) {
   completedRows.sort(function(a, b) { return (b.completedAt || 0) - (a.completedAt || 0); }).forEach(function(r) {
     var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
-      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div>' + (r.lobbyCode ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Download SB3</button>' : '') + '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
+      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div>' + (r.lobbyCode && (!ASSESSMENTS[r.assessmentId] || ASSESSMENTS[r.assessmentId].type !== 'binary-hex') ? '<button class="btn-ap-result-sb3 px-2 py-1 rounded border border-blue-500 text-blue-700 bg-blue-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Download SB3</button>' : '') + '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
       '<div class="p-3 space-y-1">';
     (r.rubric || []).forEach(function(c) {
       html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
@@ -5308,6 +5780,11 @@ function feedbackListHtml(items) {
 }
 
 function assessmentPracticePrompt(id, assessmentId) {
+  var spec = ASSESSMENTS[assessmentId] || {};
+  if (spec.type === 'binary-hex') {
+    var question = (spec.questions || []).find(function(q) { return q.id === id; });
+    if (question) return question.prompt + ' Work it out again, then check your answer.';
+  }
   var practice = assessmentId === 'year7-ap2-practice-scratch';
   var prompts = practice ? {
     backdrop: 'Add or rename a backdrop so it clearly shows a space setting. Check that the backdrop name includes a clue such as space, galaxy, planet, star or moon.',
@@ -5336,14 +5813,32 @@ function assessmentPracticePrompt(id, assessmentId) {
 function renderIndividualPractice(record) {
   var rubric = record.rubric || [];
   var practiceAssessmentId = record.assessmentId || assessment.assessmentId;
+  var spec = ASSESSMENTS[practiceAssessmentId] || {};
   var weak = rubric.filter(function(c) { return (c.awarded || 0) < (c.marks || 0); });
   var cards = weak.slice(0, 5).map(function(c) {
     return { id: c.id, text: c.text, prompt: assessmentPracticePrompt(c.id, practiceAssessmentId), choice: false };
   });
-  var allCriteria = rubric.length ? rubric : ((ASSESSMENTS[practiceAssessmentId] && ASSESSMENTS[practiceAssessmentId].criteria) || []);
+  var allCriteria = rubric.length ? rubric : (spec.criteria || []);
   while (cards.length < 3) {
-    var fallback = allCriteria[cards.length % Math.max(1, allCriteria.length)] || { id: 'choice', text: 'Choose a focus' };
+    var fallback = allCriteria.find(function(c) { return !cards.some(function(card) { return card.id === c.id; }); }) || allCriteria[cards.length % Math.max(1, allCriteria.length)] || { id: 'choice', text: 'Choose a focus' };
     cards.push({ id: fallback.id, text: fallback.text, prompt: assessmentPracticePrompt(fallback.id, practiceAssessmentId), choice: true });
+  }
+  if (spec.questions && spec.questions.length) {
+    var qById = {};
+    (spec.questions || []).forEach(function(q) { qById[q.id] = q; });
+    var questionHtml = '<div class="border border-blue-200 bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-900 mb-2">Your additional practice</h4>' +
+      '<p class="text-sm text-blue-800 mb-3">Complete at least three practice questions. They are based on your AP result and check locally for your own revision.</p><div class="space-y-3">';
+    cards.slice(0, 5).forEach(function(card, i) {
+      var q = qById[card.id];
+      questionHtml += '<div class="ap-binary-practice bg-white border border-blue-100 rounded-lg p-3" data-qid="' + escapeHtml(card.id) + '">' +
+        '<div class="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-1">Practice ' + (i + 1) + '</div>' +
+        '<div class="font-semibold text-gray-800 mb-1">' + escapeHtml(card.text || (q && q.title) || '') + '</div>' +
+        '<p class="text-sm text-gray-700 mb-2">' + escapeHtml(card.prompt) + '</p>' +
+        '<div class="bb-question-card bg-gray-900 text-gray-100 rounded-lg p-3">' + (q && q.html ? q.html : '') + '<div class="ap-binary-widget mt-3"></div><div class="ap-binary-feedback mt-2 text-sm"></div></div>' +
+        '<button class="btn-ap-binary-practice-check jhncc-primary px-4 py-1.5 rounded text-sm mt-3">Check Answer</button></div>';
+    });
+    questionHtml += '</div></div>';
+    return questionHtml;
   }
   var html = '<div class="border border-blue-200 bg-blue-50 rounded-lg p-4"><h4 class="font-semibold text-blue-900 mb-2">Your additional practice</h4>' +
     '<p class="text-sm text-blue-800 mb-3">Complete at least three practice tasks. They are based on your AP result. If you had fewer than three areas to improve, choose the extra focus areas yourself. Use the Scratch workspace below, then check your practice project locally.</p><div class="space-y-3">';
@@ -5485,6 +5980,11 @@ function selectedAssessmentPracticeIds(box) {
 
 function setupAssessmentPracticeWorkspace(box, record) {
   box.__apPracticeRecord = record || {};
+  var spec = ASSESSMENTS[(record && record.assessmentId) || assessment.assessmentId] || {};
+  if (spec.questions && spec.questions.length) {
+    setupBinaryAssessmentPracticeWorkspace(box, spec);
+    return;
+  }
   var frame = box.querySelector('.ap-practice-frame');
   var feedback = box.querySelector('.ap-practice-feedback');
   var button = box.querySelector('.btn-ap-practice-check');
@@ -5513,6 +6013,45 @@ function setupAssessmentPracticeWorkspace(box, record) {
   };
 }
 
+function setupBinaryAssessmentPracticeWorkspace(box, spec) {
+  var qById = {};
+  (spec.questions || []).forEach(function(q) { qById[q.id] = q; });
+  box.querySelectorAll('.ap-binary-practice').forEach(function(card) {
+    var q = qById[card.dataset.qid];
+    var widgetEl = card.querySelector('.ap-binary-widget');
+    var feedback = card.querySelector('.ap-binary-feedback');
+    var button = card.querySelector('.btn-ap-binary-practice-check');
+    var widget = null;
+    if (!q || !widgetEl || !button) return;
+    if (q.type === 'bit_input') {
+      widgetEl.innerHTML = '<div class="ap-practice-bit-widget"></div>';
+      widget = BinaryLesson.mountBitInput(widgetEl.querySelector('.ap-practice-bit-widget'), { useNibbles: !!q.useNibbles, showTotal: !q.useNibbles });
+    } else if (q.type === 'addition_input') {
+      widgetEl.innerHTML = '<div class="ap-practice-add-widget"></div>';
+      widget = BinaryLesson.mountAddInput(widgetEl.querySelector('.ap-practice-add-widget'), q.rowA, q.rowB);
+    } else if (q.type === 'code_input') {
+      widgetEl.innerHTML = '<textarea class="ap-practice-code quiz-code-area w-full min-h-[180px]" spellcheck="false" placeholder="Write your Python code here"></textarea>';
+    } else if (q.type === 'mcq') {
+      widgetEl.innerHTML = '<div class="grid gap-2">' + (q.options || []).map(function(opt, i) {
+        return '<label class="flex items-start gap-2 bg-gray-800 border border-gray-700 rounded p-2 cursor-pointer"><input type="radio" name="ap-practice-mcq-' + escapeHtml(q.id) + '" value="' + i + '" class="mt-1 accent-[rgb(245,186,41)]"><span>' + escapeHtml(opt) + '</span></label>';
+      }).join('') + '</div>';
+    } else {
+      widgetEl.innerHTML = '<input class="ap-practice-text ex-input mt-2" autocomplete="off" spellcheck="false" placeholder="Type your answer">';
+    }
+    button.onclick = function() {
+      var input = card.querySelector('.ap-practice-text');
+      var codeInput = card.querySelector('.ap-practice-code');
+      var radio = card.querySelector('input[type="radio"]:checked');
+      var actual = widget && widget.getAnswer ? widget.getAnswer() : (codeInput ? codeInput.value : (input ? input.value : (radio ? radio.value : '')));
+      var check = validateAssessmentQuestionAnswer(q, actual);
+      var ok = check.correct;
+      feedback.innerHTML = ok
+        ? '<div class="text-green-300">Correct.</div>'
+        : '<div class="text-red-300">Not quite. Expected <span class="font-mono">' + escapeHtml(check.expected || q.answer || q.sampleAnswer || '') + '</span>.</div>';
+    };
+  });
+}
+
 function waitForFrameScratchVm(frame) {
   return new Promise(function(resolve, reject) {
     var started = Date.now();
@@ -5532,6 +6071,8 @@ function waitForFrameScratchVm(frame) {
 
 async function exportAssessmentResults(className, assessmentId, lobbyCode) {
   assessmentId = assessmentId || 'year7-ap2-scratch';
+  var spec = ASSESSMENTS[assessmentId] || {};
+  var defaultMax = spec.maxScore || 21;
   var snap = await state.db.ref('progress').get();
   var classSnap = await state.db.ref('classes/' + className + '/codes').get();
   var rows = [];
@@ -5542,7 +6083,7 @@ async function exportAssessmentResults(className, assessmentId, lobbyCode) {
     var r = progressRows[code] && progressRows[code].assessments && progressRows[code].assessments[assessmentId];
     var score = r ? (r.score || 0) : 0;
     scores.push(score);
-    rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || 21) : 21, completedAt: r && r.completedAt });
+    rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || defaultMax) : defaultMax, completedAt: r && r.completedAt });
   });
   rows.sort(function(a, b) { return b.score - a.score; });
   var grades = definitePurposeGrades(rows.map(function(r) { return r.score; }));

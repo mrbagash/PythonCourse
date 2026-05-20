@@ -262,7 +262,7 @@
           ]
         }
       ],
-      "sampleAnswer": "when [right arrow] key pressed -> change x by 10",
+      "sampleAnswer": "when [right arrow v] key pressed\nchange x by (10)",
       "duration": 90,
       "runtimeTest": {
         "kind": "keyMoves",
@@ -320,7 +320,7 @@
           ]
         }
       ],
-      "sampleAnswer": "when [left arrow] key pressed -> change x by -10",
+      "sampleAnswer": "when [left arrow v] key pressed\nchange x by (-10)",
       "duration": 90,
       "runtimeTest": {
         "kind": "keyMoves",
@@ -343,7 +343,7 @@
           "motion_glidesecstoxy"
         ]
       ],
-      "sampleAnswer": "when flag clicked -> move 10 steps",
+      "sampleAnswer": "when green flag clicked\nmove (10) steps",
       "duration": 75,
       "runtimeTest": {
         "kind": "greenFlagMoves"
@@ -368,7 +368,7 @@
           ]
         }
       ],
-      "sampleAnswer": "when [space] key pressed -> turn 15 degrees",
+      "sampleAnswer": "when [space v] key pressed\nturn cw (15) degrees",
       "duration": 75,
       "runtimeTest": {
         "kind": "keyTurns",
@@ -386,7 +386,7 @@
           "motion_sety"
         ]
       ],
-      "sampleAnswer": "when flag clicked -> go to x: 0 y: 0",
+      "sampleAnswer": "when green flag clicked\ngo to x: (0) y: (0)",
       "duration": 90,
       "runtimeTest": {
         "kind": "greenFlagResetsPosition"
@@ -402,7 +402,7 @@
           "looks_sayforsecs"
         ]
       ],
-      "sampleAnswer": "when flag clicked -> say [Hello!] for 2 seconds",
+      "sampleAnswer": "when green flag clicked\nsay [Hello!] for (2) seconds",
       "duration": 90
     },
     {
@@ -412,7 +412,7 @@
         "event_whenflagclicked",
         "sensing_askandwait"
       ],
-      "sampleAnswer": "when flag clicked -> ask [What is your name?] and wait",
+      "sampleAnswer": "when green flag clicked\nask [What is your name?] and wait",
       "duration": 90
     },
     {
@@ -422,7 +422,7 @@
         "sensing_askandwait",
         "data_setvariableto"
       ],
-      "sampleAnswer": "ask [What is your name?] and wait -> set [name] to (answer)",
+      "sampleAnswer": "ask [What is your name?] and wait\nset [name v] to (answer)",
       "duration": 105,
       "runtimeTest": {
         "kind": "askStores",
@@ -440,7 +440,7 @@
           "looks_sayforsecs"
         ]
       ],
-      "sampleAnswer": "set [score] to [10] -> say (score) for 2 seconds",
+      "sampleAnswer": "set [score v] to (10)\nsay (score) for (2) seconds",
       "duration": 105
     },
     {
@@ -454,7 +454,7 @@
           "looks_sayforsecs"
         ]
       ],
-      "sampleAnswer": "when flag clicked -> ask [] and wait -> set [name] to (answer) -> say (join [Hello ] (name)) for 2 seconds",
+      "sampleAnswer": "when green flag clicked\nask [What is your name?] and wait\nset [name v] to (answer)\nsay (join [Hello ] (name)) for (2) seconds",
       "duration": 120,
       "runtimeTest": {
         "kind": "askStoresAndSays",

@@ -7,8 +7,8 @@
       "id": "do-now",
       "title": "Do Now Activity",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-3'>Which block category contains <strong>forever</strong> and <strong>if</strong> blocks?</p><div id='cv-dna'></div>",
-      "js": "createMCQ('cv-dna',['Control (orange)','Motion (blue)','Looks (purple)','Sensing (light blue)'],0,'Correct — Control blocks (orange) contain loops and if/else.','Control blocks are orange. They contain forever, repeat, if, and if/else.');"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-3'>Answer these five questions from Scratch Basics before starting conditionals and variables.</p><div id='cv-dna'></div>",
+      "js": "createMCQSet('cv-dna',[{q:'Which category contains forever and if blocks?',opts:['Control (orange)','Motion (blue)','Looks (purple)','Sensing (light blue)'],correct:0,feedback:'Correct - Control blocks contain loops and if blocks.',wrongFeedback:'Control blocks are orange. They contain forever, repeat, if and if/else.'},{q:'Which script makes a sprite keep moving forever?',opts:[{scratch:'when green flag clicked\\nforever\\n  move (5) steps\\nend'},{scratch:'when green flag clicked\\nmove (5) steps'},{scratch:'forever\\nend'},{scratch:'when green flag clicked\\nnext costume'}],correct:0,feedback:'Correct - move is nested inside forever.',wrongFeedback:'The move block must be inside the forever loop to keep repeating.'},{q:'Which category contains say and next costume blocks?',opts:['Looks','Motion','Events','Variables'],correct:0,feedback:'Correct - Looks blocks control appearance and speech.',wrongFeedback:'say and next costume are purple Looks blocks.'},{q:'What does if on edge, bounce help with?',opts:['Stopping a moving sprite from disappearing off the stage','Starting a script','Changing a variable','Detecting a keyboard key'],correct:0,feedback:'Correct - it bounces the sprite at the stage edge.',wrongFeedback:'if on edge, bounce is a Motion block that keeps movement on the stage.'},{q:'Which script animates a sprite by changing costumes repeatedly?',opts:[{scratch:'when green flag clicked\\nforever\\n  next costume\\n  wait (0.1) seconds\\nend'},{scratch:'when green flag clicked\\nnext costume'},{scratch:'when green flag clicked\\nmove (10) steps'},{scratch:'forever\\n  turn cw (15) degrees\\nend'}],correct:0,feedback:'Correct - next costume is repeated inside forever with a wait.',wrongFeedback:'Animation needs next costume inside a loop, usually with a short wait.'}]);"
     },
     {
       "id": "conditionals-explain",
@@ -28,15 +28,15 @@
       "id": "variables-explain",
       "title": "Variables",
       "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Variables in Scratch</h2><p class='text-gray-700 mb-4'>A <strong>variable</strong> is a named box that stores a value. In Scratch, variables are <strong>dark orange</strong>.</p><p class='text-gray-700 mb-2'>To create one: <em>Variables → Make a Variable → type a name → OK</em></p><p class='text-gray-700 mb-3'>Three blocks you will use constantly:</p><pre class='scratch-blocks'>set [score v] to (0)       ← give score a starting value\nchange [score v] by (1)    ← add 1 to score\nchange [score v] by (-1)   ← take 1 away from score</pre><p class='text-gray-700 mt-3'>Always <strong>set</strong> the variable to 0 at the start, then <strong>change</strong> it as events happen in the game.</p>"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Variables in Scratch</h2><p class='text-gray-700 mb-4'>A <strong>variable</strong> is a named box that stores a value. In Scratch, variables are <strong>dark orange</strong>.</p><p class='text-gray-700 mb-2'>To create one: <em>Open Variables, choose Make a Variable, type a name, then choose OK</em></p><p class='text-gray-700 mb-3'>Three blocks you will use constantly:</p><pre class='scratch-blocks'>set [score v] to (0)\nchange [score v] by (1)\nchange [score v] by (-1)</pre><ul class='text-gray-700 mt-2 text-sm' style='list-style:disc;padding-left:1.2rem;line-height:1.8'><li><strong>set</strong> gives score a starting value.</li><li><strong>change by (1)</strong> adds 1 to score.</li><li><strong>change by (-1)</strong> takes 1 away from score.</li></ul><p class='text-gray-700 mt-3'>Always <strong>set</strong> the variable to 0 at the start, then <strong>change</strong> it as events happen in the game.</p>"
     },
     {
       "id": "build-2",
       "title": "Build 2: Score Counter",
       "autoComplete": false,
       "css": ".y7-scratch-wrap{margin:0.75rem 0;border:1px solid #e2e8f0;border-radius:0.5rem;overflow:hidden}.y7-scratch-wrap.y7-fullscreen{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;border-radius:0!important;border:none!important;background:#111827}.y7-scratch-frame{display:block;border:none;transform-origin:top left}.y7-check-bar{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:#f8fafc;border-top:1px solid #e2e8f0}.y7-check-result{font-size:0.85rem;flex:1}.y7-fs-btn{margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#64748b;line-height:1}",
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build 2: score counter</h2><p class='text-gray-700 mb-3'>Create a score that goes up when you press the space key and back to 0 when you press R.</p><pre class='scratch-blocks'>when green flag clicked\nset [score v] to (0)\n\nwhen [space v] key pressed\nchange [score v] by (1)\n\nwhen [r v] key pressed\nset [score v] to (0)</pre><ol class='text-gray-700 my-3 text-sm' style='list-style:decimal;padding-left:1.2rem;line-height:2'><li>Variables → <strong>Make a Variable</strong> → name it <strong>score</strong></li><li>Build the three separate scripts above (three separate stacks)</li><li>Run it — press Space to score, press R to reset</li></ol><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>&#x26F6;</button></div></div>",
-      "js": "(function(){var NW=1100,NH=650;function sf(){var f=document.getElementById('y7-scratch-frame');if(!f)return;var w=f.parentElement,bar=w.querySelector('.y7-check-bar'),bH=bar?bar.offsetHeight:44,fs=w.classList.contains('y7-fullscreen'),aW=fs?window.innerWidth:w.clientWidth,sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;f.style.width=NW+'px';f.style.height=NH+'px';f.style.transform='scale('+sc+')';f.style.marginBottom=Math.round(NH*(sc-1))+'px';f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';}function tfs(){var f=document.getElementById('y7-scratch-frame'),w=f.parentElement,b=document.getElementById('y7-fs-btn'),fs=w.classList.toggle('y7-fullscreen');b.textContent=fs?'✕':'⛶';if(fs){window._sy=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._sy||0);}sf();}sf();if(window._sfR)window.removeEventListener('resize',window._sfR);window._sfR=sf;window.addEventListener('resize',sf);if(window._sfK)document.removeEventListener('keydown',window._sfK);window._sfK=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))tfs();}};document.addEventListener('keydown',window._sfK);document.getElementById('y7-fs-btn').onclick=tfs;document.getElementById('y7-check-btn').onclick=function(){runStepRuntimeTest({kind:'keyChangesVariable',key:' '},'✓ Space key changes the score!','Variable did not change — make sure when [space] key pressed → change [score] by 1 is connected.');};})()"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build 2: score counter</h2><p class='text-gray-700 mb-3'>Create a score that goes up when you press the space key and back to 0 when you press R.</p><pre class='scratch-blocks'>when green flag clicked\nset [score v] to (0)\n\nwhen [space v] key pressed\nchange [score v] by (1)\n\nwhen [r v] key pressed\nset [score v] to (0)</pre><ol class='text-gray-700 my-3 text-sm' style='list-style:decimal;padding-left:1.2rem;line-height:2'><li>Open Variables, choose <strong>Make a Variable</strong>, then name it <strong>score</strong></li><li>Build the three separate scripts above (three separate stacks)</li><li>Run it — press Space to score, press R to reset</li></ol><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check My Work</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>&#x26F6;</button></div></div>",
+      "js": "(function(){var NW=1100,NH=650;function sf(){var f=document.getElementById('y7-scratch-frame');if(!f)return;var w=f.parentElement,bar=w.querySelector('.y7-check-bar'),bH=bar?bar.offsetHeight:44,fs=w.classList.contains('y7-fullscreen'),aW=fs?window.innerWidth:w.clientWidth,sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;f.style.width=NW+'px';f.style.height=NH+'px';f.style.transform='scale('+sc+')';f.style.marginBottom=Math.round(NH*(sc-1))+'px';f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';}function tfs(){var f=document.getElementById('y7-scratch-frame'),w=f.parentElement,b=document.getElementById('y7-fs-btn'),fs=w.classList.toggle('y7-fullscreen');b.textContent=fs?'✕':'⛶';if(fs){window._sy=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._sy||0);}sf();}sf();if(window._sfR)window.removeEventListener('resize',window._sfR);window._sfR=sf;window.addEventListener('resize',sf);if(window._sfK)document.removeEventListener('keydown',window._sfK);window._sfK=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))tfs();}};document.addEventListener('keydown',window._sfK);document.getElementById('y7-fs-btn').onclick=tfs;document.getElementById('y7-check-btn').onclick=function(){runStepRuntimeTest({kind:'keyChangesVariable',key:' '},'✓ Space key changes the score!','Variable did not change — make sure the when [space] key pressed script has change [score] by 1 connected underneath.');};})()"
     },
     {
       "id": "build-3",
@@ -108,10 +108,10 @@
       "type": "scratch_mcq",
       "q": "Which script makes a sprite bounce continuously?",
       "options": [
-        "when flag clicked → move (5) steps",
-        "when flag clicked → forever → move (5) steps → if on edge, bounce",
-        "when flag clicked → if on edge, bounce",
-        "forever → say [bouncing!]"
+        "when green flag clicked\nmove (5) steps",
+        "when green flag clicked\nforever\n  move (5) steps\n  if on edge, bounce\nend",
+        "when green flag clicked\nif on edge, bounce",
+        "forever\n  say [bouncing!]\nend"
       ],
       "answer": 1,
       "duration": 35
@@ -124,7 +124,7 @@
         "motion_movesteps",
         "motion_ifonedgebounce"
       ],
-      "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce",
+      "sampleAnswer": "when green flag clicked\nforever\n  move (5) steps\n  if on edge, bounce\nend",
       "duration": 75,
       "runtimeTest": {
         "kind": "greenFlagMoves"
@@ -137,7 +137,7 @@
         "data_setvariableto",
         "data_changevariableby"
       ],
-      "sampleAnswer": "when flag → set [score] to 0 | when space → change [score] by 1",
+      "sampleAnswer": "when green flag clicked\nset [score v] to (0)\n\nwhen [space v] key pressed\nchange [score v] by (1)",
       "duration": 90,
       "runtimeTest": {
         "kind": "keyChangesVariable",
@@ -159,7 +159,7 @@
           "motion_turnleft"
         ]
       ],
-      "sampleAnswer": "forever → if touching edge → turn 180 degrees",
+      "sampleAnswer": "forever\n  if <touching [edge v] ?> then\n    turn cw (180) degrees\n  end\nend",
       "duration": 90,
       "runtimeTest": {
         "kind": "greenFlagMoves",

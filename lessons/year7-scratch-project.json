@@ -21,8 +21,8 @@
       "title": "Build Your Game",
       "autoComplete": false,
       "css": ".y7-scratch-wrap{margin:0.75rem 0;border:1px solid #e2e8f0;border-radius:0.5rem;overflow:hidden}.y7-scratch-wrap.y7-fullscreen{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;border-radius:0!important;border:none!important;background:#111827}.y7-scratch-frame{display:block;border:none;transform-origin:top left}.y7-check-bar{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:#f8fafc;border-top:1px solid #e2e8f0}.y7-check-result{font-size:0.85rem;flex:1}.y7-fs-btn{margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#64748b;line-height:1}.y7-fs-btn:hover{background:#f1f5f9;color:#374151}",
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build your game</h2><p class='text-gray-700 mb-2'>Build your game below. Check against the criteria as you go:</p><div class='ex-box mb-3'><ul style='list-style:disc;padding-left:1.2rem;line-height:2.2;color:#cdd6f4;font-size:0.88rem'><li>Background that fits the theme (2 marks)</li><li>At least one sprite that changes costume (4 marks)</li><li>Sprite controlled by arrow keys (4 marks)</li><li>Score that goes up AND down (6 marks)</li></ul></div><div class='scratch-blocks-wrap mb-3'><p class='scratch-blocks-label'>Reminder: score up and score down</p><pre class='scratch-blocks'>change [score v] by (1)    ← score goes up\nchange [score v] by (-1)   ← score goes down</pre></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check Criteria</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>&#x26F6;</button></div></div>",
-      "js": "(function(){var NW=1100,NH=650;function sf(){var f=document.getElementById('y7-scratch-frame');if(!f)return;var w=f.parentElement,bar=w.querySelector('.y7-check-bar'),bH=bar?bar.offsetHeight:44,fs=w.classList.contains('y7-fullscreen'),aW=fs?window.innerWidth:w.clientWidth,sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;f.style.width=NW+'px';f.style.height=NH+'px';f.style.transform='scale('+sc+')';f.style.marginBottom=Math.round(NH*(sc-1))+'px';f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';}function tfs(){var f=document.getElementById('y7-scratch-frame'),w=f.parentElement,btn=document.getElementById('y7-fs-btn'),isF=w.classList.toggle('y7-fullscreen');btn.textContent=isF?'✕':'⛶';btn.title=isF?'Exit full screen (Esc)':'Full screen';if(isF){window._y7sy=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._y7sy||0);}sf();}sf();if(window._y7r)window.removeEventListener('resize',window._y7r);window._y7r=sf;window.addEventListener('resize',window._y7r);if(window._y7k)document.removeEventListener('keydown',window._y7k);window._y7k=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))tfs();}};document.addEventListener('keydown',window._y7k);document.getElementById('y7-fs-btn').onclick=tfs;document.getElementById('y7-check-btn').onclick=function(){runStepRuntimeTest({kind:'keyMoves',key:'ArrowRight',axis:'x',direction:'positive'},'✓ Arrow key controls working!','Arrow key not moving the sprite — check forever loop with if right arrow pressed → change x by (5).');};}())"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build your game</h2><p class='text-gray-700 mb-2'>Build your game below. Check against the criteria as you go:</p><div class='ex-box mb-3'><ul style='list-style:disc;padding-left:1.2rem;line-height:2.2;color:#cdd6f4;font-size:0.88rem'><li>Background that fits the theme (2 marks)</li><li>At least one sprite that changes costume (4 marks)</li><li>Sprite controlled by arrow keys (4 marks)</li><li>Score that goes up AND down (6 marks)</li></ul></div><div class='scratch-blocks-wrap mb-3'><p class='scratch-blocks-label'>Reminder: score up and score down</p><pre class='scratch-blocks'>change [score v] by (1)\nchange [score v] by (-1)</pre><ul class='text-gray-700 text-sm mt-2' style='list-style:disc;padding-left:1.2rem;line-height:1.8'><li><strong>change by (1)</strong> makes the score go up.</li><li><strong>change by (-1)</strong> makes the score go down.</li></ul></div><div class='y7-scratch-wrap'><iframe id='y7-scratch-frame' class='y7-scratch-frame' src='./scratch/editor.html' allow='microphone; camera'></iframe><div class='y7-check-bar'><button id='y7-check-btn' class='ex-btn'>Check Criteria</button><span id='y7-check-result' class='y7-check-result'></span><button id='y7-fs-btn' class='y7-fs-btn' title='Full screen'>&#x26F6;</button></div></div>",
+      "js": "(function(){var NW=1100,NH=650;function sf(){var f=document.getElementById('y7-scratch-frame');if(!f)return;var w=f.parentElement,bar=w.querySelector('.y7-check-bar'),bH=bar?bar.offsetHeight:44,fs=w.classList.contains('y7-fullscreen'),aW=fs?window.innerWidth:w.clientWidth,sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;f.style.width=NW+'px';f.style.height=NH+'px';f.style.transform='scale('+sc+')';f.style.marginBottom=Math.round(NH*(sc-1))+'px';f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';}function tfs(){var f=document.getElementById('y7-scratch-frame'),w=f.parentElement,btn=document.getElementById('y7-fs-btn'),isF=w.classList.toggle('y7-fullscreen');btn.textContent=isF?'✕':'⛶';btn.title=isF?'Exit full screen (Esc)':'Full screen';if(isF){window._y7sy=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._y7sy||0);}sf();}sf();if(window._y7r)window.removeEventListener('resize',window._y7r);window._y7r=sf;window.addEventListener('resize',window._y7r);if(window._y7k)document.removeEventListener('keydown',window._y7k);window._y7k=function(e){if(e.key==='Escape'){var f=document.getElementById('y7-scratch-frame');if(f&&f.parentElement.classList.contains('y7-fullscreen'))tfs();}};document.addEventListener('keydown',window._y7k);document.getElementById('y7-fs-btn').onclick=tfs;document.getElementById('y7-check-btn').onclick=function(){runStepRuntimeTest({kind:'keyMoves',key:'ArrowRight',axis:'x',direction:'positive'},'✓ Arrow key controls working!','Arrow key not moving the sprite — check the forever loop has an if right arrow pressed block with change x by (5) nested inside.');};}())"
     },
     {
       "id": "peer-assess",
@@ -73,10 +73,10 @@
       "type": "scratch_mcq",
       "q": "Which script lets a sprite move in four directions using arrow keys?",
       "options": [
-        "when flag clicked → move (10) steps",
-        "when flag clicked → forever → if right pressed → change x (5) → if left → change x (-5) → if up → change y (5) → if down → change y (-5)",
-        "when flag clicked → repeat (4) → change x by (5)",
-        "when [right arrow v] pressed → forever → move steps"
+        "when green flag clicked\nmove (10) steps",
+        "when green flag clicked\nforever\n  if <key [right arrow v] pressed?> then\n    change x by (5)\n  end\n  if <key [left arrow v] pressed?> then\n    change x by (-5)\n  end\n  if <key [up arrow v] pressed?> then\n    change y by (5)\n  end\n  if <key [down arrow v] pressed?> then\n    change y by (-5)\n  end\nend",
+        "when green flag clicked\nrepeat (4)\n  change x by (5)\nend",
+        "when [right arrow v] key pressed\nforever\n  move (10) steps\nend"
       ],
       "answer": 1,
       "duration": 35
@@ -88,7 +88,7 @@
         "data_setvariableto",
         "data_changevariableby"
       ],
-      "sampleAnswer": "when flag → set score 0 | when up pressed → change score +1 | when down pressed → change score -1",
+      "sampleAnswer": "when green flag clicked\nset [score v] to (0)\n\nwhen [up arrow v] key pressed\nchange [score v] by (1)\n\nwhen [down arrow v] key pressed\nchange [score v] by (-1)",
       "duration": 90,
       "runtimeTest": {
         "kind": "keyChangesVariable",
@@ -107,7 +107,7 @@
           ]
         }
       ],
-      "sampleAnswer": "when flag → forever → if up pressed → change y 10 → if down pressed → change y -10",
+      "sampleAnswer": "when green flag clicked\nforever\n  if <key [up arrow v] pressed?> then\n    change y by (10)\n  end\n  if <key [down arrow v] pressed?> then\n    change y by (-10)\n  end\nend",
       "duration": 90,
       "runtimeTest": {
         "kind": "keyMoves",

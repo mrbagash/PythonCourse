@@ -7,8 +7,8 @@
       "id": "do-now",
       "title": "Do Now Activity",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-3'>Scratch is a <strong>block-based</strong> programming language. You drag and snap coloured blocks together instead of typing code.</p><div id='sb-dna'></div>",
-      "js": "createMCQ('sb-dna',['Drag and snap coloured blocks together','Type lines of code','Draw pictures','Use a spreadsheet'],0,'Correct — Scratch uses drag-and-drop blocks.','In Scratch you build programs by dragging and snapping coloured blocks together.');"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now</h2><p class='text-gray-700 mb-3'>Answer these five starter questions about Scratch basics.</p><div id='sb-dna'></div>",
+      "js": "createMCQSet('sb-dna',[{q:'How do you build programs in Scratch?',opts:['Drag and snap coloured blocks together','Type every line of code','Only draw pictures','Use spreadsheet formulas'],correct:0,feedback:'Correct - Scratch uses drag-and-drop blocks.',wrongFeedback:'Scratch programs are built by dragging and snapping coloured blocks together.'},{q:'Which block should normally start a script that runs when the project begins?',opts:[{scratch:'when green flag clicked'},{scratch:'move (10) steps'},{scratch:'say [Hello!] for (2) seconds'},{scratch:'next costume'}],correct:0,feedback:'Correct - the green flag event starts the script.',wrongFeedback:'A script that starts when the project begins usually starts with when green flag clicked.'},{q:'Which category is used for blue movement blocks like move and turn?',opts:['Motion','Looks','Events','Variables'],correct:0,feedback:'Correct - Motion blocks are blue.',wrongFeedback:'Move and turn blocks are in the blue Motion category.'},{q:'What does this script do first?',opts:[{scratch:'when green flag clicked\\nsay [Hello!] for (2) seconds\\nmove (10) steps'},{scratch:'when green flag clicked\\nmove (10) steps\\nsay [Hello!] for (2) seconds'} ,'It runs both blocks at exactly the same time','It never runs'],correct:0,feedback:'Correct - blocks run from top to bottom, so it says Hello first.',wrongFeedback:'Scratch stacks run top to bottom. The say block is first in the correct answer.'},{q:'Which block changes a sprite to its next costume?',opts:[{scratch:'next costume'},{scratch:'move (10) steps'},{scratch:'turn cw (15) degrees'},{scratch:'when green flag clicked'}],correct:0,feedback:'Correct - next costume changes appearance.',wrongFeedback:'The Looks block next costume changes the sprite appearance.'}]);"
     },
     {
       "id": "block-categories",
@@ -114,10 +114,10 @@
       "type": "scratch_mcq",
       "q": "Which script makes a sprite walk and animate?",
       "options": [
-        "when flag clicked → move (5) steps",
-        "when flag clicked → forever → move (5) steps → next costume",
-        "when flag clicked → next costume",
-        "forever → say [hello]"
+        "when green flag clicked\nmove (5) steps",
+        "when green flag clicked\nforever\n  move (5) steps\n  next costume\nend",
+        "when green flag clicked\nnext costume",
+        "forever\n  say [hello]\nend"
       ],
       "answer": 1,
       "duration": 35
@@ -137,7 +137,7 @@
           "motion_changeyby"
         ]
       ],
-      "sampleAnswer": "when flag clicked → say [Hello!] for 2 seconds → move 10 steps",
+      "sampleAnswer": "when green flag clicked\nsay [Hello!] for (2) seconds\nmove (10) steps",
       "duration": 75,
       "runtimeTest": {
         "kind": "greenFlagMoves",
@@ -151,7 +151,7 @@
         "control_forever",
         "looks_nextcostume"
       ],
-      "sampleAnswer": "when flag clicked → forever → next costume → wait 0.1 seconds",
+      "sampleAnswer": "when green flag clicked\nforever\n  next costume\n  wait (0.1) seconds\nend",
       "duration": 75,
       "runtimeTest": {
         "kind": "greenFlagChangesCostume"
@@ -165,7 +165,7 @@
         "motion_movesteps",
         "motion_ifonedgebounce"
       ],
-      "sampleAnswer": "when flag clicked → forever → move 5 steps → if on edge, bounce",
+      "sampleAnswer": "when green flag clicked\nforever\n  move (5) steps\n  if on edge, bounce\nend",
       "duration": 75,
       "runtimeTest": {
         "kind": "greenFlagMoves"
