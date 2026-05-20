@@ -789,8 +789,10 @@
     <select id="ap-assessment-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none">
       <option value="year7-ap2-scratch">Year 7 AP2 Scratch - Underwater Racing Game</option>
       <option value="year7-ap2-practice-scratch">Practice Year 7 AP2 Scratch - Space Collector Game</option>
+      <option value="year8-ap2-practice-python">Practice Year 8 AP2 Python</option>
       <option value="year8-ap2-python">Year 8 AP2 Python</option>
-      <option value="year8-ap2-binary-hex">Year 8 AP2 Binary & Hexadecimal</option>
+      <option value="year9-ap2-practice-binary-hex">Practice Year 9 AP2 Binary & Hexadecimal</option>
+      <option value="year9-ap2-binary-hex">Year 9 AP2 Binary & Hexadecimal</option>
     </select>
     <label class="flex items-start gap-2 border border-red-200 bg-red-50 rounded-lg p-3 mb-4 cursor-pointer">
       <input id="ap-force-class" type="checkbox" class="mt-0.5 accent-[rgb(176,28,35)]" />
@@ -3758,13 +3760,13 @@ var assessment = {
   })()
 };
 
-function buildYear8BinaryHexAp2Criteria() {
-  return buildYear8BinaryHexAp2Questions().map(function(q, i) {
+function buildYear9BinaryHexAp2Criteria() {
+  return buildYear9BinaryHexAp2Questions().map(function(q, i) {
     return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
   });
 }
 
-function buildYear8BinaryHexAp2Questions() {
+function buildYear9BinaryHexAp2Questions() {
   function bits(n) { return Number(n).toString(2).padStart(8, '0'); }
   function hex(n) { return Number(n).toString(16).toUpperCase().padStart(2, '0'); }
   function bitArray(n) { return bits(n).split('').map(function(b) { return Number(b); }); }
@@ -3799,6 +3801,44 @@ function buildYear8BinaryHexAp2Questions() {
       : { type:'bit_input', useNibbles:true, html:'<div class="bb-hex-pair"><div>' + hex(n)[0] + '</div><div>' + hex(n)[1] + '</div></div>' }));
   });
   return rows;
+}
+
+function buildYear9BinaryHexPracticeAp2Questions() {
+  function bits(n) { return Number(n).toString(2).padStart(8, '0'); }
+  function hex(n) { return Number(n).toString(16).toUpperCase().padStart(2, '0'); }
+  function bitArray(n) { return bits(n).split('').map(function(b) { return Number(b); }); }
+  function q(id, family, title, prompt, answer, opts) {
+    return Object.assign({ id: id, family: family, title: title, prompt: prompt, answer: String(answer).toUpperCase(), marks: 1 }, opts || {});
+  }
+  var rows = [];
+  [2, 7, 21, 84, 195].forEach(function(n, i) {
+    rows.push(q('pbd' + (i + 1), 'binary_to_denary', 'Binary to denary', 'Convert this 8-bit binary number to denary.', String(n), { type:'text', html: BinaryLesson.bitTable(bitArray(n)) }));
+  });
+  [4, 13, 36, 112, 218].forEach(function(n, i) {
+    rows.push(q('pdb' + (i + 1), 'denary_to_binary', 'Denary to binary', 'Convert ' + n + ' to 8-bit binary.', bits(n), { type:'bit_input', useNibbles:false }));
+  });
+  [[2, 5], [6, 7], [10, 13], [24, 19], [61, 86]].forEach(function(pair, i) {
+    var total = pair[0] + pair[1];
+    rows.push(q('pba' + (i + 1), 'binary_addition', 'Binary addition', 'Add these two binary numbers.', bits(total), { type:'addition_input', rowA: bitArray(pair[0]), rowB: bitArray(pair[1]), right: pair[0] + ' + ' + pair[1] + ' = ' + total + '.' }));
+  });
+  [12, 26, 45, 91, 190].forEach(function(n, i) {
+    rows.push(q('phd' + (i + 1), 'hex_to_denary', 'Hex to denary', 'Convert ' + hex(n) + ' to denary.', String(n), { type:'text', html:'<div class="bb-hex-pair"><div>' + hex(n)[0] + '</div><div>' + hex(n)[1] + '</div></div>' }));
+  });
+  [14, 27, 58, 144, 236].forEach(function(n, i) {
+    rows.push(q('pdh' + (i + 1), 'denary_to_hex', 'Denary to hex', 'Convert ' + n + ' to hexadecimal.', hex(n), { type:'text', html:'<div class="bb-hex-pair"><div>?</div><div>?</div></div>' }));
+  });
+  [13, 29, 62, 176, 254].forEach(function(n, i) {
+    rows.push(q('pbh' + (i + 1), 'binary_hex_conversion', 'Binary and hex conversion', i % 2 === 0 ? 'Convert this binary number to hexadecimal.' : 'Convert ' + hex(n) + ' to 8-bit binary.', i % 2 === 0 ? hex(n) : bits(n), i % 2 === 0
+      ? { type:'text', html: BinaryLesson.bitTable(bitArray(n), [8, 4, 2, 1, 8, 4, 2, 1], true) }
+      : { type:'bit_input', useNibbles:true, html:'<div class="bb-hex-pair"><div>' + hex(n)[0] + '</div><div>' + hex(n)[1] + '</div></div>' }));
+  });
+  return rows;
+}
+
+function buildYear9BinaryHexPracticeAp2Criteria() {
+  return buildYear9BinaryHexPracticeAp2Questions().map(function(q, i) {
+    return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
+  });
 }
 
 function buildYear8PythonAp2Questions() {
@@ -3839,13 +3879,66 @@ function buildYear8PythonAp2Questions() {
   ];
 }
 
+function buildYear8PythonPracticeAp2Questions() {
+  function mcq(id, family, title, prompt, options, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'mcq', options:options, answer:String(answer), marks:1 };
+  }
+  function text(id, family, title, prompt, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
+  }
+  function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
+    return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
+  }
+  return [
+    mcq('pp1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Ready")</pre>', ['Ready', '"Ready"', 'print Ready', 'Nothing'], 0),
+    text('pp2', 'print_comments', 'Two print statements', 'Write the output of this code exactly.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Red")\nprint("Blue")</pre>', 'Red\nBlue'),
+    mcq('pp3', 'print_comments', 'Comments', 'Which line would Python ignore because it is a comment?', ['print("Score")', '# score check', 'comment = "Score"', 'input("Score")'], 1),
+    code('pp4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Practice</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Practice['\\\"]\\s*\\)"], 'print("Practice")'),
+    code('pp5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>One</strong> on one line and <strong>Two</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]One['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]Two['\\\"]\\s*\\)"], 'print("One")\nprint("Two")'),
+
+    text('pv1', 'variables', 'Variable tracing', 'What is the value of <code>total</code> after this code runs?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">total = 6\ntotal = total + 4</pre>', '10'),
+    mcq('pv2', 'variables', 'Variable value', 'After <code>lives = 3</code>, what value is stored in <code>lives</code>?', ['3', 'lives', '0', 'A comment'], 0),
+    code('pv3', 'variables', 'Create and print a variable', 'Create a variable called <code>player</code>, store <code>"Alex"</code> in it, then print the variable.', ["\\bplayer\\s*=\\s*['\\\"]Alex['\\\"]", '\\bprint\\s*\\(\\s*player\\s*\\)'], 'player = "Alex"\nprint(player)'),
+    code('pv4', 'variables', 'Update a number variable', 'Create a variable called <code>points</code> with the value <code>8</code>, add <code>2</code> to it, then print <code>points</code>.', ['\\bpoints\\s*=\\s*8\\b', '\\bpoints\\s*=\\s*points\\s*\\+\\s*2\\b|\\bpoints\\s*\\+=\\s*2\\b', '\\bprint\\s*\\(\\s*points\\s*\\)'], 'points = 8\npoints = points + 2\nprint(points)'),
+
+    code('pi1', 'input', 'Store user input', 'Ask the user for their town and store the answer in a variable called <code>town</code>.', ['\\btown\\s*=\\s*input\\s*\\('], 'town = input("Town: ")'),
+    code('pi2', 'input', 'Input then output', 'Ask the user for their favourite subject, store it in <code>subject</code>, then print <code>subject</code>.', ['\\bsubject\\s*=\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*subject\\s*\\)'], 'subject = input("Favourite subject? ")\nprint(subject)'),
+    mcq('pi3', 'input', 'Integer input', 'Which code stores typed input as a whole number?', ['num = input("Number: ")', 'num = int(input("Number: "))', 'num = input(int)', 'int(input) = num'], 1),
+    code('pi4', 'input', 'Number input calculation', 'Ask the user for a whole number, store it as an integer in <code>age</code>, then print <code>age + 2</code>.', ['\\bage\\s*=\\s*int\\s*\\(\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*age\\s*\\+\\s*2\\s*\\)'], 'age = int(input("Age: "))\nprint(age + 2)'),
+
+    mcq('ps1', 'selection', 'Selection condition', 'Which comparison checks whether <code>temperature</code> is below 5?', ['temperature < 5', 'temperature = 5', 'temperature > 5', 'temperature == below 5'], 0),
+    code('ps2', 'selection', 'Simple if statement', 'Write an if statement that prints <code>Cold</code> when <code>temperature</code> is less than <code>5</code>.', ['\\bif\\s+temperature\\s*<\\s*5\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Cold['\\\"]\\s*\\)"], 'if temperature < 5:\n    print("Cold")'),
+    code('ps3', 'selection', 'if and else', 'Write selection code that prints <code>Adult</code> if <code>age</code> is at least <code>18</code>, otherwise prints <code>Child</code>.', ['\\bif\\s+age\\s*>=\\s*18\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Adult['\\\"]\\s*\\)", '\\belse\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Child['\\\"]\\s*\\)"], 'if age >= 18:\n    print("Adult")\nelse:\n    print("Child")'),
+    code('ps4', 'selection', 'elif choice', 'Write code that prints <code>Excellent</code> if <code>mark</code> is 80 or more, <code>Good</code> if <code>mark</code> is 50 or more, otherwise <code>Revise</code>.', ['\\bif\\s+mark\\s*>=\\s*80\\s*:', '\\belif\\s+mark\\s*>=\\s*50\\s*:', '\\belse\\s*:', 'Excellent', 'Good', 'Revise'], 'if mark >= 80:\n    print("Excellent")\nelif mark >= 50:\n    print("Good")\nelse:\n    print("Revise")'),
+
+    mcq('pl1', 'loops', 'Loop count', 'How many times will this loop print <code>Go</code>?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">for i in range(4):\n    print("Go")</pre>', ['2', '3', '4', '5'], 2),
+    code('pl2', 'loops', 'For loop', 'Write a for loop that prints <code>Loop</code> three times.', ['\\bfor\\s+\\w+\\s+in\\s+range\\s*\\(\\s*3\\s*\\)\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Loop['\\\"]\\s*\\)"], 'for i in range(3):\n    print("Loop")'),
+    code('pl3', 'loops', 'While loop counter', 'Write a while loop that starts <code>num</code> at 1, prints it while it is less than or equal to 4, and increases it by 1 each time.', ['\\bnum\\s*=\\s*1\\b', '\\bwhile\\s+num\\s*<=\\s*4\\s*:', '\\n\\s+print\\s*\\(\\s*num\\s*\\)', '\\bnum\\s*=\\s*num\\s*\\+\\s*1\\b|\\bnum\\s*\\+=\\s*1\\b'], 'num = 1\nwhile num <= 4:\n    print(num)\n    num = num + 1')
+  ];
+}
+
 function buildYear8PythonAp2Criteria() {
   return buildYear8PythonAp2Questions().map(function(q, i) {
     return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
   });
 }
 
+function buildYear8PythonPracticeAp2Criteria() {
+  return buildYear8PythonPracticeAp2Questions().map(function(q, i) {
+    return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };
+  });
+}
+
 var ASSESSMENTS = {
+  'year8-ap2-practice-python': {
+    id: 'year8-ap2-practice-python',
+    title: 'Practice Year 8 AP2 Python',
+    type: 'python-code',
+    maxScore: 20,
+    brief: 'Practice the Year 8 Python AP2 format with similar skills but different questions. It is front loaded towards print, variables, input and selection, with only the final three questions on loops.',
+    criteria: buildYear8PythonPracticeAp2Criteria(),
+    questions: buildYear8PythonPracticeAp2Questions()
+  },
   'year8-ap2-python': {
     id: 'year8-ap2-python',
     title: 'Year 8 AP2 Python',
@@ -3855,14 +3948,33 @@ var ASSESSMENTS = {
     criteria: buildYear8PythonAp2Criteria(),
     questions: buildYear8PythonAp2Questions()
   },
-  'year8-ap2-binary-hex': {
-    id: 'year8-ap2-binary-hex',
-    title: 'Year 8 AP2 Binary & Hexadecimal',
+  'year9-ap2-practice-binary-hex': {
+    id: 'year9-ap2-practice-binary-hex',
+    title: 'Practice Year 9 AP2 Binary & Hexadecimal',
+    type: 'binary-hex',
+    maxScore: 30,
+    brief: 'Practice the Year 9 Binary & Hexadecimal AP2 format with similar conversion and addition skills but different numbers.',
+    criteria: buildYear9BinaryHexPracticeAp2Criteria(),
+    questions: buildYear9BinaryHexPracticeAp2Questions()
+  },
+  'year9-ap2-binary-hex': {
+    id: 'year9-ap2-binary-hex',
+    title: 'Year 9 AP2 Binary & Hexadecimal',
     type: 'binary-hex',
     maxScore: 30,
     brief: 'Answer 30 self-paced conversion questions. There are five questions from each type, and each set gets gradually harder.',
-    criteria: buildYear8BinaryHexAp2Criteria(),
-    questions: buildYear8BinaryHexAp2Questions()
+    criteria: buildYear9BinaryHexAp2Criteria(),
+    questions: buildYear9BinaryHexAp2Questions()
+  },
+  'year8-ap2-binary-hex': {
+    id: 'year8-ap2-binary-hex',
+    title: 'Year 9 AP2 Binary & Hexadecimal',
+    type: 'binary-hex',
+    maxScore: 30,
+    brief: 'Legacy id for Year 9 AP2 Binary & Hexadecimal results created before the assessment was renamed.',
+    criteria: buildYear9BinaryHexAp2Criteria(),
+    questions: buildYear9BinaryHexAp2Questions(),
+    legacyOf: 'year9-ap2-binary-hex'
   },
   'year7-ap2-practice-scratch': {
     id: 'year7-ap2-practice-scratch',
