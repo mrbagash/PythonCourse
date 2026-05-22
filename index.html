@@ -871,6 +871,7 @@
     <span class="font-bold">Assessment Point</span>
     <div class="flex items-center gap-2">
       <span id="aps-save-status" class="text-xs text-gray-400"></span>
+      <button id="btn-aps-expand" class="text-gray-400 hover:text-white border border-gray-600 px-2 py-1 rounded text-lg leading-none" title="Expand content area">&#x26F6;</button>
       <button id="btn-ap-student-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">Leave</button>
     </div>
   </div>
@@ -889,7 +890,7 @@
       <div id="aps-feedback" class="mt-4 text-sm"></div>
     </aside>
     <div id="aps-scratch-wrap" class="relative min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
-      <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;width:100%;height:100%"></iframe>
+      <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;position:absolute;inset:0;width:100%;height:100%"></iframe>
       <div id="aps-question-ap" class="hidden absolute inset-0 overflow-y-auto bg-gray-100 text-gray-800 p-4"></div>
       <div id="aps-validation-lock" class="hidden absolute inset-0 z-20 bg-gray-950/85 backdrop-blur-sm flex items-center justify-center text-center p-6" tabindex="-1">
         <div class="bg-gray-900 border border-yellow-500/60 rounded-lg px-6 py-5 max-w-md shadow-xl">
@@ -4331,6 +4332,10 @@ function showAssessmentStudentScreen(session) {
   document.getElementById('aps-criteria').innerHTML = spec.criteria.map(function(c) {
     return '<li>' + c.text + ' <span class="text-gray-500">(' + c.marks + ' marks)</span></li>';
   }).join('');
+  assessment.contentExpanded = false;
+  document.getElementById('aps-sidebar').classList.remove('hidden');
+  var _ebtn = document.getElementById('btn-aps-expand');
+  if (_ebtn) { _ebtn.innerHTML = '&#x26F6;'; _ebtn.title = 'Expand content area'; }
   setAssessmentInstructionsCollapsed(false);
   if (spec.questions && spec.questions.length) {
     loadAssessmentQuestionPaper(spec);
@@ -4349,6 +4354,7 @@ function loadAssessmentScratchEditor() {
   document.getElementById('aps-question-ap').classList.add('hidden');
   document.getElementById('aps-scratch-frame').classList.remove('hidden');
   document.getElementById('btn-ap-check').textContent = 'Check My Project';
+  initApScratchLetterbox();
   var frame = document.getElementById('aps-scratch-frame');
   document.getElementById('aps-feedback').innerHTML = '';
   document.getElementById('aps-save-status').textContent = 'Loading editor...';
@@ -4381,6 +4387,7 @@ async function loadAssessmentQuestionPaper(spec) {
   } catch(e) {}
   renderAssessmentQuestionPaper(spec);
   document.getElementById('aps-save-status').textContent = 'Autosave on';
+  initApScratchLetterbox();
 }
 
 function normaliseAssessmentAnswer(value) {
@@ -4487,6 +4494,7 @@ function renderAssessmentQuestionPaper(spec) {
     input.onkeydown = function(e) { if (e.key === 'Enter') saveCurrentQuestionAnswer(spec); };
     setTimeout(function() { input.focus(); }, 0);
   }
+  setTimeout(scaleApQuestionPanel, 0);
 }
 
 function setQuestionAnswer(spec, id, value, opts) {
@@ -4728,7 +4736,8 @@ function setAssessmentValidationLocked(locked, status, index, total) {
   if (lock) lock.classList.toggle('hidden', !locked);
   if (frame) frame.style.pointerEvents = locked ? 'none' : '';
   if (sidebar) sidebar.style.pointerEvents = locked ? 'none' : '';
-  [checkBtn, finishBtn, exitBtn, toggleBtn].forEach(function(btn) {
+  var expandBtn = document.getElementById('btn-aps-expand');
+  [checkBtn, finishBtn, exitBtn, toggleBtn, expandBtn].forEach(function(btn) {
     if (btn) btn.disabled = !!locked;
     if (btn) btn.classList.toggle('opacity-60', !!locked);
   });
@@ -5601,17 +5610,95 @@ function setAssessmentInstructionsCollapsed(collapsed) {
   active.classList.toggle('ap-instructions-collapsed', !!collapsed);
   instructions.classList.toggle('hidden', !!collapsed);
   if (collapsed) {
-    active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 p-4 ap-instructions-collapsed';
     toggle.innerHTML = '&#x203A;';
     toggle.title = 'Show instructions';
     toggle.setAttribute('aria-label', 'Show instructions');
+    if (!assessment.contentExpanded) active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 p-4 ap-instructions-collapsed';
   } else {
-    active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
     toggle.innerHTML = '&#x2039;';
     toggle.title = 'Hide instructions';
     toggle.setAttribute('aria-label', 'Hide instructions');
+    if (!assessment.contentExpanded) active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
   }
 }
+
+var _apsScratchRO = null;
+
+function scaleApScratchFrame() {
+  var wrap = document.getElementById('aps-scratch-wrap');
+  var frame = document.getElementById('aps-scratch-frame');
+  if (!wrap || !frame || frame.classList.contains('hidden')) return;
+  var NW = 900, NH = 540;
+  var wW = wrap.clientWidth, wH = wrap.clientHeight;
+  if (wW < 1 || wH < 1) return;
+  var sc = Math.min(wW / NW, wH / NH);
+  if (sc >= 1) {
+    frame.style.position = 'absolute';
+    frame.style.width = '100%';
+    frame.style.height = '100%';
+    frame.style.transform = '';
+    frame.style.transformOrigin = '';
+    frame.style.left = '0';
+    frame.style.top = '0';
+  } else {
+    var scaledW = Math.round(NW * sc);
+    var scaledH = Math.round(NH * sc);
+    frame.style.position = 'absolute';
+    frame.style.width = NW + 'px';
+    frame.style.height = NH + 'px';
+    frame.style.transform = 'scale(' + sc.toFixed(4) + ')';
+    frame.style.transformOrigin = 'top left';
+    frame.style.left = Math.max(0, Math.round((wW - scaledW) / 2)) + 'px';
+    frame.style.top = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  }
+}
+
+function initApScratchLetterbox() {
+  var wrap = document.getElementById('aps-scratch-wrap');
+  if (!wrap) return;
+  if (_apsScratchRO) _apsScratchRO.disconnect();
+  _apsScratchRO = new ResizeObserver(function() { scaleApScratchFrame(); scaleApQuestionPanel(); });
+  _apsScratchRO.observe(wrap);
+  scaleApScratchFrame();
+  scaleApQuestionPanel();
+}
+
+function scaleApQuestionPanel() {
+  var panel = document.getElementById('aps-question-ap');
+  if (!panel || panel.classList.contains('hidden')) return;
+  var inner = panel.querySelector('.max-w-5xl');
+  if (!inner) return;
+  inner.style.zoom = '';
+  var naturalH = inner.offsetHeight;
+  var panelH = panel.clientHeight - 32;
+  if (naturalH < 10 || naturalH <= panelH) { inner.style.zoom = ''; return; }
+  var sc = Math.max(0.55, panelH / naturalH);
+  inner.style.zoom = sc.toFixed(3);
+}
+
+function setAssessmentExpanded(expanded) {
+  var sidebar = document.getElementById('aps-sidebar');
+  var active = document.getElementById('aps-active');
+  var btn = document.getElementById('btn-aps-expand');
+  if (!sidebar || !active || !btn) return;
+  assessment.contentExpanded = !!expanded;
+  if (expanded) {
+    sidebar.classList.add('hidden');
+    active.className = 'flex-1 min-h-0 p-4';
+    btn.innerHTML = '&#x2715;';
+    btn.title = 'Show sidebar';
+  } else {
+    sidebar.classList.remove('hidden');
+    btn.innerHTML = '&#x26F6;';
+    btn.title = 'Expand content area';
+    setAssessmentInstructionsCollapsed(active.classList.contains('ap-instructions-collapsed'));
+  }
+  setTimeout(function() { scaleApScratchFrame(); scaleApQuestionPanel(); }, 50);
+}
+
+document.getElementById('btn-aps-expand').onclick = function() {
+  setAssessmentExpanded(!assessment.contentExpanded);
+};
 
 function assessmentRowsForClass(className, assessmentId) {
   var rows = [];
