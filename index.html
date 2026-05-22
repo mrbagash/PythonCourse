@@ -442,6 +442,7 @@
     <div class="flex gap-2 border-b border-gray-200 mb-4">
       <button id="admin-tab-classes" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]">Classes</button>
       <button id="admin-tab-quiz-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Quiz Results</button>
+      <button id="admin-tab-ap-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">AP Results</button>
       <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
       <button id="admin-tab-teachers" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Teachers</button>
     </div>
@@ -526,6 +527,35 @@
       </div>
       <div id="quiz-results-content" class="text-sm text-gray-700">
         <p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>
+      </div>
+    </div>
+
+    <div id="admin-ap-results-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto_auto] gap-3 items-end bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Class</label>
+          <select id="ap-results-class" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"><option value="">— select class —</option></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">View</label>
+          <select id="ap-results-mode" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none">
+            <option value="class">Whole class</option>
+            <option value="student">One student</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Assessment</label>
+          <select id="ap-results-assessment" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Student</label>
+          <select id="ap-results-student" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+        </div>
+        <button id="btn-ap-results-download" class="jhncc-primary px-4 py-1.5 rounded text-sm">Download CSV</button>
+        <button id="btn-ap-results-release" class="px-4 py-1.5 rounded border border-green-500 text-green-700 bg-green-50 text-sm font-medium">Release Feedback</button>
+      </div>
+      <div id="ap-results-content" class="overflow-y-auto flex-1 text-sm text-gray-700">
+        <p class="text-gray-400 text-center py-8">Choose a class to view AP results.</p>
       </div>
     </div>
 
@@ -894,38 +924,6 @@
   </div>
 </div>
 
-<!-- ASSESSMENT POINT RESULTS MODAL (admin) -->
-<div id="modal-ap-results" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-5xl max-h-[88vh] flex flex-col">
-    <div class="flex justify-between items-center mb-4">
-      <div>
-        <h2 class="text-lg font-semibold">Assessment Point Results</h2>
-        <p id="ap-results-class" class="text-xs text-gray-500 mt-0.5"></p>
-      </div>
-      <button id="btn-ap-results-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">View</label>
-        <select id="ap-results-mode" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none">
-          <option value="class">Whole class</option>
-          <option value="student">One student</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">Assessment</label>
-        <select id="ap-results-assessment" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">Student</label>
-        <select id="ap-results-student" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
-      </div>
-      <button id="btn-ap-results-download" class="jhncc-primary px-4 py-1.5 rounded text-sm">Download CSV</button>
-      <button id="btn-ap-results-release" class="px-4 py-1.5 rounded border border-green-500 text-green-700 bg-green-50 text-sm font-medium">Release Feedback</button>
-    </div>
-    <div id="ap-results-content" class="overflow-y-auto flex-1 text-sm text-gray-700"></div>
-  </div>
-</div>
 
 <!-- ASSESSMENT POINT HOST SCREEN -->
 <div id="ap-host-screen" class="hidden fixed inset-0 bg-gray-900 flex flex-col z-50 text-white">
@@ -2678,24 +2676,29 @@ async function showAdmin() {
 function setAdminTab(tab) {
   var classesTab = tab === 'classes';
   var quizResultsTab = tab === 'quiz-results';
+  var apResultsTab = tab === 'ap-results';
   var teachersTab = tab === 'teachers';
   var debugTab = tab === 'debug';
   var activeCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]';
   var idleCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
   document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
   document.getElementById('admin-quiz-results-tab').classList.toggle('hidden', !quizResultsTab);
+  document.getElementById('admin-ap-results-tab').classList.toggle('hidden', !apResultsTab);
   document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
   document.getElementById('admin-tab-classes').className = classesTab ? activeCls : idleCls;
   document.getElementById('admin-tab-quiz-results').className = quizResultsTab ? activeCls : idleCls;
+  document.getElementById('admin-tab-ap-results').className = apResultsTab ? activeCls : idleCls;
   document.getElementById('admin-tab-teachers').className = teachersTab ? activeCls : idleCls;
   document.getElementById('admin-tab-debug').className = debugTab ? activeCls : idleCls;
   if (quizResultsTab) loadQuizResultsClassOptions();
+  if (apResultsTab) loadApResultsClassOptions();
   if (teachersTab) renderTeachersTab();
 }
 
 document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
 document.getElementById('admin-tab-quiz-results').onclick = function() { setAdminTab('quiz-results'); };
+document.getElementById('admin-tab-ap-results').onclick = function() { setAdminTab('ap-results'); };
 document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 
@@ -2733,7 +2736,7 @@ function canDo(perm) {
 function applyAdminPermissions() {
   if (state.isAdmin) {
     // Full admin — restore everything
-    ['admin-tab-classes','admin-tab-quiz-results','admin-tab-teachers','admin-tab-debug',
+    ['admin-tab-classes','admin-tab-quiz-results','admin-tab-ap-results','admin-tab-teachers','admin-tab-debug',
      'admin-gen-row','admin-add-row'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
@@ -2745,6 +2748,7 @@ function applyAdminPermissions() {
   var tabMap = {
     'admin-tab-classes':      canDo('viewClasses'),
     'admin-tab-quiz-results': canDo('viewQuizResults'),
+    'admin-tab-ap-results':   canDo('viewAP'),
     'admin-tab-teachers':     canDo('manageTeachers'),
     'admin-tab-debug':        canDo('viewDebug'),
   };
@@ -3258,7 +3262,7 @@ async function loadClassDashboard(className, opts) {
     document.getElementById('btn-admin-host-ap').onclick      = function() { openAssessmentSetup(className); };
     document.getElementById('btn-admin-debug-ap').onclick     = function() { openAssessmentSetup(className); };
     document.getElementById('btn-admin-refresh-class').onclick = function() { refreshCurrentAdminDashboard(); };
-    document.getElementById('btn-admin-export-ap').onclick    = function() { openAssessmentResults(className); };
+    document.getElementById('btn-admin-export-ap').onclick    = function() { setAdminTab('ap-results'); loadApResultsClassOptions(className); };
     document.getElementById('btn-admin-export-detail').onclick = function() { exportDetailedReport(className); };
     document.getElementById('btn-admin-export-codes').onclick  = function() { exportCodesSheet(className); };
     document.getElementById('btn-admin-delete-class').onclick  = async function() {
@@ -5944,11 +5948,11 @@ function exitAssessmentStudent(opts) {
 
 var apResultsState = { className: null, rows: [], students: [], progressRows: {} };
 
-document.getElementById('btn-ap-results-close').onclick = function() {
-  document.getElementById('modal-ap-results').classList.add('hidden');
-  document.getElementById('modal-admin').classList.remove('hidden');
+document.getElementById('ap-results-class').onchange = function() {
+  var cls = this.value;
+  if (!cls) { document.getElementById('ap-results-content').innerHTML = '<p class="text-gray-400 text-center py-8">Choose a class to view AP results.</p>'; return; }
+  openAssessmentResults(cls);
 };
-
 document.getElementById('ap-results-mode').onchange = renderAssessmentResultsPanel;
 document.getElementById('ap-results-assessment').onchange = renderAssessmentResultsPanel;
 document.getElementById('ap-results-student').onchange = renderAssessmentResultsPanel;
@@ -6119,13 +6123,30 @@ document.getElementById('btn-ap-results-release').onclick = async function() {
   }
 };
 
+async function loadApResultsClassOptions(preselectClass) {
+  var classEl = document.getElementById('ap-results-class');
+  var prev = preselectClass || classEl.value;
+  classEl.innerHTML = '<option value="">— select class —</option>';
+  try {
+    var snap = await state.db.ref('classes').get();
+    if (snap.exists()) snap.forEach(function(child) {
+      var opt = document.createElement('option');
+      opt.value = child.key; opt.textContent = child.key;
+      classEl.appendChild(opt);
+    });
+    if (prev && classEl.querySelector('option[value="' + prev + '"]')) {
+      classEl.value = prev;
+      openAssessmentResults(prev);
+    }
+  } catch(e) {
+    document.getElementById('ap-results-content').innerHTML =
+      '<p class="text-red-500 text-center py-8">Could not load classes: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
 async function openAssessmentResults(className) {
   apResultsState.className = className;
-  document.getElementById('ap-results-class').textContent = 'Class: ' + className;
-  document.getElementById('ap-results-content').innerHTML = '<p class="text-gray-400 text-center py-8">Loading AP results...</p>';
-  document.getElementById('modal-admin').classList.add('hidden');
-  document.getElementById('modal-ap-results').classList.remove('hidden');
-
+  document.getElementById('ap-results-content').innerHTML = '<p class="text-gray-400 text-center py-8">Loading AP results…</p>';
   try {
     await refreshAssessmentResultsData(className);
     populateAssessmentResultsFilters();
