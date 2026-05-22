@@ -443,6 +443,7 @@
       <button id="admin-tab-classes" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]">Classes</button>
       <button id="admin-tab-quiz-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Quiz Results</button>
       <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
+      <button id="admin-tab-teachers" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Teachers</button>
     </div>
 
     <div id="admin-classes-tab" class="flex-1 min-h-0 flex flex-col">
@@ -450,7 +451,7 @@
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
       <!-- Bulk generate -->
       <p class="text-sm font-medium text-gray-700 mb-3">Generate codes for a class</p>
-      <div class="flex gap-2 items-end mb-3">
+      <div id="admin-gen-row" class="flex gap-2 items-end mb-3">
         <div class="flex-1">
           <label class="block text-xs text-gray-500 mb-1">Class name</label>
           <input id="input-class-name" type="text" placeholder="e.g. 7Y1"
@@ -465,7 +466,7 @@
         <button id="btn-refresh-codes" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-gray-50">Refresh</button>
       </div>
       <!-- Add single + import -->
-      <div class="flex gap-2 items-end border-t border-gray-200 pt-3">
+      <div id="admin-add-row" class="flex gap-2 items-end border-t border-gray-200 pt-3">
         <div class="flex-1">
           <label class="block text-xs text-gray-500 mb-1">Add one student to existing class</label>
           <input id="input-single-class" type="text" placeholder="Class name (e.g. 7Y1)"
@@ -508,6 +509,8 @@
       <p class="text-gray-400 text-sm text-center py-8">Select a class above to view the dashboard.</p>
     </div>
     </div>
+
+    <div id="admin-teachers-tab" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
 
     <div id="admin-debug-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
       <div class="border border-red-200 bg-red-50 rounded-lg p-4">
@@ -1754,6 +1757,9 @@ var state = {
   currentLessonIdx: 0,
   currentStepIdx: 0,
   isAdmin: false,
+  isTeacher: false,
+  teacherPermissions: null,
+  teacherCode: null,
   db: null,
   uid: null,
   className: null,
@@ -2536,6 +2542,21 @@ function setupAuthUI() {
       return;
     }
     try {
+      var teacherSnap = await state.db.ref('teachers/' + code.toLowerCase()).get();
+      if (teacherSnap.exists()) {
+        var td = teacherSnap.val();
+        localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
+        localStorage.setItem('pylearn_code', code.toLowerCase());
+        localStorage.setItem('pylearn_is_teacher', '1');
+        localStorage.setItem('pylearn_teacher_perms', JSON.stringify(td.permissions || {}));
+        state.isAdmin=false; state.isTeacher=true;
+        state.uid=code.toLowerCase(); state.teacherPermissions=td.permissions||{}; state.teacherCode=code.toLowerCase();
+        modalLogin.classList.add('hidden');
+        updateAuthUI(first,last,false,true);
+        return;
+      }
+    } catch(e) {}
+    try {
       // Search for the code across all classes, case-insensitively
       // Use the stored version of the code (correct case) as the uid
       var classesSnap = await state.db.ref('classes').get();
@@ -2579,8 +2600,10 @@ function setupAuthUI() {
     try { localStorage.removeItem(localProgressKey()); } catch(e) {}
     stopForcedQuizWatcher();
     stopForcedAssessmentWatcher();
-    state.uid=null; state.className=null; state.isAdmin=false; state.progress={};
-    updateAuthUI(null,null,false);
+    localStorage.removeItem('pylearn_is_teacher');
+    localStorage.removeItem('pylearn_teacher_perms');
+    state.uid=null; state.className=null; state.isAdmin=false; state.isTeacher=false; state.teacherPermissions=null; state.teacherCode=null; state.progress={};
+    updateAuthUI(null,null,false,false);
     renderLessonTabs(); renderStepBar();
   };
 
@@ -2606,6 +2629,19 @@ function setupAuthUI() {
         }
       } catch(e) {}
       updateAuthUI(n.first,n.last,true);
+    } else if (localStorage.getItem('pylearn_is_teacher') === '1') {
+      state.uid=savedCode.toLowerCase(); state.isTeacher=true; state.teacherCode=savedCode.toLowerCase();
+      try { state.teacherPermissions=JSON.parse(localStorage.getItem('pylearn_teacher_perms')||'{}'); } catch(e){ state.teacherPermissions={}; }
+      updateAuthUI(n.first,n.last,false,true);
+      state.db.ref('teachers/'+savedCode.toLowerCase()).get().then(function(snap){
+        if(!snap.exists()){
+          localStorage.removeItem('pylearn_is_teacher'); localStorage.removeItem('pylearn_teacher_perms');
+          document.getElementById('btn-logout').click();
+        } else {
+          state.teacherPermissions=snap.val().permissions||{};
+          localStorage.setItem('pylearn_teacher_perms',JSON.stringify(state.teacherPermissions));
+        }
+      }).catch(function(){});
     } else {
       state.uid=savedCode;
       findClassForCode(savedCode).then(function(className) {
@@ -2619,42 +2655,201 @@ function setupAuthUI() {
   }
 }
 
-function updateAuthUI(first, last, isAdmin) {
+function updateAuthUI(first, last, isAdmin, isTeacher) {
   var show = !!first;
   document.getElementById('btn-login').classList.toggle('hidden',  show);
   document.getElementById('btn-logout').classList.toggle('hidden', !show);
-  document.getElementById('btn-report').classList.toggle('hidden', !show||isAdmin);
-  document.getElementById('btn-ap-feedback').classList.toggle('hidden', !show||isAdmin);
-  document.getElementById('btn-admin').classList.toggle('hidden',  !isAdmin);
+  document.getElementById('btn-report').classList.toggle('hidden', !show||isAdmin||isTeacher);
+  document.getElementById('btn-ap-feedback').classList.toggle('hidden', !show||isAdmin||isTeacher);
+  document.getElementById('btn-admin').classList.toggle('hidden',  !isAdmin&&!isTeacher);
+  document.getElementById('btn-admin').textContent = isTeacher ? 'Teacher Panel' : 'Admin';
   document.getElementById('user-label').textContent = show ? first+' '+last : '';
 }
 
 // ── Admin ─────────────────────────────────────────────────────
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
-  setAdminTab('classes');
-  await loadAdminClassList();
-  loadActiveSessions();
+  applyAdminPermissions();
+  setAdminTab(state.isTeacher ? 'teachers' : 'classes');
+  if (!state.isTeacher) { await loadAdminClassList(); loadActiveSessions(); }
 }
 
 function setAdminTab(tab) {
   var classesTab = tab === 'classes';
   var quizResultsTab = tab === 'quiz-results';
+  var teachersTab = tab === 'teachers';
   var debugTab = tab === 'debug';
   var activeCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]';
   var idleCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
   document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
   document.getElementById('admin-quiz-results-tab').classList.toggle('hidden', !quizResultsTab);
+  document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
   document.getElementById('admin-tab-classes').className = classesTab ? activeCls : idleCls;
   document.getElementById('admin-tab-quiz-results').className = quizResultsTab ? activeCls : idleCls;
+  document.getElementById('admin-tab-teachers').className = teachersTab ? activeCls : idleCls;
   document.getElementById('admin-tab-debug').className = debugTab ? activeCls : idleCls;
   if (quizResultsTab) loadQuizResultsClassOptions();
+  if (teachersTab) renderTeachersTab();
 }
 
 document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
 document.getElementById('admin-tab-quiz-results').onclick = function() { setAdminTab('quiz-results'); };
+document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
+
+// ── Teacher account management ────────────────────────────────
+
+var TEACHER_PERMISSION_DEFS = [
+  { group: 'Classes & Students', perms: [
+    { id: 'viewClasses',    label: 'View classes and student list' },
+    { id: 'manageClasses',  label: 'Create / delete classes and manage codes' },
+    { id: 'viewProgress',   label: 'View student progress' },
+    { id: 'exportProgress', label: 'Export progress data (Excel)' },
+  ]},
+  { group: 'Quizzes', perms: [
+    { id: 'hostQuiz',       label: 'Host live quizzes' },
+    { id: 'viewQuizResults',label: 'View quiz results' },
+    { id: 'forceQuiz',      label: 'Force a quiz for a class' },
+  ]},
+  { group: 'Assessments', perms: [
+    { id: 'viewAP',         label: 'View assessment results' },
+    { id: 'forceAP',        label: 'Force / unlock assessments for a class' },
+  ]},
+  { group: 'Account Management', perms: [
+    { id: 'manageTeachers', label: 'Create and delete teacher accounts (account management)' },
+    { id: 'viewDebug',      label: 'Access debug panel' },
+    { id: 'fullAdmin',      label: 'Full admin — all permissions (equivalent to admin account)' },
+  ]},
+];
+
+function canDo(perm) {
+  if (state.isAdmin) return true;
+  if (!state.isTeacher || !state.teacherPermissions) return false;
+  return !!(state.teacherPermissions.fullAdmin || state.teacherPermissions[perm]);
+}
+
+function applyAdminPermissions() {
+  if (state.isAdmin) {
+    // Full admin — restore everything
+    ['admin-tab-classes','admin-tab-quiz-results','admin-tab-teachers','admin-tab-debug',
+     'admin-gen-row','admin-add-row'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    });
+    return;
+  }
+  if (!state.isTeacher) return;
+  // Hide all tabs first, then show permitted ones
+  var tabMap = {
+    'admin-tab-classes':      canDo('viewClasses'),
+    'admin-tab-quiz-results': canDo('viewQuizResults'),
+    'admin-tab-teachers':     canDo('manageTeachers'),
+    'admin-tab-debug':        canDo('viewDebug'),
+  };
+  Object.keys(tabMap).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !tabMap[id]);
+  });
+  ['admin-gen-row','admin-add-row'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !canDo('manageClasses'));
+  });
+}
+
+async function renderTeachersTab() {
+  var panel = document.getElementById('admin-teachers-tab');
+  panel.innerHTML = '<p class="text-gray-400 text-xs p-4">Loading teachers…</p>';
+  var snap;
+  try { snap = await state.db.ref('teachers').get(); } catch(e) {
+    panel.innerHTML = '<p class="text-red-400 text-xs p-4">Error loading teachers.</p>'; return;
+  }
+  var teachers = {};
+  if (snap && snap.exists()) snap.forEach(function(c) { teachers[c.key] = c.val(); });
+
+  var rows = Object.keys(teachers).map(function(code) {
+    var t = teachers[code];
+    var permList = Object.keys(t.permissions||{}).filter(function(k){ return t.permissions[k]; }).join(', ') || 'none';
+    return '<tr class="border-b border-gray-100 hover:bg-gray-50">'
+      + '<td class="py-2 px-3 font-mono text-sm font-semibold text-gray-800">'+code+'</td>'
+      + '<td class="py-2 px-3 text-sm text-gray-600 max-w-xs truncate">'+permList+'</td>'
+      + '<td class="py-2 px-3 text-right space-x-2">'
+      + '<button class="text-xs text-blue-600 hover:underline" onclick="showTeacherForm(\''+code+'\','+JSON.stringify(t)+')">Edit</button>'
+      + '<button class="text-xs text-red-500 hover:underline" onclick="deleteTeacher(\''+code+'\')">Delete</button>'
+      + '</td></tr>';
+  }).join('');
+
+  panel.innerHTML = '<div class="p-4">'
+    + '<div class="flex items-center justify-between mb-3">'
+    + '<h3 class="font-semibold text-gray-800 text-sm">Teacher accounts ('+Object.keys(teachers).length+')</h3>'
+    + '<button onclick="showTeacherForm(null,null)" class="px-3 py-1.5 text-xs rounded font-semibold jhncc-primary">+ Add teacher</button>'
+    + '</div>'
+    + (rows ? '<div class="overflow-x-auto"><table class="w-full text-left"><thead><tr>'
+      + '<th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>'
+      + '<th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Permissions</th>'
+      + '<th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      : '<p class="text-gray-400 text-sm">No teacher accounts yet. Add one below.</p>')
+    + '<div id="teacher-form-wrap" class="mt-4"></div>'
+    + '</div>';
+}
+
+function buildPermissionCheckboxesHtml(perms) {
+  perms = perms || {};
+  return TEACHER_PERMISSION_DEFS.map(function(group) {
+    return '<div class="mb-3"><p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">'+group.group+'</p>'
+      + group.perms.map(function(p) {
+          var checked = perms[p.id] ? ' checked' : '';
+          return '<label class="flex items-center gap-2 text-sm text-gray-700 mb-1 cursor-pointer">'
+            + '<input type="checkbox" class="teacher-perm-cb" data-perm="'+p.id+'"'+checked+'> '+p.label+'</label>';
+        }).join('')
+      + '</div>';
+  }).join('');
+}
+
+function showTeacherForm(code, teacherData) {
+  var wrap = document.getElementById('teacher-form-wrap');
+  if (!wrap) return;
+  var isEdit = !!code;
+  var perms = (teacherData && teacherData.permissions) || {};
+  wrap.innerHTML = '<div class="border border-gray-200 rounded-lg p-4 bg-gray-50 mt-2">'
+    + '<h4 class="font-semibold text-gray-800 text-sm mb-3">'+(isEdit ? 'Edit teacher: '+code : 'New teacher account')+'</h4>'
+    + (isEdit ? '' : '<label class="block mb-3"><span class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Login code</span>'
+      + '<input id="tf-code" class="mt-1 block w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono" placeholder="e.g. TEACH01" autocomplete="off"></label>')
+    + '<div class="mb-3"><span class="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-2">Permissions</span>'
+    + buildPermissionCheckboxesHtml(perms)
+    + '</div>'
+    + '<div class="flex gap-2">'
+    + '<button id="tf-save" class="px-4 py-1.5 text-sm rounded font-semibold jhncc-primary">'+(isEdit?'Save changes':'Create account')+'</button>'
+    + '<button onclick="document.getElementById(\'teacher-form-wrap\').innerHTML=\'\'" class="px-4 py-1.5 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-100">Cancel</button>'
+    + '</div>'
+    + '<div id="tf-fb" class="mt-2 text-sm"></div>'
+    + '</div>';
+
+  document.getElementById('tf-save').onclick = async function() {
+    var saveCode = isEdit ? code : (document.getElementById('tf-code').value.trim().toUpperCase());
+    var fb = document.getElementById('tf-fb');
+    if (!saveCode) { fb.className='text-red-500'; fb.textContent='Enter a login code.'; return; }
+    if (!/^[A-Z0-9_-]{2,20}$/.test(saveCode)) { fb.className='text-red-500'; fb.textContent='Code must be 2–20 characters: letters, numbers, _ or -'; return; }
+    var newPerms = {};
+    wrap.querySelectorAll('.teacher-perm-cb').forEach(function(cb) {
+      if (cb.checked) newPerms[cb.dataset.perm] = true;
+    });
+    try {
+      fb.className='text-gray-400'; fb.textContent='Saving…';
+      await state.db.ref('teachers/'+saveCode.toLowerCase()).set({ permissions: newPerms });
+      fb.className='text-green-600'; fb.textContent='Saved!';
+      setTimeout(function(){ renderTeachersTab(); }, 800);
+    } catch(e) { fb.className='text-red-500'; fb.textContent='Error saving: '+e.message; }
+  };
+}
+
+async function deleteTeacher(code) {
+  if (!confirm('Delete teacher account "'+code+'"? This cannot be undone.')) return;
+  try {
+    await state.db.ref('teachers/'+code.toLowerCase()).remove();
+    renderTeachersTab();
+  } catch(e) { alert('Error deleting teacher: '+e.message); }
+}
 
 async function loadActiveSessions() {
   var panel = document.getElementById('admin-sessions-panel');
