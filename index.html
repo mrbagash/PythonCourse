@@ -441,6 +441,7 @@
     <!-- Admin tabs -->
     <div class="flex gap-2 border-b border-gray-200 mb-4">
       <button id="admin-tab-classes" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]">Classes</button>
+      <button id="admin-tab-quiz-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Quiz Results</button>
       <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
     </div>
 
@@ -712,6 +713,24 @@
         </label>
         <button id="btn-qh-next-start" class="jhncc-primary w-full py-2 rounded font-semibold">Create New Lobby</button>
       </aside>
+    </div>
+    <div id="admin-quiz-results-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
+      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Class</label>
+            <select id="quiz-results-class-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Quiz</label>
+            <select id="quiz-results-quiz-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+          </div>
+          <button id="btn-quiz-results-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
+        </div>
+      </div>
+      <div id="quiz-results-content" class="text-sm text-gray-700">
+        <p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -2620,17 +2639,21 @@ async function showAdmin() {
 
 function setAdminTab(tab) {
   var classesTab = tab === 'classes';
+  var quizResultsTab = tab === 'quiz-results';
+  var debugTab = tab === 'debug';
+  var activeCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]';
+  var idleCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
   document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
-  document.getElementById('admin-debug-tab').classList.toggle('hidden', classesTab);
-  document.getElementById('admin-tab-classes').className = classesTab
-    ? 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]'
-    : 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
-  document.getElementById('admin-tab-debug').className = !classesTab
-    ? 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]'
-    : 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
+  document.getElementById('admin-quiz-results-tab').classList.toggle('hidden', !quizResultsTab);
+  document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
+  document.getElementById('admin-tab-classes').className = classesTab ? activeCls : idleCls;
+  document.getElementById('admin-tab-quiz-results').className = quizResultsTab ? activeCls : idleCls;
+  document.getElementById('admin-tab-debug').className = debugTab ? activeCls : idleCls;
+  if (quizResultsTab) loadQuizResultsClassOptions();
 }
 
 document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
+document.getElementById('admin-tab-quiz-results').onclick = function() { setAdminTab('quiz-results'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 
 async function loadActiveSessions() {
@@ -2829,6 +2852,150 @@ async function loadAdminClassList() {
     if (d) d.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Error loading classes: ' + e.message + '</p>';
   }
 }
+
+async function loadQuizResultsClassOptions() {
+  var classEl = document.getElementById('quiz-results-class-select');
+  var quizEl = document.getElementById('quiz-results-quiz-select');
+  var content = document.getElementById('quiz-results-content');
+  if (!classEl || !quizEl) return;
+  var prev = classEl.value;
+  classEl.innerHTML = '<option value="">— select class —</option>';
+  quizEl.innerHTML = '<option value="">— select quiz —</option>';
+  try {
+    var snap = await state.db.ref('classes').get();
+    if (snap.exists()) {
+      snap.forEach(function(child) {
+        var opt = document.createElement('option');
+        opt.value = child.key;
+        opt.textContent = child.key;
+        classEl.appendChild(opt);
+      });
+    }
+    if (prev && classEl.querySelector('option[value="' + prev + '"]')) classEl.value = prev;
+    classEl.onchange = function() { loadQuizResultsForClass(classEl.value); };
+    quizEl.onchange = function() { renderSelectedQuizResult(); };
+    if (classEl.value) loadQuizResultsForClass(classEl.value);
+    else content.innerHTML = '<p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>';
+  } catch(e) {
+    content.innerHTML = '<p class="text-red-500 text-center py-8">Could not load classes: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+var quizResultsState = { className: null, records: [] };
+
+async function loadQuizResultsForClass(className) {
+  var quizEl = document.getElementById('quiz-results-quiz-select');
+  var content = document.getElementById('quiz-results-content');
+  quizResultsState = { className: className, records: [] };
+  quizEl.innerHTML = '<option value="">— select quiz —</option>';
+  if (!className) {
+    content.innerHTML = '<p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>';
+    return;
+  }
+  content.innerHTML = '<p class="text-gray-400 text-center py-8">Loading quiz results...</p>';
+  try {
+    var snap = await state.db.ref('classes/' + className + '/quizHistory').get();
+    if (!snap.exists()) {
+      content.innerHTML = '<p class="text-gray-400 text-center py-8">No quiz history found for ' + escapeHtml(className) + ' yet.</p>';
+      return;
+    }
+    var records = [];
+    snap.forEach(function(child) {
+      var rec = child.val() || {};
+      rec.key = child.key;
+      records.push(rec);
+    });
+    records.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    quizResultsState = { className: className, records: records };
+    records.forEach(function(rec, i) {
+      var d = rec.timestamp ? new Date(rec.timestamp) : null;
+      var opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = (d ? d.toLocaleString('en-GB') + ' — ' : '') + (rec.lessonTitle || rec.lessonId || 'Quiz') + ' (' + Object.keys(rec.results || {}).length + ' students)';
+      quizEl.appendChild(opt);
+    });
+    quizEl.value = '0';
+    renderSelectedQuizResult();
+  } catch(e) {
+    content.innerHTML = '<p class="text-red-500 text-center py-8">Could not load quiz results: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+function quizResultScore(rec, code) {
+  var qs = rec.questions || [];
+  var answers = (rec.results || {})[code] || [];
+  var score = 0, max = 0;
+  qs.forEach(function(q, i) {
+    max += quizQuestionMaxPoints(q);
+    var a = answers[i];
+    if (!a) return;
+    score += q.type === 'pybot_level'
+      ? (typeof a.points === 'number' ? a.points : pyBotMedalPoints(a.medal, a.completed === true || a.correct === true))
+      : (a.correct === true ? 1 : 0);
+  });
+  return { score: score, max: max };
+}
+
+function renderSelectedQuizResult() {
+  var quizEl = document.getElementById('quiz-results-quiz-select');
+  var content = document.getElementById('quiz-results-content');
+  var rec = quizResultsState.records[Number(quizEl.value)];
+  if (!rec) {
+    content.innerHTML = '<p class="text-gray-400 text-center py-8">Choose a quiz result.</p>';
+    return;
+  }
+  var qs = rec.questions || [];
+  var results = rec.results || {};
+  var codes = Object.keys(results);
+  var rows = codes.map(function(code) {
+    var s = quizResultScore(rec, code);
+    return { code: code, name: studentName(code) || '', score: s.score, max: s.max, answers: results[code] || [] };
+  }).sort(function(a, b) { return b.score - a.score || String(a.name || a.code).localeCompare(String(b.name || b.code)); });
+  var dateText = rec.timestamp ? new Date(rec.timestamp).toLocaleString('en-GB') : '-';
+  var avg = rows.length ? Math.round(rows.reduce(function(t, r) { return t + (r.max ? r.score / r.max : 0); }, 0) / rows.length * 100) : 0;
+  var html = '<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">' +
+    '<div class="bg-blue-50 border border-blue-100 rounded-lg p-3"><div class="text-xs text-blue-500">Quiz</div><div class="font-bold text-blue-800">' + escapeHtml(rec.lessonTitle || rec.lessonId || 'Quiz') + '</div></div>' +
+    '<div class="bg-green-50 border border-green-100 rounded-lg p-3"><div class="text-xs text-green-500">Students</div><div class="text-2xl font-bold text-green-700">' + rows.length + '</div></div>' +
+    '<div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3"><div class="text-xs text-yellow-600">Average</div><div class="text-2xl font-bold text-yellow-700">' + avg + '%</div></div>' +
+    '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3"><div class="text-xs text-gray-500">Date</div><div class="font-semibold text-gray-800">' + escapeHtml(dateText) + '</div></div></div>';
+
+  html += '<div class="border border-gray-200 rounded-lg overflow-hidden mb-4"><div class="bg-gray-50 px-3 py-2 border-b border-gray-200 font-semibold text-gray-700">Question Breakdown</div>';
+  html += '<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="bg-gray-50 text-left text-gray-500"><th class="border border-gray-200 px-2 py-1.5">Question</th><th class="border border-gray-200 px-2 py-1.5 text-center">Correct</th><th class="border border-gray-200 px-2 py-1.5">Prompt</th></tr></thead><tbody>';
+  qs.forEach(function(q, i) {
+    var correct = rows.filter(function(r) { return r.answers[i] && (q.type === 'pybot_level' ? quizResultScore({ questions: [q], results: { x: [r.answers[i]] } }, 'x').score > 0 : r.answers[i].correct === true); }).length;
+    var pct = rows.length ? Math.round(correct / rows.length * 100) : 0;
+    html += '<tr><td class="border border-gray-100 px-2 py-1.5 font-mono">Q' + (i + 1) + '</td><td class="border border-gray-100 px-2 py-1.5 text-center font-semibold">' + correct + '/' + rows.length + ' (' + pct + '%)</td><td class="border border-gray-100 px-2 py-1.5">' + escapeHtml(q.q || '') + '</td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  html += '<div class="border border-gray-200 rounded-lg overflow-hidden"><div class="bg-gray-50 px-3 py-2 border-b border-gray-200 font-semibold text-gray-700">Student Results</div>';
+  html += '<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="bg-gray-50 text-left text-gray-500"><th class="border border-gray-200 px-2 py-1.5">Name</th><th class="border border-gray-200 px-2 py-1.5">Code</th><th class="border border-gray-200 px-2 py-1.5 text-center">Score</th>';
+  qs.forEach(function(q, i) { html += '<th class="border border-gray-200 px-2 py-1.5 text-center">Q' + (i + 1) + '</th>'; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(function(r) {
+    html += '<tr><td class="border border-gray-100 px-2 py-1.5 font-medium">' + escapeHtml(r.name || '-') + '</td><td class="border border-gray-100 px-2 py-1.5 font-mono text-gray-500">' + escapeHtml(r.code) + '</td><td class="border border-gray-100 px-2 py-1.5 text-center font-bold">' + r.score + '/' + r.max + '</td>';
+    qs.forEach(function(q, i) {
+      var a = r.answers[i];
+      var points = 0, label = '-';
+      if (a) {
+        points = q.type === 'pybot_level'
+          ? (typeof a.points === 'number' ? a.points : pyBotMedalPoints(a.medal, a.completed === true || a.correct === true))
+          : (a.correct === true ? 1 : 0);
+        label = q.type === 'pybot_level' ? (pyBotMedalLabel(a.medal) + ' ' + points) : (points ? '✓' : '✗');
+      }
+      html += '<td class="border border-gray-100 px-2 py-1.5 text-center ' + (points ? 'text-green-600 font-bold' : 'text-red-500') + '">' + escapeHtml(label) + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  content.innerHTML = html;
+}
+
+document.getElementById('btn-quiz-results-refresh').onclick = function() {
+  var className = document.getElementById('quiz-results-class-select').value;
+  if (className) loadQuizResultsForClass(className);
+  else loadQuizResultsClassOptions();
+};
 
 async function refreshAdminTable() {
   await loadAdminClassList();
@@ -3831,12 +3998,35 @@ var quiz = {
 
 // ── Generate 4-digit lobby code unique in Firebase ─────────────
 async function genLobbyCode() {
-  for (var attempt = 0; attempt < 20; attempt++) {
+  var now = Date.now();
+  var staleMs = 12 * 60 * 60 * 1000;
+  for (var attempt = 0; attempt < 80; attempt++) {
     var code = String(Math.floor(1000 + Math.random() * 9000));
-    var snap = await state.db.ref('quizSessions/' + code).get();
-    if (!snap.exists() || !snap.child('hostUid').exists()) return code;
+    var ref = state.db.ref('quizSessions/' + code);
+    var snap = await ref.get();
+    if (snap.exists()) {
+      var stateVal = snap.child('state').val();
+      var endedAt = Number(snap.child('endedAt').val()) || 0;
+      var createdAt = Number(snap.child('createdAt').val()) || Number(snap.child('startedAt').val()) || 0;
+      var reservedAt = Number(snap.child('reservedAt').val()) || 0;
+      var staleFinished = stateVal === 'finished' || (endedAt && now - endedAt > 60000);
+      var staleReservation = snap.child('reserved').val() === true && reservedAt && now - reservedAt > 120000;
+      var staleAbandoned = createdAt && now - createdAt > staleMs && stateVal !== 'question' && stateVal !== 'answer';
+      if (staleFinished || staleReservation || staleAbandoned) {
+        try { await ref.remove(); } catch(e) {}
+      }
+    }
+    try {
+      var tx = await ref.transaction(function(current) {
+        if (current === null) return { reserved: true, reservedAt: Date.now() };
+        return;
+      });
+      if (tx && tx.committed) return code;
+    } catch(e) {
+      // Try another code; permission/network errors will surface if all attempts fail.
+    }
   }
-  return String(Math.floor(1000 + Math.random() * 9000)); // fallback
+  throw new Error('No free quiz lobby codes are available right now. End old active quizzes or try again in a moment.');
 }
 
 var assessment = {
@@ -6860,6 +7050,7 @@ async function createHostedQuizLobby(lesson, selectedQs, forceClass) {
     lessonId:    lesson.meta.id,
     className:   quiz.className || null,
     forced:      !!forceClass,
+    createdAt:   Date.now(),
     questions:   selectedQs.map(function(q) {
       var isCodeType = q.type === 'code_regex' || q.type === 'code_output';
       return {
