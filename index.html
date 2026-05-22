@@ -2669,8 +2669,10 @@ function updateAuthUI(first, last, isAdmin, isTeacher) {
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
   applyAdminPermissions();
-  setAdminTab(state.isTeacher ? 'teachers' : 'classes');
-  if (!state.isTeacher) { await loadAdminClassList(); loadActiveSessions(); }
+  var needsClasses = !state.isTeacher || canDo('viewClasses') || canDo('hostQuiz') || canDo('forceQuiz') || canDo('viewAP') || canDo('forceAP') || canDo('viewProgress') || canDo('exportProgress') || canDo('manageClasses');
+  var initialTab = needsClasses ? 'classes' : (canDo('manageTeachers') ? 'teachers' : 'quiz-results');
+  setAdminTab(initialTab);
+  if (needsClasses) { await loadAdminClassList(); loadActiveSessions(); }
 }
 
 function setAdminTab(tab) {
@@ -2745,8 +2747,9 @@ function applyAdminPermissions() {
   }
   if (!state.isTeacher) return;
   // Hide all tabs first, then show permitted ones
+  var needsClasses = canDo('viewClasses') || canDo('hostQuiz') || canDo('forceQuiz') || canDo('viewAP') || canDo('forceAP') || canDo('viewProgress') || canDo('exportProgress') || canDo('manageClasses');
   var tabMap = {
-    'admin-tab-classes':      canDo('viewClasses'),
+    'admin-tab-classes':      needsClasses,
     'admin-tab-quiz-results': canDo('viewQuizResults'),
     'admin-tab-ap-results':   canDo('viewAP'),
     'admin-tab-teachers':     canDo('manageTeachers'),
@@ -2776,11 +2779,11 @@ async function renderTeachersTab() {
     var t = teachers[code];
     var permList = Object.keys(t.permissions||{}).filter(function(k){ return t.permissions[k]; }).join(', ') || 'none';
     return '<tr class="border-b border-gray-100 hover:bg-gray-50">'
-      + '<td class="py-2 px-3 font-mono text-sm font-semibold text-gray-800">'+code+'</td>'
-      + '<td class="py-2 px-3 text-sm text-gray-600 max-w-xs truncate">'+permList+'</td>'
+      + '<td class="py-2 px-3 font-mono text-sm font-semibold text-gray-800">'+escapeHtml(code)+'</td>'
+      + '<td class="py-2 px-3 text-sm text-gray-600 max-w-xs truncate">'+escapeHtml(permList)+'</td>'
       + '<td class="py-2 px-3 text-right space-x-2">'
-      + '<button class="text-xs text-blue-600 hover:underline" onclick="showTeacherForm(\''+code+'\','+JSON.stringify(t)+')">Edit</button>'
-      + '<button class="text-xs text-red-500 hover:underline" onclick="deleteTeacher(\''+code+'\')">Delete</button>'
+      + '<button class="btn-teacher-edit text-xs text-blue-600 hover:underline" data-code="'+escapeHtml(code)+'">Edit</button>'
+      + '<button class="btn-teacher-delete text-xs text-red-500 hover:underline" data-code="'+escapeHtml(code)+'">Delete</button>'
       + '</td></tr>';
   }).join('');
 
@@ -2796,6 +2799,13 @@ async function renderTeachersTab() {
       : '<p class="text-gray-400 text-sm">No teacher accounts yet. Add one below.</p>')
     + '<div id="teacher-form-wrap" class="mt-4"></div>'
     + '</div>';
+
+  panel.querySelectorAll('.btn-teacher-edit').forEach(function(btn) {
+    btn.onclick = function() { showTeacherForm(btn.dataset.code, teachers[btn.dataset.code]); };
+  });
+  panel.querySelectorAll('.btn-teacher-delete').forEach(function(btn) {
+    btn.onclick = function() { deleteTeacher(btn.dataset.code); };
+  });
 }
 
 function buildPermissionCheckboxesHtml(perms) {
