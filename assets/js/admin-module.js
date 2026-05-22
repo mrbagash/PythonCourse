@@ -655,18 +655,31 @@ function renderAdminDashboard(className, codes, progMap, forced) {
     var isAP       = String(forced.lessonId || '').indexOf('AP:') === 0;
     var sessionLabel = (isAP ? 'AP' : 'Quiz') + ' — code ' + lobbyCode;
     var banner = document.createElement('div');
-    banner.className = 'bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-4 flex flex-wrap items-center gap-3';
+    banner.className = 'bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-2 flex flex-wrap items-center gap-3';
     banner.innerHTML =
       '<span class="text-amber-800 font-medium text-sm">Active session: ' + sessionLabel + '</span>' +
       '<button id="btn-dash-rejoin" class="px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 font-medium">Rejoin as Host</button>' +
+      (isAP ? '<button id="btn-dash-live-progress" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 font-medium">&#x1F4CA; Live Progress</button>' : '') +
       '<button id="btn-dash-force-end" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 font-medium">Force End</button>';
     dash.appendChild(banner);
+
+    var liveProgressWrap = document.createElement('div');
+    liveProgressWrap.id = 'ap-live-progress-wrap';
+    liveProgressWrap.className = 'mb-4';
+    dash.appendChild(liveProgressWrap);
 
     document.getElementById('btn-dash-rejoin').onclick = function() {
       document.getElementById('modal-admin').classList.add('hidden');
       if (isAP) rejoinAPSession(lobbyCode);
       else       rejoinQuizSession(lobbyCode);
     };
+
+    if (isAP) {
+      var apAssessmentId = String(forced.lessonId).slice(3); // strip 'AP:'
+      document.getElementById('btn-dash-live-progress').onclick = function() {
+        loadLiveAPProgress(apAssessmentId, codes);
+      };
+    }
 
     document.getElementById('btn-dash-force-end').onclick = async function() {
       if (!confirm('Force-end the active ' + (isAP ? 'AP' : 'quiz') + ' for ' + className + '? Students will be released.')) return;
@@ -946,6 +959,87 @@ function renderAdminDashboard(className, codes, progMap, forced) {
     if (preferredCourse) courseEl.value = preferredCourse.value;
   }
   if (courseList.length) populateLessons();
+}
+
+async function loadLiveAPProgress(assessmentId, codes) {
+  var wrap = document.getElementById('ap-live-progress-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<p class="text-gray-400 text-xs py-2 px-1">Loading live progress…</p>';
+
+  var spec = (typeof ASSESSMENTS !== 'undefined') && ASSESSMENTS[assessmentId];
+  if (!spec) { wrap.innerHTML = '<p class="text-red-400 text-xs px-1">AP spec not found for: ' + escapeHtml(assessmentId) + '</p>'; return; }
+
+  var snaps = await Promise.all(codes.map(function(c) {
+    return state.db.ref('progress/' + c + '/assessments/' + assessmentId).get();
+  }));
+
+  var now = Date.now();
+  var rows = codes.map(function(c, i) {
+    var rec = snaps[i].exists() ? snaps[i].val() : null;
+    if (!rec) return { code: c, name: studentName(c) || c, started: false };
+    var result = assessQuestionAssessment(spec, rec.answers || {});
+    return {
+      code: c,
+      name: studentName(c) || c,
+      started: true,
+      score: result.score,
+      maxScore: result.maxScore,
+      criteria: result.criteria,
+      savedAt: rec.savedAt || rec.lastSeenAt || null
+    };
+  });
+
+  rows.sort(function(a, b) {
+    if (a.started !== b.started) return a.started ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  var started = rows.filter(function(r) { return r.started; });
+  var notStarted = rows.filter(function(r) { return !r.started; });
+  var qLabels = (spec.questions || []).map(function(q, i) { return q.title ? q.title.slice(0, 12) : ('Q' + (i + 1)); });
+
+  var html = '<div class="border border-blue-200 rounded-lg overflow-hidden">' +
+    '<div class="bg-blue-50 px-3 py-2 border-b border-blue-200 flex justify-between items-center">' +
+    '<span class="text-xs font-semibold text-blue-800">&#x1F4CA; Live AP Progress — ' + escapeHtml(spec.title || assessmentId) + '</span>' +
+    '<span class="text-xs text-blue-600">' + started.length + ' / ' + codes.length + ' started &nbsp;&middot;&nbsp; ' +
+    '<button id="btn-ap-live-reload" class="underline hover:text-blue-900">Reload</button>' +
+    '</span></div>' +
+    '<div class="overflow-x-auto"><table class="w-full text-xs">' +
+    '<thead><tr class="bg-gray-50 text-gray-500 text-left">' +
+    '<th class="px-2 py-1.5">Student</th>' +
+    '<th class="px-2 py-1.5 text-center">Score</th>' +
+    '<th class="px-2 py-1.5 text-center">Last saved</th>' +
+    qLabels.map(function(l) { return '<th class="px-1 py-1.5 text-center max-w-[3rem] truncate" title="' + escapeHtml(l) + '">' + escapeHtml(l) + '</th>'; }).join('') +
+    '</tr></thead><tbody>';
+
+  started.forEach(function(r) {
+    var pct = r.maxScore ? r.score / r.maxScore : 0;
+    var scoreCol = pct >= 0.7 ? 'text-green-700' : pct >= 0.5 ? 'text-yellow-700' : 'text-red-600';
+    var ago = '—';
+    if (r.savedAt) {
+      var diffMs = now - r.savedAt;
+      var diffMins = Math.floor(diffMs / 60000);
+      ago = diffMins < 1 ? 'just now' : diffMins + 'm ago';
+    }
+    html += '<tr class="border-t border-gray-100 hover:bg-gray-50">' +
+      '<td class="px-2 py-1.5 font-medium">' + escapeHtml(r.name) + '</td>' +
+      '<td class="px-2 py-1.5 text-center font-semibold ' + scoreCol + '">' + r.score + ' / ' + r.maxScore + '</td>' +
+      '<td class="px-2 py-1.5 text-center text-gray-400">' + ago + '</td>' +
+      (r.criteria || []).map(function(c) {
+        return '<td class="px-1 py-1.5 text-center">' + (c.awarded ? '<span class="text-green-600">&#x2713;</span>' : '<span class="text-red-400">&#x2715;</span>') + '</td>';
+      }).join('') +
+      '</tr>';
+  });
+
+  if (notStarted.length) {
+    html += '<tr class="border-t border-gray-200"><td colspan="' + (3 + qLabels.length) + '" class="px-2 py-1.5 text-gray-400 italic">Not yet started: ' +
+      notStarted.map(function(r) { return escapeHtml(r.name || r.code); }).join(', ') + '</td></tr>';
+  }
+
+  html += '</tbody></table></div></div>';
+  wrap.innerHTML = html;
+
+  document.getElementById('btn-ap-live-reload').onclick = function() { loadLiveAPProgress(assessmentId, codes); };
 }
 
 // ── Helpers ───────────────────────────────────────────────────
