@@ -890,7 +890,7 @@
     </aside>
     <div id="aps-scratch-wrap" class="relative min-h-0 rounded-lg overflow-hidden border border-gray-700 bg-gray-950">
       <iframe id="aps-scratch-frame" src="about:blank" style="display:block;border:none;width:100%;height:100%"></iframe>
-      <div id="aps-question-ap" class="hidden h-full overflow-y-auto bg-gray-100 text-gray-800 p-4"></div>
+      <div id="aps-question-ap" class="hidden absolute inset-0 overflow-y-auto bg-gray-100 text-gray-800 p-4"></div>
       <div id="aps-validation-lock" class="hidden absolute inset-0 z-20 bg-gray-950/85 backdrop-blur-sm flex items-center justify-center text-center p-6" tabindex="-1">
         <div class="bg-gray-900 border border-yellow-500/60 rounded-lg px-6 py-5 max-w-md shadow-xl">
           <div class="text-yellow-300 font-bold text-lg mb-2">Validation in progress</div>
@@ -4559,8 +4559,9 @@ function validateAssessmentQuestionAnswer(q, value) {
   var raw = String(value == null ? '' : value);
   if (q.type === 'code_input') {
     var patterns = q.patterns || (q.pattern ? [q.pattern] : []);
+    // 'm' only — Python is case-sensitive so the 'i' flag must not be used
     var ok = raw.trim().length > 0 && patterns.every(function(pattern) {
-      try { return new RegExp(pattern, q.flags || 'im').test(raw); }
+      try { return new RegExp(pattern, q.flags || 'm').test(raw); }
       catch(e) { return false; }
     });
     return { correct: ok, expected: q.sampleAnswer || 'Valid Python code' };
@@ -4568,7 +4569,10 @@ function validateAssessmentQuestionAnswer(q, value) {
   if (q.type === 'mcq') {
     return { correct: normaliseAssessmentAnswer(raw) === normaliseAssessmentAnswer(q.answer), expected: (q.options && q.options[Number(q.answer)]) || q.answer };
   }
-  return { correct: !!normaliseAssessmentAnswer(raw) && normaliseAssessmentAnswer(raw) === normaliseAssessmentAnswer(q.answer), expected: q.answer };
+  // text type: preserve newlines so multi-line output questions require the correct
+  // number of lines — collapse only horizontal whitespace, then case-fold
+  function normText(v) { return String(v == null ? '' : v).trim().replace(/[^\S\n]+/g, '').toUpperCase(); }
+  return { correct: !!normText(raw) && normText(raw) === normText(q.answer), expected: q.answer };
 }
 
 async function submitQuestionAssessmentFinal() {
@@ -4820,40 +4824,42 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
     return sprite !== diverSprite && sprite !== sharkSprite;
   });
 
-  function hasAny(list) { return list.some(function(op) { return (info.counts[op] || 0) > 0; }); }
-  function spriteHasAny(sprite, list) {
-    return sprite && sprite.info && list.some(function(op) { return (sprite.info.counts[op] || 0) > 0; });
-  }
   function criterion(id, text, marks, ok, got) { return { id:id, text:text, marks:marks, awarded: ok ? marks : (got || 0) }; }
+  var specCriteria = (ASSESSMENTS[config.assessmentId] && ASSESSMENTS[config.assessmentId].criteria) ||
+                     (ASSESSMENTS['year7-ap2-scratch'] && ASSESSMENTS['year7-ap2-scratch'].criteria) || [];
+  function criterionFromSpec(id, ok, got) {
+    var item = specCriteria.find(function(c) { return c.id === id; }) || { id: id, text: id, marks: 1 };
+    return criterion(id, item.text, item.marks, ok, got);
+  }
 
-  // ── 1. Backdrop: any backdrop whose name contains an underwater keyword ──
+  // -- 1. Backdrop --
+  progress(config.labels.backdrop, 1);
   var underwaterBackdrop = false;
   try {
     var backdrops = stage && stage.getCostumes ? stage.getCostumes() :
       (stage && stage.sprite && stage.sprite.costumes ? stage.sprite.costumes : []);
     underwaterBackdrop = backdrops.some(function(b) {
       var name = normaliseScratchFieldValue((b && (b.name || b.assetId)) || '');
-      return config.backdropWords.some(function(w) {
-        return name.indexOf(w) !== -1;
-      });
+      return config.backdropWords.some(function(w) { return name.indexOf(w) !== -1; });
     });
   } catch(e) {}
 
-  // ── 2. Diver sprite (static name check) ─────────────────────────────
-  var hasDiver = !!diverSprite;
-
-  // ── 3. Movement: simulate each arrow key, check diver moves that way ──
+  // -- 2 & 3. Player sprite + Movement: test EVERY sprite, track which one responds --
+  progress(config.labels.movement, 3);
   var movementScore = 0;
-  if (diverSprite) {
-    var dirTests = [
-      { key: 'ArrowRight', axis: 'x', dir: 1 },
-      { key: 'ArrowLeft',  axis: 'x', dir: -1 },
-      { key: 'ArrowUp',    axis: 'y', dir: 1 },
-      { key: 'ArrowDown',  axis: 'y', dir: -1 }
-    ];
+  var actualPlayerSprite = diverSprite;
+  var dirTests = [
+    { key: 'ArrowRight', axis: 'x', dir: 1 },
+    { key: 'ArrowLeft',  axis: 'x', dir: -1 },
+    { key: 'ArrowUp',    axis: 'y', dir: 1 },
+    { key: 'ArrowDown',  axis: 'y', dir: -1 }
+  ];
+  for (var si = 0; si < sprites.length && movementScore < 4; si++) {
+    var movTestSprite = sprites[si];
+    var spriteDirections = 0;
     for (var di = 0; di < dirTests.length; di++) {
       var dt = dirTests[di];
-      diverSprite.setXY(0, 0);
+      movTestSprite.setXY(0, 0);
       runtime.stopAll();
       runtime.greenFlag();
       await waitMs(50);
@@ -4863,160 +4869,216 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
       await waitMs(80);
       runtime.stopAll();
       var moved = dt.axis === 'x'
-        ? (dt.dir > 0 ? diverSprite.x > 1 : diverSprite.x < -1)
-        : (dt.dir > 0 ? diverSprite.y > 1 : diverSprite.y < -1);
-      if (moved) movementScore++;
+        ? (dt.dir > 0 ? movTestSprite.x > 1 : movTestSprite.x < -1)
+        : (dt.dir > 0 ? movTestSprite.y > 1 : movTestSprite.y < -1);
+      if (moved) spriteDirections++;
     }
-    await waitMs(80);
+    if (spriteDirections > movementScore) {
+      movementScore = spriteDirections;
+      actualPlayerSprite = movTestSprite;
+    }
   }
+  // Player: passes by name match OR by proving movement response
+  var hasDiver = !!diverSprite || movementScore >= 1;
+  progress(config.labels.player, 2);
 
-  // ── 4. Target/collectible moves when collected ───────────────────────
-  //        Hiding and showing is not enough: the target must change position.
-  var targetMovesStatic = targetSprite && diverSprite &&
-    targetHasTouchingSprite(targetSprite, diverSprite) &&
-    targetHasRandomPositionChange(targetSprite);
-  var targetCollectionLinked = targetSprite && diverSprite && (
-    targetHasTouchingSprite(targetSprite, diverSprite) ||
-    targetHasChangeVariableBy(targetSprite, ['score', 'point'], 1) ||
-    targetHasTouchingSprite(diverSprite, targetSprite)
-  );
+  // -- 4. Collectible: teleport each sprite onto every other, watch for teleport-away --
+  progress(config.labels.target, 4);
+  // Static: any sprite that has both a touching block and a random-position-change block
+  var targetMovesStatic = sprites.some(function(s) {
+    return targetHasRandomPositionChange(s) &&
+           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+  });
   var targetMovedDynamic = false;
-  if (targetSprite && diverSprite) {
-    var targetTests = [[0, 0], [80, -40], [-90, 70]];
-    for (var ti = 0; ti < targetTests.length; ti++) {
+  var actualTargetSprite = targetSprite;
+  for (var tai = 0; tai < sprites.length && !targetMovedDynamic; tai++) {
+    for (var tbi = 0; tbi < sprites.length && !targetMovedDynamic; tbi++) {
+      if (tai === tbi) continue;
+      var tA = sprites[tai];
+      var tB = sprites[tbi];
       runtime.stopAll();
-      var tp = targetTests[ti];
-      targetSprite.setXY(tp[0], tp[1]);
-      diverSprite.setXY(tp[0], tp[1]);
       runtime.greenFlag();
-      await waitMs(1800);
+      await waitMs(200);
+      var tBx = tB.x, tBy = tB.y;
+      tA.setXY(tBx, tBy);
+      await waitMs(1500);
       runtime.stopAll();
-      if (Math.hypot(targetSprite.x - tp[0], targetSprite.y - tp[1]) > 8) {
+      if (Math.hypot(tB.x - tBx, tB.y - tBy) > 8) {
         targetMovedDynamic = true;
-        break;
+        actualTargetSprite = tB;
       }
     }
-    await waitMs(80);
   }
-  var targetRandom = targetMovesStatic || (targetMovedDynamic && targetCollectionLinked);
+  var targetRandom = targetMovesStatic || targetMovedDynamic;
 
-  // ── 5. Score plus (static — needs sprite collision to trigger) ────────
-  progress(config.labels.backdrop, 1);
-
-  var scoreVar = info.variableNames.some(function(name) {
-    return name.indexOf('score') !== -1 || name.indexOf('point') !== -1;
+  // Identify hazard: name match first, then any sprite that is neither player nor collectible
+  var actualHazardSprite = sharkSprite || sprites.find(function(s) {
+    return s !== actualPlayerSprite && s !== actualTargetSprite;
   });
-  progress(config.labels.player, 2);
-  var plusScore = scoreVar && diverSprite && (
-    (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('1') !== -1) ||
-    (diverSprite.info && diverSprite.info.changeVariableValues.indexOf('+1') !== -1) ||
-    info.changeVariableValues.indexOf('1') !== -1 ||
-    targetHasChangeVariableBy(diverSprite, ['score', 'point'], 1) ||
-    (targetSprite && targetHasChangeVariableBy(targetSprite, ['score', 'point'], 1))
-  );
+  var hasShark = !!actualHazardSprite;
 
-  // ── 6. Shark sprite (static) ─────────────────────────────────────────
-  progress(config.labels.movement, 3);
-  var hasShark = !!sharkSprite;
-  progress(config.labels.target, 4);
+  // -- 5. Score variable + mechanics (3 marks) --
+  progress('score mechanics', 5);
 
-  // ── 7. Shark chases diver: place shark at 3 fixed offsets,
-  //        check it gets closer to the diver within 1 second each time ──
+  var scoreObj = null;
+  (runtime.targets || []).forEach(function(t) {
+    Object.keys(t.variables || {}).forEach(function(id) {
+      var v = t.variables[id];
+      if (!v) return;
+      var vname = v.name ? normaliseScratchFieldValue(v.name) : '';
+      if (!scoreObj) scoreObj = v;
+      if (vname.indexOf('score') !== -1 || vname.indexOf('point') !== -1) scoreObj = v;
+    });
+  });
+
+  var hasAnyVar = info.variableNames.length > 0;
+
+  // Static fallback for score+1: sprite must have BOTH a touching block AND a change-by-1 block
+  var plusScoreStatic = sprites.some(function(s) {
+    return targetHasChangeVariableBy(s, null, 1) &&
+           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+  });
+
+  // Mark 2 runtime: scatter sprites first so no collisions during init, then bring pair together
+  var scoreIncreases = false;
+  if (scoreObj && sprites.length >= 2) {
+    for (var spi = 0; spi < sprites.length && !scoreIncreases; spi++) {
+      for (var spj = 0; spj < sprites.length && !scoreIncreases; spj++) {
+        if (spi === spj) continue;
+        var spA = sprites[spi], spB = sprites[spj];
+        sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, 200); });
+        runtime.stopAll();
+        runtime.greenFlag();
+        await waitMs(300);
+        var score0 = Number(scoreObj.value);
+        spA.setXY(spB.x, spB.y);
+        await waitMs(1200);
+        runtime.stopAll();
+        if (Number(scoreObj.value) > score0) scoreIncreases = true;
+      }
+    }
+  }
+
+  // Mark 3 runtime: scatter sprites to prevent collision-triggered changes, then check reset
+  var scoreResetsOnFlag = false;
+  if (scoreObj) {
+    sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, 200); });
+    runtime.stopAll();
+    scoreObj.value = 5;
+    runtime.greenFlag();
+    await waitMs(700);
+    runtime.stopAll();
+    if (Number(scoreObj.value) === 0) scoreResetsOnFlag = true;
+  }
+
+  var scorePlusMark1 = hasAnyVar ? 1 : 0;
+  var scorePlusMark2 = (scoreIncreases || plusScoreStatic) ? 1 : 0;
+  var scorePlusMark3 = scoreResetsOnFlag ? 1 : 0;
+  var scorePlusTotal = scorePlusMark1 + scorePlusMark2 + scorePlusMark3;
+
+  // -- 6. Hazard chases player --
+  progress(config.labels.chase, 6);
   var sharkChases = false;
-  var sharkChaseStatic = sharkSprite && diverSprite && targetHasChaseTowardsSprite(sharkSprite, diverSprite);
-  if (sharkSprite && diverSprite) {
-    progress(config.labels.hazard, 5);
+  var sharkChaseStatic = actualHazardSprite && actualPlayerSprite &&
+    targetHasChaseTowardsSprite(actualHazardSprite, actualPlayerSprite);
+  if (actualHazardSprite && actualPlayerSprite) {
     var chaseCount = 0;
     var chasePositions = [[-150, 80], [160, -90], [-100, -100]];
     for (var ci = 0; ci < chasePositions.length; ci++) {
       var cp = chasePositions[ci];
       runtime.stopAll();
-      diverSprite.setXY(0, 0);
-      sharkSprite.setXY(cp[0], cp[1]);
+      actualPlayerSprite.setXY(0, 0);
+      actualHazardSprite.setXY(cp[0], cp[1]);
       runtime.greenFlag();
       await waitMs(150);
-      var d0 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
+      var d0 = Math.hypot(actualHazardSprite.x - actualPlayerSprite.x, actualHazardSprite.y - actualPlayerSprite.y);
       await waitMs(1300);
-      var d1 = Math.hypot(sharkSprite.x - diverSprite.x, sharkSprite.y - diverSprite.y);
+      var d1 = Math.hypot(actualHazardSprite.x - actualPlayerSprite.x, actualHazardSprite.y - actualPlayerSprite.y);
       if (d1 < d0 - 5) chaseCount++;
     }
     sharkChases = chaseCount >= 2 || sharkChaseStatic;
     runtime.stopAll();
     await waitMs(100);
   }
-  progress(config.labels.chase, 6);
 
-  // ── 8. Shark says something when touching diver ───────────────────────
-  //        Teleport shark onto diver, listen for any SAY event from shark
+  // -- 7. Hazard says something when touching player --
+  progress(config.labels.message, 7);
   var sharkSays = false;
-  var sharkSaysStatic = sharkSprite && diverSprite && targetHasTouchingSprite(sharkSprite, diverSprite) && targetHasAnyOpcode(sharkSprite, ['looks_say', 'looks_sayforsecs', 'looks_think', 'looks_thinkforsecs']);
-  if (sharkSprite && diverSprite) {
+  // Static: hazard sprite has both a touching block and a say/think block (no name constraint)
+  var sharkSaysStatic = actualHazardSprite &&
+    targetHasAnyOpcode(actualHazardSprite, ['sensing_touchingobject']) &&
+    targetHasAnyOpcode(actualHazardSprite, ['looks_say', 'looks_sayforsecs', 'looks_think', 'looks_thinkforsecs']);
+  if (actualHazardSprite && actualPlayerSprite) {
     runtime.stopAll();
-    diverSprite.setXY(0, 0);
-    sharkSprite.setXY(120, 0);
+    actualPlayerSprite.setXY(0, 0);
+    actualHazardSprite.setXY(120, 0);
     runtime.greenFlag();
     await waitMs(300);
     var sayHeard = false;
     var sayHandler = function(sTarget) {
-      if (sTarget === sharkSprite || (sTarget && sharkSprite && sTarget.id === sharkSprite.id)) sayHeard = true;
+      if (sTarget === actualHazardSprite || (sTarget && actualHazardSprite && sTarget.id === actualHazardSprite.id)) sayHeard = true;
     };
     runtime.on('SAY', sayHandler);
-    sharkSprite.setXY(diverSprite.x, diverSprite.y);
+    actualHazardSprite.setXY(actualPlayerSprite.x, actualPlayerSprite.y);
     await waitMs(5600);
     runtime.off('SAY', sayHandler);
     sharkSays = sayHeard || sharkSaysStatic;
     runtime.stopAll();
     await waitMs(100);
   }
-  progress(config.labels.message, 7);
 
-  // ── 9. Score decreases when shark touches diver ───────────────────────
-  //        Record score, teleport shark onto diver, check score went down
-  var scoreDecreases = false;
-  var scoreDecreasesStatic = sharkSprite && diverSprite && targetHasTouchingSprite(sharkSprite, diverSprite) && targetHasChangeVariableBy(sharkSprite, ['score', 'point'], -1);
-  if (sharkSprite && diverSprite && scoreVar) {
-    runtime.stopAll();
-    diverSprite.setXY(0, 0);
-    sharkSprite.setXY(120, 0);
-    runtime.greenFlag();
-    await waitMs(300);
-    var scoreObj = null;
-    (runtime.targets || []).forEach(function(t) {
-      Object.keys(t.variables || {}).forEach(function(id) {
-        var v = t.variables[id];
-        var name = v && v.name ? normaliseScratchFieldValue(v.name) : '';
-        if (name.indexOf('score') !== -1 || name.indexOf('point') !== -1) scoreObj = v;
-      });
-    });
-    var scoreBefore = scoreObj ? Number(scoreObj.value) : null;
-    sharkSprite.setXY(diverSprite.x, diverSprite.y);
-    await waitMs(1800);
-    var scoreAfter = scoreObj ? Number(scoreObj.value) : null;
-    if (scoreBefore !== null && scoreAfter !== null) scoreDecreases = scoreAfter < scoreBefore;
-    scoreDecreases = scoreDecreases || scoreDecreasesStatic;
-    runtime.stopAll();
-    await waitMs(100);
-  }
+  // -- 8. Score decreases by 1 when hazard touches player --
   progress(config.labels.scoreMinus, 8);
-
-  var specCriteria = (ASSESSMENTS[config.assessmentId] && ASSESSMENTS[config.assessmentId].criteria) || (ASSESSMENTS['year7-ap2-scratch'] && ASSESSMENTS['year7-ap2-scratch'].criteria) || [];
-  function criterionFromSpec(id, ok, got) {
-    var item = specCriteria.find(function(c) { return c.id === id; }) || { id: id, text: id, marks: 1 };
-    return criterion(id, item.text, item.marks, ok, got);
+  var scoreDecreases = false;
+  // Static: any sprite has BOTH a touching block AND a change-by-(-1) block
+  var scoreDecreasesStatic = sprites.some(function(s) {
+    return targetHasChangeVariableBy(s, null, -1) &&
+           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+  });
+  if (scoreObj && sprites.length >= 2) {
+    // Prioritise the actual hazard/player pair, then try all remaining combinations
+    var sdPairs = [];
+    if (actualHazardSprite && actualPlayerSprite) {
+      sdPairs.push([actualHazardSprite, actualPlayerSprite]);
+      sdPairs.push([actualPlayerSprite, actualHazardSprite]);
+    }
+    for (var sdi = 0; sdi < sprites.length; sdi++) {
+      for (var sdj = 0; sdj < sprites.length; sdj++) {
+        if (sdi === sdj) continue;
+        var pa = sprites[sdi], pb = sprites[sdj];
+        var alreadyIn = sdPairs.some(function(p) { return p[0] === pa && p[1] === pb; });
+        if (!alreadyIn) sdPairs.push([pa, pb]);
+      }
+    }
+    for (var pi = 0; pi < sdPairs.length && !scoreDecreases; pi++) {
+      var sdA = sdPairs[pi][0], sdB = sdPairs[pi][1];
+      sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, -150); });
+      runtime.stopAll();
+      runtime.greenFlag();
+      await waitMs(400);
+      scoreObj.value = 10;
+      sdA.setXY(sdB.x, sdB.y);
+      await waitMs(1800);
+      runtime.stopAll();
+      if (Number(scoreObj.value) < 10) scoreDecreases = true;
+      await waitMs(100);
+    }
   }
+  scoreDecreases = scoreDecreases || scoreDecreasesStatic;
+
+  progress('final score', 9);
   var criteria = [
     criterionFromSpec('backdrop', underwaterBackdrop),
     criterionFromSpec('diver', hasDiver),
     criterionFromSpec('movement', movementScore >= 4, movementScore),
     criterionFromSpec('target', !!targetRandom),
-    criterionFromSpec('scorePlus', !!plusScore, scoreVar ? 1 : 0),
+    criterionFromSpec('scorePlus', scorePlusTotal >= 3, scorePlusTotal),
     criterionFromSpec('shark', hasShark),
     criterionFromSpec('sharkChase', sharkChases),
     criterionFromSpec('yum', sharkSays),
     criterionFromSpec('scoreMinus', scoreDecreases)
   ];
   var score = criteria.reduce(function(t, c) { return t + c.awarded; }, 0);
-  progress('final score', 9);
   var maxScore = (ASSESSMENTS[config.assessmentId] && ASSESSMENTS[config.assessmentId].maxScore) || 21;
   return { score: score, maxScore: maxScore, criteria: criteria };
 }
