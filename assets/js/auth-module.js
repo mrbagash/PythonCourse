@@ -1,0 +1,164 @@
+// ── Auth ──────────────────────────────────────────────────────
+function setupAuthUI() {
+  var modalLogin = document.getElementById('modal-login');
+
+  document.getElementById('btn-login').onclick = function() {
+    modalLogin.classList.remove('hidden');
+    var saved = localStorage.getItem('pylearn_name');
+    if (saved) {
+      var n = JSON.parse(saved);
+      document.getElementById('input-first').value = n.first || '';
+      document.getElementById('input-last').value  = n.last  || '';
+    }
+  };
+
+  document.getElementById('btn-login-cancel').onclick = function() { modalLogin.classList.add('hidden'); };
+
+  document.getElementById('btn-login-submit').onclick = async function() {
+    var first = document.getElementById('input-first').value.trim();
+    var last  = document.getElementById('input-last').value.trim();
+    var code  = document.getElementById('input-code').value.trim();
+    var errEl = document.getElementById('login-error');
+    errEl.classList.add('hidden');
+
+    if (!first||!last) { errEl.textContent='Please enter your name.';       errEl.classList.remove('hidden'); return; }
+    if (!code)         { errEl.textContent='Please enter your login code.'; errEl.classList.remove('hidden'); return; }
+
+    if (code.toLowerCase() === state.config.adminCode.toLowerCase()) {
+      localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
+      localStorage.setItem('pylearn_code', state.config.adminCode);
+      state.isAdmin=true; state.uid='admin';
+      try {
+        var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
+        if (firebaseUid) {
+          await state.db.ref('admins/' + firebaseUid).set(state.config.adminCode);
+        }
+      } catch(e) { console.warn('Could not register admin session:', e.message); }
+      modalLogin.classList.add('hidden');
+      updateAuthUI(first,last,true);
+      return;
+    }
+    try {
+      var teacherSnap = await state.db.ref('teachers/' + code.toLowerCase()).get();
+      if (teacherSnap.exists()) {
+        var td = teacherSnap.val();
+        localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
+        localStorage.setItem('pylearn_code', code.toLowerCase());
+        localStorage.setItem('pylearn_is_teacher', '1');
+        localStorage.setItem('pylearn_teacher_perms', JSON.stringify(td.permissions || {}));
+        state.isAdmin=false; state.isTeacher=true;
+        state.uid=code.toLowerCase(); state.teacherPermissions=td.permissions||{}; state.teacherCode=code.toLowerCase();
+        modalLogin.classList.add('hidden');
+        updateAuthUI(first,last,false,true);
+        return;
+      }
+    } catch(e) {}
+    try {
+      // Search for the code across all classes, case-insensitively
+      // Use the stored version of the code (correct case) as the uid
+      var classesSnap = await state.db.ref('classes').get();
+      var foundCode = null;
+      var foundClass = null;
+      if (classesSnap.exists()) {
+        classesSnap.forEach(function(classSnap) {
+          var codesVal = classSnap.child('codes').val() || {};
+          Object.keys(codesVal).forEach(function(storedCode) {
+            if (storedCode.toLowerCase() === code.toLowerCase()) {
+              foundCode = storedCode;  // use the correctly-cased stored code as uid
+              foundClass = classSnap.key;
+            }
+          });
+        });
+      }
+      if (!foundCode) { errEl.textContent='Invalid code. Please ask your teacher.'; errEl.classList.remove('hidden'); return; }
+      localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
+      localStorage.setItem('pylearn_code', foundCode);
+      state.uid=foundCode; state.className=foundClass; state.isAdmin=false;
+      await loadProgress();
+      renderLessonTabs(); renderStepBar();
+      modalLogin.classList.add('hidden');
+      updateAuthUI(first,last,false);
+      startForcedQuizWatcher(foundClass);
+      startForcedAssessmentWatcher(foundClass);
+    } catch(e) { errEl.textContent='Error connecting. Please try again.'; errEl.classList.remove('hidden'); }
+  };
+
+  document.getElementById('btn-logout').onclick = async function() {
+    await saveStepTime();
+    localStorage.removeItem('pylearn_code');
+    // Clear all saved per-step code so the next student doesn't see this one's work
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && (k.indexOf('pylearn_code:') === 0)) localStorage.removeItem(k);
+      }
+    } catch(e) {}
+    // Clear local progress so the next student starts fresh on this device
+    try { localStorage.removeItem(localProgressKey()); } catch(e) {}
+    stopForcedQuizWatcher();
+    stopForcedAssessmentWatcher();
+    localStorage.removeItem('pylearn_is_teacher');
+    localStorage.removeItem('pylearn_teacher_perms');
+    state.uid=null; state.className=null; state.isAdmin=false; state.isTeacher=false; state.teacherPermissions=null; state.teacherCode=null; state.progress={};
+    updateAuthUI(null,null,false,false);
+    renderLessonTabs(); renderStepBar();
+  };
+
+  document.getElementById('btn-report').onclick = showReport;
+  document.getElementById('btn-admin').onclick   = showAdmin;
+  document.getElementById('btn-admin-close').onclick  = function(){ document.getElementById('modal-admin').classList.add('hidden'); };
+  document.getElementById('btn-report-close').onclick  = function(){ document.getElementById('modal-report').classList.add('hidden'); };
+  document.getElementById('btn-report-close2').onclick = function(){ document.getElementById('modal-report').classList.add('hidden'); };
+  document.getElementById('btn-export-txt').onclick   = exportReport;
+
+  // Auto-login
+  var savedCode = localStorage.getItem('pylearn_code');
+  var savedName = localStorage.getItem('pylearn_name');
+  if (savedCode && savedName) {
+    var n = JSON.parse(savedName);
+    if (savedCode.toLowerCase() === state.config.adminCode.toLowerCase()) {
+      state.uid='admin'; state.className=null; state.isAdmin=true;
+      // Re-register admin UID on page refresh so Firebase rules still recognise them
+      try {
+        var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
+        if (firebaseUid) {
+          state.db.ref('admins/' + firebaseUid).set(state.config.adminCode).catch(function(){});
+        }
+      } catch(e) {}
+      updateAuthUI(n.first,n.last,true);
+    } else if (localStorage.getItem('pylearn_is_teacher') === '1') {
+      state.uid=savedCode.toLowerCase(); state.isTeacher=true; state.teacherCode=savedCode.toLowerCase();
+      try { state.teacherPermissions=JSON.parse(localStorage.getItem('pylearn_teacher_perms')||'{}'); } catch(e){ state.teacherPermissions={}; }
+      updateAuthUI(n.first,n.last,false,true);
+      state.db.ref('teachers/'+savedCode.toLowerCase()).get().then(function(snap){
+        if(!snap.exists()){
+          localStorage.removeItem('pylearn_is_teacher'); localStorage.removeItem('pylearn_teacher_perms');
+          document.getElementById('btn-logout').click();
+        } else {
+          state.teacherPermissions=snap.val().permissions||{};
+          localStorage.setItem('pylearn_teacher_perms',JSON.stringify(state.teacherPermissions));
+        }
+      }).catch(function(){});
+    } else {
+      state.uid=savedCode;
+      findClassForCode(savedCode).then(function(className) {
+        state.className = className;
+        startForcedQuizWatcher(className);
+        startForcedAssessmentWatcher(className);
+      });
+      loadProgress().then(function(){ renderLessonTabs(); renderStepBar(); });
+      updateAuthUI(n.first,n.last,false);
+    }
+  }
+}
+
+function updateAuthUI(first, last, isAdmin, isTeacher) {
+  var show = !!first;
+  document.getElementById('btn-login').classList.toggle('hidden',  show);
+  document.getElementById('btn-logout').classList.toggle('hidden', !show);
+  document.getElementById('btn-report').classList.toggle('hidden', !show||isAdmin||isTeacher);
+  document.getElementById('btn-ap-feedback').classList.toggle('hidden', !show||isAdmin||isTeacher);
+  document.getElementById('btn-admin').classList.toggle('hidden',  !isAdmin&&!isTeacher);
+  document.getElementById('btn-admin').textContent = isTeacher ? 'Teacher Panel' : 'Admin';
+  document.getElementById('user-label').textContent = show ? first+' '+last : '';
+}
