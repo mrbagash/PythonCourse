@@ -3849,12 +3849,15 @@ function buildYear8PythonAp2Questions() {
   function text(id, family, title, prompt, answer) {
     return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
   }
+  function output(id, family, title, prompt, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'output_text', answer:String(answer), marks:1 };
+  }
   function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
     return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
   }
   return [
     mcq('p1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Hello")</pre>', ['Hello', '"Hello"', 'print', 'Nothing'], 0),
-    text('p2', 'print_comments', 'One print statement', 'Write the output of this code exactly.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Cat")\nprint("Dog")</pre>', 'Cat\nDog'),
+    output('p2', 'print_comments', 'Two-line output', 'Write the output of this code exactly. Put each line of output on its own line.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Cat")\nprint("Dog")</pre>', 'Cat\nDog'),
     mcq('p3', 'print_comments', 'Comments', 'Which line is a comment in Python?', ['print("Hi")', '# print("Hi")', 'comment("Hi")', '// print("Hi")'], 1),
     code('p4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Welcome</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Welcome['\\\"]\\s*\\)"], 'print("Welcome")'),
     code('p5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>Start</strong> on one line and <strong>End</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]Start['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]End['\\\"]\\s*\\)"], 'print("Start")\nprint("End")'),
@@ -3887,12 +3890,15 @@ function buildYear8PythonPracticeAp2Questions() {
   function text(id, family, title, prompt, answer) {
     return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
   }
+  function output(id, family, title, prompt, answer) {
+    return { id:id, family:family, title:title, prompt:prompt, type:'output_text', answer:String(answer), marks:1 };
+  }
   function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
     return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
   }
   return [
     mcq('pp1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Ready")</pre>', ['Ready', '"Ready"', 'print Ready', 'Nothing'], 0),
-    text('pp2', 'print_comments', 'Two print statements', 'Write the output of this code exactly.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Red")\nprint("Blue")</pre>', 'Red\nBlue'),
+    output('pp2', 'print_comments', 'Two-line output', 'Write the output of this code exactly. Put each line of output on its own line.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Red")\nprint("Blue")</pre>', 'Red\nBlue'),
     mcq('pp3', 'print_comments', 'Comments', 'Which line would Python ignore because it is a comment?', ['print("Score")', '# score check', 'comment = "Score"', 'input("Score")'], 1),
     code('pp4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Practice</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Practice['\\\"]\\s*\\)"], 'print("Practice")'),
     code('pp5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>One</strong> on one line and <strong>Two</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]One['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]Two['\\\"]\\s*\\)"], 'print("One")\nprint("Two")'),
@@ -4487,6 +4493,12 @@ function renderAssessmentQuestionPaper(spec) {
     widgetEl.querySelectorAll('input[name="ap-mcq-answer"]').forEach(function(radio) {
       radio.onchange = function() { setQuestionAnswer(spec, q.id, radio.value, { defer: true }); };
     });
+  } else if (q.type === 'output_text') {
+    widgetEl.innerHTML = '<textarea id="ap-output-answer" class="ex-textarea mt-2" rows="4" autocomplete="off" spellcheck="false" placeholder="Type the exact output here">' + escapeHtml(saved || '') + '</textarea>';
+    var outputInput = document.getElementById('ap-output-answer');
+    outputInput.oninput = function() { setQuestionAnswer(spec, q.id, outputInput.value, { defer: true }); };
+    outputInput.onkeydown = function(e) { if (e.key === 'Enter' && e.ctrlKey) saveCurrentQuestionAnswer(spec); };
+    setTimeout(function() { outputInput.focus(); }, 0);
   } else {
     widgetEl.innerHTML = '<input id="ap-text-answer" class="ex-input mt-2" autocomplete="off" spellcheck="false" placeholder="Type your answer" value="' + escapeHtml(saved || '') + '">';
     var input = document.getElementById('ap-text-answer');
@@ -4514,9 +4526,10 @@ function saveCurrentQuestionAnswer(spec, opts) {
   if (assessment.questionWidget && assessment.questionWidget.getAnswer) value = assessment.questionWidget.getAnswer();
   else {
     var codeInput = document.getElementById('ap-code-answer');
+    var outputInput = document.getElementById('ap-output-answer');
     var input = document.getElementById('ap-text-answer');
     var radio = document.querySelector('input[name="ap-mcq-answer"]:checked');
-    value = codeInput ? codeInput.value : (input ? input.value : (radio ? radio.value : (assessment.questionAnswers[q.id] || '')));
+    value = codeInput ? codeInput.value : (outputInput ? outputInput.value : (input ? input.value : (radio ? radio.value : (assessment.questionAnswers[q.id] || ''))));
   }
   setQuestionAnswer(spec, q.id, value);
   saveQuestionAssessmentDraft(spec, opts);
@@ -4576,6 +4589,17 @@ function validateAssessmentQuestionAnswer(q, value) {
   }
   if (q.type === 'mcq') {
     return { correct: normaliseAssessmentAnswer(raw) === normaliseAssessmentAnswer(q.answer), expected: (q.options && q.options[Number(q.answer)]) || q.answer };
+  }
+  if (q.type === 'output_text') {
+    function normOutput(v) {
+      return String(v == null ? '' : v)
+        .trim()
+        .replace(/\r\n/g, '\n')
+        .replace(/[^\S\n]+/g, ' ')
+        .replace(/[ \t]*\n[ \t]*/g, '\n')
+        .toUpperCase();
+    }
+    return { correct: !!normOutput(raw) && normOutput(raw) === normOutput(q.answer), expected: q.answer };
   }
   // text type: preserve newlines so multi-line output questions require the correct
   // number of lines — collapse only horizontal whitespace, then case-fold
@@ -6250,6 +6274,8 @@ function setupBinaryAssessmentPracticeWorkspace(box, spec) {
       widget = BinaryLesson.mountAddInput(widgetEl.querySelector('.ap-practice-add-widget'), q.rowA, q.rowB);
     } else if (q.type === 'code_input') {
       widgetEl.innerHTML = '<textarea class="ap-practice-code quiz-code-area w-full min-h-[180px]" spellcheck="false" placeholder="Write your Python code here"></textarea>';
+    } else if (q.type === 'output_text') {
+      widgetEl.innerHTML = '<textarea class="ap-practice-output ex-textarea mt-2" rows="4" autocomplete="off" spellcheck="false" placeholder="Type the exact output here"></textarea>';
     } else if (q.type === 'mcq') {
       widgetEl.innerHTML = '<div class="grid gap-2">' + (q.options || []).map(function(opt, i) {
         return '<label class="flex items-start gap-2 bg-gray-800 border border-gray-700 rounded p-2 cursor-pointer"><input type="radio" name="ap-practice-mcq-' + escapeHtml(q.id) + '" value="' + i + '" class="mt-1 accent-[rgb(245,186,41)]"><span>' + escapeHtml(opt) + '</span></label>';
@@ -6260,8 +6286,9 @@ function setupBinaryAssessmentPracticeWorkspace(box, spec) {
     button.onclick = function() {
       var input = card.querySelector('.ap-practice-text');
       var codeInput = card.querySelector('.ap-practice-code');
+      var outputInput = card.querySelector('.ap-practice-output');
       var radio = card.querySelector('input[type="radio"]:checked');
-      var actual = widget && widget.getAnswer ? widget.getAnswer() : (codeInput ? codeInput.value : (input ? input.value : (radio ? radio.value : '')));
+      var actual = widget && widget.getAnswer ? widget.getAnswer() : (codeInput ? codeInput.value : (outputInput ? outputInput.value : (input ? input.value : (radio ? radio.value : ''))));
       var check = validateAssessmentQuestionAnswer(q, actual);
       var ok = check.correct;
       feedback.innerHTML = ok
