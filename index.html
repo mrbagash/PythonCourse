@@ -2688,11 +2688,15 @@ function setAdminTab(tab) {
   document.getElementById('admin-ap-results-tab').classList.toggle('hidden', !apResultsTab);
   document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
-  document.getElementById('admin-tab-classes').className = classesTab ? activeCls : idleCls;
-  document.getElementById('admin-tab-quiz-results').className = quizResultsTab ? activeCls : idleCls;
-  document.getElementById('admin-tab-ap-results').className = apResultsTab ? activeCls : idleCls;
-  document.getElementById('admin-tab-teachers').className = teachersTab ? activeCls : idleCls;
-  document.getElementById('admin-tab-debug').className = debugTab ? activeCls : idleCls;
+  [['admin-tab-classes',classesTab],['admin-tab-quiz-results',quizResultsTab],
+   ['admin-tab-ap-results',apResultsTab],['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab]
+  ].forEach(function(pair) {
+    var el = document.getElementById(pair[0]);
+    if (!el) return;
+    var wasHidden = el.classList.contains('hidden');
+    el.className = pair[1] ? activeCls : idleCls;
+    if (wasHidden) el.classList.add('hidden');
+  });
   if (quizResultsTab) loadQuizResultsClassOptions();
   if (apResultsTab) loadApResultsClassOptions();
   if (teachersTab) renderTeachersTab();
@@ -3275,6 +3279,21 @@ async function loadClassDashboard(className, opts) {
     document.getElementById('btn-admin-export-ap').onclick    = function() { setAdminTab('ap-results'); loadApResultsClassOptions(className); };
     document.getElementById('btn-admin-export-detail').onclick = function() { exportDetailedReport(className); };
     document.getElementById('btn-admin-export-codes').onclick  = function() { exportCodesSheet(className); };
+    // Per-permission button visibility
+    var btnPerms = {
+      'btn-admin-host-quiz':      canDo('hostQuiz'),
+      'btn-admin-host-ap':        canDo('forceAP'),
+      'btn-admin-debug-ap':       canDo('viewDebug'),
+      'btn-admin-export-ap':      canDo('viewAP'),
+      'btn-admin-export-detail':  canDo('exportProgress'),
+      'btn-admin-export-codes':   canDo('manageClasses'),
+      'btn-admin-wipe-sb3':       state.isAdmin,
+      'btn-admin-delete-class':   canDo('manageClasses'),
+    };
+    Object.keys(btnPerms).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden', !btnPerms[id]);
+    });
     document.getElementById('btn-admin-delete-class').onclick  = async function() {
       if (!confirm('Delete all codes for ' + className + '? This cannot be undone.')) return;
       try {
