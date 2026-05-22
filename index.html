@@ -620,7 +620,10 @@
       <span class="text-gray-400 text-sm">Join code:</span>
       <span id="qh-lobby-code" class="font-mono text-2xl font-bold tracking-widest text-yellow-400"></span>
     </div>
-    <button id="btn-quiz-host-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">End Quiz</button>
+    <div class="flex items-center gap-2">
+      <button id="btn-quiz-manage-students" class="text-gray-300 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">Manage Students</button>
+      <button id="btn-quiz-host-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">End Quiz</button>
+    </div>
   </div>
 
   <!-- Lobby state -->
@@ -710,6 +713,20 @@
         <button id="btn-qh-next-start" class="jhncc-primary w-full py-2 rounded font-semibold">Create New Lobby</button>
       </aside>
     </div>
+  </div>
+</div>
+
+<!-- QUIZ PLAYER MANAGER MODAL (host) -->
+<div id="modal-quiz-manage-students" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-xl p-5 w-full max-w-lg max-h-[82vh] flex flex-col text-white">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-semibold">Manage Quiz Students</h2>
+        <p id="quiz-manage-subtitle" class="text-xs text-gray-400 mt-0.5"></p>
+      </div>
+      <button id="btn-quiz-manage-close" class="text-gray-400 hover:text-white text-xl leading-none">&#x2715;</button>
+    </div>
+    <div id="quiz-manage-list" class="space-y-2 overflow-y-auto pr-1"></div>
   </div>
 </div>
 
@@ -3790,6 +3807,7 @@ var quiz = {
   lobbyCode:   null,    // 4-digit string
   sessionRef:  null,    // Firebase ref
   playerCount: 0,
+  hostPlayers: {},
   timerInterval: null,
   revealTimer: null,
   studentTimerInterval: null,
@@ -6830,6 +6848,7 @@ async function createHostedQuizLobby(lesson, selectedQs, forceClass) {
   quiz.lessonId   = lesson.meta.id;
   quiz.lessonTitle = lesson.data.title || lesson.meta.title || lesson.meta.id;
   quiz.forced = !!forceClass;
+  quiz.hostPlayers = {};
   quiz.sessionRef = state.db.ref('quizSessions/' + lobbyCode);
   var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
   await quiz.sessionRef.set({
@@ -6923,9 +6942,11 @@ function showQuizHostScreen() {
   var playersRef = quiz.sessionRef.child('players');
   var playersListener = playersRef.on('value', function(snap) {
     var players = snap.val() || {};
+    quiz.hostPlayers = players;
     var playerCodes = Object.keys(players).filter(function(c) { return !players[c].kicked; });
     quiz.playerCount = playerCodes.length;
     renderHostPlayerList(players);
+    renderQuizManageStudents();
     document.getElementById('btn-quiz-begin').disabled = playerCodes.length === 0;
   });
   quiz.unsubscribers.push(function() { playersRef.off('value', playersListener); });
@@ -6956,6 +6977,61 @@ function renderHostPlayerList(players) {
     list.appendChild(chip);
   });
 }
+
+function openQuizManageStudents() {
+  document.getElementById('modal-quiz-manage-students').classList.remove('hidden');
+  document.getElementById('quiz-manage-subtitle').textContent = quiz.lobbyCode ? ('Lobby code ' + quiz.lobbyCode) : '';
+  renderQuizManageStudents();
+}
+
+function renderQuizManageStudents() {
+  var modal = document.getElementById('modal-quiz-manage-students');
+  if (!modal || modal.classList.contains('hidden')) return;
+  var list = document.getElementById('quiz-manage-list');
+  var players = quiz.hostPlayers || {};
+  var codes = Object.keys(players).sort(function(a, b) {
+    return String(studentName(a) || a).localeCompare(String(studentName(b) || b));
+  });
+  if (!codes.length) {
+    list.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">No students have joined this quiz yet.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  codes.forEach(function(code) {
+    var p = players[code] || {};
+    var kicked = p.kicked === true;
+    var row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-3 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2';
+    row.innerHTML =
+      '<div class="min-w-0"><div class="font-medium text-gray-100 truncate">' + escapeHtml(studentName(code) || code) + '</div>' +
+      '<div class="text-xs text-gray-500 font-mono">' + escapeHtml(code) + (p.lastSeenAt ? ' · seen ' + new Date(p.lastSeenAt).toLocaleTimeString('en-GB') : '') + '</div></div>' +
+      (kicked
+        ? '<span class="text-xs text-red-300 border border-red-500/40 rounded px-2 py-1">Kicked</span>'
+        : '<button class="btn-quiz-kick-student px-3 py-1 rounded border border-red-500 text-red-200 text-xs hover:bg-red-900/30" data-code="' + escapeHtml(code) + '">Kick</button>');
+    var btn = row.querySelector('.btn-quiz-kick-student');
+    if (btn) {
+      btn.onclick = async function() {
+        if (!quiz.sessionRef) return;
+        if (!confirm('Kick ' + (studentName(code) || code) + ' from this quiz?')) return;
+        btn.disabled = true;
+        btn.textContent = 'Kicking...';
+        try {
+          await quiz.sessionRef.child('players/' + code + '/kicked').set(true);
+        } catch(e) {
+          alert('Could not kick student: ' + e.message);
+          btn.disabled = false;
+          btn.textContent = 'Kick';
+        }
+      };
+    }
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('btn-quiz-manage-students').onclick = openQuizManageStudents;
+document.getElementById('btn-quiz-manage-close').onclick = function() {
+  document.getElementById('modal-quiz-manage-students').classList.add('hidden');
+};
 
 document.getElementById('btn-quiz-begin').onclick = async function() {
   await startNextQuestion();
@@ -7004,7 +7080,9 @@ function exitHostQuizScreen() {
   quiz.unsubscribers = [];
   quiz.sessionRef = null;
   quiz.currentState = null;
+  quiz.hostPlayers = {};
   localStorage.removeItem('pylearn_host_quiz');
+  document.getElementById('modal-quiz-manage-students').classList.add('hidden');
   document.getElementById('quiz-host-screen').classList.add('hidden');
 }
 
