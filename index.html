@@ -493,6 +493,7 @@
         <button id="btn-admin-host-quiz"    class="jhncc-secondary px-3 py-1 rounded border text-xs">&#x1F3AE; Host Quiz</button>
         <button id="btn-admin-host-ap"      class="px-3 py-1 rounded border border-yellow-400 text-yellow-700 text-xs hover:bg-yellow-50">Start AP</button>
         <button id="btn-admin-debug-ap"     class="px-3 py-1 rounded border border-blue-300 text-blue-700 text-xs hover:bg-blue-50">Debug AP</button>
+        <button id="btn-admin-refresh-class" class="px-3 py-1 rounded border border-gray-300 text-gray-700 text-xs hover:bg-gray-50">Refresh View</button>
         <button id="btn-admin-export-ap"    class="px-3 py-1 rounded border border-purple-300 text-purple-700 text-xs hover:bg-purple-50">AP Results</button>
         <button id="btn-admin-wipe-sb3"     class="px-3 py-1 rounded border border-red-400 text-red-700 text-xs hover:bg-red-50">Wipe SB3 Data</button>
         <button id="btn-admin-export-detail" class="px-3 py-1 rounded border border-green-300 text-green-700 text-xs hover:bg-green-50">&#x2193; Report</button>
@@ -2771,7 +2772,34 @@ async function refreshAdminTable() {
   if (sel && sel.value) await loadClassDashboard(sel.value);
 }
 
-async function loadClassDashboard(className) {
+var adminDashboardState = {
+  className: null,
+  courseLabel: null,
+  lessonId: null
+};
+
+function captureAdminDashboardSelection(className) {
+  var courseEl = document.getElementById('admin-course-select');
+  var lessonEl = document.getElementById('admin-lesson-select');
+  if (!courseEl || !lessonEl) return;
+  var courseOpt = courseEl.options[courseEl.selectedIndex];
+  var lessonOpt = lessonEl.options[lessonEl.selectedIndex];
+  adminDashboardState = {
+    className: className,
+    courseLabel: courseOpt ? courseOpt.textContent : null,
+    lessonId: lessonOpt ? lessonOpt.dataset.lid : null
+  };
+}
+
+async function refreshCurrentAdminDashboard() {
+  var sel = document.getElementById('admin-class-select');
+  if (!sel || !sel.value) return;
+  await loadClassDashboard(sel.value, { preserveSelection: true });
+}
+
+async function loadClassDashboard(className, opts) {
+  opts = opts || {};
+  if (opts.preserveSelection) captureAdminDashboardSelection(className);
   var dash = document.getElementById('admin-dashboard');
   dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Loading ' + className + '…</p>';
   document.getElementById('admin-class-actions').classList.add('hidden');
@@ -2802,6 +2830,7 @@ async function loadClassDashboard(className) {
     document.getElementById('btn-admin-host-quiz').onclick    = function() { openQuizSetup(className); };
     document.getElementById('btn-admin-host-ap').onclick      = function() { openAssessmentSetup(className); };
     document.getElementById('btn-admin-debug-ap').onclick     = function() { openAssessmentSetup(className); };
+    document.getElementById('btn-admin-refresh-class').onclick = function() { refreshCurrentAdminDashboard(); };
     document.getElementById('btn-admin-export-ap').onclick    = function() { openAssessmentResults(className); };
     document.getElementById('btn-admin-export-detail').onclick = function() { exportDetailedReport(className); };
     document.getElementById('btn-admin-export-codes').onclick  = function() { exportCodesSheet(className); };
@@ -3019,8 +3048,15 @@ function renderAdminDashboard(className, codes, progMap, forced) {
     (course ? course.lessons : []).forEach(function(l, i) {
       var o = document.createElement('option');
       o.value = i; o.textContent = l.meta.title || l.data.title;
+      o.dataset.lid = l.meta.id;
       lessonEl.appendChild(o);
     });
+    if (adminDashboardState.className === className && adminDashboardState.lessonId) {
+      var preferredLesson = Array.prototype.find.call(lessonEl.options, function(o) {
+        return o.dataset.lid === adminDashboardState.lessonId;
+      });
+      if (preferredLesson) lessonEl.value = preferredLesson.value;
+    }
     renderLessonPanel();
   }
 
@@ -3110,6 +3146,12 @@ function renderAdminDashboard(className, codes, progMap, forced) {
 
   courseEl.onchange = populateLessons;
   lessonEl.onchange = renderLessonPanel;
+  if (adminDashboardState.className === className && adminDashboardState.courseLabel) {
+    var preferredCourse = Array.prototype.find.call(courseEl.options, function(o) {
+      return o.textContent === adminDashboardState.courseLabel;
+    });
+    if (preferredCourse) courseEl.value = preferredCourse.value;
+  }
   if (courseList.length) populateLessons();
 }
 
@@ -4879,6 +4921,7 @@ function assessmentValidationConfig(assessmentId) {
     hazardWords: practice
       ? ['alien', 'meteor', 'asteroid', 'robot', 'comet', 'enemy', 'obstacle']
       : ['shark'],
+    scoreWords: ['score', 'point'],
     labels: practice
       ? {
           backdrop: 'space background',
@@ -5022,21 +5065,12 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   // -- 5. Score variable + mechanics (3 marks) --
   progress('score mechanics', 5);
 
-  var scoreObj = null;
-  (runtime.targets || []).forEach(function(t) {
-    Object.keys(t.variables || {}).forEach(function(id) {
-      var v = t.variables[id];
-      if (!v) return;
-      var vname = v.name ? normaliseScratchFieldValue(v.name) : '';
-      if (!scoreObj) scoreObj = v;
-      if (vname.indexOf('score') !== -1 || vname.indexOf('point') !== -1) scoreObj = v;
-    });
-  });
-
-  var hasAnyVar = info.variableNames.length > 0;
+  var scoreObj = findAssessmentVariable(runtime.targets || [], config.scoreWords) ||
+                 findAssessmentVariable(runtime.targets || [], null);
+  var hasAnyActualVariable = !!scoreObj;
 
   // Static fallback for score+1: sprite must have BOTH a touching block AND a change-by-1 block
-  var plusScoreStatic = sprites.some(function(s) {
+  var plusScoreStatic = hasAnyActualVariable && sprites.some(function(s) {
     return targetHasChangeVariableBy(s, null, 1) &&
            targetHasAnyOpcode(s, ['sensing_touchingobject']);
   });
@@ -5073,8 +5107,8 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
     if (Number(scoreObj.value) === 0) scoreResetsOnFlag = true;
   }
 
-  var scorePlusMark1 = hasAnyVar ? 1 : 0;
-  var scorePlusMark2 = (scoreIncreases || plusScoreStatic) ? 1 : 0;
+  var scorePlusMark1 = hasAnyActualVariable ? 1 : 0;
+  var scorePlusMark2 = (hasAnyActualVariable && (scoreIncreases || plusScoreStatic)) ? 1 : 0;
   var scorePlusMark3 = scoreResetsOnFlag ? 1 : 0;
   var scorePlusTotal = scorePlusMark1 + scorePlusMark2 + scorePlusMark3;
 
@@ -5133,7 +5167,7 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   progress(config.labels.scoreMinus, 8);
   var scoreDecreases = false;
   // Static: any sprite has BOTH a touching block AND a change-by-(-1) block
-  var scoreDecreasesStatic = sprites.some(function(s) {
+  var scoreDecreasesStatic = hasAnyActualVariable && sprites.some(function(s) {
     return targetHasChangeVariableBy(s, null, -1) &&
            targetHasAnyOpcode(s, ['sensing_touchingobject']);
   });
@@ -5229,6 +5263,20 @@ function mergeAssessmentScratchInfo(total, part) {
   total.keyFields.push.apply(total.keyFields, part.keyFields || []);
   total.variableNames.push.apply(total.variableNames, part.variableNames || []);
   total.changeVariableValues.push.apply(total.changeVariableValues, part.changeVariableValues || []);
+}
+
+function findAssessmentVariable(targets, words) {
+  var wanted = words ? words.map(normaliseScratchFieldValue) : null;
+  for (var ti = 0; ti < (targets || []).length; ti++) {
+    var variables = targets[ti].variables || {};
+    var ids = Object.keys(variables);
+    for (var vi = 0; vi < ids.length; vi++) {
+      var variable = variables[ids[vi]];
+      var name = normaliseScratchFieldValue(variable && variable.name);
+      if (name && (!wanted || wanted.some(function(word) { return name.indexOf(word) !== -1; }))) return variable;
+    }
+  }
+  return null;
 }
 
 function targetBlocks(target) {
