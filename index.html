@@ -8799,13 +8799,18 @@ function renderStudentReveal(q, qIdx) {
       var medal = snap.exists() ? snap.child('medal').val() : '';
       var lines = snap.exists() ? snap.child('lines').val() : 0;
       revealEl.textContent = snap.exists() ? (pyBotMedalLabel(medal) + ' - ' + points + ' point' + (points === 1 ? '' : 's') + ' - ' + lines + ' line' + (lines === 1 ? '' : 's')) : 'Not completed';
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
     } else if (isTextInput || isWidget) {
       revealEl.textContent = 'Answer: ' + q.answer;
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 font-mono whitespace-pre-wrap';
     } else if (isScratch) {
       revealEl.textContent = q.sampleAnswer || "See your teacher's screen";
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
     } else if (isCodeQuestion) {
       revealEl.textContent = 'Example: ' + (q.sampleAnswer || 'See teacher');
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 font-mono whitespace-pre-wrap text-left';
     } else {
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
       renderTextWithBlocks(revealEl, 'Answer: ' + q.options[q.answer]);
     }
   });
