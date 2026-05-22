@@ -2769,6 +2769,7 @@ async function rejoinQuizSession(code) {
     quiz.questions  = session.questions || [];
     quiz.className  = session.className || null;
     quiz.lessonId   = session.lessonId  || null;
+    quiz.lessonTitle = ((quizLessonById(quiz.lessonId) || { data: { title: quiz.lessonId || '' } }).data.title);
     quiz.unsubscribers.forEach(function(fn) { try { fn(); } catch(e) {} });
     quiz.unsubscribers = [];
     showQuizHostScreen();
@@ -3812,6 +3813,7 @@ var quiz = {
   revealTimer: null,
   studentTimerInterval: null,
   hostTimerToken: 0,
+  hostSessionRenderKey: null,
   timerEnd:    null,
   currentState: null,   // 'lobby'|'question'|'answer'|'finished'
   myScore:     0,       // student side
@@ -6936,6 +6938,7 @@ function showQuizHostScreen() {
   document.getElementById('qh-lesson-name').textContent = quiz.lessonTitle ||
     ((state.allLessons.find(function(l) { return l.meta.id === quiz.lessonId; }) || {data:{title:''}}).data.title);
 
+  quiz.hostSessionRenderKey = null;
   setQuizHostView('lobby');
 
   // Listen for players joining/leaving/being kicked
@@ -6950,6 +6953,43 @@ function showQuizHostScreen() {
     document.getElementById('btn-quiz-begin').disabled = playerCodes.length === 0;
   });
   quiz.unsubscribers.push(function() { playersRef.off('value', playersListener); });
+
+  var hostSessionRef = quiz.sessionRef;
+  var sessionListener = hostSessionRef.on('value', function(snap) {
+    if (!snap.exists()) return;
+    renderQuizHostFromSession(snap);
+  });
+  quiz.unsubscribers.push(function() { hostSessionRef.off('value', sessionListener); });
+}
+
+function renderQuizHostFromSession(snap) {
+  var stateVal = snap.child('state').val() || 'lobby';
+  var qIdx = Number(snap.child('questionIdx').val());
+  var questionStart = snap.child('questionStart').val() || 0;
+  var answerRevealStart = snap.child('answerRevealStart').val() || 0;
+  var renderKey = [stateVal, qIdx, questionStart, answerRevealStart].join(':');
+  if (quiz.hostSessionRenderKey === renderKey) return;
+  quiz.hostSessionRenderKey = renderKey;
+
+  if (stateVal === 'lobby') {
+    clearAllQuizTimers();
+    setQuizHostView('lobby');
+    return;
+  }
+  if (stateVal === 'question' && qIdx >= 0 && quiz.questions[qIdx]) {
+    renderHostQuestionView(qIdx, questionStart, snap.child('questionDuration').val() || quiz.questions[qIdx].duration || 60);
+    return;
+  }
+  if (stateVal === 'answer' && qIdx >= 0 && quiz.questions[qIdx]) {
+    renderHostRevealView(qIdx, answerRevealStart);
+    return;
+  }
+  if (stateVal === 'finished') {
+    clearAllQuizTimers();
+    var leaderboard = snap.child('leaderboard').val() || [];
+    renderHostLeaderboard(Array.isArray(leaderboard) ? leaderboard : Object.values(leaderboard));
+    setQuizHostView('finished');
+  }
 }
 
 function setQuizHostView(view) {
@@ -7106,7 +7146,13 @@ async function startNextQuestion() {
     answerRevealStart: null,
   });
 
-  // Render host question view
+  renderHostQuestionView(nextIdx, now, q.duration);
+}
+
+function renderHostQuestionView(qIdx, questionStart, duration) {
+  clearRevealTimer();
+  var q = quiz.questions[qIdx];
+  if (!q) return;
   safeText(document.getElementById('qh-q-text'), q.q);
   var hostVisual = document.getElementById('qh-q-visual');
   if (q.html) {
@@ -7138,12 +7184,12 @@ async function startNextQuestion() {
     });
   }
   document.getElementById('qh-q-progress').textContent =
-    'Question ' + (nextIdx + 1) + ' of ' + quiz.questions.length;
+    'Question ' + (qIdx + 1) + ' of ' + quiz.questions.length;
   document.getElementById('qh-answered-count').textContent = '';
   document.getElementById('qh-unanswered-list').innerHTML = '<span class="text-gray-400">Waiting for answers...</span>';
 
   setQuizHostView('question');
-  startHostTimer(q.duration, nextIdx, now);
+  startHostTimer(duration || q.duration || 60, qIdx, questionStart || Date.now());
 }
 
 function clearHostQuestionTimer() {
@@ -7174,7 +7220,7 @@ function clearAllQuizTimers() {
 }
 
 function startHostTimer(duration, qIdx, questionStart) {
-  quiz.timerEnd = Date.now() + duration * 1000;
+  quiz.timerEnd = (questionStart || Date.now()) + duration * 1000;
   clearHostQuestionTimer();
   quiz.hostTimerToken++;
   var timerToken = quiz.hostTimerToken;
@@ -7271,8 +7317,20 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
+  await renderHostRevealView(qIdx, now);
+}
 
+async function renderHostRevealView(qIdx, revealStart) {
+  clearHostQuestionTimer();
+  clearRevealTimer();
   var revealEl = document.getElementById('qh-reveal-answer');
+  var q = quiz.questions[qIdx];
+  if (!q) return;
+  var isTextInput = q.type === 'text_input';
+  var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
+  var isScratch = q.type === 'scratch_build';
+  var isPyBot = q.type === 'pybot_level';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
   if (isTextInput || isWidget) {
     safeText(revealEl, 'Answer: ' + q.answer);
     revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono';
@@ -7384,10 +7442,14 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   setQuizHostView('reveal');
 
   var revealDuration = Math.max(5000, (q.duration / 2) * 1000);
-  quiz.revealTimer = setTimeout(async function() {
-    quiz.revealTimer = null;
-    await startNextQuestion();
-  }, revealDuration);
+  var elapsed = revealStart ? Date.now() - revealStart : 0;
+  var remaining = revealDuration - elapsed;
+  if (remaining > 0) {
+    quiz.revealTimer = setTimeout(async function() {
+      quiz.revealTimer = null;
+      await startNextQuestion();
+    }, remaining);
+  }
 }
 
 async function endQuiz() {
