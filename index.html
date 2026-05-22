@@ -510,6 +510,25 @@
     </div>
     </div>
 
+    <div id="admin-quiz-results-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
+      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Class</label>
+            <select id="quiz-results-class-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Quiz</label>
+            <select id="quiz-results-quiz-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+          </div>
+          <button id="btn-quiz-results-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
+        </div>
+      </div>
+      <div id="quiz-results-content" class="text-sm text-gray-700">
+        <p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>
+      </div>
+    </div>
+
     <div id="admin-teachers-tab" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
 
     <div id="admin-debug-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
@@ -716,24 +735,6 @@
         </label>
         <button id="btn-qh-next-start" class="jhncc-primary w-full py-2 rounded font-semibold">Create New Lobby</button>
       </aside>
-    </div>
-    <div id="admin-quiz-results-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
-      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-4">
-        <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Class</label>
-            <select id="quiz-results-class-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Quiz</label>
-            <select id="quiz-results-quiz-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
-          </div>
-          <button id="btn-quiz-results-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
-        </div>
-      </div>
-      <div id="quiz-results-content" class="text-sm text-gray-700">
-        <p class="text-gray-400 text-center py-8">Choose a class to view previous quiz results.</p>
-      </div>
     </div>
   </div>
 </div>
