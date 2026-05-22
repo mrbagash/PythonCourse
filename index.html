@@ -549,7 +549,21 @@
       <button id="btn-quiz-setup-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
     </div>
     <div class="mb-3">
-      <p class="text-sm text-gray-600 mb-3">Lesson: <span id="quiz-setup-lesson-name" class="font-medium text-gray-800"></span></p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Year group</label>
+          <select id="quiz-year-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Course</label>
+          <select id="quiz-course-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Lesson</label>
+          <select id="quiz-lesson-select" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none"></select>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600 mb-3">Quiz: <span id="quiz-setup-lesson-name" class="font-medium text-gray-800"></span></p>
       <div class="flex gap-3 mb-4">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="radio" name="quiz-mode" value="quick" checked class="accent-[rgb(176,28,35)]" />
@@ -6531,30 +6545,107 @@ function genPyQuestion(mode) {
 }
 
 // ── ADMIN: Open quiz setup modal ───────────────────────────────
-function openQuizSetup(className) {
-  quiz.className = className;
-  // Find current lesson's quiz questions
-  var lesson = state.lessons[state.currentLessonIdx];
-  quiz.lessonId = lesson.meta.id;
-  var allQs = lesson.data.quizQuestions || [];
+function quizLessonsForCourse(yearGroupId, courseId) {
+  return state.allLessons.filter(function(l) {
+    return l.meta.yearGroupId === yearGroupId &&
+           l.meta.courseId === courseId &&
+           l.data.quizQuestions &&
+           l.data.quizQuestions.length;
+  });
+}
 
-  document.getElementById('quiz-setup-lesson-name').textContent = lesson.data.title;
-  document.getElementById('quiz-force-class').checked = false;
-  document.getElementById('quiz-q-count').max = allQs.length;
-  document.getElementById('quiz-q-count').value = Math.min(5, allQs.length);
+function getSelectedQuizLesson() {
+  var lessonId = document.getElementById('quiz-lesson-select').value;
+  return state.allLessons.find(function(l) { return l.meta.id === lessonId; }) || null;
+}
 
-  // Build custom question list
+function refreshQuizSetupQuestions() {
+  var lesson = getSelectedQuizLesson();
+  var allQs = lesson && lesson.data.quizQuestions ? lesson.data.quizQuestions : [];
+  document.getElementById('quiz-setup-lesson-name').textContent = lesson ? (lesson.data.title || lesson.meta.title || lesson.meta.id) : 'No quiz available';
+  document.getElementById('quiz-q-count').max = Math.max(1, allQs.length);
+  document.getElementById('quiz-q-count').value = Math.min(5, Math.max(1, allQs.length));
+  document.getElementById('btn-quiz-start-host').disabled = !allQs.length;
+  document.getElementById('btn-quiz-start-host').classList.toggle('opacity-60', !allQs.length);
+
   var customList = document.getElementById('quiz-custom-list');
   customList.innerHTML = '';
+  if (!allQs.length) {
+    customList.innerHTML = '<p class="text-xs text-gray-500">This lesson does not currently have quiz questions.</p>';
+    return;
+  }
   allQs.forEach(function(q, idx) {
     var row = document.createElement('div');
     row.className = 'flex items-center gap-2';
     row.innerHTML =
       '<input type="checkbox" class="quiz-custom-check accent-[rgb(176,28,35)]" data-idx="' + idx + '" />' +
-      '<span class="text-sm text-gray-700 flex-1">' + q.q + '</span>' +
-      '<input type="number" class="quiz-custom-time w-16 border border-gray-300 rounded px-2 py-0.5 text-xs" value="60" min="10" max="300" />';
+      '<span class="text-sm text-gray-700 flex-1">' + escapeHtml(q.q || q.title || ('Question ' + (idx + 1))) + '</span>' +
+      '<input type="number" class="quiz-custom-time w-16 border border-gray-300 rounded px-2 py-0.5 text-xs" value="' + (q.duration || 60) + '" min="10" max="300" />';
     customList.appendChild(row);
   });
+}
+
+function populateQuizLessonSelect() {
+  var yearEl = document.getElementById('quiz-year-select');
+  var courseEl = document.getElementById('quiz-course-select');
+  var lessonEl = document.getElementById('quiz-lesson-select');
+  var yg = state.yearGroups.find(function(y) { return y.id === yearEl.value; });
+  var courses = (yg && yg.courses) || [];
+  var previousCourse = courseEl.value;
+  courseEl.innerHTML = '';
+  courses.forEach(function(course) {
+    var hasQuizzes = quizLessonsForCourse(yg.id, course.id).length > 0;
+    if (!hasQuizzes) return;
+    var opt = document.createElement('option');
+    opt.value = course.id;
+    opt.textContent = course.label;
+    courseEl.appendChild(opt);
+  });
+  if (previousCourse && courseEl.querySelector('option[value="' + previousCourse + '"]')) courseEl.value = previousCourse;
+
+  var lessons = quizLessonsForCourse(yearEl.value, courseEl.value);
+  var previousLesson = lessonEl.value;
+  lessonEl.innerHTML = '';
+  lessons.forEach(function(lesson) {
+    var opt = document.createElement('option');
+    opt.value = lesson.meta.id;
+    opt.textContent = lesson.data.title || lesson.meta.title || lesson.meta.id;
+    lessonEl.appendChild(opt);
+  });
+  if (previousLesson && lessonEl.querySelector('option[value="' + previousLesson + '"]')) lessonEl.value = previousLesson;
+  refreshQuizSetupQuestions();
+}
+
+function openQuizSetup(className) {
+  quiz.className = className;
+  var yearEl = document.getElementById('quiz-year-select');
+  var courseEl = document.getElementById('quiz-course-select');
+  yearEl.innerHTML = '';
+  state.yearGroups.forEach(function(yg) {
+    var hasQuizzes = (yg.courses || []).some(function(course) {
+      return quizLessonsForCourse(yg.id, course.id).length > 0;
+    });
+    if (!hasQuizzes) return;
+    var opt = document.createElement('option');
+    opt.value = yg.id;
+    opt.textContent = yg.label;
+    yearEl.appendChild(opt);
+  });
+  if (state.currentYearGroup && yearEl.querySelector('option[value="' + state.currentYearGroup + '"]')) yearEl.value = state.currentYearGroup;
+  populateQuizLessonSelect();
+  if (state.currentCourse && courseEl.querySelector('option[value="' + state.currentCourse + '"]')) {
+    courseEl.value = state.currentCourse;
+    populateQuizLessonSelect();
+  }
+  var currentLesson = state.lessons[state.currentLessonIdx];
+  if (currentLesson && document.getElementById('quiz-lesson-select').querySelector('option[value="' + currentLesson.meta.id + '"]')) {
+    document.getElementById('quiz-lesson-select').value = currentLesson.meta.id;
+    refreshQuizSetupQuestions();
+  }
+  document.getElementById('quiz-force-class').checked = false;
+  yearEl.onchange = populateQuizLessonSelect;
+  courseEl.onchange = populateQuizLessonSelect;
+  document.getElementById('quiz-lesson-select').onchange = refreshQuizSetupQuestions;
 
   document.getElementById('modal-quiz-setup').classList.remove('hidden');
   document.getElementById('modal-admin').classList.add('hidden');
@@ -6574,8 +6665,10 @@ document.getElementById('btn-quiz-setup-close').onclick = function() {
 };
 
 document.getElementById('btn-quiz-start-host').onclick = async function() {
-  var lesson = state.lessons[state.currentLessonIdx];
+  var lesson = getSelectedQuizLesson();
+  if (!lesson) { alert('Choose a lesson with quiz questions first.'); return; }
   var allQs  = lesson.data.quizQuestions || [];
+  if (!allQs.length) { alert('That lesson does not currently have quiz questions.'); return; }
   var mode   = document.querySelector('input[name="quiz-mode"]:checked').value;
   var forceClass = document.getElementById('quiz-force-class').checked;
   var selectedQs = [];
@@ -6609,6 +6702,8 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
   var lobbyCode = await genLobbyCode();
   quiz.lobbyCode  = lobbyCode;
   quiz.questions  = selectedQs;
+  quiz.lessonId   = lesson.meta.id;
+  quiz.lessonTitle = lesson.data.title || lesson.meta.title || lesson.meta.id;
   quiz.sessionRef = state.db.ref('quizSessions/' + lobbyCode);
 
   var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
@@ -6693,8 +6788,8 @@ function showQuizHostScreen() {
   document.getElementById('quiz-host-screen').classList.remove('hidden');
   document.getElementById('qh-lobby-code').textContent = quiz.lobbyCode;
   document.getElementById('qh-lobby-code-big').textContent = quiz.lobbyCode;
-  document.getElementById('qh-lesson-name').textContent =
-    (state.lessons[state.currentLessonIdx] || {data:{title:''}}).data.title;
+  document.getElementById('qh-lesson-name').textContent = quiz.lessonTitle ||
+    ((state.allLessons.find(function(l) { return l.meta.id === quiz.lessonId; }) || {data:{title:''}}).data.title);
 
   setQuizHostView('lobby');
 
