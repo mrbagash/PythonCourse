@@ -8391,16 +8391,16 @@ function renderStudentLeaderboard(lb) {
   var el = document.getElementById('qs-final-score');
   var total = quizMaxScore(quiz.questions);
   var medals = ['🥇','🥈','🥉'];
-  var html = '<div class="space-y-2 mt-4 w-full max-w-xs">';
+  var html = '<div class="space-y-2 mt-4 w-full max-w-xl mx-auto">';
   var lbArr = Array.isArray(lb) ? lb : Object.values(lb);
   lbArr.forEach(function(entry, i) {
     var isMe = entry.code === state.uid;
-    html += '<div class="flex items-center gap-3 rounded-lg px-4 py-2 ' +
+    html += '<div class="flex items-center justify-between gap-6 rounded-lg px-6 py-3 ' +
       (isMe ? 'bg-yellow-600/40 border border-yellow-400' : 'bg-white/10') + '">' +
-      '<span>' + (medals[i] || (i+1)+'.') + '</span>' +
-      '<span class="font-mono flex-1 text-sm ' + (isMe ? 'text-yellow-300 font-bold' : 'text-gray-300') + '">' +
+      '<span class="text-lg shrink-0">' + (medals[i] || (i+1)+'.') + '</span>' +
+      '<span class="font-mono flex-1 text-sm text-left ' + (isMe ? 'text-yellow-300 font-bold' : 'text-gray-300') + '">' +
       (studentName(entry.code) || entry.code) + (isMe ? ' (you)' : '') + '</span>' +
-      '<span class="font-bold text-yellow-400">' + entry.score + '/' + total + '</span>' +
+      '<span class="font-bold text-yellow-400 text-right shrink-0">' + entry.score + '/' + total + '</span>' +
       '</div>';
   });
   html += '</div>';
