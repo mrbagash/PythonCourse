@@ -671,13 +671,45 @@
   </div>
 
   <!-- Finished state -->
-  <div id="qh-finished" class="hidden flex-1 min-h-0 flex flex-col items-center px-6 py-8 overflow-y-auto">
-    <div class="text-4xl mb-4 shrink-0">&#x1F3C6;</div>
-    <h2 class="text-2xl font-bold mb-2 shrink-0">Quiz Complete!</h2>
-    <button id="btn-quiz-host-home" class="jhncc-primary mt-3 mb-6 px-6 py-2 rounded font-semibold shrink-0">
-      Back to lessons
-    </button>
-    <div id="qh-final-scores" class="space-y-2 text-center w-full max-w-xl pb-8"></div>
+  <div id="qh-finished" class="hidden flex-1 min-h-0 overflow-y-auto px-6 py-8">
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 max-w-6xl mx-auto">
+      <div class="flex flex-col items-center">
+        <div class="text-4xl mb-4 shrink-0">&#x1F3C6;</div>
+        <h2 class="text-2xl font-bold mb-2 shrink-0">Quiz Complete!</h2>
+        <button id="btn-quiz-host-home" class="jhncc-primary mt-3 mb-6 px-6 py-2 rounded font-semibold shrink-0">
+          Back to lessons
+        </button>
+        <div id="qh-final-scores" class="space-y-2 text-center w-full max-w-xl pb-8"></div>
+      </div>
+      <aside id="qh-next-quiz-panel" class="bg-gray-800 border border-gray-700 rounded-lg p-4 h-fit">
+        <h3 class="font-bold text-white mb-1">Start Another Quiz</h3>
+        <p class="text-xs text-gray-400 mb-3">Create a new lobby from here, including another forced quiz for the same class.</p>
+        <label class="block text-xs text-gray-400 mb-1">Year group</label>
+        <select id="qh-next-year-select" class="jhncc-focus w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1.5 text-sm focus:outline-none mb-2"></select>
+        <label class="block text-xs text-gray-400 mb-1">Course</label>
+        <select id="qh-next-course-select" class="jhncc-focus w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1.5 text-sm focus:outline-none mb-2"></select>
+        <label class="block text-xs text-gray-400 mb-1">Lesson</label>
+        <select id="qh-next-lesson-select" class="jhncc-focus w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1.5 text-sm focus:outline-none mb-3"></select>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Questions</label>
+            <input id="qh-next-q-count" type="number" min="1" max="15" value="5" class="jhncc-focus w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1.5 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Seconds</label>
+            <input id="qh-next-q-time" type="number" min="10" max="300" value="60" class="jhncc-focus w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1.5 text-sm focus:outline-none" />
+          </div>
+        </div>
+        <label class="flex items-start gap-2 border border-red-500/40 bg-red-900/20 rounded-lg p-3 mb-3 cursor-pointer">
+          <input id="qh-next-force-class" type="checkbox" class="mt-0.5 accent-[rgb(245,186,41)]" />
+          <span>
+            <span class="block text-sm font-semibold text-red-200">Force quiz for this class</span>
+            <span class="block text-xs text-red-200/80">Students in this class will be taken straight into the new quiz.</span>
+          </span>
+        </label>
+        <button id="btn-qh-next-start" class="jhncc-primary w-full py-2 rounded font-semibold">Create New Lobby</button>
+      </aside>
+    </div>
   </div>
 </div>
 
@@ -6559,6 +6591,10 @@ function getSelectedQuizLesson() {
   return state.allLessons.find(function(l) { return l.meta.id === lessonId; }) || null;
 }
 
+function quizLessonById(lessonId) {
+  return state.allLessons.find(function(l) { return l.meta.id === lessonId; }) || null;
+}
+
 function refreshQuizSetupQuestions() {
   var lesson = getSelectedQuizLesson();
   var allQs = lesson && lesson.data.quizQuestions ? lesson.data.quizQuestions : [];
@@ -6614,6 +6650,85 @@ function populateQuizLessonSelect() {
   });
   if (previousLesson && lessonEl.querySelector('option[value="' + previousLesson + '"]')) lessonEl.value = previousLesson;
   refreshQuizSetupQuestions();
+}
+
+function populateQuizSelectSet(ids, preferred) {
+  preferred = preferred || {};
+  var yearEl = document.getElementById(ids.year);
+  var courseEl = document.getElementById(ids.course);
+  var lessonEl = document.getElementById(ids.lesson);
+  if (!yearEl || !courseEl || !lessonEl) return;
+
+  var previousYear = preferred.yearGroupId || yearEl.value || state.currentYearGroup;
+  yearEl.innerHTML = '';
+  state.yearGroups.forEach(function(yg) {
+    var hasQuizzes = (yg.courses || []).some(function(course) {
+      return quizLessonsForCourse(yg.id, course.id).length > 0;
+    });
+    if (!hasQuizzes) return;
+    var opt = document.createElement('option');
+    opt.value = yg.id;
+    opt.textContent = yg.label;
+    yearEl.appendChild(opt);
+  });
+  if (previousYear && yearEl.querySelector('option[value="' + previousYear + '"]')) yearEl.value = previousYear;
+
+  function refreshCoursesAndLessons(preferredCourse, preferredLesson) {
+    var yg = state.yearGroups.find(function(y) { return y.id === yearEl.value; });
+    var courses = (yg && yg.courses) || [];
+    var keepCourse = preferredCourse || courseEl.value;
+    courseEl.innerHTML = '';
+    courses.forEach(function(course) {
+      if (!quizLessonsForCourse(yg.id, course.id).length) return;
+      var opt = document.createElement('option');
+      opt.value = course.id;
+      opt.textContent = course.label;
+      courseEl.appendChild(opt);
+    });
+    if (keepCourse && courseEl.querySelector('option[value="' + keepCourse + '"]')) courseEl.value = keepCourse;
+
+    var keepLesson = preferredLesson || lessonEl.value;
+    var lessons = quizLessonsForCourse(yearEl.value, courseEl.value);
+    lessonEl.innerHTML = '';
+    lessons.forEach(function(lesson) {
+      var opt = document.createElement('option');
+      opt.value = lesson.meta.id;
+      opt.textContent = lesson.data.title || lesson.meta.title || lesson.meta.id;
+      lessonEl.appendChild(opt);
+    });
+    if (keepLesson && lessonEl.querySelector('option[value="' + keepLesson + '"]')) lessonEl.value = keepLesson;
+  }
+
+  refreshCoursesAndLessons(preferred.courseId || state.currentCourse, preferred.lessonId || (state.lessons[state.currentLessonIdx] && state.lessons[state.currentLessonIdx].meta.id));
+  yearEl.onchange = function() { refreshCoursesAndLessons(null, null); if (ids.onchange) ids.onchange(); };
+  courseEl.onchange = function() { refreshCoursesAndLessons(courseEl.value, null); if (ids.onchange) ids.onchange(); };
+  lessonEl.onchange = function() { if (ids.onchange) ids.onchange(); };
+}
+
+function refreshFinishedQuizPanel() {
+  var lesson = quizLessonById(document.getElementById('qh-next-lesson-select').value);
+  var count = document.getElementById('qh-next-q-count');
+  var btn = document.getElementById('btn-qh-next-start');
+  var allQs = lesson && lesson.data.quizQuestions ? lesson.data.quizQuestions : [];
+  if (count) {
+    count.max = Math.max(1, allQs.length);
+    count.value = Math.min(parseInt(count.value, 10) || 5, Math.max(1, allQs.length));
+  }
+  if (btn) {
+    btn.disabled = !allQs.length;
+    btn.classList.toggle('opacity-60', !allQs.length);
+  }
+}
+
+function prepareFinishedQuizPanel() {
+  populateQuizSelectSet({
+    year: 'qh-next-year-select',
+    course: 'qh-next-course-select',
+    lesson: 'qh-next-lesson-select',
+    onchange: refreshFinishedQuizPanel
+  }, { lessonId: quiz.lessonId });
+  document.getElementById('qh-next-force-class').checked = !!quiz.forced;
+  refreshFinishedQuizPanel();
 }
 
 function openQuizSetup(className) {
@@ -6698,14 +6813,24 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
     return gen ? Object.assign({}, gen, { duration: q.duration || 60 }) : q;
   });
 
-  // Create Firebase session
+  await createHostedQuizLobby(lesson, selectedQs, forceClass);
+};
+
+async function createHostedQuizLobby(lesson, selectedQs, forceClass) {
+  if (quiz.cleanupTimer) {
+    clearTimeout(quiz.cleanupTimer);
+    quiz.cleanupTimer = null;
+  }
+  quiz.unsubscribers.forEach(function(fn) { try { fn(); } catch(e) {} });
+  quiz.unsubscribers = [];
+  var oldSessionRef = quiz.sessionRef;
   var lobbyCode = await genLobbyCode();
   quiz.lobbyCode  = lobbyCode;
   quiz.questions  = selectedQs;
   quiz.lessonId   = lesson.meta.id;
   quiz.lessonTitle = lesson.data.title || lesson.meta.title || lesson.meta.id;
+  quiz.forced = !!forceClass;
   quiz.sessionRef = state.db.ref('quizSessions/' + lobbyCode);
-
   var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
   await quiz.sessionRef.set({
     hostUid:     firebaseUid,
@@ -6758,8 +6883,9 @@ document.getElementById('btn-quiz-start-host').onclick = async function() {
   // cleaned up explicitly when the host ends/finishes them instead.
 
   localStorage.setItem('pylearn_host_quiz', lobbyCode);
+  if (oldSessionRef && oldSessionRef !== quiz.sessionRef) oldSessionRef.remove().catch(function(){});
   showQuizHostScreen();
-};
+}
 
 // ── ADMIN: Host screen ─────────────────────────────────────────
 function normaliseScratchCheckFields(checkFields) {
@@ -6810,6 +6936,7 @@ function setQuizHostView(view) {
     document.getElementById('qh-' + v).classList.toggle('hidden', v !== view);
   });
   quiz.currentState = view;
+  if (view === 'finished') prepareFinishedQuizPanel();
 }
 
 function renderHostPlayerList(players) {
@@ -6851,6 +6978,24 @@ document.getElementById('btn-quiz-host-exit').onclick = async function() {
 
 document.getElementById('btn-quiz-host-home').onclick = function() {
   exitHostQuizScreen();
+};
+
+document.getElementById('btn-qh-next-start').onclick = async function() {
+  var lesson = quizLessonById(document.getElementById('qh-next-lesson-select').value);
+  if (!lesson) { alert('Choose a lesson with quiz questions first.'); return; }
+  var allQs = lesson.data.quizQuestions || [];
+  if (!allQs.length) { alert('That lesson does not currently have quiz questions.'); return; }
+  var count = Math.min(parseInt(document.getElementById('qh-next-q-count').value, 10) || 5, allQs.length);
+  var timeEach = parseInt(document.getElementById('qh-next-q-time').value, 10) || 60;
+  var forceClass = document.getElementById('qh-next-force-class').checked;
+  var shuffled = allQs.slice().sort(function() { return Math.random() - 0.5; });
+  var selectedQs = shuffled.slice(0, count).map(function(q) { return Object.assign({}, q, { duration: timeEach }); });
+  selectedQs = selectedQs.map(function(q) {
+    if (q.type !== 'generated') return q;
+    var gen = BinaryLesson.genQuestion(q.mode) || genPyQuestion(q.mode);
+    return gen ? Object.assign({}, gen, { duration: q.duration || 60 }) : q;
+  });
+  await createHostedQuizLobby(lesson, selectedQs, forceClass);
 };
 
 function exitHostQuizScreen() {
@@ -7189,8 +7334,7 @@ async function endQuiz() {
   // ── Save permanent quiz history ──────────────────────────────
   try {
     if (quiz.className) {
-      var lesson = state.lessons[state.currentLessonIdx];
-      var lessonTitle = lesson ? lesson.data.title : (quiz.lessonId || '');
+      var lessonTitle = quiz.lessonTitle || ((quizLessonById(quiz.lessonId) || { data: { title: quiz.lessonId || '' } }).data.title);
       // Collect all answers across questions
       var historyResults = {};
       for (var qi = 0; qi < quiz.questions.length; qi++) {
