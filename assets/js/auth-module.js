@@ -78,6 +78,7 @@ function setupAuthUI() {
       renderLessonTabs(); renderStepBar();
       modalLogin.classList.add('hidden');
       updateAuthUI(first,last,false);
+      logStudentAccess(foundCode, first + ' ' + last, foundClass);
       startForcedQuizWatcher(foundClass);
       startForcedAssessmentWatcher(foundClass);
       startIndividualForcedApWatcher(foundClass, foundCode);
@@ -144,6 +145,7 @@ function setupAuthUI() {
       state.uid=savedCode;
       findClassForCode(savedCode).then(function(className) {
         state.className = className;
+        logStudentAccess(savedCode, n.first + ' ' + n.last, className);
         startForcedQuizWatcher(className);
         startForcedAssessmentWatcher(className);
         startIndividualForcedApWatcher(className, savedCode);
@@ -152,6 +154,19 @@ function setupAuthUI() {
       updateAuthUI(n.first,n.last,false);
     }
   }
+}
+
+function logStudentAccess(code, name, className) {
+  if (!state.db || !code) return;
+  var now = Date.now();
+  var d = new Date(now);
+  var dateKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  var ref = state.db.ref('accessLog/' + code);
+  ref.update({ name: name, className: className || '', lastSeen: now }).catch(function() {});
+  ref.child('days/' + dateKey).transaction(function(current) {
+    if (!current) return { count: 1, last: now };
+    return { count: (current.count || 0) + 1, last: now };
+  }, null, false);
 }
 
 function updateAuthUI(first, last, isAdmin, isTeacher) {

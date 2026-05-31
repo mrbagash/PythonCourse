@@ -15,6 +15,7 @@ function setAdminTab(tab) {
   var forceApTab = tab === 'force-ap';
   var teachersTab = tab === 'teachers';
   var debugTab = tab === 'debug';
+  var accessTab = tab === 'access';
   var activeCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]';
   var idleCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800';
   document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
@@ -23,9 +24,11 @@ function setAdminTab(tab) {
   document.getElementById('admin-force-ap-tab').classList.toggle('hidden', !forceApTab);
   document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
+  document.getElementById('admin-access-tab').classList.toggle('hidden', !accessTab);
   [['admin-tab-classes',classesTab],['admin-tab-quiz-results',quizResultsTab],
    ['admin-tab-ap-results',apResultsTab],['admin-tab-force-ap',forceApTab],
-   ['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab]
+   ['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab],
+   ['admin-tab-access',accessTab]
   ].forEach(function(pair) {
     var el = document.getElementById(pair[0]);
     if (!el) return;
@@ -37,6 +40,7 @@ function setAdminTab(tab) {
   if (apResultsTab) loadApResultsClassOptions();
   if (teachersTab) renderTeachersTab();
   if (forceApTab) loadForceApTab();
+  if (accessTab) loadAccessTab();
 }
 
 document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
@@ -45,6 +49,7 @@ document.getElementById('admin-tab-ap-results').onclick = function() { setAdminT
 document.getElementById('admin-tab-force-ap').onclick = function() { setAdminTab('force-ap'); };
 document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
+document.getElementById('admin-tab-access').onclick = function() { setAdminTab('access'); };
 
 // ── Teacher account management ────────────────────────────────
 
@@ -1358,70 +1363,95 @@ async function exportDetailedReport(className) {
   } catch(e) { alert('Export failed: ' + e.message); }
 }
 
-// ── Import names from spreadsheet ────────────────────────────
+// ── Import names from spreadsheet / ZIP ──────────────────────
+
+function parseSheetData(uint8array) {
+  var wb = XLSX.read(uint8array, { type: 'array' });
+  var sheetName = wb.SheetNames.indexOf('Codes') !== -1 ? 'Codes' : wb.SheetNames[0];
+  var rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+  var imported = 0, skipped = 0;
+  rows.forEach(function(row) {
+    var name = (row[0] || '').toString().trim();
+    var code = (row[1] || '').toString().trim();
+    if (name.toLowerCase() === 'name' && code.toLowerCase() === 'code') return;
+    if (!name && !code) return;
+    if (name && code && code.length >= 6) {
+      state.nameMap[code] = name;
+      imported++;
+    } else {
+      skipped++;
+    }
+  });
+  return { imported: imported, skipped: skipped };
+}
+
+function applyImportResult(imported, skipped, statusEl, source) {
+  if (imported === 0) {
+    statusEl.textContent = '⚠️ No names imported. Make sure column A = Name, column B = Code. Rows skipped: ' + skipped;
+    return;
+  }
+  localStorage.setItem('pylearn_name_map', JSON.stringify(state.nameMap));
+  var msg = '✅ Imported ' + imported + ' name' + (imported !== 1 ? 's' : '');
+  if (source) msg += ' from ' + source;
+  msg += '.';
+  if (skipped > 0) msg += ' (' + skipped + ' rows skipped — missing name or code too short.)';
+  msg += ' Names saved locally — they will persist between sessions.';
+  statusEl.textContent = msg;
+  refreshAdminTable();
+}
+
 function importNamesFromSheet(file) {
   var statusEl = document.getElementById('import-status');
-  statusEl.textContent = 'Reading file\u2026';
+  statusEl.textContent = 'Reading file…';
   statusEl.classList.remove('hidden');
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
-      var data = new Uint8Array(e.target.result);
-      var wb   = XLSX.read(data, { type: 'array' });
-      var sheetName = wb.SheetNames.indexOf('Codes') !== -1 ? 'Codes' : wb.SheetNames[0];
-      var ws   = wb.Sheets[sheetName];
-      var rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-      // Build a lowercase → correct-case map of all known stored codes
-      // so we can match case-insensitively and store under the right key
-      var storedCodeMap = {};  // lowercase → stored case
-      state.allLessons.forEach(function() {}); // allLessons isn't per-code
-      // We'll match against nameMap keys already loaded, plus fetch from the admin table
-      // Simpler: just preserve code as-is from the sheet and normalise on lookup
-      // The nameMap key must match what Firebase uses, so look up the exact stored code
-      // by searching state.db in memory isn't possible here — instead store the code
-      // as typed but normalise case when doing lookups in the admin table display.
-      // Best approach: store in nameMap with the code trimmed exactly as written in sheet,
-      // and in the admin table do a case-insensitive lookup.
-
-      var imported = 0;
-      var skipped  = 0;
-      rows.forEach(function(row) {
-        var name = (row[0] || '').toString().trim();
-        var code = (row[1] || '').toString().trim();  // preserve original case
-
-        // Skip header row
-        if (name.toLowerCase() === 'name' && code.toLowerCase() === 'code') return;
-        // Skip empty rows
-        if (!name && !code) return;
-
-        // Accept any code that is at least 6 characters (word codes are ~20+, old codes were 14)
-        if (name && code && code.length >= 6) {
-          // Store under the trimmed code; admin table does case-insensitive lookup
-          state.nameMap[code] = name;
-          imported++;
-        } else {
-          skipped++;
-        }
-      });
-
-      if (imported === 0) {
-        statusEl.textContent = '\u26A0\uFE0F No names imported. Make sure column A = Name, column B = Code. Rows skipped: ' + skipped;
-      } else {
-        localStorage.setItem('pylearn_name_map', JSON.stringify(state.nameMap));
-        var msg = '\u2705 Imported ' + imported + ' name' + (imported !== 1 ? 's' : '') + '.';
-        if (skipped > 0) msg += ' (' + skipped + ' rows skipped \u2014 missing name or code too short.)';
-        msg += ' Names saved locally \u2014 they will persist between sessions.';
-        statusEl.textContent = msg;
-        refreshAdminTable();
-      }
+      var result = parseSheetData(new Uint8Array(e.target.result));
+      applyImportResult(result.imported, result.skipped, statusEl);
     } catch(err) {
-      statusEl.textContent = '\u274C Error reading file: ' + err.message;
+      statusEl.textContent = '❌ Error reading file: ' + err.message;
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
+async function importNamesFromZip(file) {
+  var statusEl = document.getElementById('import-status');
+  statusEl.textContent = 'Reading ZIP…';
+  statusEl.classList.remove('hidden');
+  try {
+    var zip = await JSZip.loadAsync(await file.arrayBuffer());
+    var sheetEntries = [];
+    zip.forEach(function(path, entry) {
+      if (!entry.dir && /.(xlsx|xls)$/i.test(path) && !/^__MACOSX//i.test(path)) {
+        sheetEntries.push({ path: path, entry: entry });
+      }
+    });
+    if (!sheetEntries.length) {
+      statusEl.textContent = '⚠️ No .xlsx or .xls files found in the ZIP.';
+      return;
+    }
+    var totalImported = 0, totalSkipped = 0, filesDone = 0, filesFailed = 0;
+    for (var i = 0; i < sheetEntries.length; i++) {
+      statusEl.textContent = 'Processing file ' + (i + 1) + ' of ' + sheetEntries.length + '…';
+      try {
+        var data = await sheetEntries[i].entry.async('uint8array');
+        var result = parseSheetData(data);
+        totalImported += result.imported;
+        totalSkipped += result.skipped;
+        filesDone++;
+      } catch(e) {
+        filesFailed++;
+      }
+    }
+    var source = filesDone + ' spreadsheet' + (filesDone !== 1 ? 's' : '');
+    if (filesFailed > 0) source += ' (' + filesFailed + ' could not be read)';
+    applyImportResult(totalImported, totalSkipped, statusEl, source);
+  } catch(e) {
+    statusEl.textContent = '❌ Error reading ZIP: ' + e.message;
+  }
+}
 document.getElementById('btn-gen-codes').onclick = async function() {
   var rawName  = document.getElementById('input-class-name').value.trim().toUpperCase();
   var count    = parseInt(document.getElementById('input-code-count').value, 10);
@@ -1496,8 +1526,11 @@ document.getElementById('btn-import-names').onclick = function() {
 document.getElementById('input-import-names').onchange = function(e) {
   var file = e.target.files[0];
   if (file) {
-    importNamesFromSheet(file);
-    // Reset so the same file can be re-imported
+    if (/\.zip$/i.test(file.name)) {
+      importNamesFromZip(file);
+    } else {
+      importNamesFromSheet(file);
+    }
     e.target.value = '';
   }
 };
@@ -1840,6 +1873,114 @@ async function endForcedApForStudent(className, studentCode, lobbyCode) {
       }
     } catch(e) {}
   }, 30000);
+}
+
+// ── Access History ────────────────────────────────────────────
+
+function isSchoolHours(ts) {
+  var d = new Date(ts);
+  var day = d.getDay();
+  if (day === 0 || day === 6) return false;
+  var mins = d.getHours() * 60 + d.getMinutes();
+  return mins >= 8 * 60 + 30 && mins <= 16 * 60 + 30;
+}
+
+function formatAccessTime(ts) {
+  var d = new Date(ts);
+  var now = new Date();
+  var timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  if (d.toDateString() === now.toDateString()) return 'Today ' + timeStr;
+  var yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday ' + timeStr;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + timeStr;
+}
+
+async function loadAccessTab() {
+  var content = document.getElementById('access-history-content');
+  var filterEl = document.getElementById('access-class-filter');
+  content.innerHTML = '<p class="text-gray-400 text-sm py-4">Loading…</p>';
+
+  try {
+    // Populate class filter once
+    if (filterEl.options.length <= 1) {
+      var classSnap = await state.db.ref('classes').get();
+      if (classSnap.exists()) {
+        classSnap.forEach(function(c) {
+          var o = document.createElement('option');
+          o.value = c.key; o.textContent = c.key;
+          filterEl.appendChild(o);
+        });
+      }
+    }
+
+    var snap = await state.db.ref('accessLog').get();
+    if (!snap.exists()) {
+      content.innerHTML = '<p class="text-gray-400 text-sm py-4">No access history yet — students need to log in for entries to appear.</p>';
+      return;
+    }
+
+    var classFilter = filterEl.value;
+
+    // Build last-14-days key array (oldest → newest)
+    var days14 = [];
+    for (var i = 13; i >= 0; i--) {
+      var day = new Date(); day.setDate(day.getDate() - i);
+      days14.push(day.getFullYear() + '-' + String(day.getMonth() + 1).padStart(2, '0') + '-' + String(day.getDate()).padStart(2, '0'));
+    }
+
+    var students = [];
+    snap.forEach(function(child) {
+      var data = child.val() || {};
+      if (classFilter && data.className !== classFilter) return;
+      students.push({ code: child.key, name: data.name || child.key, className: data.className || '—', lastSeen: data.lastSeen || 0, days: data.days || {} });
+    });
+    students.sort(function(a, b) { return b.lastSeen - a.lastSeen; });
+
+    if (!students.length) {
+      content.innerHTML = '<p class="text-gray-400 text-sm py-4">No access history for this class yet.</p>';
+      return;
+    }
+
+    var h = '<div class="border border-gray-200 rounded-lg overflow-hidden"><table class="w-full text-sm">';
+    h += '<thead><tr class="bg-gray-50 text-xs text-gray-500 text-left">';
+    h += '<th class="px-3 py-2">Name</th><th class="px-3 py-2">Code</th><th class="px-3 py-2">Class</th><th class="px-3 py-2">Last seen</th><th class="px-3 py-2">Last 14 days</th>';
+    h += '</tr></thead><tbody>';
+
+    students.forEach(function(s, idx) {
+      var grid = '<div class="flex gap-0.5 items-center">';
+      days14.forEach(function(dk) {
+        var dayData = s.days[dk];
+        if (dayData) {
+          var home = !isSchoolHours(dayData.last);
+          var dt = new Date(dayData.last);
+          var tip = dk + ' · ' + dayData.count + ' visit' + (dayData.count !== 1 ? 's' : '') + ', last ' + dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          grid += '<div class="w-3 h-3 rounded-sm ' + (home ? 'bg-orange-400' : 'bg-blue-500') + '" title="' + escapeHtml(tip) + '"></div>';
+        } else {
+          grid += '<div class="w-3 h-3 rounded-sm bg-gray-200" title="' + escapeHtml(dk) + ' — no access"></div>';
+        }
+      });
+      grid += '</div>';
+
+      var home = s.lastSeen && !isSchoolHours(s.lastSeen);
+      var rowCls = idx % 2 === 0 ? '' : 'bg-gray-50';
+      h += '<tr class="border-t border-gray-100 ' + rowCls + '">';
+      h += '<td class="px-3 py-2 font-medium">' + escapeHtml(s.name) + '</td>';
+      h += '<td class="px-3 py-2 font-mono text-xs text-gray-500">' + escapeHtml(s.code) + '</td>';
+      h += '<td class="px-3 py-2 text-gray-500">' + escapeHtml(s.className) + '</td>';
+      h += '<td class="px-3 py-2 text-gray-600 whitespace-nowrap">' + (s.lastSeen ? escapeHtml(formatAccessTime(s.lastSeen)) : '—');
+      if (home) h += ' <span class="text-xs bg-orange-100 text-orange-700 rounded px-1 py-0.5 ml-1">home</span>';
+      h += '</td>';
+      h += '<td class="px-3 py-2">' + grid + '</td>';
+      h += '</tr>';
+    });
+
+    h += '</tbody></table></div>';
+    content.innerHTML = h;
+  } catch(e) {
+    content.innerHTML = '<p class="text-red-400 text-sm py-2">Error: ' + escapeHtml(e.message) + '</p>';
+  }
+
+  document.getElementById('btn-access-refresh').onclick = function() { loadAccessTab(); };
 }
 
 // ════════════════════════════════════════════════════════════════

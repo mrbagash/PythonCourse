@@ -15,6 +15,8 @@
   <script src="assets/js/skulpt-stdlib.js"></script>
   <!-- SheetJS: xlsx export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- JSZip: ZIP file reading (vendored locally) -->
+  <script src="assets/js/jszip.min.js"></script>
 <!-- scratchblocks: render Scratch block notation as SVG -->
   <script src="https://unpkg.com/scratchblocks@3.6.4/build/scratchblocks.min.js"></script>
   <style>
@@ -439,11 +441,12 @@
     </div>
 
     <!-- Admin tabs -->
-    <div class="flex gap-2 border-b border-gray-200 mb-4">
+    <div class="flex gap-2 border-b border-gray-200 mb-4 overflow-x-auto">
       <button id="admin-tab-classes" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]">Classes</button>
       <button id="admin-tab-quiz-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Quiz Results</button>
       <button id="admin-tab-ap-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">AP Results</button>
       <button id="admin-tab-force-ap" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Force AP</button>
+      <button id="admin-tab-access" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Access</button>
       <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
       <button id="admin-tab-teachers" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Teachers</button>
     </div>
@@ -478,7 +481,7 @@
         <div class="border-l border-gray-200 pl-3 flex gap-2 items-end">
           <div>
             <label class="block text-xs text-gray-500 mb-1">Import names from spreadsheet</label>
-            <input type="file" id="input-import-names" accept=".xlsx,.xls" class="hidden" />
+            <input type="file" id="input-import-names" accept=".xlsx,.xls,.zip" class="hidden" />
             <button id="btn-import-names" class="jhncc-secondary px-3 py-1.5 rounded border text-sm whitespace-nowrap">&#x1F4C2; Import Names</button>
           </div>
         </div>
@@ -561,6 +564,20 @@
     </div>
 
     <div id="admin-teachers-tab" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
+
+    <div id="admin-access-tab" class="hidden flex-1 min-h-0 overflow-y-auto p-4">
+      <div class="flex gap-3 items-end mb-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Class</label>
+          <select id="access-class-filter" class="border border-gray-300 rounded px-2 py-1.5 text-sm min-w-[130px]">
+            <option value="">All classes</option>
+          </select>
+        </div>
+        <button id="btn-access-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-gray-50">Refresh</button>
+        <p class="text-xs text-gray-400 self-center ml-2">Blue = school hours &nbsp;·&nbsp; Orange = outside school hours</p>
+      </div>
+      <div id="access-history-content"></div>
+    </div>
 
     <div id="admin-force-ap-tab" class="hidden flex-1 min-h-0 overflow-y-auto p-4">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
