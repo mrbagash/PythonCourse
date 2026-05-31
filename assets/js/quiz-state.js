@@ -178,87 +178,715 @@ function buildYear9BinaryHexPracticeAp2Criteria() {
 }
 
 function buildYear8PythonAp2Questions() {
-  function mcq(id, family, title, prompt, options, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'mcq', options:options, answer:String(answer), marks:1 };
-  }
-  function text(id, family, title, prompt, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
-  }
-  function output(id, family, title, prompt, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'output_text', answer:String(answer), marks:1 };
-  }
-  function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
-    return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
-  }
   return [
-    mcq('p1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Hello")</pre>', ['Hello', '"Hello"', 'print', 'Nothing'], 0),
-    output('p2', 'print_comments', 'Two-line output', 'Write the output of this code exactly. Put each line of output on its own line.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Cat")\nprint("Dog")</pre>', 'Cat\nDog'),
-    mcq('p3', 'print_comments', 'Comments', 'Which line is a comment in Python?', ['print("Hi")', '# print("Hi")', 'comment("Hi")', '// print("Hi")'], 1),
-    code('p4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Welcome</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Welcome['\\\"]\\s*\\)"], 'print("Welcome")'),
-    code('p5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>Start</strong> on one line and <strong>End</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]Start['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]End['\\\"]\\s*\\)"], 'print("Start")\nprint("End")'),
-
-    text('v1', 'variables', 'Variable tracing', 'What is the value of <code>score</code> after this code runs?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">score = 4\nscore = score + 3</pre>', '7'),
-    mcq('v2', 'variables', 'Variable purpose', 'Why is a variable useful?', ['It stores a value so it can be used later', 'It always prints text', 'It makes code run forever', 'It only works with comments'], 0),
-    code('v3', 'variables', 'Create and print a variable', 'Create a variable called <code>name</code>, store <code>"Sam"</code> in it, then print the variable.', ["\\bname\\s*=\\s*['\\\"]Sam['\\\"]", '\\bprint\\s*\\(\\s*name\\s*\\)'], 'name = "Sam"\nprint(name)'),
-    code('v4', 'variables', 'Update a number variable', 'Create a variable called <code>score</code> with the value <code>10</code>, add <code>5</code> to it, then print <code>score</code>.', ['\\bscore\\s*=\\s*10\\b', '\\bscore\\s*=\\s*score\\s*\\+\\s*5\\b|\\bscore\\s*\\+=\\s*5\\b', '\\bprint\\s*\\(\\s*score\\s*\\)'], 'score = 10\nscore = score + 5\nprint(score)'),
-
-    code('i1', 'input', 'Store user input', 'Ask the user for their name and store the answer in a variable called <code>name</code>.', ['\\bname\\s*=\\s*input\\s*\\('], 'name = input("What is your name? ")'),
-    code('i2', 'input', 'Input then output', 'Ask the user for their favourite colour, store it in <code>colour</code>, then print <code>colour</code>.', ['\\bcolour\\s*=\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*colour\\s*\\)'], 'colour = input("Favourite colour? ")\nprint(colour)'),
-    mcq('i3', 'input', 'Integer input', 'Which code correctly lets the user type a whole number and stores it as an integer?', ['age = input(int("Age?"))', 'age = int(input("Age?"))', 'int = input("Age?")', 'age = input("Age?") + int'], 1),
-    code('i4', 'input', 'Number input calculation', 'Ask the user for a whole number, store it as an integer in <code>num</code>, then print <code>num + 1</code>.', ['\\bnum\\s*=\\s*int\\s*\\(\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*num\\s*\\+\\s*1\\s*\\)'], 'num = int(input("Number: "))\nprint(num + 1)'),
-
-    mcq('s1', 'selection', 'Selection condition', 'Which comparison checks whether <code>score</code> is at least 10?', ['score = 10', 'score > 10', 'score >= 10', 'score <= 10'], 2),
-    code('s2', 'selection', 'Simple if statement', 'Write an if statement that prints <code>Win</code> when <code>score</code> is greater than <code>20</code>.', ['\\bif\\s+score\\s*>\\s*20\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Win['\\\"]\\s*\\)"], 'if score > 20:\n    print("Win")'),
-    code('s3', 'selection', 'if and else', 'Write selection code that prints <code>Pass</code> if <code>mark</code> is at least <code>50</code>, otherwise prints <code>Try again</code>.', ['\\bif\\s+mark\\s*>=\\s*50\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Pass['\\\"]\\s*\\)", '\\belse\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Try again['\\\"]\\s*\\)"], 'if mark >= 50:\n    print("Pass")\nelse:\n    print("Try again")'),
-    code('s4', 'selection', 'elif choice', 'Write code that prints <code>Gold</code> if <code>place</code> is 1, <code>Silver</code> if <code>place</code> is 2, otherwise <code>Keep trying</code>.', ['\\bif\\s+place\\s*==\\s*1\\s*:', '\\belif\\s+place\\s*==\\s*2\\s*:', '\\belse\\s*:', 'Gold', 'Silver', 'Keep trying'], 'if place == 1:\n    print("Gold")\nelif place == 2:\n    print("Silver")\nelse:\n    print("Keep trying")'),
-
-    mcq('l1', 'loops', 'Loop count', 'How many times will this loop print <code>Hello</code>?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">for i in range(3):\n    print("Hello")</pre>', ['1', '2', '3', '4'], 2),
-    code('l2', 'loops', 'For loop', 'Write a for loop that prints <code>Hi</code> five times.', ['\\bfor\\s+\\w+\\s+in\\s+range\\s*\\(\\s*5\\s*\\)\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Hi['\\\"]\\s*\\)"], 'for i in range(5):\n    print("Hi")'),
-    code('l3', 'loops', 'While loop counter', 'Write a while loop that starts <code>count</code> at 1, prints it while it is less than or equal to 3, and increases it by 1 each time.', ['\\bcount\\s*=\\s*1\\b', '\\bwhile\\s+count\\s*<=\\s*3\\s*:', '\\n\\s+print\\s*\\(\\s*count\\s*\\)', '\\bcount\\s*=\\s*count\\s*\\+\\s*1\\b|\\bcount\\s*\\+=\\s*1\\b'], 'count = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1')
+    {
+      "id": "p1",
+      "family": "print_comments",
+      "title": "print() output",
+      "prompt": "What exact text is displayed by this code? Do not include quote marks unless they would appear on the screen.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">print(\"Hello\")</pre>",
+      "type": "mcq",
+      "options": [
+        "Hello",
+        "\"Hello\"",
+        "print",
+        "Nothing"
+      ],
+      "answer": "0",
+      "marks": 1
+    },
+    {
+      "id": "p2",
+      "family": "print_comments",
+      "title": "Two-line output",
+      "prompt": "Write the output of this code exactly. Put each line of output on its own line. Do not include the word <code>print</code> or the quote marks.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">print(\"Cat\")\nprint(\"Dog\")</pre>",
+      "type": "output_text",
+      "answer": "Cat\nDog",
+      "marks": 1
+    },
+    {
+      "id": "p3",
+      "family": "print_comments",
+      "title": "Comments",
+      "prompt": "Which line would Python treat as a comment, meaning the line would be ignored when the program runs?",
+      "type": "mcq",
+      "options": [
+        "print(\"Hi\")",
+        "# print(\"Hi\")",
+        "comment(\"Hi\")",
+        "// print(\"Hi\")"
+      ],
+      "answer": "1",
+      "marks": 1
+    },
+    {
+      "id": "p4",
+      "family": "print_comments",
+      "title": "Write a print statement",
+      "prompt": "Write one line of Python that displays the word <strong>Welcome</strong>. A comment is not required.",
+      "type": "code_input",
+      "sampleAnswer": "print(\"Welcome\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Welcome"
+        }
+      ]
+    },
+    {
+      "id": "p5",
+      "family": "print_comments",
+      "title": "Two lines of output",
+      "prompt": "Write Python code that displays <strong>Start</strong> first and <strong>End</strong> second, on two separate output lines. A comment is not required.",
+      "type": "code_input",
+      "sampleAnswer": "print(\"Start\")\nprint(\"End\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Start\nEnd"
+        }
+      ]
+    },
+    {
+      "id": "v1",
+      "family": "variables",
+      "title": "Variable tracing",
+      "prompt": "What number is stored in <code>score</code> after both lines have run? Type the number only.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">score = 4\nscore = score + 3</pre>",
+      "type": "text",
+      "answer": "7",
+      "marks": 1
+    },
+    {
+      "id": "v2",
+      "family": "variables",
+      "title": "Variable purpose",
+      "prompt": "Why is a variable useful?",
+      "type": "mcq",
+      "options": [
+        "It stores a value so it can be used later",
+        "It always prints text",
+        "It makes code run forever",
+        "It only works with comments"
+      ],
+      "answer": "0",
+      "marks": 1
+    },
+    {
+      "id": "v3",
+      "family": "variables",
+      "title": "Create and print a variable",
+      "prompt": "Write Python code that uses a variable called <code>name</code> to store the text value <code>\"Sam\"</code> and displays the stored value. Do not print the word <code>name</code> in quote marks.",
+      "type": "code_input",
+      "sampleAnswer": "name = \"Sam\"\nprint(name)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bname\\s*=",
+        "\\bprint\\s*\\(\\s*name\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Sam"
+        }
+      ]
+    },
+    {
+      "id": "v4",
+      "family": "variables",
+      "title": "Update a number variable",
+      "prompt": "Write Python code where <code>score</code> starts at <code>10</code>. The program should increase <code>score</code> by <code>5</code> and display the final value.",
+      "type": "code_input",
+      "sampleAnswer": "score = 10\nscore = score + 5\nprint(score)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bscore\\s*=\\s*10\\b",
+        "(?:score\\s*=\\s*score\\s*\\+\\s*5|score\\s*\\+=\\s*5)",
+        "\\bprint\\s*\\(\\s*score\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "15"
+        }
+      ]
+    },
+    {
+      "id": "i1",
+      "family": "input",
+      "title": "Store user input",
+      "prompt": "Write one line of Python that asks the user to type their name and stores what they type in a variable called <code>name</code>. Nothing needs to be printed.",
+      "type": "code_input",
+      "sampleAnswer": "name = input(\"What is your name? \")",
+      "marks": 1,
+      "keywordPatterns": [
+        "^\\s*name\\s*=\\s*input\\s*\\("
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "Sam"
+          ],
+          "expectedOutput": ""
+        }
+      ]
+    },
+    {
+      "id": "i2",
+      "family": "input",
+      "title": "Input then output",
+      "prompt": "Write Python code that asks for a favourite colour using <code>input()</code>. Store the response in <code>colour</code> and display the stored value.",
+      "type": "code_input",
+      "sampleAnswer": "colour = input(\"Favourite colour? \")\nprint(colour)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bcolour\\s*=\\s*input\\s*\\(",
+        "\\bprint\\s*\\(\\s*colour\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "Blue"
+          ],
+          "expectedOutput": "Blue"
+        }
+      ]
+    },
+    {
+      "id": "i3",
+      "family": "input",
+      "title": "Integer input",
+      "prompt": "Which code correctly lets the user type a whole number and stores it as an integer?",
+      "type": "mcq",
+      "options": [
+        "age = input(int(\"Age?\"))",
+        "age = int(input(\"Age?\"))",
+        "int = input(\"Age?\")",
+        "age = input(\"Age?\") + int"
+      ],
+      "answer": "1",
+      "marks": 1
+    },
+    {
+      "id": "i4",
+      "family": "input",
+      "title": "Number input calculation",
+      "prompt": "Write Python code that asks for a whole number and displays one more than the number entered. The typed input must be treated as an integer and stored in <code>num</code>.",
+      "type": "code_input",
+      "sampleAnswer": "num = int(input(\"Number: \"))\nprint(num + 1)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bnum\\s*=\\s*int\\s*\\(\\s*input\\s*\\(",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "6"
+          ],
+          "expectedOutput": "7"
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "family": "selection",
+      "title": "Selection condition",
+      "prompt": "Which comparison checks whether <code>score</code> is at least 10?",
+      "type": "mcq",
+      "options": [
+        "score = 10",
+        "score > 10",
+        "score >= 10",
+        "score <= 10"
+      ],
+      "answer": "2",
+      "marks": 1
+    },
+    {
+      "id": "s2",
+      "family": "selection",
+      "title": "Simple if statement",
+      "prompt": "Write a complete <code>if</code> statement for this rule: when <code>score</code> is greater than <code>20</code>, the program displays <code>Win</code>.",
+      "type": "code_input",
+      "sampleAnswer": "if score > 20:\n    print(\"Win\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bif\\b",
+        "\\bscore\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "prefix": "score = 25",
+          "expectedOutput": "Win"
+        },
+        {
+          "prefix": "score = 20",
+          "expectedOutput": ""
+        },
+        {
+          "prefix": "score = 10",
+          "expectedOutput": ""
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "family": "selection",
+      "title": "if and else",
+      "prompt": "Write a complete <code>if</code>/<code>else</code> block for this rule: marks of <code>50</code> or more display <code>Pass</code>; all other marks display <code>Try again</code>.",
+      "type": "code_input",
+      "sampleAnswer": "if mark >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Try again\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bif\\b",
+        "\\belse\\b",
+        "\\bmark\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "prefix": "mark = 55",
+          "expectedOutput": "Pass"
+        },
+        {
+          "prefix": "mark = 50",
+          "expectedOutput": "Pass"
+        },
+        {
+          "prefix": "mark = 40",
+          "expectedOutput": "Try again"
+        },
+        {
+          "prefix": "mark = 30",
+          "expectedOutput": "Try again"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "family": "selection",
+      "title": "Trace if and else",
+      "prompt": "What is printed when <code>score = 8</code>? Write the output exactly, without quote marks.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">score = 8\nif score >= 10:\n    print(\"High\")\nelse:\n    print(\"Low\")</pre>",
+      "type": "output_text",
+      "answer": "Low",
+      "marks": 1
+    },
+    {
+      "id": "l1",
+      "family": "loops",
+      "title": "Loop count",
+      "prompt": "How many times will this loop print <code>Hello</code>?<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">for i in range(3):\n    print(\"Hello\")</pre>",
+      "type": "mcq",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "2",
+      "marks": 1
+    },
+    {
+      "id": "l2",
+      "family": "loops",
+      "title": "For loop",
+      "prompt": "Write a complete <code>for</code> loop that outputs <code>Hi</code> exactly five times. The print statement must be inside the loop.",
+      "type": "code_input",
+      "sampleAnswer": "for i in range(5):\n    print(\"Hi\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bfor\\b",
+        "\\brange\\s*\\(",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Hi\nHi\nHi\nHi\nHi"
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "family": "loops",
+      "title": "While loop counter",
+      "prompt": "Write a complete <code>while</code> loop using a counter variable called <code>count</code>. It should display <code>1</code>, <code>2</code> and <code>3</code>, each on its own line, then stop. The value of <code>count</code> must change inside the loop.",
+      "type": "code_input",
+      "sampleAnswer": "count = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bwhile\\b",
+        "\\bcount\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "1\n2\n3",
+          "execLimit": 3000
+        }
+      ],
+      "execLimit": 3000
+    }
   ];
 }
-
 function buildYear8PythonPracticeAp2Questions() {
-  function mcq(id, family, title, prompt, options, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'mcq', options:options, answer:String(answer), marks:1 };
-  }
-  function text(id, family, title, prompt, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'text', answer:String(answer), marks:1 };
-  }
-  function output(id, family, title, prompt, answer) {
-    return { id:id, family:family, title:title, prompt:prompt, type:'output_text', answer:String(answer), marks:1 };
-  }
-  function code(id, family, title, prompt, patterns, sampleAnswer, opts) {
-    return Object.assign({ id:id, family:family, title:title, prompt:prompt, type:'code_input', patterns:patterns, sampleAnswer:sampleAnswer, marks:1 }, opts || {});
-  }
   return [
-    mcq('pp1', 'print_comments', 'print() output', 'What is displayed by this code?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Ready")</pre>', ['Ready', '"Ready"', 'print Ready', 'Nothing'], 0),
-    output('pp2', 'print_comments', 'Two-line output', 'Write the output of this code exactly. Put each line of output on its own line.<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">print("Red")\nprint("Blue")</pre>', 'Red\nBlue'),
-    mcq('pp3', 'print_comments', 'Comments', 'Which line would Python ignore because it is a comment?', ['print("Score")', '# score check', 'comment = "Score"', 'input("Score")'], 1),
-    code('pp4', 'print_comments', 'Write a print statement', 'Write one line of Python that displays the word <strong>Practice</strong>.', ["\\bprint\\s*\\(\\s*['\\\"]Practice['\\\"]\\s*\\)"], 'print("Practice")'),
-    code('pp5', 'print_comments', 'Two lines of output', 'Write Python code that displays <strong>One</strong> on one line and <strong>Two</strong> on the next line.', ["\\bprint\\s*\\(\\s*['\\\"]One['\\\"]\\s*\\)", "\\bprint\\s*\\(\\s*['\\\"]Two['\\\"]\\s*\\)"], 'print("One")\nprint("Two")'),
-
-    text('pv1', 'variables', 'Variable tracing', 'What is the value of <code>total</code> after this code runs?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">total = 6\ntotal = total + 4</pre>', '10'),
-    mcq('pv2', 'variables', 'Variable value', 'After <code>lives = 3</code>, what value is stored in <code>lives</code>?', ['3', 'lives', '0', 'A comment'], 0),
-    code('pv3', 'variables', 'Create and print a variable', 'Create a variable called <code>player</code>, store <code>"Alex"</code> in it, then print the variable.', ["\\bplayer\\s*=\\s*['\\\"]Alex['\\\"]", '\\bprint\\s*\\(\\s*player\\s*\\)'], 'player = "Alex"\nprint(player)'),
-    code('pv4', 'variables', 'Update a number variable', 'Create a variable called <code>points</code> with the value <code>8</code>, add <code>2</code> to it, then print <code>points</code>.', ['\\bpoints\\s*=\\s*8\\b', '\\bpoints\\s*=\\s*points\\s*\\+\\s*2\\b|\\bpoints\\s*\\+=\\s*2\\b', '\\bprint\\s*\\(\\s*points\\s*\\)'], 'points = 8\npoints = points + 2\nprint(points)'),
-
-    code('pi1', 'input', 'Store user input', 'Ask the user for their town and store the answer in a variable called <code>town</code>.', ['\\btown\\s*=\\s*input\\s*\\('], 'town = input("Town: ")'),
-    code('pi2', 'input', 'Input then output', 'Ask the user for their favourite subject, store it in <code>subject</code>, then print <code>subject</code>.', ['\\bsubject\\s*=\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*subject\\s*\\)'], 'subject = input("Favourite subject? ")\nprint(subject)'),
-    mcq('pi3', 'input', 'Integer input', 'Which code stores typed input as a whole number?', ['num = input("Number: ")', 'num = int(input("Number: "))', 'num = input(int)', 'int(input) = num'], 1),
-    code('pi4', 'input', 'Number input calculation', 'Ask the user for a whole number, store it as an integer in <code>age</code>, then print <code>age + 2</code>.', ['\\bage\\s*=\\s*int\\s*\\(\\s*input\\s*\\(', '\\bprint\\s*\\(\\s*age\\s*\\+\\s*2\\s*\\)'], 'age = int(input("Age: "))\nprint(age + 2)'),
-
-    mcq('ps1', 'selection', 'Selection condition', 'Which comparison checks whether <code>temperature</code> is below 5?', ['temperature < 5', 'temperature = 5', 'temperature > 5', 'temperature == below 5'], 0),
-    code('ps2', 'selection', 'Simple if statement', 'Write an if statement that prints <code>Cold</code> when <code>temperature</code> is less than <code>5</code>.', ['\\bif\\s+temperature\\s*<\\s*5\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Cold['\\\"]\\s*\\)"], 'if temperature < 5:\n    print("Cold")'),
-    code('ps3', 'selection', 'if and else', 'Write selection code that prints <code>Adult</code> if <code>age</code> is at least <code>18</code>, otherwise prints <code>Child</code>.', ['\\bif\\s+age\\s*>=\\s*18\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Adult['\\\"]\\s*\\)", '\\belse\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Child['\\\"]\\s*\\)"], 'if age >= 18:\n    print("Adult")\nelse:\n    print("Child")'),
-    code('ps4', 'selection', 'elif choice', 'Write code that prints <code>Excellent</code> if <code>mark</code> is 80 or more, <code>Good</code> if <code>mark</code> is 50 or more, otherwise <code>Revise</code>.', ['\\bif\\s+mark\\s*>=\\s*80\\s*:', '\\belif\\s+mark\\s*>=\\s*50\\s*:', '\\belse\\s*:', 'Excellent', 'Good', 'Revise'], 'if mark >= 80:\n    print("Excellent")\nelif mark >= 50:\n    print("Good")\nelse:\n    print("Revise")'),
-
-    mcq('pl1', 'loops', 'Loop count', 'How many times will this loop print <code>Go</code>?<pre class="mt-2 bg-gray-950 text-gray-100 rounded p-2">for i in range(4):\n    print("Go")</pre>', ['2', '3', '4', '5'], 2),
-    code('pl2', 'loops', 'For loop', 'Write a for loop that prints <code>Loop</code> three times.', ['\\bfor\\s+\\w+\\s+in\\s+range\\s*\\(\\s*3\\s*\\)\\s*:', "\\n\\s+print\\s*\\(\\s*['\\\"]Loop['\\\"]\\s*\\)"], 'for i in range(3):\n    print("Loop")'),
-    code('pl3', 'loops', 'While loop counter', 'Write a while loop that starts <code>num</code> at 1, prints it while it is less than or equal to 4, and increases it by 1 each time.', ['\\bnum\\s*=\\s*1\\b', '\\bwhile\\s+num\\s*<=\\s*4\\s*:', '\\n\\s+print\\s*\\(\\s*num\\s*\\)', '\\bnum\\s*=\\s*num\\s*\\+\\s*1\\b|\\bnum\\s*\\+=\\s*1\\b'], 'num = 1\nwhile num <= 4:\n    print(num)\n    num = num + 1')
+    {
+      "id": "pp1",
+      "family": "print_comments",
+      "title": "print() output",
+      "prompt": "What exact text is displayed by this code? Do not include quote marks unless they would appear on the screen.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">print(\"Ready\")</pre>",
+      "type": "mcq",
+      "options": [
+        "Ready",
+        "\"Ready\"",
+        "print Ready",
+        "Nothing"
+      ],
+      "answer": "0",
+      "marks": 1
+    },
+    {
+      "id": "pp2",
+      "family": "print_comments",
+      "title": "Two-line output",
+      "prompt": "Write the output of this code exactly. Put each line of output on its own line. Do not include the word <code>print</code> or the quote marks.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">print(\"Red\")\nprint(\"Blue\")</pre>",
+      "type": "output_text",
+      "answer": "Red\nBlue",
+      "marks": 1
+    },
+    {
+      "id": "pp3",
+      "family": "print_comments",
+      "title": "Comments",
+      "prompt": "Which line would Python ignore because it is a comment rather than code that runs?",
+      "type": "mcq",
+      "options": [
+        "print(\"Score\")",
+        "# score check",
+        "comment = \"Score\"",
+        "input(\"Score\")"
+      ],
+      "answer": "1",
+      "marks": 1
+    },
+    {
+      "id": "pp4",
+      "family": "print_comments",
+      "title": "Write a print statement",
+      "prompt": "Write one line of Python that displays the word <strong>Practice</strong>. A comment is not required.",
+      "type": "code_input",
+      "sampleAnswer": "print(\"Practice\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Practice"
+        }
+      ]
+    },
+    {
+      "id": "pp5",
+      "family": "print_comments",
+      "title": "Two lines of output",
+      "prompt": "Write Python code that displays <strong>One</strong> first and <strong>Two</strong> second, on two separate output lines. A comment is not required.",
+      "type": "code_input",
+      "sampleAnswer": "print(\"One\")\nprint(\"Two\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "One\nTwo"
+        }
+      ]
+    },
+    {
+      "id": "pv1",
+      "family": "variables",
+      "title": "Variable tracing",
+      "prompt": "What number is stored in <code>total</code> after both lines have run? Type the number only.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">total = 6\ntotal = total + 4</pre>",
+      "type": "text",
+      "answer": "10",
+      "marks": 1
+    },
+    {
+      "id": "pv2",
+      "family": "variables",
+      "title": "Variable value",
+      "prompt": "After <code>lives = 3</code>, what value is stored in <code>lives</code>?",
+      "type": "mcq",
+      "options": [
+        "3",
+        "lives",
+        "0",
+        "A comment"
+      ],
+      "answer": "0",
+      "marks": 1
+    },
+    {
+      "id": "pv3",
+      "family": "variables",
+      "title": "Create and print a variable",
+      "prompt": "Write Python code that uses a variable called <code>player</code> to store the text value <code>\"Alex\"</code> and displays the stored value. Do not print the word <code>player</code> in quote marks.",
+      "type": "code_input",
+      "sampleAnswer": "player = \"Alex\"\nprint(player)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bplayer\\s*=",
+        "\\bprint\\s*\\(\\s*player\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Alex"
+        }
+      ]
+    },
+    {
+      "id": "pv4",
+      "family": "variables",
+      "title": "Update a number variable",
+      "prompt": "Write Python code where <code>points</code> starts at <code>8</code>. The program should increase <code>points</code> by <code>2</code> and display the final value.",
+      "type": "code_input",
+      "sampleAnswer": "points = 8\npoints = points + 2\nprint(points)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bpoints\\s*=\\s*8\\b",
+        "(?:points\\s*=\\s*points\\s*\\+\\s*2|points\\s*\\+=\\s*2)",
+        "\\bprint\\s*\\(\\s*points\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "10"
+        }
+      ]
+    },
+    {
+      "id": "pi1",
+      "family": "input",
+      "title": "Store user input",
+      "prompt": "Write one line of Python that asks the user to type their town and stores what they type in a variable called <code>town</code>. Nothing needs to be printed.",
+      "type": "code_input",
+      "sampleAnswer": "town = input(\"Town: \")",
+      "marks": 1,
+      "keywordPatterns": [
+        "^\\s*town\\s*=\\s*input\\s*\\("
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "Leeds"
+          ],
+          "expectedOutput": ""
+        }
+      ]
+    },
+    {
+      "id": "pi2",
+      "family": "input",
+      "title": "Input then output",
+      "prompt": "Write Python code that asks for a favourite subject using <code>input()</code>. Store the response in <code>subject</code> and display the stored value.",
+      "type": "code_input",
+      "sampleAnswer": "subject = input(\"Favourite subject? \")\nprint(subject)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bsubject\\s*=\\s*input\\s*\\(",
+        "\\bprint\\s*\\(\\s*subject\\s*\\)"
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "Math"
+          ],
+          "expectedOutput": "Math"
+        }
+      ]
+    },
+    {
+      "id": "pi3",
+      "family": "input",
+      "title": "Integer input",
+      "prompt": "Which code stores typed input as a whole number?",
+      "type": "mcq",
+      "options": [
+        "num = input(\"Number: \")",
+        "num = int(input(\"Number: \"))",
+        "num = input(int)",
+        "int(input) = num"
+      ],
+      "answer": "1",
+      "marks": 1
+    },
+    {
+      "id": "pi4",
+      "family": "input",
+      "title": "Number input calculation",
+      "prompt": "Write Python code that asks for a whole number and displays two more than the number entered. The typed input must be treated as an integer and stored in <code>age</code>.",
+      "type": "code_input",
+      "sampleAnswer": "age = int(input(\"Age: \"))\nprint(age + 2)",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bage\\s*=\\s*int\\s*\\(\\s*input\\s*\\(",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "inputs": [
+            "10"
+          ],
+          "expectedOutput": "12"
+        }
+      ]
+    },
+    {
+      "id": "ps1",
+      "family": "selection",
+      "title": "Selection condition",
+      "prompt": "Which comparison checks whether <code>temperature</code> is below 5?",
+      "type": "mcq",
+      "options": [
+        "temperature < 5",
+        "temperature = 5",
+        "temperature > 5",
+        "temperature == below 5"
+      ],
+      "answer": "0",
+      "marks": 1
+    },
+    {
+      "id": "ps2",
+      "family": "selection",
+      "title": "Simple if statement",
+      "prompt": "Write a complete <code>if</code> statement for this rule: when <code>temperature</code> is less than <code>5</code>, the program displays <code>Cold</code>.",
+      "type": "code_input",
+      "sampleAnswer": "if temperature < 5:\n    print(\"Cold\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bif\\b",
+        "\\btemperature\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "prefix": "temperature = 4",
+          "expectedOutput": "Cold"
+        },
+        {
+          "prefix": "temperature = 5",
+          "expectedOutput": ""
+        },
+        {
+          "prefix": "temperature = 10",
+          "expectedOutput": ""
+        }
+      ]
+    },
+    {
+      "id": "ps3",
+      "family": "selection",
+      "title": "if and else",
+      "prompt": "Write a complete <code>if</code>/<code>else</code> block for this rule: ages of <code>18</code> or more display <code>Adult</code>; all other ages display <code>Child</code>.",
+      "type": "code_input",
+      "sampleAnswer": "if age >= 18:\n    print(\"Adult\")\nelse:\n    print(\"Child\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bif\\b",
+        "\\belse\\b",
+        "\\bage\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "prefix": "age = 20",
+          "expectedOutput": "Adult"
+        },
+        {
+          "prefix": "age = 18",
+          "expectedOutput": "Adult"
+        },
+        {
+          "prefix": "age = 12",
+          "expectedOutput": "Child"
+        },
+        {
+          "prefix": "age = 17",
+          "expectedOutput": "Child"
+        }
+      ]
+    },
+    {
+      "id": "ps4",
+      "family": "selection",
+      "title": "Trace if and else",
+      "prompt": "What is printed when <code>lives = 0</code>? Write the output exactly, without quote marks.<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">lives = 0\nif lives > 0:\n    print(\"Alive\")\nelse:\n    print(\"Game over\")</pre>",
+      "type": "output_text",
+      "answer": "Game over",
+      "marks": 1
+    },
+    {
+      "id": "pl1",
+      "family": "loops",
+      "title": "Loop count",
+      "prompt": "How many times will this loop print <code>Go</code>?<pre class=\"mt-2 bg-gray-950 text-gray-100 rounded p-2\">for i in range(4):\n    print(\"Go\")</pre>",
+      "type": "mcq",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "2",
+      "marks": 1
+    },
+    {
+      "id": "pl2",
+      "family": "loops",
+      "title": "For loop",
+      "prompt": "Write a complete <code>for</code> loop that outputs <code>Loop</code> exactly three times. The print statement must be inside the loop.",
+      "type": "code_input",
+      "sampleAnswer": "for i in range(3):\n    print(\"Loop\")",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bfor\\b",
+        "\\brange\\s*\\(",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "Loop\nLoop\nLoop"
+        }
+      ]
+    },
+    {
+      "id": "pl3",
+      "family": "loops",
+      "title": "While loop counter",
+      "prompt": "Write a complete <code>while</code> loop using a counter variable called <code>num</code>. It should display <code>1</code>, <code>2</code>, <code>3</code> and <code>4</code>, each on its own line, then stop. The value of <code>num</code> must change inside the loop.",
+      "type": "code_input",
+      "sampleAnswer": "num = 1\nwhile num <= 4:\n    print(num)\n    num = num + 1",
+      "marks": 1,
+      "keywordPatterns": [
+        "\\bwhile\\b",
+        "\\bnum\\b",
+        "\\bprint\\s*\\("
+      ],
+      "runTests": [
+        {
+          "expectedOutput": "1\n2\n3\n4",
+          "execLimit": 3000
+        }
+      ],
+      "execLimit": 3000
+    }
   ];
 }
-
 function buildYear8PythonAp2Criteria() {
   return buildYear8PythonAp2Questions().map(function(q, i) {
     return { id: q.id, text: 'Q' + (i + 1) + ': ' + q.title, marks: 1, type: q.family };

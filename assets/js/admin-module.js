@@ -12,6 +12,7 @@ function setAdminTab(tab) {
   var classesTab = tab === 'classes';
   var quizResultsTab = tab === 'quiz-results';
   var apResultsTab = tab === 'ap-results';
+  var forceApTab = tab === 'force-ap';
   var teachersTab = tab === 'teachers';
   var debugTab = tab === 'debug';
   var activeCls = 'admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-[rgb(176,28,35)] text-[rgb(176,28,35)]';
@@ -19,10 +20,12 @@ function setAdminTab(tab) {
   document.getElementById('admin-classes-tab').classList.toggle('hidden', !classesTab);
   document.getElementById('admin-quiz-results-tab').classList.toggle('hidden', !quizResultsTab);
   document.getElementById('admin-ap-results-tab').classList.toggle('hidden', !apResultsTab);
+  document.getElementById('admin-force-ap-tab').classList.toggle('hidden', !forceApTab);
   document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
   [['admin-tab-classes',classesTab],['admin-tab-quiz-results',quizResultsTab],
-   ['admin-tab-ap-results',apResultsTab],['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab]
+   ['admin-tab-ap-results',apResultsTab],['admin-tab-force-ap',forceApTab],
+   ['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab]
   ].forEach(function(pair) {
     var el = document.getElementById(pair[0]);
     if (!el) return;
@@ -33,11 +36,13 @@ function setAdminTab(tab) {
   if (quizResultsTab) loadQuizResultsClassOptions();
   if (apResultsTab) loadApResultsClassOptions();
   if (teachersTab) renderTeachersTab();
+  if (forceApTab) loadForceApTab();
 }
 
 document.getElementById('admin-tab-classes').onclick = function() { setAdminTab('classes'); };
 document.getElementById('admin-tab-quiz-results').onclick = function() { setAdminTab('quiz-results'); };
 document.getElementById('admin-tab-ap-results').onclick = function() { setAdminTab('ap-results'); };
+document.getElementById('admin-tab-force-ap').onclick = function() { setAdminTab('force-ap'); };
 document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 
@@ -1619,6 +1624,222 @@ function releasedFeedbackForAssessmentAttempt(feedbacks, rec) {
   if (feedback && rec.lobbyCode && feedback[rec.lobbyCode] && feedback[rec.lobbyCode].released) return feedback[rec.lobbyCode];
   if (feedback && feedback.released) return feedback;
   return null;
+}
+
+// ── Force Individual AP ───────────────────────────────────────
+
+var forceApActiveListeners = {};
+
+async function loadForceApTab() {
+  var classEl = document.getElementById('force-ap-class');
+  var assessEl = document.getElementById('force-ap-assessment');
+
+  // Populate class dropdown from Firebase
+  classEl.innerHTML = '<option value="">Loading…</option>';
+  try {
+    var snap = await state.db.ref('classes').get();
+    classEl.innerHTML = '';
+    if (snap.exists()) {
+      snap.forEach(function(child) {
+        var o = document.createElement('option');
+        o.value = child.key; o.textContent = child.key;
+        classEl.appendChild(o);
+      });
+    }
+  } catch(e) {
+    classEl.innerHTML = '<option value="">Error loading classes</option>';
+  }
+
+  // Populate assessment dropdown from ASSESSMENTS
+  assessEl.innerHTML = '';
+  if (typeof ASSESSMENTS !== 'undefined') {
+    Object.keys(ASSESSMENTS).forEach(function(id) {
+      var o = document.createElement('option');
+      o.value = id;
+      o.textContent = (ASSESSMENTS[id].title || id);
+      assessEl.appendChild(o);
+    });
+  }
+
+  // Load students for the selected class
+  classEl.onchange = function() { loadForceApStudents(classEl.value); };
+  if (classEl.value) loadForceApStudents(classEl.value);
+
+  document.getElementById('btn-force-ap-assign').onclick = function() {
+    assignForcedApToSelectedStudents(classEl.value, assessEl.value);
+  };
+
+  loadActiveForcedAps();
+}
+
+async function loadForceApStudents(className) {
+  var container = document.getElementById('force-ap-students');
+  if (!className) { container.innerHTML = ''; return; }
+  container.innerHTML = '<p class="text-gray-400 text-sm py-2">Loading students…</p>';
+  try {
+    var snap = await state.db.ref('classes/' + className + '/codes').get();
+    if (!snap.exists()) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No students in this class.</p>'; return; }
+    var codes = Object.keys(snap.val());
+    var h = '<p class="text-xs text-gray-500 mb-2">Select students to assign:</p>';
+    h += '<div class="flex flex-wrap gap-2 mb-2">';
+    codes.forEach(function(code) {
+      var name = studentName(code) || code;
+      h += '<label class="flex items-center gap-1.5 text-sm cursor-pointer bg-gray-50 border border-gray-200 rounded px-2 py-1 hover:bg-gray-100">' +
+        '<input type="checkbox" class="force-ap-student-check" value="' + escapeHtml(code) + '">' +
+        '<span>' + escapeHtml(name) + '</span></label>';
+    });
+    h += '</div>';
+    h += '<div class="flex gap-2 text-xs">' +
+      '<button id="btn-force-ap-select-all" class="text-blue-500 hover:text-blue-700 underline">Select all</button>' +
+      '<button id="btn-force-ap-select-none" class="text-gray-400 hover:text-gray-600 underline">Clear</button></div>';
+    container.innerHTML = h;
+    document.getElementById('btn-force-ap-select-all').onclick = function() {
+      container.querySelectorAll('.force-ap-student-check').forEach(function(cb) { cb.checked = true; });
+    };
+    document.getElementById('btn-force-ap-select-none').onclick = function() {
+      container.querySelectorAll('.force-ap-student-check').forEach(function(cb) { cb.checked = false; });
+    };
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-400 text-sm py-2">Error: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+async function assignForcedApToSelectedStudents(className, assessmentId) {
+  if (!className || !assessmentId) { alert('Please select a class and an assessment.'); return; }
+  var checks = document.querySelectorAll('#force-ap-students .force-ap-student-check:checked');
+  if (!checks.length) { alert('Please select at least one student.'); return; }
+  var btn = document.getElementById('btn-force-ap-assign');
+  btn.disabled = true; btn.textContent = 'Assigning…';
+  try {
+    var codes = Array.prototype.map.call(checks, function(cb) { return cb.value; });
+    await Promise.all(codes.map(function(code) {
+      return assignForcedApToStudent(className, code, assessmentId);
+    }));
+    btn.textContent = 'Assigned!';
+    setTimeout(function() { btn.disabled = false; btn.textContent = 'Assign to selected students'; }, 2000);
+    loadActiveForcedAps();
+  } catch(e) {
+    alert('Error: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Assign to selected students';
+  }
+}
+
+async function assignForcedApToStudent(className, studentCode, assessmentId) {
+  var lobbyCode = 'FAP' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+  var now = Date.now();
+  var updates = {};
+  updates['quizSessions/' + lobbyCode] = {
+    lessonId: 'AP:' + assessmentId,
+    state: 'active',
+    forced: true,
+    individualForced: true,
+    assignedTo: studentCode,
+    className: className,
+    createdAt: now,
+    answers: { 0: {} }
+  };
+  updates['classes/' + className + '/forcedAPAssignments/' + studentCode] = {
+    assessmentId: assessmentId,
+    lobbyCode: lobbyCode,
+    assignedAt: now,
+    assignedBy: state.uid || 'admin',
+    state: 'active'
+  };
+  updates['progress/' + studentCode + '/forcedAPAssignment'] = {
+    assessmentId: assessmentId,
+    lobbyCode: lobbyCode,
+    assignedAt: now,
+    state: 'active'
+  };
+  await state.db.ref().update(updates);
+}
+
+async function loadActiveForcedAps() {
+  var container = document.getElementById('force-ap-active');
+  if (!container) return;
+  container.innerHTML = '<p class="text-gray-400 text-sm py-2">Loading…</p>';
+
+  try {
+    var classesSnap = await state.db.ref('classes').get();
+    if (!classesSnap.exists()) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>'; return; }
+
+    var activeItems = [];
+    classesSnap.forEach(function(classSnap) {
+      var assignments = classSnap.child('forcedAPAssignments').val() || {};
+      Object.keys(assignments).forEach(function(code) {
+        var rec = assignments[code] || {};
+        if (rec.state === 'active') {
+          activeItems.push({ className: classSnap.key, code: code, rec: rec });
+        }
+      });
+    });
+
+    if (!activeItems.length) {
+      container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>';
+      return;
+    }
+
+    var h = '<div class="border border-gray-200 rounded-lg overflow-hidden"><table class="w-full text-sm">';
+    h += '<thead><tr class="bg-gray-50 text-xs text-gray-500 text-left">';
+    h += '<th class="px-3 py-2">Student</th><th class="px-3 py-2">Class</th><th class="px-3 py-2">Assessment</th><th class="px-3 py-2">Assigned</th><th class="px-3 py-2"></th>';
+    h += '</tr></thead><tbody>';
+    activeItems.forEach(function(item, idx) {
+      var name = studentName(item.code) || item.code;
+      var spec = (typeof ASSESSMENTS !== 'undefined') && ASSESSMENTS[item.rec.assessmentId];
+      var apTitle = spec ? spec.title : (item.rec.assessmentId || '—');
+      var when = item.rec.assignedAt ? new Date(item.rec.assignedAt).toLocaleString('en-GB') : '—';
+      h += '<tr class="border-t border-gray-100 hover:bg-gray-50" data-idx="' + idx + '">';
+      h += '<td class="px-3 py-2 font-medium">' + escapeHtml(name) + '</td>';
+      h += '<td class="px-3 py-2 text-gray-500">' + escapeHtml(item.className) + '</td>';
+      h += '<td class="px-3 py-2">' + escapeHtml(apTitle) + '</td>';
+      h += '<td class="px-3 py-2 text-gray-400 text-xs">' + escapeHtml(when) + '</td>';
+      h += '<td class="px-3 py-2"><button class="btn-end-forced-ap text-xs text-red-500 hover:text-red-700 font-medium" data-idx="' + idx + '">End AP</button></td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    container.innerHTML = h;
+
+    container.querySelectorAll('.btn-end-forced-ap').forEach(function(btn) {
+      btn.onclick = async function() {
+        var item = activeItems[parseInt(btn.dataset.idx, 10)];
+        if (!item) return;
+        var name = studentName(item.code) || item.code;
+        if (!confirm('End the forced AP for ' + name + '? Their current work will be auto-submitted.')) return;
+        btn.disabled = true; btn.textContent = 'Ending…';
+        try {
+          await endForcedApForStudent(item.className, item.code, item.rec.lobbyCode);
+          loadActiveForcedAps();
+        } catch(e) {
+          alert('Error: ' + e.message);
+          btn.disabled = false; btn.textContent = 'End AP';
+        }
+      };
+    });
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-400 text-sm py-2">Error: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+async function endForcedApForStudent(className, studentCode, lobbyCode) {
+  var now = Date.now();
+  var updates = {};
+  updates['classes/' + className + '/forcedAPAssignments/' + studentCode + '/state'] = 'ended';
+  updates['classes/' + className + '/forcedAPAssignments/' + studentCode + '/endedAt'] = now;
+  updates['progress/' + studentCode + '/forcedAPAssignment/state'] = 'ended';
+  updates['progress/' + studentCode + '/forcedAPAssignment/endedAt'] = now;
+  if (lobbyCode) {
+    updates['quizSessions/' + lobbyCode + '/state'] = 'ending';
+    updates['quizSessions/' + lobbyCode + '/endingAt'] = now;
+  }
+  await state.db.ref().update(updates);
+  // After 30s grace, mark finished
+  setTimeout(async function() {
+    try {
+      if (lobbyCode) {
+        await state.db.ref('quizSessions/' + lobbyCode).update({ state: 'finished', endedAt: Date.now() });
+      }
+    } catch(e) {}
+  }, 30000);
 }
 
 // ════════════════════════════════════════════════════════════════

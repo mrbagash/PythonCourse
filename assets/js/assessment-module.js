@@ -1,9 +1,48 @@
+var apRecoveryListenerRef = null;
+
+function saveLocalApBackup(result) {
+  if (!assessment.lobbyCode || !state.uid || assessment.debugMode) return;
+  try {
+    var backup = {
+      assessmentId: assessment.assessmentId,
+      lobbyCode: assessment.lobbyCode,
+      uid: state.uid,
+      savedAt: Date.now(),
+      answers: assessment.questionAnswers || null,
+      score: result ? result.score : null,
+      maxScore: result ? result.maxScore : null,
+      rubric: result ? stripRubricForStorage(result.criteria) : null
+    };
+    localStorage.setItem('pylearn_ap_backup_' + assessment.lobbyCode, JSON.stringify(backup));
+  } catch(e) {}
+}
+
+function setupApRecoveryListener() {
+  if (apRecoveryListenerRef || !state.uid || !state.db) return;
+  apRecoveryListenerRef = state.db.ref('progress/' + state.uid + '/apRecoveryRequest');
+  apRecoveryListenerRef.on('value', async function(snap) {
+    if (!snap.exists()) return;
+    var req = snap.val() || {};
+    if (!req.lobbyCode) return;
+    var raw = null;
+    try { raw = localStorage.getItem('pylearn_ap_backup_' + req.lobbyCode); } catch(e) {}
+    var payload = { respondedAt: Date.now(), lobbyCode: req.lobbyCode };
+    if (raw) {
+      try { Object.assign(payload, JSON.parse(raw)); } catch(e) {}
+    }
+    try {
+      await state.db.ref('progress/' + state.uid + '/apRecoveryResponse').set(payload);
+    } catch(e) {}
+  });
+}
+
 document.getElementById('btn-ap-setup-close').onclick = function() {
   document.getElementById('modal-ap-setup').classList.add('hidden');
   document.getElementById('modal-admin').classList.remove('hidden');
 };
 
 async function genAssessmentCode() {
+  if (typeof genLobbyCode === 'function') return await genLobbyCode();
   for (var attempt = 0; attempt < 30; attempt++) {
     var code = String(Math.floor(1000 + Math.random() * 9000));
     var snap = await state.db.ref('quizSessions/' + code).get();
@@ -96,10 +135,14 @@ function renderAssessmentHostStudents(session) {
   box.innerHTML = '';
   codes.forEach(function(code) {
     var r = responses[code] || {};
+    var snapshotNote = '';
+    if (r.scratchSnapshotStatus && r.scratchSnapshotStatus !== 'saved') {
+      snapshotNote = '<div class="text-[11px] text-yellow-300">' + escapeHtml(r.scratchSnapshotWarning || ('Snapshot: ' + r.scratchSnapshotStatus)) + '</div>';
+    }
     var row = document.createElement('div');
     row.className = 'grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center bg-gray-800 rounded-lg px-4 py-2';
     row.innerHTML =
-      '<span class="font-mono text-gray-200">' + (studentName(code) || code) + '</span>' +
+      '<span class="font-mono text-gray-200">' + (studentName(code) || code) + snapshotNote + '</span>' +
       '<span class="text-sm text-gray-400">' + (r.completed ? 'Submitted' : 'Working') + '</span>' +
       '<span class="font-bold text-yellow-400">' + (r.score != null ? r.score + ' / ' + (r.maxScore || 21) : (r.draftScore != null ? r.draftScore + ' / ' + (r.draftMaxScore || ((ASSESSMENTS[assessment.assessmentId] && ASSESSMENTS[assessment.assessmentId].maxScore) || 21)) + ' draft' : '-')) + '</span>' +
       '<span class="text-xs text-gray-500">' + (r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleTimeString('en-GB') : '') + '</span>' +
@@ -123,7 +166,7 @@ async function inspectAssessmentProject(code) {
     try {
       var answerSnap = await assessment.sessionRef.child('answers/0/' + code).get();
       var rec = answerSnap.val() || {};
-      var result = assessQuestionAssessment(spec, rec.answers || {});
+      var result = await assessQuestionAssessmentAsync(spec, rec.answers || {});
       var html = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Answer inspection: ' + escapeHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div>';
       html += '<p class="text-sm text-gray-300 mb-3">Current score: <strong class="text-yellow-300">' + result.score + ' / ' + result.maxScore + '</strong></p><div class="grid gap-1 text-xs">';
       result.criteria.forEach(function(c, i) {
@@ -137,7 +180,52 @@ async function inspectAssessmentProject(code) {
     }
     return;
   }
-  panel.innerHTML = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Project inspection: ' + escapeHtml(studentName(code) || code) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div><p class="text-yellow-300 text-sm">Remote SB3 inspection is disabled to keep Firebase usage under the daily limit. Use the student screen or their submitted rubric/score instead.</p>';
+  try {
+    var snap = await assessment.sessionRef.child('answers/0/' + code).get();
+    var rec = snap.val() || {};
+    panel.innerHTML = renderScratchSnapshotInspection(studentName(code) || code, rec);
+  } catch(e) {
+    panel.innerHTML = '<p class="text-red-300 text-sm">Could not inspect project snapshot: ' + escapeHtml(e.message || String(e)) + '</p>';
+  }
+}
+
+function renderScratchSnapshotInspection(name, rec) {
+  var html = '<div class="flex items-center justify-between mb-3"><h3 class="font-bold text-white">Project inspection: ' + escapeHtml(name) + '</h3><button class="text-gray-400 hover:text-white" onclick="document.getElementById(&quot;aph-inspector&quot;).classList.add(&quot;hidden&quot;)">Close</button></div>';
+  var snapshot = rec.scratchSnapshot || null;
+  if (!snapshot && rec.scratchSnapshotJson) {
+    try { snapshot = JSON.parse(rec.scratchSnapshotJson); } catch(e) {}
+  }
+  var status = rec.scratchSnapshotStatus || (snapshot ? 'saved' : 'missing');
+  var size = rec.scratchSnapshotSizeBytes ? Math.ceil(rec.scratchSnapshotSizeBytes / 1024) + ' KB' : 'unknown size';
+  if (status !== 'saved' && status !== 'saved_warn_size') {
+    html += '<p class="text-yellow-300 text-sm mb-3">' + escapeHtml(rec.scratchSnapshotWarning || 'No stripped project snapshot was saved for this submission.') + ' (' + escapeHtml(size) + ' / 20 KB limit)</p>';
+  } else if (status === 'saved_warn_size') {
+    html += '<p class="text-yellow-300 text-sm mb-3">' + escapeHtml(rec.scratchSnapshotWarning || 'Snapshot saved, but larger than expected.') + ' (' + escapeHtml(size) + ' / 20 KB limit)</p>';
+  } else {
+    html += '<p class="text-green-300 text-sm mb-3">Stripped project snapshot saved (' + escapeHtml(size) + ' / 20 KB limit). Asset bytes were not stored.</p>';
+  }
+  if (!snapshot || !snapshot.project) return html;
+  var project = snapshot.project;
+  html += '<div class="grid md:grid-cols-2 gap-3 text-xs">';
+  (project.targets || []).forEach(function(target) {
+    var costumes = (target.costumes || []).map(function(c) { return c && c.name; }).filter(Boolean);
+    var vars = Object.keys(target.variables || {}).map(function(id) {
+      var v = target.variables[id];
+      return Array.isArray(v) ? v[0] : (v && v.name) || id;
+    });
+    var opCounts = {};
+    Object.keys(target.blocks || {}).forEach(function(id) {
+      var op = target.blocks[id] && target.blocks[id].opcode;
+      if (op) opCounts[op] = (opCounts[op] || 0) + 1;
+    });
+    var topOps = Object.keys(opCounts).sort(function(a, b) { return opCounts[b] - opCounts[a]; }).slice(0, 8);
+    html += '<div class="bg-gray-900 border border-gray-700 rounded p-3"><div class="font-bold text-gray-100 mb-2">' + escapeHtml(target.isStage ? 'Stage' : (target.name || 'Sprite')) + '</div>' +
+      '<div class="text-gray-300"><strong class="text-gray-100">Costumes:</strong> ' + escapeHtml(costumes.join(', ') || '-') + '</div>' +
+      '<div class="text-gray-300"><strong class="text-gray-100">Variables:</strong> ' + escapeHtml(vars.join(', ') || '-') + '</div>' +
+      '<div class="text-gray-300"><strong class="text-gray-100">Blocks:</strong> ' + escapeHtml(topOps.map(function(op) { return op + ' x' + opCounts[op]; }).join(', ') || '-') + '</div></div>';
+  });
+  html += '</div>';
+  return html;
 }
 
 function errorMessage(error, fallback) {
@@ -173,6 +261,16 @@ document.getElementById('btn-ap-release-feedback').onclick = async function() {
 
 async function endAssessmentHostSession() {
   localStorage.removeItem('pylearn_host_ap');
+  var exitBtn = document.getElementById('btn-ap-host-exit');
+  if (exitBtn) { exitBtn.disabled = true; exitBtn.textContent = 'Ending…'; }
+  var container = document.querySelector('#ap-host-screen .max-w-5xl');
+  var statusDiv = document.createElement('div');
+  statusDiv.className = 'mb-4 bg-yellow-900/40 border border-yellow-600 rounded p-3 text-yellow-200 text-sm';
+  statusDiv.textContent = 'Giving students time to submit their work automatically…';
+  if (container) container.prepend(statusDiv);
+  if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'ending', endingAt: Date.now() });
+  await waitMs(30000);
+  statusDiv.textContent = 'Finalising any remaining submissions…';
   await finaliseIncompleteAssessmentResponses();
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
   if (assessment.className) {
@@ -195,11 +293,14 @@ async function finaliseIncompleteAssessmentResponses() {
   });
   for (var i = 0; i < items.length; i++) {
     var code = items[i].code;
-    var rec = items[i].rec;
     var spec = ASSESSMENTS[assessment.assessmentId] || {};
+    // Re-read this student's record to avoid overwriting a submission that arrived during the grace period
+    var freshSnap = await assessment.sessionRef.child('answers/0/' + code).get();
+    var rec = freshSnap.exists() ? (freshSnap.val() || {}) : items[i].rec;
+    if (rec.completed) continue;
     var result;
     if (spec.questions && spec.questions.length) {
-      result = assessQuestionAssessment(spec, rec.answers || {});
+      result = await assessQuestionAssessmentAsync(spec, rec.answers || {});
     } else if (rec.rubric && rec.rubric.length) {
       result = {
         score: rec.score || rec.draftScore || rec.rubric.reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0),
@@ -284,6 +385,30 @@ function startForcedAssessmentWatcher(className) {
   });
 }
 
+function stopIndividualForcedApWatcher() {
+  if (state.individualForcedApRef && state.individualForcedApListener) {
+    state.individualForcedApRef.off('value', state.individualForcedApListener);
+  }
+  state.individualForcedApRef = null;
+  state.individualForcedApListener = null;
+}
+
+function startIndividualForcedApWatcher(className, uid) {
+  stopIndividualForcedApWatcher();
+  if (!uid || state.isAdmin || !state.db) return;
+  state.individualForcedApRef = state.db.ref('progress/' + uid + '/forcedAPAssignment');
+  state.individualForcedApListener = state.individualForcedApRef.on('value', function(snap) {
+    if (!snap.exists()) return;
+    var data = snap.val() || {};
+    if (!data.lobbyCode || data.state !== 'active') return;
+    if (state.forcedAssessmentCode === data.lobbyCode && assessment.sessionRef) return;
+    state.forcedAssessmentCode = data.lobbyCode;
+    joinAssessmentByCode(String(data.lobbyCode), { forced: true }).catch(function(e) {
+      console.warn('Individual forced AP join failed:', e.message);
+    });
+  });
+}
+
 async function joinAssessmentByCode(code, opts) {
   opts = opts || {};
   if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join an assessment.');
@@ -307,6 +432,7 @@ async function joinAssessmentByCode(code, opts) {
   assessment.responseRef = sessionRef.child('answers/0/' + state.uid);
   assessment.className = snap.child('className').val() || state.className || null;
   assessment.forced = !!opts.forced || snap.child('forced').val() === true;
+  assessment.individualForced = snap.child('individualForced').val() === true;
   if (completedSnap.exists()) {
     showAssessmentCompleted(completedSnap.val());
     return;
@@ -333,10 +459,7 @@ function showAssessmentStudentScreen(session) {
   document.getElementById('aps-criteria').innerHTML = spec.criteria.map(function(c) {
     return '<li>' + c.text + ' <span class="text-gray-500">(' + c.marks + ' marks)</span></li>';
   }).join('');
-  assessment.contentExpanded = false;
   document.getElementById('aps-sidebar').classList.remove('hidden');
-  var _ebtn = document.getElementById('btn-aps-expand');
-  if (_ebtn) { _ebtn.innerHTML = '&#x26F6;'; _ebtn.title = 'Expand content area'; }
   setAssessmentInstructionsCollapsed(false);
   if (spec.questions && spec.questions.length) {
     loadAssessmentQuestionPaper(spec);
@@ -348,18 +471,28 @@ function showAssessmentStudentScreen(session) {
   assessment.studentListenerRef = null;
   if (!assessment.debugMode && assessment.sessionRef) {
     assessment.studentListenerRef = assessment.sessionRef.child('state');
-    assessment.studentListener = assessment.studentListenerRef.on('value', function(snap) {
-      if (snap.val() === 'finished') {
+    assessment.studentListener = assessment.studentListenerRef.on('value', async function(snap) {
+      var sessionState = snap.val();
+      if (sessionState === 'ending' && !assessment.completed && !assessment.validating) {
+        await autoSubmitAssessmentForEarlyEnd();
+      } else if (sessionState === 'finished') {
         if (!assessment.completed) exitAssessmentStudent({ keepForced: true });
       }
     });
+    assessment.activeClientRef = assessment.responseRef.child('activeClientId');
+    assessment.activeClientListener = assessment.activeClientRef.on('value', function(snap) {
+      var activeClientId = snap.val();
+      if (activeClientId && activeClientId !== assessment.clientId) {
+        exitAssessmentStudent({ keepForced: true, displaced: true });
+      }
+    });
+    setupApRecoveryListener();
   }
 }
 
 function loadAssessmentScratchEditor() {
   document.getElementById('aps-question-ap').classList.add('hidden');
   document.getElementById('aps-scratch-frame').classList.remove('hidden');
-  document.getElementById('btn-ap-check').textContent = 'Check My Project';
   initApScratchLetterbox();
   var frame = document.getElementById('aps-scratch-frame');
   document.getElementById('aps-feedback').innerHTML = '';
@@ -383,7 +516,7 @@ async function loadAssessmentQuestionPaper(spec) {
   frame.src = 'about:blank';
   frame.classList.add('hidden');
   panel.classList.remove('hidden');
-  document.getElementById('btn-ap-check').textContent = 'Save Current Answer';
+  document.getElementById('btn-ap-check').classList.add('hidden');
   document.getElementById('aps-save-status').textContent = assessment.debugMode ? 'Debug mode - not saved' : 'Loading answers...';
   document.getElementById('aps-feedback').innerHTML = '<div class="text-xs text-gray-500">' + (assessment.debugMode ? 'Debug preview only. Answers are checked locally and are not saved.' : 'Answers save automatically. You can move between questions at your own pace.') + '</div>';
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
@@ -503,13 +636,13 @@ function renderAssessmentQuestionPaper(spec) {
     widgetEl.innerHTML = '<textarea id="ap-output-answer" class="ex-textarea mt-2" rows="4" autocomplete="off" spellcheck="false" placeholder="Type the exact output here">' + escapeHtml(saved || '') + '</textarea>';
     var outputInput = document.getElementById('ap-output-answer');
     outputInput.oninput = function() { setQuestionAnswer(spec, q.id, outputInput.value, { defer: true }); };
-    outputInput.onkeydown = function(e) { if (e.key === 'Enter' && e.ctrlKey) saveCurrentQuestionAnswer(spec); };
+    outputInput.onkeydown = function(e) { if (e.key === 'Enter' && e.ctrlKey) saveCurrentQuestionAnswer(spec, { silent: true }); };
     setTimeout(function() { outputInput.focus(); }, 0);
   } else {
     widgetEl.innerHTML = '<input id="ap-text-answer" class="ex-input mt-2" autocomplete="off" spellcheck="false" placeholder="Type your answer" value="' + escapeHtml(saved || '') + '">';
     var input = document.getElementById('ap-text-answer');
     input.oninput = function() { setQuestionAnswer(spec, q.id, input.value, { defer: true }); };
-    input.onkeydown = function(e) { if (e.key === 'Enter') saveCurrentQuestionAnswer(spec); };
+    input.onkeydown = function(e) { if (e.key === 'Enter') saveCurrentQuestionAnswer(spec, { silent: true }); };
     setTimeout(function() { input.focus(); }, 0);
   }
   setTimeout(scaleApQuestionPanel, 0);
@@ -544,11 +677,12 @@ function saveCurrentQuestionAnswer(spec, opts) {
 async function saveQuestionAssessmentDraft(spec, opts) {
   opts = opts || {};
   if (assessment.debugMode) {
-    if (!opts.silent) document.getElementById('aps-save-status').textContent = 'Debug answer checked locally';
+    document.getElementById('aps-save-status').textContent = 'Debug mode - not saved';
     return;
   }
   if (!assessment.responseRef || assessment.completed) return;
   var result = assessQuestionAssessment(spec, assessment.questionAnswers || {});
+  saveLocalApBackup(result);
   try {
     await assessment.responseRef.update({
       answers: assessment.questionAnswers || {},
@@ -559,7 +693,6 @@ async function saveQuestionAssessmentDraft(spec, opts) {
       draftMaxScore: result.maxScore
     });
     document.getElementById('aps-save-status').textContent = 'Saved ' + new Date().toLocaleTimeString('en-GB');
-    if (!opts.silent) document.getElementById('aps-feedback').innerHTML = '<div class="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2">Current answer saved.</div>';
   } catch(e) {
     document.getElementById('aps-save-status').textContent = 'Save failed';
   }
@@ -591,10 +724,41 @@ function assessQuestionAssessment(spec, answers) {
   return { score: score, maxScore: spec.maxScore || (spec.questions || []).length, criteria: criteria };
 }
 
+async function assessQuestionAssessmentAsync(spec, answers) {
+  answers = answers || {};
+  var score = 0;
+  var criteria = [];
+  var questions = spec.questions || [];
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    var check = await validateAssessmentQuestionAnswerAsync(q, answers[q.id]);
+    var ok = check.correct;
+    if (ok) score += 1;
+    criteria.push({
+      id: q.id,
+      text: 'Q' + (i + 1) + ': ' + q.title,
+      marks: 1,
+      awarded: ok ? 1 : 0,
+      family: q.family,
+      answer: answers[q.id] || '',
+      expected: check.expected
+    });
+  }
+  return { score: score, maxScore: spec.maxScore || questions.length, criteria: criteria };
+}
+
+function normaliseAssessmentOutput(value) {
+  return String(value == null ? '' : value)
+    .trim()
+    .replace(/\r\n/g, '\n')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/[ \t]*\n[ \t]*/g, '\n');
+}
+
 function validateAssessmentQuestionAnswer(q, value) {
   var raw = String(value == null ? '' : value);
   if (q.type === 'code_input') {
-    var patterns = q.patterns || (q.pattern ? [q.pattern] : []);
+    var patterns = q.keywordPatterns || q.patterns || (q.pattern ? [q.pattern] : []);
     // 'm' only — Python is case-sensitive so the 'i' flag must not be used
     var ok = raw.trim().length > 0 && patterns.every(function(pattern) {
       try { return new RegExp(pattern, q.flags || 'm').test(raw); }
@@ -618,14 +782,129 @@ function validateAssessmentQuestionAnswer(q, value) {
   }
   // text type: preserve newlines so multi-line output questions require the correct
   // number of lines — collapse only horizontal whitespace, then case-fold
+  if ((q.family === 'denary_to_hex' || q.family === 'binary_hex_conversion') && /^[0-9A-F]+$/i.test(String(q.answer || ''))) {
+    function normHex(v) { return String(v == null ? '' : v).trim().replace(/\s+/g, '').replace(/^#/, '').replace(/^0X/i, '').replace(/^0+(?=[0-9A-F])/i, '').toUpperCase(); }
+    return { correct: !!normHex(raw) && normHex(raw) === normHex(q.answer), expected: q.answer };
+  }
+  if ((q.family === 'binary_to_denary' || q.family === 'hex_to_denary') && /^\d+$/.test(String(q.answer || ''))) {
+    function normNumber(v) {
+      var text = String(v == null ? '' : v).trim();
+      return /^\d+$/.test(text) ? text.replace(/^0+(?=\d)/, '') : '';
+    }
+    return { correct: !!normNumber(raw) && normNumber(raw) === normNumber(q.answer), expected: q.answer };
+  }
   function normText(v) { return String(v == null ? '' : v).trim().replace(/[^\S\n]+/g, '').toUpperCase(); }
   return { correct: !!normText(raw) && normText(raw) === normText(q.answer), expected: q.answer };
+}
+
+async function validateAssessmentQuestionAnswerAsync(q, value) {
+  var staticCheck = validateAssessmentQuestionAnswer(q, value);
+  if (q.type !== 'code_input' || !q.runTests || !q.runTests.length) return staticCheck;
+  if (!staticCheck.correct) return staticCheck;
+  if (!window.PyLearn || typeof window.PyLearn.runPython !== 'function') {
+    return staticCheck;
+  }
+
+  var raw = String(value == null ? '' : value);
+  for (var i = 0; i < q.runTests.length; i++) {
+    var test = q.runTests[i] || {};
+    var prefix = test.prefix ? String(test.prefix).replace(/\s+$/, '') + '\n' : '';
+    var result = await window.PyLearn.runPython(prefix + raw, {
+      inputs: test.inputs || [],
+      execLimit: test.execLimit || q.execLimit || 3000
+    });
+    if (result.error) return { correct: false, expected: q.sampleAnswer || 'Valid Python code' };
+    var actual = normaliseAssessmentOutput(result.output);
+    if (test.expectedOutput != null && actual !== normaliseAssessmentOutput(test.expectedOutput)) {
+      return { correct: false, expected: q.sampleAnswer || test.expectedOutput };
+    }
+    if (test.expectedContains != null && actual.indexOf(normaliseAssessmentOutput(test.expectedContains)) === -1) {
+      return { correct: false, expected: q.sampleAnswer || test.expectedContains };
+    }
+  }
+  return { correct: true, expected: q.sampleAnswer || 'Valid Python code' };
+}
+
+async function autoSubmitAssessmentForEarlyEnd() {
+  if (assessment.completed || assessment.validating) return;
+  var spec = ASSESSMENTS[assessment.assessmentId];
+  if (!spec) return;
+  try {
+    if (spec.questions && spec.questions.length) {
+      saveCurrentQuestionAnswer(spec, { silent: true });
+      var result = await assessQuestionAssessmentAsync(spec, assessment.questionAnswers || {});
+      saveLocalApBackup(result);
+      assessment.completed = true;
+      if (!assessment.debugMode && assessment.responseRef) {
+        var completedAt = Date.now();
+        var strippedRubric = stripRubricForStorage(result.criteria);
+        await assessment.responseRef.update({
+          answers: assessment.questionAnswers || {},
+          completed: true,
+          autoSubmitted: true,
+          completedAt: completedAt,
+          score: result.score,
+          maxScore: result.maxScore,
+          rubric: strippedRubric,
+          savedAt: completedAt,
+          lastSeenAt: completedAt
+        });
+        await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+          completedAt: completedAt,
+          autoSubmitted: true,
+          score: result.score,
+          maxScore: result.maxScore,
+          rubric: strippedRubric,
+          className: assessment.className || state.className || null
+        });
+      }
+      showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
+    } else {
+      await runAssessmentValidation('Time is up — submitting your project…', async function() {
+        await saveAssessmentProject({ force: true });
+        var result = await validateAssessmentProject(function(label, index, total) {
+          updateAssessmentValidationStatus(label, index, total);
+        });
+        saveLocalApBackup(result);
+        assessment.completed = true;
+        if (!assessment.debugMode && assessment.responseRef) {
+          var completedAt = Date.now();
+          var strippedRubric = stripRubricForStorage(result.criteria);
+          var snapshotRecord = typeof buildScratchSnapshotRecord === 'function' ? buildScratchSnapshotRecord() : null;
+          var snapshotFields = typeof scratchSnapshotUpdateFields === 'function' ? scratchSnapshotUpdateFields(snapshotRecord) : {};
+          var progressSnapshotFields = Object.assign({}, snapshotFields);
+          delete progressSnapshotFields.scratchSnapshotJson;
+          await assessment.responseRef.update(Object.assign({
+            completed: true,
+            autoSubmitted: true,
+            completedAt: completedAt,
+            score: result.score,
+            maxScore: result.maxScore,
+            rubric: strippedRubric,
+            projectSavedAt: assessment.lastProjectSaveAt || completedAt
+          }, snapshotFields));
+          await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, Object.assign({
+            completedAt: completedAt,
+            autoSubmitted: true,
+            score: result.score,
+            maxScore: result.maxScore,
+            rubric: strippedRubric,
+            className: assessment.className || state.className || null
+          }, progressSnapshotFields));
+        }
+        showAssessmentCompleted(Object.assign({ score: result.score, maxScore: result.maxScore, rubric: result.criteria }, progressSnapshotFields || {}));
+      });
+    }
+  } catch(e) {
+    // Validation failed — teacher's finaliseIncompleteAssessmentResponses will handle this student
+  }
 }
 
 async function submitQuestionAssessmentFinal() {
   var spec = ASSESSMENTS[assessment.assessmentId];
   saveCurrentQuestionAnswer(spec, { silent: true });
-  var result = assessQuestionAssessment(spec, assessment.questionAnswers || {});
+  var result = await assessQuestionAssessmentAsync(spec, assessment.questionAnswers || {});
+  saveLocalApBackup(result);
   assessment.completed = true;
   if (assessment.debugMode) {
     showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria, debugMode: true });
@@ -742,28 +1021,34 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     var result = await validateAssessmentProject(function(label, index, total) {
       updateAssessmentValidationStatus(label, index, total);
     });
+    saveLocalApBackup(result);
     assessment.completed = true;
     if (assessment.debugMode) {
       showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria, debugMode: true });
       return;
     }
+    var completedAt = Date.now();
     var strippedRubric = stripRubricForStorage(result.criteria);
-    await assessment.responseRef.update({
+    var snapshotRecord = typeof buildScratchSnapshotRecord === 'function' ? buildScratchSnapshotRecord() : null;
+    var snapshotFields = typeof scratchSnapshotUpdateFields === 'function' ? scratchSnapshotUpdateFields(snapshotRecord) : {};
+    var progressSnapshotFields = Object.assign({}, snapshotFields);
+    delete progressSnapshotFields.scratchSnapshotJson;
+    await assessment.responseRef.update(Object.assign({
       completed: true,
-      completedAt: Date.now(),
+      completedAt: completedAt,
       score: result.score,
       maxScore: result.maxScore,
       rubric: strippedRubric,
-      projectSavedAt: assessment.lastProjectSaveAt || Date.now()
-    });
-    await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
-      completedAt: Date.now(),
+      projectSavedAt: assessment.lastProjectSaveAt || completedAt
+    }, snapshotFields));
+    await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, Object.assign({
+      completedAt: completedAt,
       score: result.score,
       maxScore: result.maxScore,
       rubric: strippedRubric,
       className: assessment.className || state.className || null
-    });
-    showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
+    }, progressSnapshotFields));
+    showAssessmentCompleted(Object.assign({ score: result.score, maxScore: result.maxScore, rubric: result.criteria }, progressSnapshotFields));
   });
 };
 
@@ -788,8 +1073,7 @@ function setAssessmentValidationLocked(locked, status, index, total) {
   if (lock) lock.classList.toggle('hidden', !locked);
   if (frame) frame.style.pointerEvents = locked ? 'none' : '';
   if (sidebar) sidebar.style.pointerEvents = locked ? 'none' : '';
-  var expandBtn = document.getElementById('btn-aps-expand');
-  [checkBtn, finishBtn, exitBtn, toggleBtn, expandBtn].forEach(function(btn) {
+  [checkBtn, finishBtn, exitBtn, toggleBtn].forEach(function(btn) {
     if (btn) btn.disabled = !!locked;
     if (btn) btn.classList.toggle('opacity-60', !!locked);
   });

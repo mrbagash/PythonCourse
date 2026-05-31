@@ -80,6 +80,7 @@ function setupAuthUI() {
       updateAuthUI(first,last,false);
       startForcedQuizWatcher(foundClass);
       startForcedAssessmentWatcher(foundClass);
+      startIndividualForcedApWatcher(foundClass, foundCode);
     } catch(e) { errEl.textContent='Error connecting. Please try again.'; errEl.classList.remove('hidden'); }
   };
 
@@ -145,6 +146,7 @@ function setupAuthUI() {
         state.className = className;
         startForcedQuizWatcher(className);
         startForcedAssessmentWatcher(className);
+        startIndividualForcedApWatcher(className, savedCode);
       });
       loadProgress().then(function(){ renderLessonTabs(); renderStepBar(); });
       updateAuthUI(n.first,n.last,false);

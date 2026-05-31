@@ -268,21 +268,21 @@ document.getElementById('btn-ap-toggle-instructions').onclick = function() {
 
 function setAssessmentInstructionsCollapsed(collapsed) {
   var active = document.getElementById('aps-active');
-  var instructions = document.getElementById('aps-instructions');
+  var sidebar = document.getElementById('aps-sidebar');
   var toggle = document.getElementById('btn-ap-toggle-instructions');
-  if (!active || !instructions || !toggle) return;
+  if (!active || !sidebar || !toggle) return;
   active.classList.toggle('ap-instructions-collapsed', !!collapsed);
-  instructions.classList.toggle('hidden', !!collapsed);
+  sidebar.classList.toggle('hidden', !!collapsed);
   if (collapsed) {
-    toggle.innerHTML = '&#x203A;';
+    toggle.textContent = 'Show Instructions';
     toggle.title = 'Show instructions';
     toggle.setAttribute('aria-label', 'Show instructions');
-    if (!assessment.contentExpanded) active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 p-4 ap-instructions-collapsed';
+    active.className = 'flex-1 min-h-0 grid grid-cols-1 gap-4 p-4 ap-instructions-collapsed';
   } else {
-    toggle.innerHTML = '&#x2039;';
+    toggle.textContent = 'Hide Instructions';
     toggle.title = 'Hide instructions';
     toggle.setAttribute('aria-label', 'Hide instructions');
-    if (!assessment.contentExpanded) active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
+    active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
   }
 }
 
@@ -340,29 +340,6 @@ function scaleApQuestionPanel() {
   inner.style.zoom = sc.toFixed(3);
 }
 
-function setAssessmentExpanded(expanded) {
-  var sidebar = document.getElementById('aps-sidebar');
-  var active = document.getElementById('aps-active');
-  var btn = document.getElementById('btn-aps-expand');
-  if (!sidebar || !active || !btn) return;
-  assessment.contentExpanded = !!expanded;
-  if (expanded) {
-    sidebar.classList.add('hidden');
-    active.className = 'flex-1 min-h-0 p-4';
-    btn.innerHTML = '&#x2715;';
-    btn.title = 'Show sidebar';
-  } else {
-    sidebar.classList.remove('hidden');
-    btn.innerHTML = '&#x26F6;';
-    btn.title = 'Expand content area';
-    setAssessmentInstructionsCollapsed(active.classList.contains('ap-instructions-collapsed'));
-  }
-  setTimeout(function() { scaleApScratchFrame(); scaleApQuestionPanel(); }, 50);
-}
-
-document.getElementById('btn-aps-expand').onclick = function() {
-  setAssessmentExpanded(!assessment.contentExpanded);
-};
 
 function assessmentRowsForClass(className, assessmentId) {
   var rows = [];
@@ -402,7 +379,10 @@ function assessmentRow(code, assessmentId, rec) {
     lobbyCode: rec && rec.lobbyCode,
     className: rec && rec.className,
     rubric: rec && rec.rubric ? rec.rubric : [],
-    completed: !!(rec && rec.completedAt)
+    completed: !!(rec && rec.completedAt),
+    scratchSnapshotStatus: rec && rec.scratchSnapshotStatus,
+    scratchSnapshotSizeBytes: rec && rec.scratchSnapshotSizeBytes,
+    scratchSnapshotWarning: rec && rec.scratchSnapshotWarning
   };
 }
 
@@ -440,8 +420,11 @@ function renderClassAssessmentResults(content, rows) {
     if (a.completed !== b.completed) return a.completed ? -1 : 1;
     return b.score - a.score;
   });
-  var grades = definitePurposeGrades(sorted.map(function(r) { return r.score; }));
-  var completed = sorted.filter(function(r) { return r.completed; }).length;
+  var completedSorted = sorted.filter(function(r) { return r.completed; });
+  var completed = completedSorted.length;
+  var dpGrades = definitePurposeGrades(completedSorted.map(function(r) { return r.score; }));
+  var scoreGradeMap = {};
+  completedSorted.forEach(function(r, i) { scoreGradeMap[r.score] = dpGrades[i]; });
   var avg = sorted.length ? Math.round(sorted.reduce(function(t, r) { return t + r.score; }, 0) / sorted.length) : 0;
   var html = '<div class="grid grid-cols-3 gap-3 mb-4">' +
     '<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-blue-700">' + sorted.length + '</div><div class="text-xs text-blue-500">Students/records</div></div>' +
@@ -449,18 +432,18 @@ function renderClassAssessmentResults(content, rows) {
     '<div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-purple-700">' + avg + '</div><div class="text-xs text-purple-500">Average score</div></div>' +
     '</div>';
   html += '<div class="border border-gray-200 rounded-lg overflow-hidden"><table class="w-full text-xs"><thead><tr class="bg-gray-50 text-left text-gray-500">' +
-    '<th class="border border-gray-200 px-2 py-1.5">Name</th><th class="border border-gray-200 px-2 py-1.5">Code</th><th class="border border-gray-200 px-2 py-1.5">Assessment</th><th class="border border-gray-200 px-2 py-1.5 text-center">Score</th><th class="border border-gray-200 px-2 py-1.5 text-center">Percent</th><th class="border border-gray-200 px-2 py-1.5 text-center">DP</th><th class="border border-gray-200 px-2 py-1.5">Completed</th><th class="border border-gray-200 px-2 py-1.5 text-center">Actions</th></tr></thead><tbody>';
+    '<th class="border border-gray-200 px-2 py-1.5">Name</th><th class="border border-gray-200 px-2 py-1.5 text-center">Score</th><th class="border border-gray-200 px-2 py-1.5 text-center">Definite Purpose</th><th class="border border-gray-200 px-2 py-1.5 text-center">Actions</th></tr></thead><tbody>';
   sorted.forEach(function(r, i) {
-    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<tr class="border-b border-gray-100' + (!r.completed ? ' opacity-50' : '') + '">' +
       '<td class="border border-gray-100 px-2 py-1.5 font-medium">' + escapeHtml(r.name || '-') + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 font-mono text-gray-500">' + escapeHtml(r.code) + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5">' + escapeHtml(r.assessmentTitle) + '</td>' +
       '<td class="border border-gray-100 px-2 py-1.5 text-center font-semibold">' + r.score + ' / ' + r.maxScore + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + pct + '%</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + grades[i] + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : 'Not completed') + '</td>' +
-      '<td class="border border-gray-100 px-2 py-1.5 text-center">' + (r.completed ? '<div class="flex justify-center gap-1"><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button></div>' : '-') + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center font-bold text-blue-700">' + (r.completed ? scoreGradeMap[r.score] : '—') + '</td>' +
+      '<td class="border border-gray-100 px-2 py-1.5 text-center">' +
+        '<div class="flex justify-center gap-1">' +
+        (r.completed ? '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' : '') +
+        '<button class="btn-ap-recover px-2 py-1 rounded border border-gray-400 text-gray-500 hover:bg-gray-50" data-code="' + escapeHtml(r.code) + '" data-lobby="' + escapeHtml(r.lobbyCode || '') + '" data-assessment="' + escapeHtml(r.assessmentId) + '" title="Request local backup from student\'s browser">Recover</button>' +
+        '</div>' +
+      '</td>' +
       '</tr>';
   });
   html += '</tbody></table></div>';
@@ -469,6 +452,11 @@ function renderClassAssessmentResults(content, rows) {
     btn.onclick = function() {
       var row = sorted.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
       openAssessmentScoreEditor(btn.dataset.code, btn.dataset.assessment, row, { results: true });
+    };
+  });
+  content.querySelectorAll('.btn-ap-recover').forEach(function(btn) {
+    btn.onclick = function() {
+      requestStudentApBackup(btn.dataset.code, btn.dataset.lobby, btn.dataset.assessment, btn);
     };
   });
 }
@@ -485,7 +473,7 @@ function renderStudentAssessmentResults(content, rows) {
     var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
       '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
-      '<div class="p-3 space-y-1">';
+      '<div class="p-3 space-y-1">' + apSnapshotStatusHtml(r, true);
     (r.rubric || []).forEach(function(c) {
       html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
     });
@@ -501,14 +489,33 @@ function renderStudentAssessmentResults(content, rows) {
   });
 }
 
+function isScratchAssessmentResult(row) {
+  var spec = ASSESSMENTS[row.assessmentId] || {};
+  return String(spec.validation || '').indexOf('scratch') !== -1;
+}
+
+function apSnapshotStatusHtml(row, expanded) {
+  if (!isScratchAssessmentResult(row) || !row.completed) return '';
+  var status = row.scratchSnapshotStatus || 'missing';
+  var size = row.scratchSnapshotSizeBytes ? Math.ceil(row.scratchSnapshotSizeBytes / 1024) + ' KB' : '';
+  if (status === 'saved' && !expanded) return '<span class="text-green-700 font-semibold">Saved</span>';
+  if (status === 'saved' && expanded) return '<div class="rounded border border-green-200 bg-green-50 text-green-800 px-3 py-2 mb-2 text-sm"><strong>Project snapshot:</strong> Saved safely' + (size ? ' (' + escapeHtml(size) + ' / 20 KB limit)' : '') + '.</div>';
+  var warning = row.scratchSnapshotWarning || (status === 'saved_warn_size' ? 'Project snapshot was saved, but it was larger than expected.' : 'Project snapshot was not saved, but the AP score was saved.');
+  var label = status === 'saved_warn_size' ? 'Saved, large' : 'Not saved';
+  if (!expanded) return '<span class="text-yellow-700 font-semibold" title="' + escapeHtml(warning) + '">' + label + '</span>';
+  return '<div class="rounded border border-yellow-200 bg-yellow-50 text-yellow-800 px-3 py-2 mb-2 text-sm"><strong>Project snapshot warning:</strong> ' + escapeHtml(warning) + (size ? ' (' + escapeHtml(size) + ' / 20 KB limit)' : '') + '</div>';
+}
+
 function downloadAssessmentRows(rows, className) {
   if (!rows.length) { alert('No AP results to download.'); return; }
   var sorted = rows.slice().sort(function(a, b) { return b.score - a.score; });
-  var grades = definitePurposeGrades(sorted.map(function(r) { return r.score; }));
-  var csv = 'Name,Code,Assessment,Score,Max Score,Percent,Definite Purpose,Completed At,Lobby Code,Class At Completion\n';
-  sorted.forEach(function(r, i) {
-    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
-    csv += [r.name, r.code, r.assessmentTitle, r.score, r.maxScore, pct + '%', grades[i], r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '', r.lobbyCode || '', r.className || ''].map(csvCell).join(',') + '\n';
+  var completedSorted = sorted.filter(function(r) { return r.completed; });
+  var dpGrades = definitePurposeGrades(completedSorted.map(function(r) { return r.score; }));
+  var scoreGradeMap = {};
+  completedSorted.forEach(function(r, i) { scoreGradeMap[r.score] = dpGrades[i]; });
+  var csv = 'Name,Score,Definite Purpose\n';
+  sorted.forEach(function(r) {
+    csv += [r.name, r.score, r.completed ? scoreGradeMap[r.score] : ''].map(csvCell).join(',') + '\n';
   });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a');
@@ -923,17 +930,25 @@ function setupBinaryAssessmentPracticeWorkspace(box, spec) {
     } else {
       widgetEl.innerHTML = '<input class="ap-practice-text ex-input mt-2" autocomplete="off" spellcheck="false" placeholder="Type your answer">';
     }
-    button.onclick = function() {
+    button.onclick = async function() {
       var input = card.querySelector('.ap-practice-text');
       var codeInput = card.querySelector('.ap-practice-code');
       var outputInput = card.querySelector('.ap-practice-output');
       var radio = card.querySelector('input[type="radio"]:checked');
       var actual = widget && widget.getAnswer ? widget.getAnswer() : (codeInput ? codeInput.value : (outputInput ? outputInput.value : (input ? input.value : (radio ? radio.value : ''))));
-      var check = validateAssessmentQuestionAnswer(q, actual);
-      var ok = check.correct;
-      feedback.innerHTML = ok
-        ? '<div class="text-green-300">Correct.</div>'
-        : '<div class="text-red-300">Not quite. Expected <span class="font-mono">' + escapeHtml(check.expected || q.answer || q.sampleAnswer || '') + '</span>.</div>';
+      button.disabled = true;
+      var oldText = button.textContent;
+      button.textContent = 'Checking...';
+      try {
+        var check = await validateAssessmentQuestionAnswerAsync(q, actual);
+        var ok = check.correct;
+        feedback.innerHTML = ok
+          ? '<div class="text-green-300">Correct.</div>'
+          : '<div class="text-red-300">Not quite. Expected <span class="font-mono">' + escapeHtml(check.expected || q.answer || q.sampleAnswer || '') + '</span>.</div>';
+      } finally {
+        button.disabled = false;
+        button.textContent = oldText;
+      }
     };
   });
 }
@@ -971,11 +986,13 @@ async function exportAssessmentResults(className, assessmentId, lobbyCode) {
     rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || defaultMax) : defaultMax, completedAt: r && r.completedAt });
   });
   rows.sort(function(a, b) { return b.score - a.score; });
-  var grades = definitePurposeGrades(rows.map(function(r) { return r.score; }));
-  var csv = 'Name,Code,Score,Max Score,Percent,Definite Purpose,Completed At\n';
-  rows.forEach(function(r, i) {
-    var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
-    csv += [r.name, r.code, r.score, r.maxScore, pct + '%', grades[i], r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : ''].map(csvCell).join(',') + '\n';
+  var completedRows = rows.filter(function(r) { return r.completedAt; });
+  var dpGrades = definitePurposeGrades(completedRows.map(function(r) { return r.score; }));
+  var scoreGradeMap = {};
+  completedRows.forEach(function(r, i) { scoreGradeMap[r.score] = dpGrades[i]; });
+  var csv = 'Name,Score,Definite Purpose\n';
+  rows.forEach(function(r) {
+    csv += [r.name, r.score, r.completedAt ? scoreGradeMap[r.score] : ''].map(csvCell).join(',') + '\n';
   });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a');
@@ -985,16 +1002,100 @@ async function exportAssessmentResults(className, assessmentId, lobbyCode) {
 }
 
 function definitePurposeGrades(scores) {
+  // scores must be sorted descending. Returns a grade for each entry.
+  // Grades are assigned by score threshold so tied scores always get the same (better) grade.
   var n = scores.length;
   if (!n) return [];
-  return scores.map(function(score, i) {
-    var percentile = n === 1 ? 0.5 : i / (n - 1);
-    if (percentile < 0.10) return 1;
-    if (percentile < 0.30) return 2;
-    if (percentile <= 0.70) return 3;
-    if (percentile < 0.90) return 4;
-    return 5;
+  var idx1 = Math.min(Math.ceil(n * 0.05) - 1, n - 1); // last index ideally in grade 1
+  var idx2 = Math.min(Math.ceil(n * 0.20) - 1, n - 1); // last index ideally in grade 2
+  var idx3 = Math.min(Math.ceil(n * 0.80) - 1, n - 1); // last index ideally in grade 3
+  var thresh1 = scores[idx1]; // min score to receive grade 1
+  var thresh2 = scores[idx2]; // min score to receive grade 2
+  var thresh3 = scores[idx3]; // min score to receive grade 3
+  return scores.map(function(score) {
+    if (score >= thresh1) return 1;
+    if (score >= thresh2) return 2;
+    if (score >= thresh3) return 3;
+    return 4;
   });
+}
+
+async function requestStudentApBackup(code, lobbyCode, assessmentId, btn) {
+  if (!state.db || !code) { alert('Cannot connect to database.'); return; }
+  var origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Requesting…';
+  try {
+    // Write the request to the student's recovery path
+    await state.db.ref('progress/' + code + '/apRecoveryRequest').set({
+      lobbyCode: lobbyCode,
+      assessmentId: assessmentId,
+      requestedAt: Date.now()
+    });
+    // Poll for a response for up to 10 seconds
+    var responseRef = state.db.ref('progress/' + code + '/apRecoveryResponse');
+    var backup = null;
+    for (var i = 0; i < 20 && !backup; i++) {
+      await new Promise(function(r) { setTimeout(r, 500); });
+      var snap = await responseRef.get();
+      if (snap.exists()) {
+        var data = snap.val() || {};
+        if (data.lobbyCode === lobbyCode && data.respondedAt && data.respondedAt > Date.now() - 15000) {
+          backup = data;
+        }
+      }
+    }
+    if (!backup) {
+      alert('No backup received. The student may not be connected or has no local backup for this session.');
+      return;
+    }
+    var scoreText = (backup.score != null ? backup.score + ' / ' + (backup.maxScore || '?') : 'unknown score');
+    var savedTime = backup.savedAt ? new Date(backup.savedAt).toLocaleTimeString('en-GB') : 'unknown time';
+    if (!confirm('Local backup found for ' + (backup.savedAt ? new Date(backup.savedAt).toLocaleString('en-GB') : 'this session') + '.\nScore in backup: ' + scoreText + ' (saved ' + savedTime + ').\n\nApply this backup to results?')) return;
+    await applyStudentApBackup(code, assessmentId, lobbyCode, backup);
+    alert('Backup applied successfully.');
+    renderAssessmentResultsPanel();
+  } catch(e) {
+    alert('Recovery failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+async function applyStudentApBackup(code, assessmentId, lobbyCode, backup) {
+  var spec = ASSESSMENTS[assessmentId] || {};
+  var score = backup.score || 0;
+  var maxScore = backup.maxScore || spec.maxScore || 0;
+  var rubric = backup.rubric || [];
+  // For question paper backups that have answers but no rubric, recompute
+  if (spec.questions && spec.questions.length && backup.answers && (!rubric || !rubric.length)) {
+    var result = assessQuestionAssessment(spec, backup.answers);
+    score = result.score;
+    maxScore = result.maxScore;
+    rubric = stripRubricForStorage(result.criteria);
+  }
+  var completedAt = backup.savedAt || Date.now();
+  var record = {
+    completed: true,
+    recoveredFromBackup: true,
+    completedAt: completedAt,
+    score: score,
+    maxScore: maxScore,
+    rubric: rubric
+  };
+  if (backup.answers) record.answers = backup.answers;
+  // Update session record if lobby code is available
+  if (lobbyCode) {
+    try {
+      await state.db.ref('quizSessions/' + lobbyCode + '/answers/0/' + code).update(record);
+    } catch(e) {}
+  }
+  // Always update the progress record
+  await saveAssessmentProgressRecord(code, assessmentId, lobbyCode, Object.assign({
+    recoveredFromBackup: true,
+    className: state.className || null
+  }, record));
 }
 
 function csvCell(value) {

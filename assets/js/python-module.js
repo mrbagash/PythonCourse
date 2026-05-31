@@ -73,6 +73,7 @@ window.PyLearn = (() => {
           },
           inputfun: function() { return Promise.resolve(''); },
           inputfunTakesPromise: true,
+          execLimit: opts.execLimit || 5000,
         });
         Sk.misceval.asyncToPromise(
           function() { return Sk.importMainWithBody('<stdin>', false, shim + code, true); }
@@ -102,6 +103,7 @@ window.PyLearn = (() => {
           inputfun: liveFn,
           inputfunTakesPrompt: true,
           inputfunTakesPromise: true,
+          execLimit: opts.execLimit || 10000,
       });
       Sk.misceval.asyncToPromise(
         function() { return Sk.importMainWithBody('<stdin>', false, code, true); }
@@ -384,4 +386,3 @@ window.PyLearn = (() => {
 
   return { runPython, createEditor };
 })();
-

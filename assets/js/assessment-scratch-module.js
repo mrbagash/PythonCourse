@@ -5,6 +5,126 @@ function validateAssessmentProject(onProgress) {
   return validateAssessmentScratchVm(vm, assessment.assessmentId, onProgress);
 }
 
+var SCRATCH_SNAPSHOT_MAX_BYTES = 20000;
+var SCRATCH_SNAPSHOT_WARN_BYTES = 15000;
+
+function scratchSnapshotByteSize(value) {
+  var text = typeof value === 'string' ? value : JSON.stringify(value || {});
+  if (window.TextEncoder) return new TextEncoder().encode(text).length;
+  return unescape(encodeURIComponent(text)).length;
+}
+
+function stripScratchAsset(asset) {
+  if (!asset) return null;
+  var stripped = {};
+  ['assetId', 'name', 'bitmapResolution', 'dataFormat', 'md5ext', 'rotationCenterX', 'rotationCenterY', 'rate', 'sampleCount', 'format'].forEach(function(key) {
+    if (asset[key] != null) stripped[key] = asset[key];
+  });
+  return stripped;
+}
+
+function stripScratchProjectJson(project) {
+  project = project || {};
+  return {
+    targets: (project.targets || []).map(function(target) {
+      var stripped = {
+        isStage: !!target.isStage,
+        name: target.name || (target.isStage ? 'Stage' : ''),
+        variables: target.variables || {},
+        lists: target.lists || {},
+        broadcasts: target.broadcasts || {},
+        blocks: target.blocks || {},
+        comments: target.comments || {},
+        currentCostume: target.currentCostume || 0,
+        costumes: (target.costumes || []).map(stripScratchAsset).filter(Boolean),
+        sounds: (target.sounds || []).map(stripScratchAsset).filter(Boolean),
+        volume: target.volume
+      };
+      if (!target.isStage) {
+        stripped.visible = target.visible;
+        stripped.x = target.x;
+        stripped.y = target.y;
+        stripped.size = target.size;
+        stripped.direction = target.direction;
+        stripped.draggable = target.draggable;
+        stripped.rotationStyle = target.rotationStyle;
+      }
+      return stripped;
+    }),
+    monitors: project.monitors || [],
+    extensions: project.extensions || [],
+    meta: {
+      semver: (project.meta && project.meta.semver) || '3.0.0',
+      vm: (project.meta && project.meta.vm) || 'assessment-snapshot',
+      agent: 'JHNCC stripped Scratch AP snapshot'
+    }
+  };
+}
+
+function cleanScratchSnapshotForFirebase(value) {
+  if (Array.isArray(value)) {
+    return value.map(cleanScratchSnapshotForFirebase).filter(function(item) { return item !== undefined; });
+  }
+  if (value && typeof value === 'object') {
+    var cleaned = {};
+    Object.keys(value).forEach(function(key) {
+      var next = cleanScratchSnapshotForFirebase(value[key]);
+      if (next !== undefined) cleaned[key] = next;
+    });
+    return cleaned;
+  }
+  return value === undefined ? undefined : value;
+}
+
+function buildScratchSnapshotRecord() {
+  var frame = document.getElementById('aps-scratch-frame');
+  var vm = frame && frame.contentWindow && frame.contentWindow.vm;
+  if (!vm || !vm.runtime || typeof vm.toJSON !== 'function') {
+    return { status: 'unavailable', sizeBytes: 0, error: 'Scratch editor was not ready, so the project snapshot could not be saved.' };
+  }
+  try {
+    var project = JSON.parse(vm.toJSON());
+    var snapshot = {
+      version: 1,
+      savedAt: Date.now(),
+      assessmentId: assessment.assessmentId || null,
+      kind: 'stripped-scratch-project',
+      project: stripScratchProjectJson(project)
+    };
+    snapshot = cleanScratchSnapshotForFirebase(snapshot);
+    var sizeBytes = scratchSnapshotByteSize(snapshot);
+    if (sizeBytes > SCRATCH_SNAPSHOT_MAX_BYTES) {
+      return {
+        status: 'too_large',
+        sizeBytes: sizeBytes,
+        warning: 'Project snapshot was too large to save safely. The AP score was still saved.'
+      };
+    }
+    return {
+      status: sizeBytes > SCRATCH_SNAPSHOT_WARN_BYTES ? 'saved_warn_size' : 'saved',
+      sizeBytes: sizeBytes,
+      snapshot: snapshot,
+      warning: sizeBytes > SCRATCH_SNAPSHOT_WARN_BYTES ? 'Project snapshot was saved, but it is larger than expected.' : null
+    };
+  } catch(e) {
+    return { status: 'failed', sizeBytes: 0, error: errorMessage(e, 'Project snapshot could not be created.') };
+  }
+}
+
+function scratchSnapshotUpdateFields(snapshotRecord) {
+  var rec = snapshotRecord || { status: 'unavailable', sizeBytes: 0 };
+  var fields = {
+    scratchSnapshotStatus: rec.status || 'unavailable',
+    scratchSnapshotSizeBytes: rec.sizeBytes || 0,
+    scratchSnapshotLimitBytes: SCRATCH_SNAPSHOT_MAX_BYTES,
+    scratchSnapshotSavedAt: Date.now()
+  };
+  if (rec.warning) fields.scratchSnapshotWarning = rec.warning;
+  if (rec.error) fields.scratchSnapshotWarning = rec.error;
+  if (rec.snapshot) fields.scratchSnapshotJson = JSON.stringify(rec.snapshot);
+  return fields;
+}
+
 function validateAssessmentScratchVm(vm, assessmentId, onProgress) {
   return assessYear7Ap2Scratch(vm, onProgress, assessmentValidationConfig(assessmentId));
 }
@@ -48,6 +168,44 @@ function assessmentValidationConfig(assessmentId) {
           scoreMinus: 'score decreasing when shark touches the diver'
         }
   };
+}
+
+function patchSayDurations(sprites, newSecs) {
+  var patches = [];
+  sprites.forEach(function(sprite) {
+    var blocks = targetBlocks(sprite);
+    Object.keys(blocks).forEach(function(id) {
+      var block = blocks[id];
+      if (!block || (block.opcode !== 'looks_sayforsecs' && block.opcode !== 'looks_thinkforsecs')) return;
+      var secsInput = block.inputs && block.inputs.SECS;
+      if (Array.isArray(secsInput) && Array.isArray(secsInput[1])) {
+        patches.push({ arr: secsInput[1], idx: 1, original: secsInput[1][1] });
+        secsInput[1][1] = newSecs;
+      }
+    });
+    // Attempt to invalidate TurboWarp's compilation cache so the patch takes effect
+    try {
+      var b = sprite.blocks;
+      if (b) {
+        if (typeof b.resetCache === 'function') b.resetCache();
+        else if (b._cache && typeof b._cache === 'object') Object.keys(b._cache).forEach(function(k) { delete b._cache[k]; });
+      }
+    } catch(e) {}
+  });
+  return patches;
+}
+
+function unpatchSayDurations(sprites, patches) {
+  patches.forEach(function(p) { p.arr[p.idx] = p.original; });
+  sprites.forEach(function(sprite) {
+    try {
+      var b = sprite.blocks;
+      if (b) {
+        if (typeof b.resetCache === 'function') b.resetCache();
+        else if (b._cache && typeof b._cache === 'object') Object.keys(b._cache).forEach(function(k) { delete b._cache[k]; });
+      }
+    } catch(e) {}
+  });
 }
 
 async function assessYear7Ap2Scratch(vm, onProgress, config) {
@@ -135,8 +293,9 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   progress(config.labels.target, 4);
   // Static: any sprite that has both a touching block and a random-position-change block
   var targetMovesStatic = sprites.some(function(s) {
-    return targetHasRandomPositionChange(s) &&
-           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+    var cs = connectedOnlyTarget(s);
+    return targetHasRandomPositionChange(cs) &&
+           targetHasAnyOpcode(cs, ['sensing_touchingobject']);
   });
   var targetMovedDynamic = false;
   var actualTargetSprite = targetSprite;
@@ -175,8 +334,9 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
 
   // Static fallback for score+1: sprite must have BOTH a touching block AND a change-by-1 block
   var plusScoreStatic = hasAnyActualVariable && sprites.some(function(s) {
-    return targetHasChangeVariableBy(s, null, 1) &&
-           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+    var cs = connectedOnlyTarget(s);
+    return targetHasChangeVariableBy(cs, null, 1) &&
+           targetHasAnyOpcode(cs, ['sensing_touchingobject']);
   });
 
   // Mark 2 runtime: scatter sprites first so no collisions during init, then bring pair together
@@ -186,7 +346,7 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
       for (var spj = 0; spj < sprites.length && !scoreIncreases; spj++) {
         if (spi === spj) continue;
         var spA = sprites[spi], spB = sprites[spj];
-        sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, 200); });
+        sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 200, 170); });
         runtime.stopAll();
         runtime.greenFlag();
         await waitMs(300);
@@ -202,7 +362,7 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   // Mark 3 runtime: scatter sprites to prevent collision-triggered changes, then check reset
   var scoreResetsOnFlag = false;
   if (scoreObj) {
-    sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, 200); });
+    sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 200, 170); });
     runtime.stopAll();
     scoreObj.value = 5;
     runtime.greenFlag();
@@ -220,7 +380,7 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   progress(config.labels.chase, 6);
   var sharkChases = false;
   var sharkChaseStatic = actualHazardSprite && actualPlayerSprite &&
-    targetHasChaseTowardsSprite(actualHazardSprite, actualPlayerSprite);
+    targetHasChaseTowardsSprite(connectedOnlyTarget(actualHazardSprite), actualPlayerSprite);
   if (actualHazardSprite && actualPlayerSprite) {
     var chaseCount = 0;
     var chasePositions = [[-150, 80], [160, -90], [-100, -100]];
@@ -245,9 +405,11 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   progress(config.labels.message, 7);
   var sharkSays = false;
   // Static: hazard sprite has both a touching block and a say/think block (no name constraint)
-  var sharkSaysStatic = actualHazardSprite &&
-    targetHasAnyOpcode(actualHazardSprite, ['sensing_touchingobject']) &&
-    targetHasAnyOpcode(actualHazardSprite, ['looks_say', 'looks_sayforsecs', 'looks_think', 'looks_thinkforsecs']);
+  var sharkSaysStatic = actualHazardSprite && (function() {
+    var cs = connectedOnlyTarget(actualHazardSprite);
+    return targetHasAnyOpcode(cs, ['sensing_touchingobject']) &&
+           targetHasAnyOpcode(cs, ['looks_say', 'looks_sayforsecs', 'looks_think', 'looks_thinkforsecs']);
+  }());
   if (actualHazardSprite && actualPlayerSprite) {
     runtime.stopAll();
     actualPlayerSprite.setXY(0, 0);
@@ -271,9 +433,10 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
   progress(config.labels.scoreMinus, 8);
   var scoreDecreases = false;
   // Static: any sprite has BOTH a touching block AND a change-by-(-1) block
-  var scoreDecreasesStatic = hasAnyActualVariable && sprites.some(function(s) {
-    return targetHasChangeVariableBy(s, null, -1) &&
-           targetHasAnyOpcode(s, ['sensing_touchingobject']);
+  var scoreDecreasesStatic = sprites.some(function(s) {
+    var cs = connectedOnlyTarget(s);
+    return targetHasChangeVariableBy(cs, null, -1) &&
+           targetHasAnyOpcode(cs, ['sensing_touchingobject']);
   });
   if (scoreObj && sprites.length >= 2) {
     // Prioritise the actual hazard/player pair, then try all remaining combinations
@@ -290,19 +453,24 @@ async function assessYear7Ap2Scratch(vm, onProgress, config) {
         if (!alreadyIn) sdPairs.push([pa, pb]);
       }
     }
-    for (var pi = 0; pi < sdPairs.length && !scoreDecreases; pi++) {
+    var sayPatches = patchSayDurations(sprites, 0.1);
+    for (var pi = 0; pi < Math.min(sdPairs.length, 3) && !scoreDecreases; pi++) {
       var sdA = sdPairs[pi][0], sdB = sdPairs[pi][1];
-      sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 100, -150); });
+      sprites.forEach(function(s, idx) { s.setXY(-200 + idx * 200, -150); });
       runtime.stopAll();
       runtime.greenFlag();
       await waitMs(400);
       scoreObj.value = 10;
       sdA.setXY(sdB.x, sdB.y);
-      await waitMs(1800);
+      // Poll every 100ms for up to 7s — covers 1s glide + up to 5s say + buffer
+      for (var sdTick = 0; sdTick < 70 && !scoreDecreases; sdTick++) {
+        await waitMs(100);
+        if (Number(scoreObj.value) < 10) scoreDecreases = true;
+      }
       runtime.stopAll();
-      if (Number(scoreObj.value) < 10) scoreDecreases = true;
       await waitMs(100);
     }
+    unpatchSayDurations(sprites, sayPatches);
   }
   scoreDecreases = scoreDecreases || scoreDecreasesStatic;
 
@@ -371,13 +539,15 @@ function mergeAssessmentScratchInfo(total, part) {
 
 function findAssessmentVariable(targets, words) {
   var wanted = words ? words.map(normaliseScratchFieldValue) : null;
+  var scratchDefault = normaliseScratchFieldValue('my variable');
   for (var ti = 0; ti < (targets || []).length; ti++) {
     var variables = targets[ti].variables || {};
     var ids = Object.keys(variables);
     for (var vi = 0; vi < ids.length; vi++) {
       var variable = variables[ids[vi]];
       var name = normaliseScratchFieldValue(variable && variable.name);
-      if (name && (!wanted || wanted.some(function(word) { return name.indexOf(word) !== -1; }))) return variable;
+      if (!name || name === scratchDefault) continue;
+      if (!wanted || wanted.some(function(word) { return name.indexOf(word) !== -1; })) return variable;
     }
   }
   return null;
@@ -385,6 +555,46 @@ function findAssessmentVariable(targets, words) {
 
 function targetBlocks(target) {
   return target && target.blocks && target.blocks._blocks ? target.blocks._blocks : {};
+}
+
+// Returns only blocks reachable from a hat block (green flag, key press, etc.)
+// Orphaned / disconnected scripts are excluded.
+function getConnectedBlocks(target) {
+  var allBlocks = targetBlocks(target);
+  var hatOpcodes = {
+    'event_whenflagclicked': true, 'event_whenkeypressed': true,
+    'event_whenthisspriteclicked': true, 'event_whenstageclicked': true,
+    'event_whenbackdropswitchesto': true, 'event_whengreaterthan': true,
+    'event_whenbroadcastreceived': true, 'control_start_as_clone': true
+  };
+  var connected = Object.create(null);
+  function visit(id) {
+    if (!id || connected[id]) return;
+    var block = allBlocks[id];
+    if (!block) return;
+    connected[id] = block;
+    if (block.next) visit(block.next);
+    Object.keys(block.inputs || {}).forEach(function(k) {
+      var inp = block.inputs[k];
+      if (!Array.isArray(inp)) return;
+      inp.forEach(function(v) { if (typeof v === 'string' && allBlocks[v]) visit(v); });
+    });
+  }
+  Object.keys(allBlocks).forEach(function(id) {
+    var b = allBlocks[id];
+    if (b && b.topLevel && hatOpcodes[b.opcode]) visit(id);
+  });
+  return connected;
+}
+
+// Wraps a target so that block-inspection helpers only see hat-connected blocks.
+function connectedOnlyTarget(target) {
+  return {
+    name: target.name,
+    sprite: target.sprite,
+    variables: target.variables,
+    blocks: { _blocks: getConnectedBlocks(target) }
+  };
 }
 
 function targetHasAnyOpcode(target, opcodes) {
@@ -491,9 +701,10 @@ function targetHasChangeVariableBy(target, variableWords, sign) {
     if (block.opcode !== 'data_changevariableby') return false;
     var variableName = normaliseScratchFieldValue(scratchFieldValue(block.fields && block.fields.VARIABLE));
     var variableOk = !variableWords || variableWords.some(function(word) { return variableName.indexOf(word) !== -1; });
-    var valueText = normaliseScratchFieldValue(scratchInputReadableValue(target, block.inputs && block.inputs.VALUE));
-    var num = Number(String(valueText).match(/-?\d+(\.\d+)?/) && String(valueText).match(/-?\d+(\.\d+)?/)[0]);
-    var signOk = sign < 0 ? num < 0 || valueText.indexOf('-') !== -1 : num > 0 || valueText.indexOf('+') !== -1 || valueText === '1';
+    var rawValue = scratchInputReadableValue(target, block.inputs && block.inputs.VALUE);
+    var numMatch = String(rawValue).match(/-?\d+(\.\d+)?/);
+    var num = numMatch ? Number(numMatch[0]) : 0;
+    var signOk = sign < 0 ? num < 0 || rawValue.indexOf('-') !== -1 : num > 0 || rawValue.indexOf('+') !== -1 || String(rawValue).trim() === '1';
     return variableOk && signOk;
   });
 }
@@ -533,16 +744,41 @@ function renderAssessmentFeedback(result, finalMode) {
   document.getElementById(finalMode ? 'aps-final-rubric' : 'aps-feedback').innerHTML = html;
 }
 
+function scratchSnapshotWarningHtml(record) {
+  if (!record || !record.scratchSnapshotStatus) return '';
+  var status = record.scratchSnapshotStatus;
+  if (status === 'saved') return '';
+  var size = record.scratchSnapshotSizeBytes ? Math.ceil(record.scratchSnapshotSizeBytes / 1024) + ' KB' : 'unknown size';
+  var message = record.scratchSnapshotWarning || 'The project snapshot could not be saved, but the AP score was saved.';
+  if (status === 'saved_warn_size') message = record.scratchSnapshotWarning || 'The project snapshot was saved, but it was larger than expected.';
+  return '<div class="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-900 px-3 py-2 text-sm">' +
+    '<strong>Project snapshot:</strong> ' + escapeHtml(message) +
+    ' <span class="text-yellow-700">(' + escapeHtml(size) + ' / 20 KB limit)</span></div>';
+}
+
 function showAssessmentCompleted(record) {
   var spec = ASSESSMENTS[assessment.assessmentId] || {};
   var maxScore = record.maxScore || spec.maxScore || 21;
   assessment.completed = true;
+  if (assessment.individualForced && state.db && state.uid) {
+    var _completedAt = Date.now();
+    if (state.className) {
+      state.db.ref('classes/' + state.className + '/forcedAPAssignments/' + state.uid).update({
+        state: 'completed', completedAt: _completedAt
+      }).catch(function() {});
+    }
+    state.db.ref('progress/' + state.uid + '/forcedAPAssignment').update({
+      state: 'completed', completedAt: _completedAt
+    }).catch(function() {});
+  }
   document.getElementById('ap-student-screen').classList.remove('hidden');
   document.getElementById('aps-active').classList.add('hidden');
   document.getElementById('aps-finished').classList.remove('hidden');
   document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
   document.getElementById('aps-final-score').textContent = (assessment.debugMode ? 'Debug score: ' : 'Score: ') + (record.score || 0) + ' / ' + maxScore;
   renderAssessmentFeedback({ score: record.score || 0, maxScore: maxScore, criteria: record.rubric || [] }, true);
+  var rubricBox = document.getElementById('aps-final-rubric');
+  if (rubricBox && record.scratchSnapshotStatus) rubricBox.insertAdjacentHTML('afterbegin', scratchSnapshotWarningHtml(record));
   var feedbackBox = document.getElementById('aps-class-feedback');
   if (assessment.debugMode) {
     if (feedbackBox) { feedbackBox.classList.add('hidden'); feedbackBox.innerHTML = ''; }
@@ -565,8 +801,11 @@ function returnToLessonsFromCompletedAssessment() {
   if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
   assessment.questionAutosaveTimer = null;
   if (assessment.studentListener && assessment.studentListenerRef) assessment.studentListenerRef.off('value', assessment.studentListener);
+  if (assessment.activeClientRef && assessment.activeClientListener) assessment.activeClientRef.off('value', assessment.activeClientListener);
   if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
   assessment.studentListener = null;
+  assessment.activeClientRef = null;
+  assessment.activeClientListener = null;
   assessment.feedbackListener = null;
   assessment.feedbackRef = null;
   document.getElementById('ap-student-screen').classList.add('hidden');
@@ -584,12 +823,16 @@ function exitAssessmentStudent(opts) {
   assessment.questionAutosaveTimer = null;
   assessment.projectChangeListener = null;
   if (assessment.studentListener && assessment.studentListenerRef) assessment.studentListenerRef.off('value', assessment.studentListener);
+  if (assessment.activeClientRef && assessment.activeClientListener) assessment.activeClientRef.off('value', assessment.activeClientListener);
   if (assessment.feedbackRef && assessment.feedbackListener) assessment.feedbackRef.off('value', assessment.feedbackListener);
+  assessment.activeClientRef = null;
+  assessment.activeClientListener = null;
   assessment.feedbackRef = null;
   assessment.feedbackListener = null;
   document.getElementById('ap-student-screen').classList.add('hidden');
   assessment.sessionRef = null;
   assessment.responseRef = null;
   assessment.forced = false;
+  assessment.individualForced = false;
   assessment.debugMode = false;
 }
