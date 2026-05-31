@@ -1424,7 +1424,7 @@ async function importNamesFromZip(file) {
     var zip = await JSZip.loadAsync(await file.arrayBuffer());
     var sheetEntries = [];
     zip.forEach(function(path, entry) {
-      if (!entry.dir && /.(xlsx|xls)$/i.test(path) && !/^__MACOSX//i.test(path)) {
+      if (!entry.dir && /\.(xlsx|xls)$/i.test(path) && path.indexOf('__MACOSX/') !== 0) {
         sheetEntries.push({ path: path, entry: entry });
       }
     });
