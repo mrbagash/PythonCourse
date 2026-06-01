@@ -259,13 +259,13 @@ async function loadActiveSessions() {
 
     // Read only the active-sessions index (tiny) + per-class forcedQuiz fields
     // This replaces the old full quizSessions tree read which grew unbounded.
-    var [classNamesSnap, activeIdxSnap] = await Promise.all([
-      state.db.ref('classNames').get(),
+    var [classNamesList, activeIdxSnap] = await Promise.all([
+      getClassNames(),
       state.db.ref('activeSessions').get()
     ]);
     // Check forcedQuiz for each known class (reads just one small field per class)
-    if (classNamesSnap.exists()) {
-      var classNames = Object.keys(classNamesSnap.val() || {});
+    if (classNamesList.length) {
+      var classNames = classNamesList;
       var forcedSnaps = await Promise.all(classNames.map(function(cn) {
         return state.db.ref('classes/' + cn + '/forcedQuiz').get();
       }));
@@ -417,14 +417,12 @@ async function loadAdminClassList() {
   var prev = sel ? sel.value : '';
   if (sel) sel.innerHTML = '<option value="">— select class —</option>';
   try {
-    var snap = await state.db.ref('classNames').get();
-    if (snap.exists()) {
-      Object.keys(snap.val() || {}).sort().forEach(function(name) {
-        var opt = document.createElement('option');
-        opt.value = name; opt.textContent = name;
-        if (sel) sel.appendChild(opt);
-      });
-    }
+    var names = await getClassNames();
+    names.forEach(function(name) {
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      if (sel) sel.appendChild(opt);
+    });
     if (sel) {
       if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
       sel.onchange = function() {
@@ -452,14 +450,12 @@ async function loadQuizResultsClassOptions() {
   classEl.innerHTML = '<option value="">— select class —</option>';
   quizEl.innerHTML = '<option value="">— select quiz —</option>';
   try {
-    var snap = await state.db.ref('classNames').get();
-    if (snap.exists()) {
-      Object.keys(snap.val() || {}).sort().forEach(function(name) {
-        var opt = document.createElement('option');
-        opt.value = name; opt.textContent = name;
-        classEl.appendChild(opt);
-      });
-    }
+    var names = await getClassNames();
+    names.forEach(function(name) {
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      classEl.appendChild(opt);
+    });
     if (prev && classEl.querySelector('option[value="' + prev + '"]')) classEl.value = prev;
     classEl.onchange = function() { loadQuizResultsForClass(classEl.value); };
     quizEl.onchange = function() { renderSelectedQuizResult(); };
@@ -1104,6 +1100,23 @@ function studentName(code) {
     if (keys[i].toLowerCase() === lower) return state.nameMap[keys[i]];
   }
   return null;
+}
+
+// Returns sorted array of class name strings.
+// Tries classNames index first (tiny); falls back to full classes read and backfills the index.
+async function getClassNames() {
+  var snap = await state.db.ref('classNames').get();
+  if (snap.exists()) {
+    return Object.keys(snap.val() || {}).sort();
+  }
+  // Index not built yet — fall back to classes and backfill silently
+  var classesSnap = await state.db.ref('classes').get();
+  if (!classesSnap.exists()) return [];
+  var names = [];
+  var backfill = {};
+  classesSnap.forEach(function(child) { names.push(child.key); backfill['classNames/' + child.key] = true; });
+  state.db.ref().update(backfill).catch(function(){});
+  return names.sort();
 }
 
 function normaliseClassName(value) {
@@ -1842,9 +1855,8 @@ async function loadActiveForcedAps() {
   container.innerHTML = '<p class="text-gray-400 text-sm py-2">Loading…</p>';
 
   try {
-    var classNamesSnap = await state.db.ref('classNames').get();
-    if (!classNamesSnap.exists()) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>'; return; }
-    var classNameList = Object.keys(classNamesSnap.val() || {});
+    var classNameList = await getClassNames();
+    if (!classNameList.length) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>'; return; }
     var assignmentSnaps = await Promise.all(classNameList.map(function(cn) {
       return state.db.ref('classes/' + cn + '/forcedAPAssignments').get();
     }));
@@ -1954,16 +1966,14 @@ async function loadAccessTab() {
   content.innerHTML = '<p class="text-gray-400 text-sm py-4">Loading…</p>';
 
   try {
-    // Populate class filter once (use classNames index — tiny)
+    // Populate class filter once
     if (filterEl.options.length <= 1) {
-      var classNamesSnap = await state.db.ref('classNames').get();
-      if (classNamesSnap.exists()) {
-        Object.keys(classNamesSnap.val() || {}).sort().forEach(function(name) {
-          var o = document.createElement('option');
-          o.value = name; o.textContent = name;
-          filterEl.appendChild(o);
-        });
-      }
+      var accessClassNames = await getClassNames();
+      accessClassNames.forEach(function(name) {
+        var o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        filterEl.appendChild(o);
+      });
     }
 
     // Limit to the last 14 days of activity — orderByChild('lastSeen') with a cutoff

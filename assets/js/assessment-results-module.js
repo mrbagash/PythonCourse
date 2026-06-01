@@ -188,8 +188,8 @@ async function loadApResultsClassOptions(preselectClass) {
   var prev = preselectClass || classEl.value;
   classEl.innerHTML = '<option value="">— select class —</option>';
   try {
-    var snap = await state.db.ref('classNames').get();
-    if (snap.exists()) Object.keys(snap.val() || {}).sort().forEach(function(name) {
+    var apClassNames = await getClassNames();
+    apClassNames.forEach(function(name) {
       var opt = document.createElement('option');
       opt.value = name; opt.textContent = name;
       classEl.appendChild(opt);
