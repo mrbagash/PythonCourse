@@ -450,6 +450,7 @@ function renderClassAssessmentResults(content, rows) {
         '<div class="flex justify-center gap-1">' +
         (r.completed ? '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' : '') +
         '<button class="btn-ap-recover px-2 py-1 rounded border border-gray-400 text-gray-500 hover:bg-gray-50" data-code="' + escapeHtml(r.code) + '" data-lobby="' + escapeHtml(r.lobbyCode || '') + '" data-assessment="' + escapeHtml(r.assessmentId) + '" title="Request local backup from student\'s browser">Recover</button>' +
+        '<button class="btn-ap-delete-result px-2 py-1 rounded border border-red-400 text-red-600 bg-red-50 hover:bg-red-100" data-code="' + escapeHtml(r.code) + '" data-name="' + escapeHtml(r.name || r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '" data-title="' + escapeHtml(r.assessmentTitle || r.assessmentId) + '" title="Delete this AP result">Delete</button>' +
         '</div>' +
       '</td>' +
       '</tr>';
@@ -467,6 +468,11 @@ function renderClassAssessmentResults(content, rows) {
       requestStudentApBackup(btn.dataset.code, btn.dataset.lobby, btn.dataset.assessment, btn);
     };
   });
+  content.querySelectorAll('.btn-ap-delete-result').forEach(function(btn) {
+    btn.onclick = function() {
+      deleteAssessmentResult(btn.dataset.code, btn.dataset.assessment, btn.dataset.name, btn.dataset.title);
+    };
+  });
 }
 
 function renderStudentAssessmentResults(content, rows) {
@@ -480,7 +486,7 @@ function renderStudentAssessmentResults(content, rows) {
   completedRows.sort(function(a, b) { return (b.completedAt || 0) - (a.completedAt || 0); }).forEach(function(r) {
     var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
-      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-3"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button></div></div>' +
+      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-2"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button><button class="btn-ap-delete-result px-2 py-1 rounded border border-red-400 text-red-600 bg-red-50 hover:bg-red-100 text-xs" data-code="' + escapeHtml(r.code) + '" data-name="' + escapeHtml(name) + '" data-assessment="' + escapeHtml(r.assessmentId) + '" data-title="' + escapeHtml(r.assessmentTitle || r.assessmentId) + '">Delete result</button></div></div>' +
       '<div class="p-3 space-y-1">' + apSnapshotStatusHtml(r, true);
     (r.rubric || []).forEach(function(c) {
       html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
@@ -495,6 +501,28 @@ function renderStudentAssessmentResults(content, rows) {
       openAssessmentScoreEditor(btn.dataset.code, btn.dataset.assessment, row, { results: true });
     };
   });
+  content.querySelectorAll('.btn-ap-delete-result').forEach(function(btn) {
+    btn.onclick = function() {
+      deleteAssessmentResult(btn.dataset.code, btn.dataset.assessment, btn.dataset.name, btn.dataset.title);
+    };
+  });
+}
+
+async function deleteAssessmentResult(code, assessmentId, name, title) {
+  if (!code || !assessmentId) return;
+  var displayName = name || code;
+  var displayTitle = title || assessmentId;
+  if (!confirm('Delete ' + displayName + '\'s result for ' + displayTitle + '?\n\nThis removes their score and rubric completely and allows them to retake the AP. This cannot be undone.')) return;
+  try {
+    await state.db.ref('progress/' + code + '/assessments/' + assessmentId).remove();
+    // Refresh the local state so the panel re-renders without the deleted result
+    if (apResultsState.progressRows[code] && apResultsState.progressRows[code].assessments) {
+      delete apResultsState.progressRows[code].assessments[assessmentId];
+    }
+    renderAssessmentResultsPanel();
+  } catch(e) {
+    alert('Could not delete result: ' + e.message);
+  }
 }
 
 function isScratchAssessmentResult(row) {
