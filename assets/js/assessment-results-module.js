@@ -188,10 +188,10 @@ async function loadApResultsClassOptions(preselectClass) {
   var prev = preselectClass || classEl.value;
   classEl.innerHTML = '<option value="">— select class —</option>';
   try {
-    var snap = await state.db.ref('classes').get();
-    if (snap.exists()) snap.forEach(function(child) {
+    var snap = await state.db.ref('classNames').get();
+    if (snap.exists()) Object.keys(snap.val() || {}).sort().forEach(function(name) {
       var opt = document.createElement('option');
-      opt.value = child.key; opt.textContent = child.key;
+      opt.value = name; opt.textContent = name;
       classEl.appendChild(opt);
     });
     if (prev && classEl.querySelector('option[value="' + prev + '"]')) {

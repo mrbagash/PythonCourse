@@ -62,6 +62,8 @@ document.getElementById('btn-build-code-index').onclick = async function() {
     var updates = {};
     var total = 0;
     classesSnap.forEach(function(classSnap) {
+      // Backfill classNames index
+      updates['classNames/' + classSnap.key] = true;
       var codesVal = classSnap.child('codes').val() || {};
       Object.keys(codesVal).forEach(function(code) {
         updates['codeIndex/' + code.toLowerCase()] = { className: classSnap.key, storedCode: code };
@@ -70,7 +72,7 @@ document.getElementById('btn-build-code-index').onclick = async function() {
     });
     if (total === 0) { statusEl.textContent = 'No codes found.'; btn.disabled = false; return; }
     await state.db.ref().update(updates);
-    statusEl.textContent = '✅ Index built — ' + total + ' codes indexed.';
+    statusEl.textContent = '✅ Index built — ' + total + ' codes indexed, ' + classesSnap.numChildren() + ' classes registered.';
   } catch(e) {
     statusEl.textContent = '❌ Error: ' + e.message;
   }
@@ -255,27 +257,32 @@ async function loadActiveSessions() {
       });
     }
 
-    // Read classes tree — includes forcedQuiz sub-nodes and is permitted for admins.
-    var classesSnap = await state.db.ref('classes').get();
-    if (classesSnap.exists()) {
-      classesSnap.forEach(function(classSnap) {
-        var forced = classSnap.child('forcedQuiz').val();
+    // Read only the active-sessions index (tiny) + per-class forcedQuiz fields
+    // This replaces the old full quizSessions tree read which grew unbounded.
+    var [classNamesSnap, activeIdxSnap] = await Promise.all([
+      state.db.ref('classNames').get(),
+      state.db.ref('activeSessions').get()
+    ]);
+    // Check forcedQuiz for each known class (reads just one small field per class)
+    if (classNamesSnap.exists()) {
+      var classNames = Object.keys(classNamesSnap.val() || {});
+      var forcedSnaps = await Promise.all(classNames.map(function(cn) {
+        return state.db.ref('classes/' + cn + '/forcedQuiz').get();
+      }));
+      classNames.forEach(function(cn, i) {
+        var forced = forcedSnaps[i].val();
         if (forced && forced.active && forced.lobbyCode) {
-          addCandidate(forced.lobbyCode, classSnap.key, forced.lessonId || '');
+          addCandidate(forced.lobbyCode, cn, forced.lessonId || '');
         }
       });
     }
-
-    // Also find active unforced sessions, so a teacher can rejoin after closing the tab.
-    try {
-      var sessionKeysSnap = await state.db.ref('quizSessions').get();
-      if (sessionKeysSnap.exists()) {
-        sessionKeysSnap.forEach(function(sSnap) {
-          var s = sSnap.val() || {};
-          if (s.state !== 'finished') addCandidate(sSnap.key, s.className || null, s.lessonId || '');
-        });
-      }
-    } catch(e) {}
+    // Also pick up any unforced active sessions from the lightweight index
+    if (activeIdxSnap.exists()) {
+      activeIdxSnap.forEach(function(child) {
+        var s = child.val() || {};
+        addCandidate(child.key, s.className || null, s.lessonId || '');
+      });
+    }
 
     var checks = Object.keys(byCode).map(function(code) { return byCode[code]; });
     if (!checks.length) { panel.classList.add('hidden'); return; }
@@ -410,11 +417,11 @@ async function loadAdminClassList() {
   var prev = sel ? sel.value : '';
   if (sel) sel.innerHTML = '<option value="">— select class —</option>';
   try {
-    var snap = await state.db.ref('classes').get();
+    var snap = await state.db.ref('classNames').get();
     if (snap.exists()) {
-      snap.forEach(function(child) {
+      Object.keys(snap.val() || {}).sort().forEach(function(name) {
         var opt = document.createElement('option');
-        opt.value = child.key; opt.textContent = child.key;
+        opt.value = name; opt.textContent = name;
         if (sel) sel.appendChild(opt);
       });
     }
@@ -445,12 +452,11 @@ async function loadQuizResultsClassOptions() {
   classEl.innerHTML = '<option value="">— select class —</option>';
   quizEl.innerHTML = '<option value="">— select quiz —</option>';
   try {
-    var snap = await state.db.ref('classes').get();
+    var snap = await state.db.ref('classNames').get();
     if (snap.exists()) {
-      snap.forEach(function(child) {
+      Object.keys(snap.val() || {}).sort().forEach(function(name) {
         var opt = document.createElement('option');
-        opt.value = child.key;
-        opt.textContent = child.key;
+        opt.value = name; opt.textContent = name;
         classEl.appendChild(opt);
       });
     }
@@ -669,6 +675,7 @@ async function loadClassDashboard(className, opts) {
         // Delete the class, then best-effort clean up codeIndex entries
         var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
         await state.db.ref('classes/' + className).remove();
+        state.db.ref('classNames/' + className).remove().catch(function(){});
         if (codesSnap.exists()) {
           var indexCleanup = {};
           Object.keys(codesSnap.val()).forEach(function(c) { indexCleanup['codeIndex/' + c.toLowerCase()] = null; });
@@ -1512,15 +1519,9 @@ document.getElementById('btn-gen-codes').onclick = async function() {
   document.getElementById('btn-gen-codes').disabled = true;
 
   try {
-    // Fetch all existing codes across all classes to avoid duplicates
-    var existingSnap = await state.db.ref('classes').get();
-    var existingCodes = new Set();
-    if (existingSnap.exists()) {
-      existingSnap.forEach(function(classSnap) {
-        var codes = classSnap.child('codes').val() || {};
-        Object.keys(codes).forEach(function(c) { existingCodes.add(c); });
-      });
-    }
+    // Use the codeIndex (flat, small) instead of scanning the full classes tree
+    var existingSnap = await state.db.ref('codeIndex').get();
+    var existingCodes = new Set(existingSnap.exists() ? Object.keys(existingSnap.val() || {}) : []);
 
     var now = Date.now();
     var generated = genUniqueCodes(count, existingCodes);
@@ -1532,6 +1533,7 @@ document.getElementById('btn-gen-codes').onclick = async function() {
     });
     await state.db.ref().update(classUpdates);
     state.db.ref().update(indexUpdates).catch(function(){});  // best-effort; self-heals on login
+    state.db.ref('classNames/' + rawName).set(true).catch(function(){});
     statusEl.textContent = '\u2705 Generated ' + generated.length + ' codes for ' + rawName + '.';
     await refreshAdminTable();
   } catch(e) {
@@ -1551,19 +1553,14 @@ document.getElementById('btn-add-single').onclick = async function() {
   statusEl.textContent = 'Adding code to ' + className + '\u2026';
   statusEl.classList.remove('hidden');
   try {
-    // Fetch all existing codes to avoid duplicates
-    var existingSnap = await state.db.ref('classes').get();
-    var existingCodes = new Set();
-    if (existingSnap.exists()) {
-      existingSnap.forEach(function(classSnap) {
-        var codes = classSnap.child('codes').val() || {};
-        Object.keys(codes).forEach(function(c) { existingCodes.add(c); });
-      });
-    }
+    // Use codeIndex (flat, small) to check for existing codes
+    var existingSnap = await state.db.ref('codeIndex').get();
+    var existingCodes = new Set(existingSnap.exists() ? Object.keys(existingSnap.val() || {}) : []);
     var codes = genUniqueCodes(1, existingCodes);
     var code = codes[0];
     await state.db.ref('classes/' + className + '/codes/' + code).set({ createdAt: Date.now() });
     state.db.ref('codeIndex/' + code.toLowerCase()).set({ className: className, storedCode: code }).catch(function(){});
+    state.db.ref('classNames/' + className).set(true).catch(function(){});
     statusEl.textContent = '\u2705 Added code ' + code + ' to ' + className + '.';
     await refreshAdminTable();
   } catch(e) {
@@ -1845,16 +1842,20 @@ async function loadActiveForcedAps() {
   container.innerHTML = '<p class="text-gray-400 text-sm py-2">Loading…</p>';
 
   try {
-    var classesSnap = await state.db.ref('classes').get();
-    if (!classesSnap.exists()) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>'; return; }
+    var classNamesSnap = await state.db.ref('classNames').get();
+    if (!classNamesSnap.exists()) { container.innerHTML = '<p class="text-gray-400 text-sm py-2">No active forced APs.</p>'; return; }
+    var classNameList = Object.keys(classNamesSnap.val() || {});
+    var assignmentSnaps = await Promise.all(classNameList.map(function(cn) {
+      return state.db.ref('classes/' + cn + '/forcedAPAssignments').get();
+    }));
 
     var activeItems = [];
-    classesSnap.forEach(function(classSnap) {
-      var assignments = classSnap.child('forcedAPAssignments').val() || {};
+    classNameList.forEach(function(cn, i) {
+      var assignments = assignmentSnaps[i].val() || {};
       Object.keys(assignments).forEach(function(code) {
         var rec = assignments[code] || {};
         if (rec.state === 'active') {
-          activeItems.push({ className: classSnap.key, code: code, rec: rec });
+          activeItems.push({ className: cn, code: code, rec: rec });
         }
       });
     });
@@ -1953,19 +1954,21 @@ async function loadAccessTab() {
   content.innerHTML = '<p class="text-gray-400 text-sm py-4">Loading…</p>';
 
   try {
-    // Populate class filter once
+    // Populate class filter once (use classNames index — tiny)
     if (filterEl.options.length <= 1) {
-      var classSnap = await state.db.ref('classes').get();
-      if (classSnap.exists()) {
-        classSnap.forEach(function(c) {
+      var classNamesSnap = await state.db.ref('classNames').get();
+      if (classNamesSnap.exists()) {
+        Object.keys(classNamesSnap.val() || {}).sort().forEach(function(name) {
           var o = document.createElement('option');
-          o.value = c.key; o.textContent = c.key;
+          o.value = name; o.textContent = name;
           filterEl.appendChild(o);
         });
       }
     }
 
-    var snap = await state.db.ref('accessLog').get();
+    // Limit to the last 14 days of activity — orderByChild('lastSeen') with a cutoff
+    var cutoff = Date.now() - (14 * 24 * 60 * 60 * 1000);
+    var snap = await state.db.ref('accessLog').orderByChild('lastSeen').startAt(cutoff).get();
     if (!snap.exists()) {
       content.innerHTML = '<p class="text-gray-400 text-sm py-4">No access history yet — students need to log in for entries to appear.</p>';
       return;

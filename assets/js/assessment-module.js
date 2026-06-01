@@ -72,6 +72,8 @@ document.getElementById('btn-ap-start-host').onclick = async function() {
     forced: !!forceClass,
     questions: spec.questions || []
   });
+  // Write to lightweight active-sessions index so admin panel can find it without scanning all sessions
+  state.db.ref('activeSessions/' + code).set({ className: assessment.className, lessonId: 'AP:' + id, startedAt: Date.now() }).catch(function(){});
   if (forceClass) {
     await state.db.ref('classes/' + assessment.className + '/forcedQuiz').set({
       active: true,
@@ -118,15 +120,23 @@ function showAssessmentHostScreen() {
   document.getElementById('ap-host-screen').classList.remove('hidden');
   document.getElementById('aph-title').textContent = spec ? spec.title : '';
   document.getElementById('aph-code').textContent = assessment.lobbyCode;
-  if (assessment.hostListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.hostListener);
-  assessment.hostListener = assessment.sessionRef.on('value', function(snap) {
-    renderAssessmentHostStudents(snap.val() || {});
-  });
+  if (assessment.hostAnswersRef) {
+    if (assessment.hostListener)       assessment.hostAnswersRef.off('child_added',   assessment.hostListener);
+    if (assessment.hostChangeListener) assessment.hostAnswersRef.off('child_changed', assessment.hostChangeListener);
+  }
+  assessment.hostStudentData = {};
+  assessment.hostAnswersRef = assessment.sessionRef.child('answers/0');
+  function _onHostStudent(snap) {
+    assessment.hostStudentData[snap.key] = snap.val() || {};
+    renderAssessmentHostStudents();
+  }
+  assessment.hostListener       = assessment.hostAnswersRef.on('child_added',   _onHostStudent);
+  assessment.hostChangeListener = assessment.hostAnswersRef.on('child_changed',  _onHostStudent);
 }
 
-function renderAssessmentHostStudents(session) {
+function renderAssessmentHostStudents() {
   var box = document.getElementById('aph-students');
-  var responses = session.answers && session.answers[0] ? session.answers[0] : {};
+  var responses = assessment.hostStudentData || {};
   var codes = Object.keys(responses);
   if (!codes.length) {
     box.innerHTML = '<div class="text-gray-400 text-sm">Waiting for students to join...</div>';
@@ -281,12 +291,17 @@ async function endAssessmentHostSession() {
   statusDiv.textContent = 'Finalising any remaining submissions…';
   await finaliseIncompleteAssessmentResponses();
   if (assessment.sessionRef) await assessment.sessionRef.update({ state: 'finished', endedAt: Date.now() });
+  if (assessment.lobbyCode) state.db.ref('activeSessions/' + assessment.lobbyCode).remove().catch(function(){});
   if (assessment.className) {
     var ref = state.db.ref('classes/' + assessment.className + '/forcedQuiz');
     var snap = await ref.get();
     if (snap.child('lobbyCode').val() === assessment.lobbyCode) await ref.update({ active: false, endedAt: Date.now() });
   }
-  if (assessment.hostListener && assessment.sessionRef) assessment.sessionRef.off('value', assessment.hostListener);
+  if (assessment.hostAnswersRef) {
+    if (assessment.hostListener)       assessment.hostAnswersRef.off('child_added',   assessment.hostListener);
+    if (assessment.hostChangeListener) assessment.hostAnswersRef.off('child_changed', assessment.hostChangeListener);
+  }
+  assessment.hostAnswersRef = null; assessment.hostChangeListener = null;
   document.getElementById('ap-host-screen').classList.add('hidden');
 }
 
