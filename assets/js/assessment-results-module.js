@@ -175,6 +175,14 @@ document.getElementById('btn-ap-results-release').onclick = async function() {
   }
 };
 
+document.getElementById('btn-ap-results-view-feedback').onclick = async function() {
+  var assessmentId = document.getElementById('ap-results-assessment').value || 'all';
+  var className = apResultsState.className;
+  if (!className) { alert('Choose a class first.'); return; }
+  if (assessmentId === 'all') { alert('Choose a specific assessment first.'); return; }
+  await showAdminClassFeedbackModal(className, assessmentId);
+};
+
 async function loadApResultsClassOptions(preselectClass) {
   var classEl = document.getElementById('ap-results-class');
   var prev = preselectClass || classEl.value;
@@ -1102,3 +1110,74 @@ function csvCell(value) {
   var s = String(value == null ? '' : value);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
+
+// ── Admin class feedback modal ────────────────────────────────
+async function showAdminClassFeedbackModal(className, assessmentId) {
+  var modal = document.getElementById('modal-ap-class-feedback');
+  var body  = document.getElementById('ap-feedback-modal-body');
+  var title = document.getElementById('ap-feedback-modal-title');
+  if (!modal || !body) return;
+
+  var spec = ASSESSMENTS[assessmentId] || {};
+  title.textContent = 'Whole Class Feedback — ' + (spec.title || assessmentId);
+  body.innerHTML = '<p class="text-gray-400 text-center py-8">Loading…</p>';
+  modal.classList.remove('hidden');
+
+  try {
+    var snap = await state.db.ref('classes/' + className + '/apFeedback/' + assessmentId).get();
+    if (!snap.exists() || !snap.val().released) {
+      body.innerHTML =
+        '<div class="text-center py-8">' +
+          '<p class="text-gray-500 mb-4">No feedback has been released yet for this AP.</p>' +
+          '<p class="text-sm text-gray-400">Use <strong>Release Feedback</strong> first to generate and publish the summary, then come back here to view it.</p>' +
+        '</div>';
+      return;
+    }
+    var feedback = snap.val();
+    // Re-use the student render function but without the individual practice section
+    var stats = feedback.criteriaStats || [];
+    var topCodes = feedback.topCodes || [];
+    var html = '<p class="text-sm text-gray-500 mb-4">' + escapeHtml(feedback.assessmentTitle || assessmentId) +
+      ' · ' + (feedback.studentCount || 0) + ' submissions · released ' +
+      new Date(feedback.releasedAt || Date.now()).toLocaleString('en-GB') + '</p>';
+
+    html += '<div class="grid md:grid-cols-2 gap-4 mb-5">';
+    html += '<div class="border border-gray-200 rounded-lg p-3"><h4 class="font-semibold text-gray-800 mb-3">Class performance by criterion</h4><div class="space-y-3">';
+    stats.forEach(function(c) {
+      var colour = c.percent >= 70 ? 'bg-green-500' : c.percent >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+      html += '<div><div class="flex justify-between gap-3 text-xs mb-1">' +
+        '<span class="font-medium text-gray-700">' + escapeHtml(c.text) + '</span>' +
+        '<span class="text-gray-500">' + c.percent + '% (' + c.awarded + '/' + c.possible + ' marks)</span>' +
+        '</div><div class="h-3 rounded-full bg-gray-100 overflow-hidden">' +
+        '<div class="' + colour + ' h-3" style="width:' + Math.max(2, c.percent) + '%"></div></div></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="space-y-4">';
+    html += '<div class="border border-green-200 bg-green-50 rounded-lg p-3"><h4 class="font-semibold text-green-800 mb-2">Best class areas</h4>' + feedbackListHtml(feedback.best || []) + '</div>';
+    html += '<div class="border border-red-200 bg-red-50 rounded-lg p-3"><h4 class="font-semibold text-red-800 mb-2">Most difficult areas</h4>' + feedbackListHtml(feedback.struggle || []) + '</div>';
+    html += '<div class="border border-yellow-200 bg-yellow-50 rounded-lg p-3"><h4 class="font-semibold text-yellow-800 mb-2">Top scores</h4>';
+    if (topCodes.length) {
+      html += '<div class="flex flex-wrap gap-2">';
+      topCodes.forEach(function(t, i) {
+        var name = studentName(t.code) || t.code;
+        html += '<span class="rounded-full bg-white border border-yellow-300 px-3 py-1 text-sm font-mono text-yellow-800">' +
+          (i + 1) + '. ' + escapeHtml(name) + ' · ' + t.score + '/' + t.maxScore + '</span>';
+      });
+      html += '</div>';
+    } else {
+      html += '<p class="text-sm text-yellow-700">No submitted scores yet.</p>';
+    }
+    html += '</div></div></div>';
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<p class="text-red-600 py-4">Error loading feedback: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+document.getElementById('btn-ap-feedback-modal-close').onclick = function() {
+  document.getElementById('modal-ap-class-feedback').classList.add('hidden');
+};
+document.getElementById('modal-ap-class-feedback').onclick = function(e) {
+  if (e.target === this) this.classList.add('hidden');
+};

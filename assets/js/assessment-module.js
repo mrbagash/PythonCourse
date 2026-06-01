@@ -259,6 +259,14 @@ document.getElementById('btn-ap-release-feedback').onclick = async function() {
   }
 };
 
+document.getElementById('btn-ap-host-view-feedback').onclick = async function() {
+  if (!assessment.className || !assessment.assessmentId) {
+    alert('No active AP session.');
+    return;
+  }
+  await showAdminClassFeedbackModal(assessment.className, assessment.assessmentId);
+};
+
 async function endAssessmentHostSession() {
   localStorage.removeItem('pylearn_host_ap');
   var exitBtn = document.getElementById('btn-ap-host-exit');

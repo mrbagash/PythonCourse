@@ -557,6 +557,7 @@
         </div>
         <button id="btn-ap-results-download" class="jhncc-primary px-4 py-1.5 rounded text-sm">Download CSV</button>
         <button id="btn-ap-results-release" class="px-4 py-1.5 rounded border border-green-500 text-green-700 bg-green-50 text-sm font-medium">Release Feedback</button>
+        <button id="btn-ap-results-view-feedback" class="px-4 py-1.5 rounded border border-blue-400 text-blue-700 bg-blue-50 text-sm font-medium">View Class Feedback</button>
       </div>
       <div id="ap-results-content" class="overflow-y-auto flex-1 text-sm text-gray-700">
         <p class="text-gray-400 text-center py-8">Choose a class to view AP results.</p>
@@ -621,6 +622,17 @@
         <pre id="debug-projectdata-log" class="mt-3 hidden max-h-80 overflow-y-auto bg-gray-950 text-gray-100 rounded p-3 text-xs whitespace-pre-wrap"></pre>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ── AP CLASS FEEDBACK MODAL ────────────────────────────── -->
+<div id="modal-ap-class-feedback" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-lg font-semibold" id="ap-feedback-modal-title">Whole Class Feedback</h2>
+      <button id="btn-ap-feedback-modal-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
+    </div>
+    <div id="ap-feedback-modal-body" class="flex-1 overflow-y-auto p-6 text-sm text-gray-700"></div>
   </div>
 </div>
 
@@ -984,6 +996,7 @@
     <div class="flex gap-2">
       <button id="btn-ap-download" class="jhncc-secondary px-3 py-1 rounded border text-sm">Download Results</button>
       <button id="btn-ap-release-feedback" class="px-3 py-1 rounded border border-green-400 text-green-300 text-sm hover:bg-green-900/30">Release Feedback</button>
+      <button id="btn-ap-host-view-feedback" class="px-3 py-1 rounded border border-blue-400 text-blue-300 text-sm hover:bg-blue-900/30">View Class Feedback</button>
       <button id="btn-ap-host-exit" class="text-gray-400 hover:text-white text-sm border border-gray-600 px-3 py-1 rounded">End AP</button>
     </div>
   </div>
