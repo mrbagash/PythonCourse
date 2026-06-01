@@ -666,15 +666,14 @@ async function loadClassDashboard(className, opts) {
     document.getElementById('btn-admin-delete-class').onclick  = async function() {
       if (!confirm('Delete all codes for ' + className + '? This cannot be undone.')) return;
       try {
-        // Remove codeIndex entries for all codes in this class before deleting
+        // Delete the class, then best-effort clean up codeIndex entries
         var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
-        var delUpdates = { ['classes/' + className]: null };
+        await state.db.ref('classes/' + className).remove();
         if (codesSnap.exists()) {
-          Object.keys(codesSnap.val()).forEach(function(c) {
-            delUpdates['codeIndex/' + c.toLowerCase()] = null;
-          });
+          var indexCleanup = {};
+          Object.keys(codesSnap.val()).forEach(function(c) { indexCleanup['codeIndex/' + c.toLowerCase()] = null; });
+          state.db.ref().update(indexCleanup).catch(function(){});
         }
-        await state.db.ref().update(delUpdates);
         actions.classList.add('hidden');
         dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Class deleted.</p>';
         document.getElementById('admin-class-select').value = '';
@@ -881,10 +880,8 @@ function renderAdminDashboard(className, codes, progMap, forced) {
       if (!confirm('Remove code ' + btn.dataset.code + ' from ' + btn.dataset.class + '?')) return;
       btn.disabled = true; btn.textContent = '…';
       try {
-        var _rmUpdates = {};
-        _rmUpdates['classes/' + btn.dataset.class + '/codes/' + btn.dataset.code] = null;
-        _rmUpdates['codeIndex/' + btn.dataset.code.toLowerCase()] = null;
-        await state.db.ref().update(_rmUpdates);
+        await state.db.ref('classes/' + btn.dataset.class + '/codes/' + btn.dataset.code).remove();
+        state.db.ref('codeIndex/' + btn.dataset.code.toLowerCase()).remove().catch(function(){});
         await loadClassDashboard(btn.dataset.class);
       } catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = 'Remove'; }
     };
@@ -1163,8 +1160,8 @@ async function moveStudentToClass(code, sourceClass, targetClass) {
   var updates = {};
   updates['classes/' + sourceClass + '/codes/' + code] = null;
   updates['classes/' + targetClass + '/codes/' + code] = codeData;
-  updates['codeIndex/' + code.toLowerCase() + '/className'] = targetClass;
   await state.db.ref().update(updates);
+  state.db.ref('codeIndex/' + code.toLowerCase() + '/className').set(targetClass).catch(function(){});
 }
 
 function stepStatus(prog, lid, sid) {
@@ -1527,12 +1524,14 @@ document.getElementById('btn-gen-codes').onclick = async function() {
 
     var now = Date.now();
     var generated = genUniqueCodes(count, existingCodes);
-    var updates = {};
+    var classUpdates = {};
+    var indexUpdates = {};
     generated.forEach(function(code) {
-      updates['classes/' + rawName + '/codes/' + code] = { createdAt: now };
-      updates['codeIndex/' + code.toLowerCase()] = { className: rawName, storedCode: code };
+      classUpdates['classes/' + rawName + '/codes/' + code] = { createdAt: now };
+      indexUpdates['codeIndex/' + code.toLowerCase()] = { className: rawName, storedCode: code };
     });
-    await state.db.ref().update(updates);
+    await state.db.ref().update(classUpdates);
+    state.db.ref().update(indexUpdates).catch(function(){});  // best-effort; self-heals on login
     statusEl.textContent = '\u2705 Generated ' + generated.length + ' codes for ' + rawName + '.';
     await refreshAdminTable();
   } catch(e) {
@@ -1563,11 +1562,8 @@ document.getElementById('btn-add-single').onclick = async function() {
     }
     var codes = genUniqueCodes(1, existingCodes);
     var code = codes[0];
-    var now = Date.now();
-    var updates = {};
-    updates['classes/' + className + '/codes/' + code] = { createdAt: now };
-    updates['codeIndex/' + code.toLowerCase()] = { className: className, storedCode: code };
-    await state.db.ref().update(updates);
+    await state.db.ref('classes/' + className + '/codes/' + code).set({ createdAt: Date.now() });
+    state.db.ref('codeIndex/' + code.toLowerCase()).set({ className: className, storedCode: code }).catch(function(){});
     statusEl.textContent = '\u2705 Added code ' + code + ' to ' + className + '.';
     await refreshAdminTable();
   } catch(e) {
