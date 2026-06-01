@@ -54,21 +54,32 @@ function setupAuthUI() {
       }
     } catch(e) {}
     try {
-      // Search for the code across all classes, case-insensitively
-      // Use the stored version of the code (correct case) as the uid
-      var classesSnap = await state.db.ref('classes').get();
+      // Try the fast code index first (single point-read — avoids downloading the full classes tree)
       var foundCode = null;
       var foundClass = null;
-      if (classesSnap.exists()) {
-        classesSnap.forEach(function(classSnap) {
-          var codesVal = classSnap.child('codes').val() || {};
-          Object.keys(codesVal).forEach(function(storedCode) {
-            if (storedCode.toLowerCase() === code.toLowerCase()) {
-              foundCode = storedCode;  // use the correctly-cased stored code as uid
-              foundClass = classSnap.key;
-            }
+      var idxSnap = await state.db.ref('codeIndex/' + code.toLowerCase()).get();
+      if (idxSnap.exists()) {
+        var idxData = idxSnap.val() || {};
+        foundCode = idxData.storedCode || code;
+        foundClass = idxData.className || null;
+      } else {
+        // Index miss: fall back to full classes scan, then backfill the index
+        var classesSnap = await state.db.ref('classes').get();
+        if (classesSnap.exists()) {
+          classesSnap.forEach(function(classSnap) {
+            var codesVal = classSnap.child('codes').val() || {};
+            Object.keys(codesVal).forEach(function(storedCode) {
+              if (storedCode.toLowerCase() === code.toLowerCase()) {
+                foundCode = storedCode;  // use the correctly-cased stored code as uid
+                foundClass = classSnap.key;
+              }
+            });
           });
-        });
+        }
+        // Backfill index so next login/refresh is fast
+        if (foundCode && foundClass) {
+          state.db.ref('codeIndex/' + foundCode.toLowerCase()).set({ className: foundClass, storedCode: foundCode }).catch(function(){});
+        }
       }
       if (!foundCode) { errEl.textContent='Invalid code. Please ask your teacher.'; errEl.classList.remove('hidden'); return; }
       localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));

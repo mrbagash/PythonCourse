@@ -51,6 +51,32 @@ document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 document.getElementById('admin-tab-access').onclick = function() { setAdminTab('access'); };
 
+document.getElementById('btn-build-code-index').onclick = async function() {
+  var statusEl = document.getElementById('build-index-status');
+  var btn = this;
+  btn.disabled = true;
+  statusEl.textContent = 'Scanning classes…';
+  try {
+    var classesSnap = await state.db.ref('classes').get();
+    if (!classesSnap.exists()) { statusEl.textContent = 'No classes found.'; btn.disabled = false; return; }
+    var updates = {};
+    var total = 0;
+    classesSnap.forEach(function(classSnap) {
+      var codesVal = classSnap.child('codes').val() || {};
+      Object.keys(codesVal).forEach(function(code) {
+        updates['codeIndex/' + code.toLowerCase()] = { className: classSnap.key, storedCode: code };
+        total++;
+      });
+    });
+    if (total === 0) { statusEl.textContent = 'No codes found.'; btn.disabled = false; return; }
+    await state.db.ref().update(updates);
+    statusEl.textContent = '✅ Index built — ' + total + ' codes indexed.';
+  } catch(e) {
+    statusEl.textContent = '❌ Error: ' + e.message;
+  }
+  btn.disabled = false;
+};
+
 // ── Teacher account management ────────────────────────────────
 
 var TEACHER_PERMISSION_DEFS = [
@@ -640,7 +666,15 @@ async function loadClassDashboard(className, opts) {
     document.getElementById('btn-admin-delete-class').onclick  = async function() {
       if (!confirm('Delete all codes for ' + className + '? This cannot be undone.')) return;
       try {
-        await state.db.ref('classes/' + className).remove();
+        // Remove codeIndex entries for all codes in this class before deleting
+        var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
+        var delUpdates = { ['classes/' + className]: null };
+        if (codesSnap.exists()) {
+          Object.keys(codesSnap.val()).forEach(function(c) {
+            delUpdates['codeIndex/' + c.toLowerCase()] = null;
+          });
+        }
+        await state.db.ref().update(delUpdates);
         actions.classList.add('hidden');
         dash.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Class deleted.</p>';
         document.getElementById('admin-class-select').value = '';
@@ -847,7 +881,10 @@ function renderAdminDashboard(className, codes, progMap, forced) {
       if (!confirm('Remove code ' + btn.dataset.code + ' from ' + btn.dataset.class + '?')) return;
       btn.disabled = true; btn.textContent = '…';
       try {
-        await state.db.ref('classes/' + btn.dataset.class + '/codes/' + btn.dataset.code).remove();
+        var _rmUpdates = {};
+        _rmUpdates['classes/' + btn.dataset.class + '/codes/' + btn.dataset.code] = null;
+        _rmUpdates['codeIndex/' + btn.dataset.code.toLowerCase()] = null;
+        await state.db.ref().update(_rmUpdates);
         await loadClassDashboard(btn.dataset.class);
       } catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = 'Remove'; }
     };
@@ -1075,6 +1112,15 @@ function isSafeFirebaseKey(value) {
 
 async function findClassForCode(code) {
   if (!code || !state.db) return null;
+  // Try the fast index first
+  try {
+    var idxSnap = await state.db.ref('codeIndex/' + code.toLowerCase()).get();
+    if (idxSnap.exists()) {
+      var v = idxSnap.val();
+      return (v && typeof v === 'object') ? (v.className || null) : (typeof v === 'string' ? v : null);
+    }
+  } catch(e) {}
+  // Fall back to full scan and backfill index for next time
   var classesSnap = await state.db.ref('classes').get();
   if (!classesSnap.exists()) return null;
   var foundClass = null;
@@ -1087,6 +1133,9 @@ async function findClassForCode(code) {
       }
     });
   });
+  if (foundClass) {
+    state.db.ref('codeIndex/' + code.toLowerCase()).set({ className: foundClass, storedCode: code }).catch(function(){});
+  }
   return foundClass;
 }
 
@@ -1114,6 +1163,7 @@ async function moveStudentToClass(code, sourceClass, targetClass) {
   var updates = {};
   updates['classes/' + sourceClass + '/codes/' + code] = null;
   updates['classes/' + targetClass + '/codes/' + code] = codeData;
+  updates['codeIndex/' + code.toLowerCase() + '/className'] = targetClass;
   await state.db.ref().update(updates);
 }
 
@@ -1475,10 +1525,12 @@ document.getElementById('btn-gen-codes').onclick = async function() {
       });
     }
 
+    var now = Date.now();
     var generated = genUniqueCodes(count, existingCodes);
     var updates = {};
     generated.forEach(function(code) {
-      updates['classes/' + rawName + '/codes/' + code] = { createdAt: Date.now() };
+      updates['classes/' + rawName + '/codes/' + code] = { createdAt: now };
+      updates['codeIndex/' + code.toLowerCase()] = { className: rawName, storedCode: code };
     });
     await state.db.ref().update(updates);
     statusEl.textContent = '\u2705 Generated ' + generated.length + ' codes for ' + rawName + '.';
@@ -1511,7 +1563,11 @@ document.getElementById('btn-add-single').onclick = async function() {
     }
     var codes = genUniqueCodes(1, existingCodes);
     var code = codes[0];
-    await state.db.ref('classes/' + className + '/codes/' + code).set({ createdAt: Date.now() });
+    var now = Date.now();
+    var updates = {};
+    updates['classes/' + className + '/codes/' + code] = { createdAt: now };
+    updates['codeIndex/' + code.toLowerCase()] = { className: className, storedCode: code };
+    await state.db.ref().update(updates);
     statusEl.textContent = '\u2705 Added code ' + code + ' to ' + className + '.';
     await refreshAdminTable();
   } catch(e) {

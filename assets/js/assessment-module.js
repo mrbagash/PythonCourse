@@ -453,6 +453,8 @@ function showAssessmentStudentScreen(session) {
   document.getElementById('ap-student-screen').classList.remove('hidden');
   document.getElementById('aps-active').classList.remove('hidden');
   document.getElementById('aps-finished').classList.add('hidden');
+  var _toggleInstrBtn = document.getElementById('btn-ap-toggle-instructions');
+  if (_toggleInstrBtn) _toggleInstrBtn.classList.remove('hidden');
   document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
   document.getElementById('aps-title').textContent = (assessment.debugMode ? 'Debug preview: ' : '') + spec.title;
   document.getElementById('aps-brief').textContent = assessment.debugMode ? ((spec.brief || '') + ' This preview does not save results or lock completion.') : spec.brief;
@@ -569,7 +571,7 @@ function renderAssessmentQuestionPaper(spec) {
         '</div>' +
         '<div class="flex flex-wrap justify-between gap-2 mt-4">' +
           '<button id="ap-prev-q" class="px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 bg-white hover:bg-gray-50" ' + (idx === 0 ? 'disabled' : '') + '>Previous</button>' +
-          '<button id="ap-next-q" class="jhncc-primary px-5 py-2 rounded text-sm font-semibold">' + (idx === questions.length - 1 ? 'Review' : 'Next') + '</button>' +
+          '<button id="ap-next-q" class="' + (idx === questions.length - 1 ? 'px-5 py-2 rounded border border-green-500 text-green-700 bg-green-50 hover:bg-green-100 text-sm font-semibold' : 'jhncc-primary px-5 py-2 rounded text-sm font-semibold') + '">' + (idx === questions.length - 1 ? 'Submit AP ✓' : 'Next') + '</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -588,8 +590,13 @@ function renderAssessmentQuestionPaper(spec) {
   };
   document.getElementById('ap-next-q').onclick = function() {
     saveCurrentQuestionAnswer(spec, { silent: true });
-    assessment.questionCurrentIdx = Math.min(questions.length - 1, idx + 1);
-    renderAssessmentQuestionPaper(spec);
+    if (idx === questions.length - 1) {
+      var finishBtn = document.getElementById('btn-ap-finish');
+      if (finishBtn) finishBtn.click();
+    } else {
+      assessment.questionCurrentIdx = Math.min(questions.length - 1, idx + 1);
+      renderAssessmentQuestionPaper(spec);
+    }
   };
 
   var widgetEl = document.getElementById('ap-question-widget');

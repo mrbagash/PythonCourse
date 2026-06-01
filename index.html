@@ -599,6 +599,14 @@
     </div>
 
     <div id="admin-debug-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
+      <div class="border border-blue-200 bg-blue-50 rounded-lg p-4 mb-4">
+        <h3 class="font-semibold text-blue-800 mb-1">Code Index</h3>
+        <p class="text-sm text-blue-700 mb-3">The code index lets students log in without downloading the entire classes database. Run this once to build the index for all existing codes, then it stays up to date automatically.</p>
+        <div class="flex gap-2 items-center flex-wrap">
+          <button id="btn-build-code-index" class="px-3 py-1.5 rounded bg-blue-700 text-white text-sm hover:bg-blue-800">Build Code Index</button>
+          <span id="build-index-status" class="text-sm text-blue-700"></span>
+        </div>
+      </div>
       <div class="border border-red-200 bg-red-50 rounded-lg p-4">
         <h3 class="font-semibold text-red-800 mb-2">Database cleanup</h3>
         <p class="text-sm text-red-700 mb-3">This only targets legacy Scratch project blobs at <code>quizSessions/[code]/answers/0/[student]/projectData</code>. It uses shallow key reads so it does not download the SB3 data.</p>

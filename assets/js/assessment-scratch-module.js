@@ -774,6 +774,8 @@ function showAssessmentCompleted(record) {
   document.getElementById('ap-student-screen').classList.remove('hidden');
   document.getElementById('aps-active').classList.add('hidden');
   document.getElementById('aps-finished').classList.remove('hidden');
+  var _toggleBtn = document.getElementById('btn-ap-toggle-instructions');
+  if (_toggleBtn) _toggleBtn.classList.add('hidden');
   document.getElementById('btn-ap-student-exit').classList.toggle('hidden', !!assessment.forced);
   document.getElementById('aps-final-score').textContent = (assessment.debugMode ? 'Debug score: ' : 'Score: ') + (record.score || 0) + ' / ' + maxScore;
   renderAssessmentFeedback({ score: record.score || 0, maxScore: maxScore, criteria: record.rubric || [] }, true);
