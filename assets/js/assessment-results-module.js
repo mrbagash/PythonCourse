@@ -544,13 +544,15 @@ function apSnapshotStatusHtml(row, expanded) {
 
 function downloadAssessmentRows(rows, className) {
   if (!rows.length) { alert('No AP results to download.'); return; }
+  // Grade map must be built from score-sorted data, but the CSV rows are alphabetical
   var sorted = rows.slice().sort(function(a, b) { return b.score - a.score; });
   var completedSorted = sorted.filter(function(r) { return r.completed; });
   var dpGrades = definitePurposeGrades(completedSorted.map(function(r) { return r.score; }));
   var scoreGradeMap = {};
   completedSorted.forEach(function(r, i) { scoreGradeMap[r.score] = dpGrades[i]; });
   var csv = 'Name,Score,Definite Purpose\n';
-  sorted.forEach(function(r) {
+  var alphabetical = sorted.slice().sort(function(a, b) { return (a.name || a.code).localeCompare(b.name || b.code); });
+  alphabetical.forEach(function(r) {
     csv += [r.name, r.score, r.completed ? scoreGradeMap[r.score] : ''].map(csvCell).join(',') + '\n';
   });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -1021,13 +1023,14 @@ async function exportAssessmentResults(className, assessmentId, lobbyCode) {
     scores.push(score);
     rows.push({ code: code, name: studentName(code) || '', score: score, maxScore: r ? (r.maxScore || defaultMax) : defaultMax, completedAt: r && r.completedAt });
   });
+  // Build grade map from score-sorted data, then output alphabetically
   rows.sort(function(a, b) { return b.score - a.score; });
   var completedRows = rows.filter(function(r) { return r.completedAt; });
   var dpGrades = definitePurposeGrades(completedRows.map(function(r) { return r.score; }));
   var scoreGradeMap = {};
   completedRows.forEach(function(r, i) { scoreGradeMap[r.score] = dpGrades[i]; });
   var csv = 'Name,Score,Definite Purpose\n';
-  rows.forEach(function(r) {
+  rows.slice().sort(function(a, b) { return (a.name || a.code).localeCompare(b.name || b.code); }).forEach(function(r) {
     csv += [r.name, r.score, r.completedAt ? scoreGradeMap[r.score] : ''].map(csvCell).join(',') + '\n';
   });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
