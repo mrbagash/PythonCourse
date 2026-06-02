@@ -924,36 +924,31 @@ async function autoSubmitAssessmentForEarlyEnd() {
         assessment.completed = true;
         var completedAt = Date.now();
         var strippedRubric = stripRubricForStorage(result.criteria);
-        var snapshotRecord = typeof buildScratchSnapshotRecord === 'function' ? buildScratchSnapshotRecord() : null;
-        var snapshotFields = typeof scratchSnapshotUpdateFields === 'function' ? scratchSnapshotUpdateFields(snapshotRecord) : {};
-        var progressSnapshotFields = Object.assign({}, snapshotFields);
-        delete progressSnapshotFields.scratchSnapshotJson;
         if (!assessment.debugMode) {
           try {
             if (assessment.responseRef) {
-              await assessment.responseRef.update(Object.assign({
+              await assessment.responseRef.update({
                 completed: true,
                 autoSubmitted: true,
                 completedAt: completedAt,
                 score: result.score,
                 maxScore: result.maxScore,
-                rubric: strippedRubric,
-                projectSavedAt: assessment.lastProjectSaveAt || completedAt
-              }, snapshotFields));
+                rubric: strippedRubric
+              });
             }
-            await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, Object.assign({
+            await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
               completedAt: completedAt,
               autoSubmitted: true,
               score: result.score,
               maxScore: result.maxScore,
               rubric: strippedRubric,
               className: assessment.className || state.className || null
-            }, progressSnapshotFields));
+            });
           } catch(e) {
             console.error('AP Scratch auto-submit write failed:', e);
           }
         }
-        showAssessmentCompleted(Object.assign({ score: result.score, maxScore: result.maxScore, rubric: result.criteria }, progressSnapshotFields || {}));
+        showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
       });
     }
   } catch(e) {
@@ -1108,34 +1103,29 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     }
     var completedAt = Date.now();
     var strippedRubric = stripRubricForStorage(result.criteria);
-    var snapshotRecord = typeof buildScratchSnapshotRecord === 'function' ? buildScratchSnapshotRecord() : null;
-    var snapshotFields = typeof scratchSnapshotUpdateFields === 'function' ? scratchSnapshotUpdateFields(snapshotRecord) : {};
-    var progressSnapshotFields = Object.assign({}, snapshotFields);
-    delete progressSnapshotFields.scratchSnapshotJson;
     try {
       if (assessment.responseRef) {
-        await assessment.responseRef.update(Object.assign({
+        await assessment.responseRef.update({
           completed: true,
           completedAt: completedAt,
           score: result.score,
           maxScore: result.maxScore,
-          rubric: strippedRubric,
-          projectSavedAt: assessment.lastProjectSaveAt || completedAt
-        }, snapshotFields));
+          rubric: strippedRubric
+        });
       }
-      await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, Object.assign({
+      await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
         completedAt: completedAt,
         score: result.score,
         maxScore: result.maxScore,
         rubric: strippedRubric,
         className: assessment.className || state.className || null
-      }, progressSnapshotFields));
+      });
     } catch(e) {
       console.error('AP Scratch submit write failed:', e);
       var saveStatusEl = document.getElementById('aps-save-status');
       if (saveStatusEl) saveStatusEl.textContent = 'Save failed — please tell your teacher';
     }
-    showAssessmentCompleted(Object.assign({ score: result.score, maxScore: result.maxScore, rubric: result.criteria }, progressSnapshotFields));
+    showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
   });
 };
 
