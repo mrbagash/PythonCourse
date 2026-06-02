@@ -183,6 +183,27 @@ document.getElementById('btn-ap-results-view-feedback').onclick = async function
   await showAdminClassFeedbackModal(className, assessmentId);
 };
 
+document.getElementById('btn-ap-results-remark').onclick = async function() {
+  var assessmentId = document.getElementById('ap-results-assessment').value || 'all';
+  var className = apResultsState.className;
+  if (!className) { alert('Choose a class first.'); return; }
+  if (assessmentId === 'all') { alert('Choose a specific assessment first.'); return; }
+  var spec = ASSESSMENTS[assessmentId];
+  if (!spec || !spec.questions || !spec.questions.length) {
+    alert('Re-marking is only available for question-based APs (not Scratch projects).');
+    return;
+  }
+  await showRemarkModal(className, assessmentId, spec);
+};
+
+document.getElementById('btn-ap-remark-close').onclick =
+document.getElementById('btn-ap-remark-cancel').onclick = function() {
+  document.getElementById('modal-ap-remark').classList.add('hidden');
+};
+document.getElementById('modal-ap-remark').onclick = function(e) {
+  if (e.target === this) this.classList.add('hidden');
+};
+
 async function loadApResultsClassOptions(preselectClass) {
   var classEl = document.getElementById('ap-results-class');
   var prev = preselectClass || classEl.value;
@@ -1212,3 +1233,131 @@ document.getElementById('btn-ap-feedback-modal-close').onclick = function() {
 document.getElementById('modal-ap-class-feedback').onclick = function(e) {
   if (e.target === this) this.classList.add('hidden');
 };
+
+// ── Re-mark modal ─────────────────────────────────────────────
+async function showRemarkModal(className, assessmentId, spec) {
+  var modal   = document.getElementById('modal-ap-remark');
+  var body    = document.getElementById('ap-remark-body');
+  var applyBtn = document.getElementById('btn-ap-remark-apply');
+  var title   = document.getElementById('ap-remark-modal-title');
+
+  title.textContent = 'Re-mark: ' + (spec.title || assessmentId) + ' — ' + className;
+  body.innerHTML = '<p class="text-gray-400 text-center py-8">Loading student answers and re-evaluating…</p>';
+  applyBtn.classList.add('hidden');
+  modal.classList.remove('hidden');
+
+  try {
+    // Collect students who have a completed result for this AP
+    var students = apResultsState.students || [];
+    var toRemark = [];
+    for (var i = 0; i < students.length; i++) {
+      var code = students[i];
+      var prog = apResultsState.progressRows[code];
+      var rec  = prog && prog.assessments && prog.assessments[assessmentId];
+      if (!rec || !rec.completedAt) continue;
+      // Answers may be on the progress record itself or need a fresh read
+      var storedAnswers = rec.answers || null;
+      if (!storedAnswers) {
+        // Not cached locally — read from Firebase
+        try {
+          var aSnap = await state.db.ref('progress/' + code + '/assessments/' + assessmentId + '/answers').get();
+          storedAnswers = aSnap.exists() ? aSnap.val() : null;
+        } catch(e) { storedAnswers = null; }
+      }
+      toRemark.push({ code: code, name: studentName(code) || code, oldScore: rec.score || 0, oldRubric: rec.rubric || [], answers: storedAnswers, lobbyCode: rec.lobbyCode, rec: rec });
+    }
+
+    if (!toRemark.length) {
+      body.innerHTML = '<p class="text-gray-400 text-center py-8">No completed submissions found for this AP.</p>';
+      return;
+    }
+
+    // Re-run assessment for each student
+    body.innerHTML = '<p class="text-gray-400 text-center py-4">Running ' + toRemark.length + ' re-evaluations via Skulpt… please wait.</p>';
+    var results = [];
+    for (var j = 0; j < toRemark.length; j++) {
+      var s = toRemark[j];
+      var newResult = null;
+      if (s.answers) {
+        try { newResult = await assessQuestionAssessmentAsync(spec, s.answers); } catch(e) { newResult = null; }
+      }
+      results.push({
+        code: s.code,
+        name: s.name,
+        oldScore: s.oldScore,
+        newScore: newResult ? newResult.score : null,
+        newRubric: newResult ? newResult.criteria : null,
+        lobbyCode: s.lobbyCode,
+        rec: s.rec,
+        hasAnswers: !!s.answers
+      });
+    }
+
+    // Build comparison table
+    var changed = results.filter(function(r) { return r.newScore !== null && r.newScore !== r.oldScore; });
+    var noAnswers = results.filter(function(r) { return !r.hasAnswers; });
+    var unchanged = results.filter(function(r) { return r.newScore !== null && r.newScore === r.oldScore; });
+
+    var html = '';
+    if (noAnswers.length) {
+      html += '<p class="text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-3 mb-4 text-xs">' +
+        noAnswers.length + ' student(s) have no stored answers and cannot be re-marked: ' +
+        noAnswers.map(function(r) { return escapeHtml(r.name); }).join(', ') + '</p>';
+    }
+    html += '<p class="text-gray-500 text-xs mb-3">' + changed.length + ' score(s) will change · ' + unchanged.length + ' unchanged</p>';
+    html += '<table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden"><thead><tr class="bg-gray-50 text-left text-gray-500">' +
+      '<th class="px-3 py-2">Name</th><th class="px-3 py-2 text-center">Old</th><th class="px-3 py-2 text-center">New</th><th class="px-3 py-2 text-center">Change</th></tr></thead><tbody>';
+    results.forEach(function(r) {
+      if (r.newScore === null) return;
+      var diff = r.newScore - r.oldScore;
+      var diffStr = diff === 0 ? '—' : (diff > 0 ? '+' + diff : String(diff));
+      var diffCls = diff > 0 ? 'text-green-700 font-bold' : diff < 0 ? 'text-red-600 font-bold' : 'text-gray-400';
+      var rowCls = diff !== 0 ? 'bg-purple-50' : '';
+      html += '<tr class="border-t border-gray-100 ' + rowCls + '">' +
+        '<td class="px-3 py-1.5 font-medium">' + escapeHtml(r.name) + '</td>' +
+        '<td class="px-3 py-1.5 text-center">' + r.oldScore + '/' + spec.maxScore + '</td>' +
+        '<td class="px-3 py-1.5 text-center font-semibold">' + r.newScore + '/' + spec.maxScore + '</td>' +
+        '<td class="px-3 py-1.5 text-center ' + diffCls + '">' + diffStr + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+
+    if (changed.length > 0) {
+      applyBtn.classList.remove('hidden');
+      applyBtn.onclick = async function() {
+        applyBtn.disabled = true;
+        applyBtn.textContent = 'Applying…';
+        try {
+          for (var k = 0; k < results.length; k++) {
+            var r = results[k];
+            if (r.newScore === null || r.newScore === r.oldScore) continue;
+            var base = 'progress/' + r.code + '/assessments/' + assessmentId;
+            var updates = {};
+            updates[base + '/score'] = r.newScore;
+            updates[base + '/rubric'] = r.newRubric;
+            updates[base + '/remarkedAt'] = Date.now();
+            if (r.lobbyCode) {
+              updates[base + '/attempts/' + r.lobbyCode + '/score'] = r.newScore;
+              updates[base + '/attempts/' + r.lobbyCode + '/rubric'] = r.newRubric;
+            }
+            await state.db.ref().update(updates);
+            // Update local cache so results panel reflects change immediately
+            if (apResultsState.progressRows[r.code] && apResultsState.progressRows[r.code].assessments[assessmentId]) {
+              apResultsState.progressRows[r.code].assessments[assessmentId].score = r.newScore;
+              apResultsState.progressRows[r.code].assessments[assessmentId].rubric = r.newRubric;
+            }
+          }
+          applyBtn.textContent = '✅ Applied';
+          applyBtn.disabled = true;
+          renderAssessmentResultsPanel();
+        } catch(e) {
+          applyBtn.disabled = false;
+          applyBtn.textContent = 'Apply new marks';
+          alert('Error applying marks: ' + e.message);
+        }
+      };
+    }
+  } catch(e) {
+    body.innerHTML = '<p class="text-red-600 py-4">Error: ' + escapeHtml(e.message) + '</p>';
+  }
+}

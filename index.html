@@ -558,6 +558,7 @@
         <button id="btn-ap-results-download" class="jhncc-primary px-4 py-1.5 rounded text-sm">Download CSV</button>
         <button id="btn-ap-results-release" class="px-4 py-1.5 rounded border border-green-500 text-green-700 bg-green-50 text-sm font-medium">Release Feedback</button>
         <button id="btn-ap-results-view-feedback" class="px-4 py-1.5 rounded border border-blue-400 text-blue-700 bg-blue-50 text-sm font-medium">View Class Feedback</button>
+        <button id="btn-ap-results-remark" class="px-4 py-1.5 rounded border border-purple-400 text-purple-700 bg-purple-50 text-sm font-medium">Re-mark</button>
       </div>
       <div id="ap-results-content" class="overflow-y-auto flex-1 text-sm text-gray-700">
         <p class="text-gray-400 text-center py-8">Choose a class to view AP results.</p>
@@ -621,6 +622,21 @@
         <div id="debug-projectdata-status" class="mt-3 text-sm text-red-800"></div>
         <pre id="debug-projectdata-log" class="mt-3 hidden max-h-80 overflow-y-auto bg-gray-950 text-gray-100 rounded p-3 text-xs whitespace-pre-wrap"></pre>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AP RE-MARK MODAL ────────────────────────────────────── -->
+<div id="modal-ap-remark" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-lg font-semibold" id="ap-remark-modal-title">Re-mark AP</h2>
+      <button id="btn-ap-remark-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
+    </div>
+    <div id="ap-remark-body" class="flex-1 overflow-y-auto p-6 text-sm text-gray-700"></div>
+    <div class="px-6 py-3 border-t border-gray-100 flex-shrink-0 flex justify-end gap-3">
+      <button id="btn-ap-remark-apply" class="hidden px-4 py-2 rounded bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800">Apply new marks</button>
+      <button id="btn-ap-remark-cancel" class="px-4 py-2 rounded border border-gray-300 text-gray-600 text-sm">Close</button>
     </div>
   </div>
 </div>

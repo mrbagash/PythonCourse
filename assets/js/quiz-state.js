@@ -285,8 +285,7 @@ function buildYear8PythonAp2Questions() {
       "sampleAnswer": "name = \"Sam\"\nprint(name)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bname\\s*=",
-        "\\bprint\\s*\\(\\s*name\\s*\\)"
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -303,9 +302,7 @@ function buildYear8PythonAp2Questions() {
       "sampleAnswer": "score = 10\nscore = score + 5\nprint(score)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bscore\\s*=\\s*10\\b",
-        "(?:score\\s*=\\s*score\\s*\\+\\s*5|score\\s*\\+=\\s*5)",
-        "\\bprint\\s*\\(\\s*score\\s*\\)"
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -322,7 +319,7 @@ function buildYear8PythonAp2Questions() {
       "sampleAnswer": "name = input(\"What is your name? \")",
       "marks": 1,
       "keywordPatterns": [
-        "^\\s*name\\s*=\\s*input\\s*\\("
+        "\\binput\\s*\\("
       ],
       "runTests": [
         {
@@ -342,8 +339,8 @@ function buildYear8PythonAp2Questions() {
       "sampleAnswer": "colour = input(\"Favourite colour? \")\nprint(colour)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bcolour\\s*=\\s*input\\s*\\(",
-        "\\bprint\\s*\\(\\s*colour\\s*\\)"
+        "\\binput\\s*\\(",
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -378,7 +375,7 @@ function buildYear8PythonAp2Questions() {
       "sampleAnswer": "num = int(input(\"Number: \"))\nprint(num + 1)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bnum\\s*=\\s*int\\s*\\(\\s*input\\s*\\(",
+        "\\bint\\s*\\(\\s*input\\s*\\(",
         "\\bprint\\s*\\("
       ],
       "runTests": [
@@ -415,20 +412,19 @@ function buildYear8PythonAp2Questions() {
       "marks": 1,
       "keywordPatterns": [
         "\\bif\\b",
-        "\\bscore\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
         {
-          "prefix": "score = 25",
+          "prefix": "score = 25\npoints = 25\nm = 25\nn = 25\nx = 25\nnum = 25\nvalue = 25",
           "expectedOutput": "Win"
         },
         {
-          "prefix": "score = 20",
+          "prefix": "score = 20\npoints = 20\nm = 20\nn = 20\nx = 20\nnum = 20\nvalue = 20",
           "expectedOutput": ""
         },
         {
-          "prefix": "score = 10",
+          "prefix": "score = 10\npoints = 10\nm = 10\nn = 10\nx = 10\nnum = 10\nvalue = 10",
           "expectedOutput": ""
         }
       ]
@@ -444,24 +440,23 @@ function buildYear8PythonAp2Questions() {
       "keywordPatterns": [
         "\\bif\\b",
         "\\belse\\b",
-        "\\bmark\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
         {
-          "prefix": "mark = 55",
+          "prefix": "mark = 55\nmarks = 55\nscore = 55\ngrade = 55\nm = 55\nn = 55\nx = 55\nnum = 55\nresult = 55",
           "expectedOutput": "Pass"
         },
         {
-          "prefix": "mark = 50",
+          "prefix": "mark = 50\nmarks = 50\nscore = 50\ngrade = 50\nm = 50\nn = 50\nx = 50\nnum = 50\nresult = 50",
           "expectedOutput": "Pass"
         },
         {
-          "prefix": "mark = 40",
+          "prefix": "mark = 40\nmarks = 40\nscore = 40\ngrade = 40\nm = 40\nn = 40\nx = 40\nnum = 40\nresult = 40",
           "expectedOutput": "Try again"
         },
         {
-          "prefix": "mark = 30",
+          "prefix": "mark = 30\nmarks = 30\nscore = 30\ngrade = 30\nm = 30\nn = 30\nx = 30\nnum = 30\nresult = 30",
           "expectedOutput": "Try again"
         }
       ]
@@ -519,7 +514,6 @@ function buildYear8PythonAp2Questions() {
       "marks": 1,
       "keywordPatterns": [
         "\\bwhile\\b",
-        "\\bcount\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
@@ -640,8 +634,7 @@ function buildYear8PythonPracticeAp2Questions() {
       "sampleAnswer": "player = \"Alex\"\nprint(player)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bplayer\\s*=",
-        "\\bprint\\s*\\(\\s*player\\s*\\)"
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -658,9 +651,7 @@ function buildYear8PythonPracticeAp2Questions() {
       "sampleAnswer": "points = 8\npoints = points + 2\nprint(points)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bpoints\\s*=\\s*8\\b",
-        "(?:points\\s*=\\s*points\\s*\\+\\s*2|points\\s*\\+=\\s*2)",
-        "\\bprint\\s*\\(\\s*points\\s*\\)"
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -677,7 +668,7 @@ function buildYear8PythonPracticeAp2Questions() {
       "sampleAnswer": "town = input(\"Town: \")",
       "marks": 1,
       "keywordPatterns": [
-        "^\\s*town\\s*=\\s*input\\s*\\("
+        "\\binput\\s*\\("
       ],
       "runTests": [
         {
@@ -697,8 +688,8 @@ function buildYear8PythonPracticeAp2Questions() {
       "sampleAnswer": "subject = input(\"Favourite subject? \")\nprint(subject)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bsubject\\s*=\\s*input\\s*\\(",
-        "\\bprint\\s*\\(\\s*subject\\s*\\)"
+        "\\binput\\s*\\(",
+        "\\bprint\\s*\\("
       ],
       "runTests": [
         {
@@ -733,7 +724,7 @@ function buildYear8PythonPracticeAp2Questions() {
       "sampleAnswer": "age = int(input(\"Age: \"))\nprint(age + 2)",
       "marks": 1,
       "keywordPatterns": [
-        "\\bage\\s*=\\s*int\\s*\\(\\s*input\\s*\\(",
+        "\\bint\\s*\\(\\s*input\\s*\\(",
         "\\bprint\\s*\\("
       ],
       "runTests": [
@@ -770,20 +761,19 @@ function buildYear8PythonPracticeAp2Questions() {
       "marks": 1,
       "keywordPatterns": [
         "\\bif\\b",
-        "\\btemperature\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
         {
-          "prefix": "temperature = 4",
+          "prefix": "temperature = 4\ntemp = 4\nt = 4\nm = 4\nn = 4\nx = 4\nnum = 4\nvalue = 4",
           "expectedOutput": "Cold"
         },
         {
-          "prefix": "temperature = 5",
+          "prefix": "temperature = 5\ntemp = 5\nt = 5\nm = 5\nn = 5\nx = 5\nnum = 5\nvalue = 5",
           "expectedOutput": ""
         },
         {
-          "prefix": "temperature = 10",
+          "prefix": "temperature = 10\ntemp = 10\nt = 10\nm = 10\nn = 10\nx = 10\nnum = 10\nvalue = 10",
           "expectedOutput": ""
         }
       ]
@@ -799,24 +789,23 @@ function buildYear8PythonPracticeAp2Questions() {
       "keywordPatterns": [
         "\\bif\\b",
         "\\belse\\b",
-        "\\bage\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
         {
-          "prefix": "age = 20",
+          "prefix": "age = 20\nages = 20\nscore = 20\nm = 20\nn = 20\nx = 20\nnum = 20\nyears = 20\nvalue = 20",
           "expectedOutput": "Adult"
         },
         {
-          "prefix": "age = 18",
+          "prefix": "age = 18\nages = 18\nscore = 18\nm = 18\nn = 18\nx = 18\nnum = 18\nyears = 18\nvalue = 18",
           "expectedOutput": "Adult"
         },
         {
-          "prefix": "age = 12",
+          "prefix": "age = 12\nages = 12\nscore = 12\nm = 12\nn = 12\nx = 12\nnum = 12\nyears = 12\nvalue = 12",
           "expectedOutput": "Child"
         },
         {
-          "prefix": "age = 17",
+          "prefix": "age = 17\nages = 17\nscore = 17\nm = 17\nn = 17\nx = 17\nnum = 17\nyears = 17\nvalue = 17",
           "expectedOutput": "Child"
         }
       ]
@@ -874,7 +863,6 @@ function buildYear8PythonPracticeAp2Questions() {
       "marks": 1,
       "keywordPatterns": [
         "\\bwhile\\b",
-        "\\bnum\\b",
         "\\bprint\\s*\\("
       ],
       "runTests": [
