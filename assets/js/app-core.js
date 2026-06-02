@@ -26,6 +26,9 @@ var state = {
   forcedAssessmentRef: null,
   forcedAssessmentListener: null,
   forcedAssessmentCode: null,
+  individualForcedApRef: null,
+  individualForcedApListener: null,
+  individualForcedApCode: null,
   quizClientId: (function(){
     try {
       var existing = sessionStorage.getItem('pylearn_quiz_client_id');

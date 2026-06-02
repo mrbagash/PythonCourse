@@ -397,6 +397,7 @@ function startForcedAssessmentWatcher(className) {
   state.forcedAssessmentListener = state.forcedAssessmentRef.on('value', function(snap) {
     var forced = snap.val() || {};
     if (!forced.active || !forced.lobbyCode || String(forced.lessonId || '').indexOf('AP:') !== 0) {
+      // Only clear the class-AP code — never touch state.individualForcedApCode
       state.forcedAssessmentCode = null;
       return;
     }
@@ -414,6 +415,7 @@ function stopIndividualForcedApWatcher() {
   }
   state.individualForcedApRef = null;
   state.individualForcedApListener = null;
+  state.individualForcedApCode = null;  // own guard variable — never shared with class watcher
 }
 
 function startIndividualForcedApWatcher(className, uid) {
@@ -424,8 +426,9 @@ function startIndividualForcedApWatcher(className, uid) {
     if (!snap.exists()) return;
     var data = snap.val() || {};
     if (!data.lobbyCode || data.state !== 'active') return;
-    if (state.forcedAssessmentCode === data.lobbyCode && assessment.sessionRef) return;
-    state.forcedAssessmentCode = data.lobbyCode;
+    // Use own guard — completely independent of the class-AP watcher
+    if (state.individualForcedApCode === data.lobbyCode && assessment.sessionRef) return;
+    state.individualForcedApCode = data.lobbyCode;
     joinAssessmentByCode(String(data.lobbyCode), { forced: true }).catch(function(e) {
       console.warn('Individual forced AP join failed:', e.message);
     });
@@ -782,7 +785,9 @@ function normaliseAssessmentOutput(value) {
     .trim()
     .replace(/\r\n/g, '\n')
     .replace(/[^\S\n]+/g, ' ')
-    .replace(/[ \t]*\n[ \t]*/g, '\n');
+    .replace(/[ \t]*\n[ \t]*/g, '\n')
+    .toLowerCase()
+    .replace(/[.!?,;]+$/gm, '');  // strip trailing punctuation from each line
 }
 
 function validateAssessmentQuestionAnswer(q, value) {
@@ -806,7 +811,8 @@ function validateAssessmentQuestionAnswer(q, value) {
         .replace(/\r\n/g, '\n')
         .replace(/[^\S\n]+/g, ' ')
         .replace(/[ \t]*\n[ \t]*/g, '\n')
-        .toUpperCase();
+        .toLowerCase()
+        .replace(/[.!?,;]+$/gm, '');  // strip trailing punctuation from each line
     }
     return { correct: !!normOutput(raw) && normOutput(raw) === normOutput(q.answer), expected: q.answer };
   }
@@ -942,23 +948,36 @@ async function submitQuestionAssessmentFinal() {
   }
   var completedAt = Date.now();
   var strippedRubric = stripRubricForStorage(result.criteria);
-  await assessment.responseRef.update({
-    answers: assessment.questionAnswers || {},
-    completed: true,
-    completedAt: completedAt,
-    score: result.score,
-    maxScore: result.maxScore,
-    rubric: strippedRubric,
-    savedAt: completedAt,
-    lastSeenAt: completedAt
-  });
-  await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
-    completedAt: completedAt,
-    score: result.score,
-    maxScore: result.maxScore,
-    rubric: strippedRubric,
-    className: assessment.className || state.className || null
-  });
+  try {
+    // Write to session (best-effort — may be null if session was briefly re-initialised)
+    if (assessment.responseRef) {
+      await assessment.responseRef.update({
+        answers: assessment.questionAnswers || {},
+        completed: true,
+        completedAt: completedAt,
+        score: result.score,
+        maxScore: result.maxScore,
+        rubric: strippedRubric,
+        savedAt: completedAt,
+        lastSeenAt: completedAt
+      });
+    }
+    // Progress record is the authoritative save — always attempt this
+    await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+      completedAt: completedAt,
+      score: result.score,
+      maxScore: result.maxScore,
+      rubric: strippedRubric,
+      className: assessment.className || state.className || null
+    });
+  } catch(e) {
+    // Don't leave the student stuck — show them the completion screen even if
+    // the network write failed, and let them know so the teacher can re-mark if needed.
+    console.error('AP submit write failed:', e);
+    var saveStatusEl = document.getElementById('aps-save-status');
+    if (saveStatusEl) saveStatusEl.textContent = 'Save failed — please tell your teacher';
+    // Still show completed so they can exit
+  }
   showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria, className: assessment.className || state.className || null });
 }
 
@@ -1041,7 +1060,12 @@ document.getElementById('btn-ap-finish').onclick = async function() {
   var spec = ASSESSMENTS[assessment.assessmentId];
   if (spec && spec.questions && spec.questions.length) {
     if (!assessment.debugMode && !confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
-    await submitQuestionAssessmentFinal();
+    try {
+      await submitQuestionAssessmentFinal();
+    } catch(e) {
+      console.error('AP final submit error:', e);
+      alert('There was a problem submitting. Please try again or tell your teacher.\n\n(' + e.message + ')');
+    }
     return;
   }
   if (assessment.validating) return;
