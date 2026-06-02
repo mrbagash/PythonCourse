@@ -833,6 +833,21 @@ function validateAssessmentQuestionAnswer(q, value) {
   return { correct: !!normText(raw) && normText(raw) === normText(q.answer), expected: q.answer };
 }
 
+// For if/while questions: find the condition variable and substitute a test value.
+// Handles students who define their own variable (any name) before the condition.
+function injectTestValue(code, testValue) {
+  var m = code.match(/\b(?:if|while)\s+(\w+)\s*(?:>=|<=|==|!=|>|<)/);
+  if (!m) return code;
+  var varName = m[1];
+  // Replace the first assignment of that variable if the student defined it
+  var assignRe = new RegExp('\\b' + varName + '\\s*=(?!=)\\s*[^\\n]+');
+  if (assignRe.test(code)) {
+    return code.replace(assignRe, varName + ' = ' + testValue);
+  }
+  // Student wrote just the if/else block without defining the variable — prepend it
+  return varName + ' = ' + testValue + '\n' + code;
+}
+
 async function validateAssessmentQuestionAnswerAsync(q, value) {
   var staticCheck = validateAssessmentQuestionAnswer(q, value);
   if (q.type !== 'code_input' || !q.runTests || !q.runTests.length) return staticCheck;
@@ -844,8 +859,12 @@ async function validateAssessmentQuestionAnswerAsync(q, value) {
   var raw = String(value == null ? '' : value);
   for (var i = 0; i < q.runTests.length; i++) {
     var test = q.runTests[i] || {};
-    var prefix = test.prefix ? String(test.prefix).replace(/\s+$/, '') + '\n' : '';
-    var result = await window.PyLearn.runPython(prefix + raw, {
+    // testValue: smart injection — finds the student's variable and substitutes
+    // prefix:    legacy injection — prepends fixed code before the student's code
+    var codeToRun = (test.testValue !== undefined)
+      ? injectTestValue(raw, test.testValue)
+      : (test.prefix ? String(test.prefix).replace(/\s+$/, '') + '\n' + raw : raw);
+    var result = await window.PyLearn.runPython(codeToRun, {
       inputs: test.inputs || [],
       execLimit: test.execLimit || q.execLimit || 3000
     });
