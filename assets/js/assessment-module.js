@@ -733,7 +733,9 @@ async function saveQuestionAssessmentDraft(spec, opts) {
 
 function stripRubricForStorage(criteria) {
   return (criteria || []).map(function(c) {
-    return { id: c.id, text: c.text, marks: c.marks, awarded: c.awarded, family: c.family };
+    var item = { id: c.id, text: c.text, marks: c.marks, awarded: c.awarded };
+    if (c.family != null) item.family = c.family;
+    return item;
   });
 }
 
@@ -1103,29 +1105,63 @@ document.getElementById('btn-ap-finish').onclick = async function() {
     }
     var completedAt = Date.now();
     var strippedRubric = stripRubricForStorage(result.criteria);
-    try {
-      if (assessment.responseRef) {
-        await assessment.responseRef.update({
-          completed: true,
-          completedAt: completedAt,
-          score: result.score,
-          maxScore: result.maxScore,
-          rubric: strippedRubric
-        });
+    var sessionWriteOk = false;
+    // Session write — retried up to 3 times so the host panel updates to "Submitted"
+    if (assessment.responseRef) {
+      for (var _attempt = 0; _attempt < 3 && !sessionWriteOk; _attempt++) {
+        try {
+          if (_attempt > 0) await new Promise(function(r) { setTimeout(r, 1000); });
+          await assessment.responseRef.update({
+            completed: true,
+            completedAt: completedAt,
+            score: result.score,
+            maxScore: result.maxScore,
+            rubric: strippedRubric,
+            savedAt: completedAt,
+            lastSeenAt: completedAt
+          });
+          sessionWriteOk = true;
+        } catch(e) {
+          console.warn('AP Scratch session write attempt ' + (_attempt + 1) + ' failed:', e.message);
+        }
       }
-      await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+    }
+    // Progress write — always attempted independently so results are saved even if session write failed
+    if (!sessionWriteOk) {
+      assessment.completed = false;
+      alert('Your project was checked, but the final score could not be sent to your teacher. Please try Submit Final Assessment again before leaving this page.');
+      return;
+    }
+    var snapshotFields = {};
+    try {
+      var snapshotRecord = typeof buildScratchSnapshotRecord === 'function' ? buildScratchSnapshotRecord() : null;
+      snapshotFields = typeof scratchSnapshotUpdateFields === 'function' ? scratchSnapshotUpdateFields(snapshotRecord) : {};
+      if (assessment.responseRef && Object.keys(snapshotFields).length) await assessment.responseRef.update(snapshotFields);
+    } catch(e) {
+      console.warn('AP Scratch snapshot save skipped:', e.message);
+      snapshotFields = {
+        scratchSnapshotStatus: 'failed',
+        scratchSnapshotSizeBytes: 0,
+        scratchSnapshotWarning: 'Project snapshot could not be saved, but the AP score was saved.'
+      };
+      try { await assessment.responseRef.update(snapshotFields); } catch(_e) {}
+    }
+    try {
+      var progressSnapshotFields = Object.assign({}, snapshotFields);
+      delete progressSnapshotFields.scratchSnapshotJson;
+      await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, Object.assign({
         completedAt: completedAt,
         score: result.score,
         maxScore: result.maxScore,
         rubric: strippedRubric,
         className: assessment.className || state.className || null
-      });
+      }, progressSnapshotFields));
     } catch(e) {
-      console.error('AP Scratch submit write failed:', e);
+      console.error('AP Scratch progress write failed:', e);
       var saveStatusEl = document.getElementById('aps-save-status');
       if (saveStatusEl) saveStatusEl.textContent = 'Save failed — please tell your teacher';
     }
-    showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
+    showAssessmentCompleted(Object.assign({ score: result.score, maxScore: result.maxScore, rubric: result.criteria }, snapshotFields));
   });
 };
 
