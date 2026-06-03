@@ -258,4 +258,37 @@
 
     return { sheets: sheets, select: selectIndex };
   };
+
+  // Load the spreadsheet CSS + libraries (from local vendored copies), then run cb().
+  // Lessons bootstrap by loading just this helper, then calling JHNCCLoadSheets.
+  window.JHNCCLoadSheets = function (cb) {
+    function lcss(u) {
+      if (!document.querySelector('link[data-jhncc="' + u + '"]')) {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = u; l.setAttribute('data-jhncc', u);
+        document.head.appendChild(l);
+      }
+    }
+    function ljs(u, next) {
+      var ex = document.querySelector('script[data-jhncc-src="' + u + '"]');
+      if (ex) {
+        if (ex.getAttribute('data-loaded') === '1') next();
+        else ex.addEventListener('load', function () { next(); });
+        return;
+      }
+      var s = document.createElement('script');
+      s.setAttribute('data-jhncc-src', u);
+      s.src = u;
+      s.onload = function () { s.setAttribute('data-loaded', '1'); next(); };
+      s.onerror = function () { alert('The spreadsheet tool could not load. Please refresh the page and try again.'); };
+      document.head.appendChild(s);
+    }
+    lcss('assets/css/jsuites.css');
+    lcss('assets/css/jspreadsheet.css');
+    ljs('assets/js/jsuites.js', function () {
+      ljs('assets/js/jspreadsheet.js', function () {
+        try { cb(); } catch (e) { console.error('Sheet build error:', e); }
+      });
+    });
+  };
 })();
