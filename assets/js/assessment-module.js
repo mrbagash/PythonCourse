@@ -124,6 +124,41 @@ async function restoreLocalApScratchSb3Backup() {
   }
 }
 
+// True if a downloadable local SB3 backup exists for this lobby code (no Firebase involved).
+function hasLocalApScratchSb3(lobbyCode) {
+  if (!lobbyCode) return false;
+  try {
+    var raw = localStorage.getItem(localApScratchSb3Key(lobbyCode));
+    if (!raw) return false;
+    var record = JSON.parse(raw);
+    return !!(record && record.base64);
+  } catch(e) { return false; }
+}
+
+// Let the student download their own AP project straight from localStorage.
+function downloadOwnApScratchSb3(lobbyCode) {
+  if (!lobbyCode) return false;
+  var raw;
+  try { raw = localStorage.getItem(localApScratchSb3Key(lobbyCode)); } catch(e) { return false; }
+  if (!raw) { alert('No saved project was found on this device.'); return false; }
+  var record;
+  try { record = JSON.parse(raw); } catch(e) { return false; }
+  if (!record || !record.base64) { alert('No saved project was found on this device.'); return false; }
+  try {
+    var buffer = base64ToArrayBuffer(record.base64);
+    var blob = new Blob([buffer], { type: 'application/octet-stream' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'My-AP-Project-' + lobbyCode + '.sb3';
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+    return true;
+  } catch(e) {
+    alert('Could not download the project: ' + e.message);
+    return false;
+  }
+}
+
 function setupApRecoveryListener() {
   if (apRecoveryListenerRef || !state.uid || !state.db) return;
   apRecoveryListenerRef = state.db.ref('progress/' + state.uid + '/apRecoveryRequest');

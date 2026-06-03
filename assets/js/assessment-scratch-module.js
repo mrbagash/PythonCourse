@@ -785,6 +785,18 @@ function showAssessmentCompleted(record) {
   renderAssessmentFeedback({ score: record.score || 0, maxScore: maxScore, criteria: record.rubric || [] }, true);
   var rubricBox = document.getElementById('aps-final-rubric');
   if (rubricBox && record.scratchSnapshotStatus) rubricBox.insertAdjacentHTML('afterbegin', scratchSnapshotWarningHtml(record));
+  // Offer a direct (localStorage-only) download of the student's own project if one was saved
+  var downloadSb3Btn = document.getElementById('btn-ap-download-my-sb3');
+  if (downloadSb3Btn) {
+    var _completedLobby = assessment.lobbyCode;
+    if (!assessment.debugMode && typeof hasLocalApScratchSb3 === 'function' && hasLocalApScratchSb3(_completedLobby)) {
+      downloadSb3Btn.classList.remove('hidden');
+      downloadSb3Btn.onclick = function() { downloadOwnApScratchSb3(_completedLobby); };
+    } else {
+      downloadSb3Btn.classList.add('hidden');
+      downloadSb3Btn.onclick = null;
+    }
+  }
   var feedbackBox = document.getElementById('aps-class-feedback');
   if (assessment.debugMode) {
     if (feedbackBox) { feedbackBox.classList.add('hidden'); feedbackBox.innerHTML = ''; }

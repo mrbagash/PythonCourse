@@ -1686,15 +1686,33 @@ async function openStudentApFeedback() {
       var feedback = releasedFeedbackForAssessmentAttempt(feedbacks, rec);
       if (!feedback) {
         body.innerHTML = '<div class="border border-gray-200 rounded-lg p-4"><h3 class="text-lg font-bold mb-2">' + escapeHtml((ASSESSMENTS[id] && ASSESSMENTS[id].title) || id) + '</h3><p class="text-sm text-gray-600 mb-3">Completed: ' + (rec.completedAt ? new Date(rec.completedAt).toLocaleString('en-GB') : '-') + '</p><p class="text-gray-500">Your teacher has not released whole class feedback for this AP yet.</p></div>';
-        return;
+      } else {
+        renderReleasedAssessmentFeedback(body, feedback, rec);
       }
-      renderReleasedAssessmentFeedback(body, feedback, rec);
+      appendOwnSb3DownloadButton(body, id, rec.lobbyCode);
     }
     document.getElementById('student-ap-feedback-select').onchange = renderSelected;
     renderSelected();
   } catch(e) {
     content.innerHTML = '<p class="text-red-500 text-center py-8">' + escapeHtml(e.message) + '</p>';
   }
+}
+
+// Append a "Download my project (.sb3)" button to the feedback body when a local SB3
+// backup exists for this attempt. Pulls straight from localStorage — no Firebase.
+function appendOwnSb3DownloadButton(body, assessmentId, lobbyCode) {
+  if (!body || !lobbyCode) return;
+  var isScratch = String((ASSESSMENTS[assessmentId] || {}).validation || '').indexOf('scratch') !== -1;
+  if (!isScratch) return;
+  if (typeof hasLocalApScratchSb3 !== 'function' || !hasLocalApScratchSb3(lobbyCode)) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'mt-4';
+  var btn = document.createElement('button');
+  btn.className = 'px-5 py-2 rounded border border-blue-400 text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold text-sm';
+  btn.textContent = 'Download my project (.sb3)';
+  btn.onclick = function() { downloadOwnApScratchSb3(lobbyCode); };
+  wrap.appendChild(btn);
+  body.appendChild(wrap);
 }
 
 function completedAssessmentAttempts(assessments) {
