@@ -38,7 +38,25 @@
       '.jhncc-tab-add:hover{background:#e0e0e0}' +
       '.jhncc-sheet-panel{width:100%}' +
       /* persistent selection marker that survives the sheet losing focus */
-      '.jhncc-active-cell{box-shadow:inset 0 0 0 2px #107c41 !important}';
+      '.jhncc-active-cell{box-shadow:inset 0 0 0 2px #107c41 !important}' +
+      /* format toolbar */
+      '.jhncc-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:2px;width:100%;' +
+      'box-sizing:border-box;border:1px solid #cfcfcf;border-bottom:none;background:#f7f7f7;' +
+      'padding:3px 5px;font-family:Calibri,"Segoe UI",Arial,sans-serif;border-radius:4px 4px 0 0}' +
+      '.jhncc-tb-btn{min-width:28px;height:26px;padding:0 7px;background:#fff;border:1px solid #d0d0d0;' +
+      'border-radius:3px;cursor:pointer;font-size:13px;color:#222;line-height:24px}' +
+      '.jhncc-tb-btn:hover{background:#eef4ff;border-color:#9cc0ff}' +
+      '.jhncc-tb-btn.on{background:#d4e6ff;border-color:#6aa3ff}' +
+      '.jhncc-tb-b{font-weight:800}.jhncc-tb-i{font-style:italic;font-family:Georgia,serif}' +
+      '.jhncc-tb-u{text-decoration:underline}' +
+      '.jhncc-tb-color{display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 5px;' +
+      'background:#fff;border:1px solid #d0d0d0;border-radius:3px;cursor:pointer;font-size:13px}' +
+      '.jhncc-tb-color input{width:20px;height:18px;border:0;padding:0;background:none;cursor:pointer}' +
+      '.jhncc-tb-sep{width:1px;align-self:stretch;background:#d0d0d0;margin:2px 4px}' +
+      '.jhncc-cf-pop{border:1px solid #cfcfcf;background:#fff;border-radius:6px;padding:10px;' +
+      'margin-top:6px;font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:13px;color:#222}' +
+      '.jhncc-cf-pop select,.jhncc-cf-pop input{border:1px solid #c8c8c8;border-radius:4px;' +
+      'padding:3px 6px;font-size:13px;margin:0 4px 4px 0}';
     document.head.appendChild(s);
   }
 
@@ -131,6 +149,134 @@
     show(0, 0); // initialise to A1
   };
 
+  // ── Inline-style merge helpers (jspreadsheet setStyle replaces, so we merge ourselves) ──
+  function parseCss(str) {
+    var m = {};
+    (str || '').split(';').forEach(function (p) {
+      var i = p.indexOf(':');
+      if (i > 0) { var k = p.slice(0, i).trim().toLowerCase(); var v = p.slice(i + 1).trim(); if (k) m[k] = v; }
+    });
+    return m;
+  }
+  function cssToString(m) {
+    return Object.keys(m).map(function (k) { return k + ':' + m[k]; }).join(';');
+  }
+
+  // Excel-style formatting toolbar: bold/italic/underline, font colour, fill colour,
+  // borders, alignment and simple conditional formatting. Works fully offline.
+  window.JHNCCAddFormatToolbar = function (holder, sheet) {
+    if (!holder || !sheet || !holder.parentNode) return;
+    ensureStyles();
+
+    var sel = { x1: 0, y1: 0, x2: 0, y2: 0 };
+    var prevSel = sheet.options.onselection;
+    sheet.options.onselection = function (el, x1, y1, x2, y2, origin) {
+      sel = { x1: Math.min(x1, x2), y1: Math.min(y1, y2), x2: Math.max(x1, x2), y2: Math.max(y1, y2) };
+      if (typeof prevSel === 'function') prevSel.apply(this, arguments);
+    };
+
+    function mergeStyle(cell, props) {
+      var m = parseCss(sheet.getStyle(cell) || '');
+      Object.keys(props).forEach(function (k) { if (props[k] === null) delete m[k]; else m[k] = props[k]; });
+      return cssToString(m);
+    }
+    function applyToSelection(props) {
+      var updates = {};
+      for (var y = sel.y1; y <= sel.y2; y++) {
+        for (var x = sel.x1; x <= sel.x2; x++) {
+          var cn = colName(x) + (y + 1);
+          updates[cn] = mergeStyle(cn, props);
+        }
+      }
+      try { sheet.setStyle(updates); } catch (e) {}
+    }
+    function anchorHas(prop, val) {
+      var cur = parseCss(sheet.getStyle(colName(sel.x1) + (sel.y1 + 1)) || '');
+      return (cur[prop] || '').indexOf(val) !== -1;
+    }
+    function toggle(prop, val) { var p = {}; p[prop] = anchorHas(prop, val) ? null : val; applyToSelection(p); }
+
+    var bar = document.createElement('div');
+    bar.className = 'jhncc-toolbar';
+    function btn(cls, label, title, onClick) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'jhncc-tb-btn ' + (cls || '');
+      b.innerHTML = label; b.title = title; b.onclick = onClick;
+      bar.appendChild(b); return b;
+    }
+    function sep() { var s = document.createElement('span'); s.className = 'jhncc-tb-sep'; bar.appendChild(s); }
+    function colorPicker(labelText, title, initial, onPick) {
+      var w = document.createElement('label');
+      w.className = 'jhncc-tb-color'; w.title = title;
+      w.appendChild(document.createTextNode(labelText));
+      var inp = document.createElement('input'); inp.type = 'color'; inp.value = initial;
+      inp.onchange = function () { onPick(inp.value); };
+      w.appendChild(inp); bar.appendChild(w);
+    }
+
+    btn('jhncc-tb-b', 'B', 'Bold', function () { toggle('font-weight', 'bold'); });
+    btn('jhncc-tb-i', 'I', 'Italic', function () { toggle('font-style', 'italic'); });
+    btn('jhncc-tb-u', 'U', 'Underline', function () { toggle('text-decoration', 'underline'); });
+    sep();
+    colorPicker('A', 'Font colour', '#c00000', function (v) { applyToSelection({ 'color': v }); });
+    colorPicker('Fill', 'Fill (cell shading)', '#ffff00', function (v) { applyToSelection({ 'background-color': v }); });
+    sep();
+    btn('', 'Borders', 'Add borders to the selected cells', function () { applyToSelection({ 'border': '1px solid #444' }); });
+    btn('', 'No border', 'Remove borders from the selected cells', function () { applyToSelection({ 'border': null }); });
+    sep();
+    btn('', '&#8676;', 'Align left', function () { applyToSelection({ 'text-align': 'left' }); });
+    btn('', '&#8596;', 'Align centre', function () { applyToSelection({ 'text-align': 'center' }); });
+    btn('', '&#8677;', 'Align right', function () { applyToSelection({ 'text-align': 'right' }); });
+    sep();
+
+    var cfPop = null;
+    btn('', 'Conditional&hellip;', 'Conditional formatting', function () {
+      if (cfPop) { cfPop.parentNode.removeChild(cfPop); cfPop = null; return; }
+      cfPop = document.createElement('div');
+      cfPop.className = 'jhncc-cf-pop';
+      var grid0 = sheet.getData();
+      var ncols = grid0[0] ? grid0[0].length : 6;
+      var colOpts = '';
+      for (var i = 0; i < ncols; i++) colOpts += '<option value="' + i + '">Column ' + colName(i) + '</option>';
+      cfPop.innerHTML =
+        '<div style="margin-bottom:6px"><strong>Highlight cells</strong> that meet a rule (e.g. make &ldquo;Shop&rdquo; stand out):</div>' +
+        'in <select class="cf-col">' + colOpts + '</select> ' +
+        '<select class="cf-op"><option value="eq">is equal to</option><option value="contains">contains</option><option value="gt">is greater than</option><option value="lt">is less than</option></select> ' +
+        '<input class="cf-val" placeholder="value" style="width:90px"> ' +
+        'colour <input class="cf-color" type="color" value="#ffe08a"> ' +
+        '<button class="jhncc-tb-btn cf-apply">Apply</button>';
+      bar.parentNode.insertBefore(cfPop, bar.nextSibling);
+      cfPop.querySelector('.cf-apply').onclick = function () {
+        var col = parseInt(cfPop.querySelector('.cf-col').value, 10);
+        var op = cfPop.querySelector('.cf-op').value;
+        var val = cfPop.querySelector('.cf-val').value;
+        var colr = cfPop.querySelector('.cf-color').value;
+        var grid = sheet.getData();
+        var updates = {};
+        for (var y = 0; y < grid.length; y++) {
+          var s = String(grid[y][col] == null ? '' : grid[y][col]).trim();
+          var num = parseFloat(s), vnum = parseFloat(val);
+          var match = false;
+          if (op === 'eq') match = s.toLowerCase() === String(val).trim().toLowerCase();
+          else if (op === 'contains') match = val !== '' && s.toLowerCase().indexOf(String(val).trim().toLowerCase()) !== -1;
+          else if (op === 'gt') match = !isNaN(num) && !isNaN(vnum) && num > vnum;
+          else if (op === 'lt') match = !isNaN(num) && !isNaN(vnum) && num < vnum;
+          if (match) { var cn = colName(col) + (y + 1); updates[cn] = mergeStyle(cn, { 'background-color': colr }); }
+        }
+        try { sheet.setStyle(updates); } catch (e) {}
+        if (cfPop) { cfPop.parentNode.removeChild(cfPop); cfPop = null; }
+      };
+    });
+
+    // Place the toolbar at the very top of this sheet's stack (above the formula bar).
+    var top = holder;
+    while (top.previousElementSibling && top.previousElementSibling.classList &&
+           top.previousElementSibling.classList.contains('jhncc-fbar')) {
+      top = top.previousElementSibling;
+    }
+    top.parentNode.insertBefore(bar, top);
+  };
+
   // Build a blank sheet that mirrors the primary sheet's column setup.
   function defaultMakeSheet(primary, containerEl) {
     var o = (primary && primary.options) || {};
@@ -167,12 +313,17 @@
       ? opts.makeSheet
       : function (el) { return defaultMakeSheet(primary, el); };
 
-    // The primary sheet may already have a formula bar inserted before it.
-    var bar = (holder.previousElementSibling &&
-               holder.previousElementSibling.classList &&
-               holder.previousElementSibling.classList.contains('jhncc-fbar'))
-      ? holder.previousElementSibling : null;
-    var topNode = bar || holder;
+    // The primary sheet may already have a format toolbar and/or formula bar above it.
+    // Collect all such decoration siblings (in DOM order) so we can move them together.
+    var decos = [];
+    var prev = holder.previousElementSibling;
+    while (prev && prev.classList &&
+           (prev.classList.contains('jhncc-fbar') || prev.classList.contains('jhncc-toolbar'))) {
+      decos.unshift(prev);
+      prev = prev.previousElementSibling;
+    }
+    var hasToolbar = decos.some(function (d) { return d.classList.contains('jhncc-toolbar'); });
+    var topNode = decos.length ? decos[0] : holder;
     var parent = topNode.parentNode;
 
     var wrapper = document.createElement('div');
@@ -232,7 +383,7 @@
     } catch (e) {}
     var panel0 = document.createElement('div');
     panel0.className = 'jhncc-sheet-panel';
-    if (bar) panel0.appendChild(bar);
+    decos.forEach(function (d) { panel0.appendChild(d); });
     panel0.appendChild(holder);
     panels.appendChild(panel0);
     var tab0 = makeTab(opts.firstName || 'Sheet 1');
@@ -256,6 +407,7 @@
       try { inst = makeSheet(holderN); }
       catch (e) { panel.parentNode.removeChild(panel); selectIndex(sheets.length - 1); return; }
       if (window.JHNCCAddFormulaBar) window.JHNCCAddFormulaBar(holderN, inst);
+      if (hasToolbar && window.JHNCCAddFormatToolbar) window.JHNCCAddFormatToolbar(holderN, inst);
       var name = 'Sheet ' + (sheets.length + 1);
       var tab = makeTab(name);
       tabbar.insertBefore(tab, addBtn);
