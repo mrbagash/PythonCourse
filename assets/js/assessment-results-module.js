@@ -470,6 +470,7 @@ function renderClassAssessmentResults(content, rows) {
       '<td class="border border-gray-100 px-2 py-1.5 text-center">' +
         '<div class="flex justify-center gap-1">' +
         (r.completed ? '<button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit</button>' : '') +
+        ((r.completed && isScratchAssessmentResult(r)) ? '<button class="btn-ap-download-sb3 px-2 py-1 rounded border border-blue-400 text-blue-600 bg-blue-50 hover:bg-blue-100" data-code="' + escapeHtml(r.code) + '" data-lobby="' + escapeHtml(r.lobbyCode || '') + '" data-assessment="' + escapeHtml(r.assessmentId) + '" title="Download the student\'s Scratch project (.sb3) from their browser">Download SB3</button>' : '') +
         '<button class="btn-ap-recover px-2 py-1 rounded border border-gray-400 text-gray-500 hover:bg-gray-50" data-code="' + escapeHtml(r.code) + '" data-lobby="' + escapeHtml(r.lobbyCode || '') + '" data-assessment="' + escapeHtml(r.assessmentId) + '" title="Request local backup from student\'s browser">Recover</button>' +
         '<button class="btn-ap-delete-result px-2 py-1 rounded border border-red-400 text-red-600 bg-red-50 hover:bg-red-100" data-code="' + escapeHtml(r.code) + '" data-name="' + escapeHtml(r.name || r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '" data-title="' + escapeHtml(r.assessmentTitle || r.assessmentId) + '" title="Delete this AP result">Delete</button>' +
         '</div>' +
@@ -487,6 +488,11 @@ function renderClassAssessmentResults(content, rows) {
   content.querySelectorAll('.btn-ap-recover').forEach(function(btn) {
     btn.onclick = function() {
       requestStudentApBackup(btn.dataset.code, btn.dataset.lobby, btn.dataset.assessment, btn);
+    };
+  });
+  content.querySelectorAll('.btn-ap-download-sb3').forEach(function(btn) {
+    btn.onclick = function() {
+      downloadStudentApSb3(btn.dataset.code, btn.dataset.lobby, btn.dataset.assessment, btn);
     };
   });
   content.querySelectorAll('.btn-ap-delete-result').forEach(function(btn) {
@@ -507,7 +513,7 @@ function renderStudentAssessmentResults(content, rows) {
   completedRows.sort(function(a, b) { return (b.completedAt || 0) - (a.completedAt || 0); }).forEach(function(r) {
     var pct = r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
     html += '<div class="border border-gray-200 rounded-lg mb-4 overflow-hidden">' +
-      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-2"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button><button class="btn-ap-delete-result px-2 py-1 rounded border border-red-400 text-red-600 bg-red-50 hover:bg-red-100 text-xs" data-code="' + escapeHtml(r.code) + '" data-name="' + escapeHtml(name) + '" data-assessment="' + escapeHtml(r.assessmentId) + '" data-title="' + escapeHtml(r.assessmentTitle || r.assessmentId) + '">Delete result</button></div></div>' +
+      '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-wrap justify-between gap-2"><div><span class="font-semibold text-gray-800">' + escapeHtml(r.assessmentTitle) + '</span><span class="text-xs text-gray-400 ml-2">' + (r.completedAt ? new Date(r.completedAt).toLocaleString('en-GB') : '') + '</span></div><div class="flex items-center gap-2"><div class="font-bold text-yellow-700">' + r.score + ' / ' + r.maxScore + ' (' + pct + '%)</div><button class="btn-ap-result-edit px-2 py-1 rounded border border-yellow-500 text-yellow-700 bg-yellow-50 text-xs" data-code="' + escapeHtml(r.code) + '" data-assessment="' + escapeHtml(r.assessmentId) + '">Edit marks</button>' + (isScratchAssessmentResult(r) ? '<button class="btn-ap-download-sb3 px-2 py-1 rounded border border-blue-400 text-blue-600 bg-blue-50 hover:bg-blue-100 text-xs" data-code="' + escapeHtml(r.code) + '" data-lobby="' + escapeHtml(r.lobbyCode || '') + '" data-assessment="' + escapeHtml(r.assessmentId) + '" title="Download Scratch project from student browser">Download SB3</button>' : '') + '<button class="btn-ap-delete-result px-2 py-1 rounded border border-red-400 text-red-600 bg-red-50 hover:bg-red-100 text-xs" data-code="' + escapeHtml(r.code) + '" data-name="' + escapeHtml(name) + '" data-assessment="' + escapeHtml(r.assessmentId) + '" data-title="' + escapeHtml(r.assessmentTitle || r.assessmentId) + '">Delete result</button></div></div>' +
       '<div class="p-3 space-y-1">' + apSnapshotStatusHtml(r, true);
     (r.rubric || []).forEach(function(c) {
       html += '<div class="flex justify-between gap-3 border-b border-gray-100 py-1"><span>' + escapeHtml(c.text) + '</span><strong>' + (c.awarded || 0) + '/' + (c.marks || 0) + '</strong></div>';
@@ -520,6 +526,11 @@ function renderStudentAssessmentResults(content, rows) {
     btn.onclick = function() {
       var row = completedRows.find(function(r) { return r.code === btn.dataset.code && r.assessmentId === btn.dataset.assessment; });
       openAssessmentScoreEditor(btn.dataset.code, btn.dataset.assessment, row, { results: true });
+    };
+  });
+  content.querySelectorAll('.btn-ap-download-sb3').forEach(function(btn) {
+    btn.onclick = function() {
+      downloadStudentApSb3(btn.dataset.code, btn.dataset.lobby, btn.dataset.assessment, btn);
     };
   });
   content.querySelectorAll('.btn-ap-delete-result').forEach(function(btn) {
@@ -1128,6 +1139,55 @@ async function requestStudentApBackup(code, lobbyCode, assessmentId, btn) {
   } catch(e) {
     alert('Recovery failed: ' + e.message);
   } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// Download only the SB3 from the student's browser, via a temporary Firebase round-trip.
+// Does NOT alter the stored score/rubric, and deletes the temporary transfer data afterwards.
+async function downloadStudentApSb3(code, lobbyCode, assessmentId, btn) {
+  if (!state.db || !code) { alert('Cannot connect to database.'); return; }
+  var origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Requesting…';
+  var requestRef = state.db.ref('progress/' + code + '/apRecoveryRequest');
+  var responseRef = state.db.ref('progress/' + code + '/apRecoveryResponse');
+  try {
+    await requestRef.set({
+      lobbyCode: lobbyCode,
+      assessmentId: assessmentId,
+      requestedAt: Date.now()
+    });
+    // Poll for a response for up to 12 seconds
+    var backup = null;
+    for (var i = 0; i < 24 && !backup; i++) {
+      await new Promise(function(r) { setTimeout(r, 500); });
+      var snap = await responseRef.get();
+      if (snap.exists()) {
+        var data = snap.val() || {};
+        if (data.lobbyCode === lobbyCode && data.respondedAt && data.respondedAt > Date.now() - 15000) {
+          backup = data;
+        }
+      }
+    }
+    if (!backup) {
+      alert('No project received. The student must be logged in to this AP in another tab/device for the project to transfer. (Their work is stored only in their own browser.)');
+      return;
+    }
+    if (backup.scratchSb3Base64) {
+      downloadRecoveredScratchSb3(code, lobbyCode, backup);
+    } else if (backup.scratchSb3TooLarge) {
+      alert('The student has a local project backup, but it is too large to transfer through Firebase safely.');
+    } else {
+      alert('No Scratch project backup was found in the student\'s browser for this AP.');
+    }
+  } catch(e) {
+    alert('Download failed: ' + e.message);
+  } finally {
+    // Always clean up the temporary transfer data from Firebase
+    try { await responseRef.remove(); } catch(e) {}
+    try { await requestRef.remove(); } catch(e) {}
     btn.disabled = false;
     btn.textContent = origText;
   }
