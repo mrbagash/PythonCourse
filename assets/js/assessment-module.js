@@ -1,4 +1,23 @@
 var apRecoveryListenerRef = null;
+var AP_LOCAL_SB3_MAX_BASE64_CHARS = 2000000;
+
+function localApBackupKey(lobbyCode) {
+  return 'pylearn_ap_backup_' + lobbyCode;
+}
+
+function localApScratchSb3Key(lobbyCode) {
+  return 'pylearn_ap_scratch_sb3_' + lobbyCode;
+}
+
+function arrayBufferToBase64(buffer) {
+  var bytes = new Uint8Array(buffer);
+  var chunkSize = 0x8000;
+  var binary = '';
+  for (var i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
 
 function saveLocalApBackup(result) {
   if (!assessment.lobbyCode || !state.uid || assessment.debugMode) return;
@@ -13,8 +32,62 @@ function saveLocalApBackup(result) {
       maxScore: result ? result.maxScore : null,
       rubric: result ? stripRubricForStorage(result.criteria) : null
     };
-    localStorage.setItem('pylearn_ap_backup_' + assessment.lobbyCode, JSON.stringify(backup));
+    var scratchRaw = localStorage.getItem(localApScratchSb3Key(assessment.lobbyCode));
+    if (scratchRaw) {
+      try {
+        var scratchBackup = JSON.parse(scratchRaw);
+        backup.scratchSb3SavedAt = scratchBackup.savedAt || null;
+        backup.scratchSb3SizeBytes = scratchBackup.sizeBytes || null;
+        backup.scratchSb3Available = !!scratchBackup.base64;
+      } catch(e) {}
+    }
+    localStorage.setItem(localApBackupKey(assessment.lobbyCode), JSON.stringify(backup));
   } catch(e) {}
+}
+
+async function saveLocalApScratchSb3Backup(opts) {
+  opts = opts || {};
+  if (!assessment.lobbyCode || !state.uid || assessment.debugMode || assessment.completed) return null;
+  if (assessment.localScratchSb3SaveInFlight) return null;
+  var frame = document.getElementById('aps-scratch-frame');
+  var vm = frame && frame.contentWindow && frame.contentWindow.vm;
+  if (!vm || typeof vm.saveProjectSb3 !== 'function') return null;
+  try {
+    assessment.localScratchSb3SaveInFlight = true;
+    var content = await vm.saveProjectSb3('arraybuffer');
+    var buffer = content && content.buffer ? content.buffer : content;
+    if (!buffer) return null;
+    var base64 = arrayBufferToBase64(buffer);
+    var sizeBytes = Math.round(base64.length * 3 / 4);
+    var record = {
+      assessmentId: assessment.assessmentId,
+      lobbyCode: assessment.lobbyCode,
+      uid: state.uid,
+      savedAt: Date.now(),
+      sizeBytes: sizeBytes,
+      base64: base64
+    };
+    if (base64.length > AP_LOCAL_SB3_MAX_BASE64_CHARS) {
+      record = {
+        assessmentId: assessment.assessmentId,
+        lobbyCode: assessment.lobbyCode,
+        uid: state.uid,
+        savedAt: Date.now(),
+        sizeBytes: sizeBytes,
+        tooLarge: true
+      };
+    }
+    localStorage.setItem(localApScratchSb3Key(assessment.lobbyCode), JSON.stringify(record));
+    var statusEl = document.getElementById('aps-save-status');
+    if (statusEl && opts.updateStatus) statusEl.textContent = 'Local project backup saved ' + new Date(record.savedAt).toLocaleTimeString('en-GB');
+    return record;
+  } catch(e) {
+    var statusEl2 = document.getElementById('aps-save-status');
+    if (statusEl2 && opts.updateStatus) statusEl2.textContent = 'Local project backup failed';
+    return null;
+  } finally {
+    assessment.localScratchSb3SaveInFlight = false;
+  }
 }
 
 function setupApRecoveryListener() {
@@ -25,11 +98,23 @@ function setupApRecoveryListener() {
     var req = snap.val() || {};
     if (!req.lobbyCode) return;
     var raw = null;
-    try { raw = localStorage.getItem('pylearn_ap_backup_' + req.lobbyCode); } catch(e) {}
+    try { raw = localStorage.getItem(localApBackupKey(req.lobbyCode)); } catch(e) {}
     var payload = { respondedAt: Date.now(), lobbyCode: req.lobbyCode };
     if (raw) {
       try { Object.assign(payload, JSON.parse(raw)); } catch(e) {}
     }
+    try {
+      var scratchRaw = localStorage.getItem(localApScratchSb3Key(req.lobbyCode));
+      if (scratchRaw) {
+        var scratchBackup = JSON.parse(scratchRaw);
+        payload.scratchSb3SavedAt = scratchBackup.savedAt || null;
+        payload.scratchSb3SizeBytes = scratchBackup.sizeBytes || null;
+        payload.scratchSb3TooLarge = !!scratchBackup.tooLarge;
+        if (scratchBackup.base64 && scratchBackup.base64.length <= AP_LOCAL_SB3_MAX_BASE64_CHARS) {
+          payload.scratchSb3Base64 = scratchBackup.base64;
+        }
+      }
+    } catch(e) {}
     try {
       await state.db.ref('progress/' + state.uid + '/apRecoveryResponse').set(payload);
     } catch(e) {}
@@ -97,6 +182,7 @@ function startAssessmentDebugPreview(id) {
   var spec = ASSESSMENTS[id];
   if (!spec) return;
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
   if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
   if (assessment.studentListener && assessment.studentListenerRef) assessment.studentListenerRef.off('value', assessment.studentListener);
   assessment.assessmentId = id;
@@ -526,6 +612,7 @@ function loadAssessmentScratchEditor() {
   document.getElementById('aps-feedback').innerHTML = '';
   document.getElementById('aps-save-status').textContent = 'Loading editor...';
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
   frame.onload = async function() {
     await waitForAssessmentVm();
     if (assessment.debugMode) {
@@ -548,6 +635,7 @@ async function loadAssessmentQuestionPaper(spec) {
   document.getElementById('aps-save-status').textContent = assessment.debugMode ? 'Debug mode - not saved' : 'Loading answers...';
   document.getElementById('aps-feedback').innerHTML = '<div class="text-xs text-gray-500">' + (assessment.debugMode ? 'Debug preview only. Answers are checked locally and are not saved.' : 'Answers save automatically. You can move between questions at your own pace.') + '</div>';
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
   assessment.questionAnswers = {};
   assessment.questionCurrentIdx = 0;
   if (!assessment.debugMode && assessment.responseRef) {
@@ -918,6 +1006,7 @@ async function autoSubmitAssessmentForEarlyEnd() {
       showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
     } else {
       await runAssessmentValidation('Time is up — submitting your project…', async function() {
+        await saveLocalApScratchSb3Backup({ updateStatus: false });
         await saveAssessmentProject({ force: true });
         var result = await validateAssessmentProject(function(label, index, total) {
           updateAssessmentValidationStatus(label, index, total);
@@ -1047,7 +1136,9 @@ async function saveAssessmentProject(opts) {
 
 function startAssessmentAutosave() {
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
   assessment.saveTimer = setInterval(function() { saveAssessmentProject({ force: false }); }, 30000);
+  assessment.localScratchSb3Timer = setInterval(function() { saveLocalApScratchSb3Backup({ updateStatus: false }); }, 30000);
   try {
     var frame = document.getElementById('aps-scratch-frame');
     var runtime = frame.contentWindow.vm && frame.contentWindow.vm.runtime;
@@ -1060,6 +1151,7 @@ function startAssessmentAutosave() {
     }
   } catch(e) {}
   setTimeout(function() { saveAssessmentProject({ force: true }); }, 3000);
+  setTimeout(function() { saveLocalApScratchSb3Backup({ updateStatus: true }); }, 5000);
 }
 
 document.getElementById('btn-ap-check').onclick = async function() {
@@ -1093,6 +1185,7 @@ document.getElementById('btn-ap-finish').onclick = async function() {
   if (assessment.validating) return;
   if (!assessment.debugMode && !confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
   await runAssessmentValidation('Final validation before submitting...', async function() {
+    await saveLocalApScratchSb3Backup({ updateStatus: true });
     await saveAssessmentProject({ force: true });
     var result = await validateAssessmentProject(function(label, index, total) {
       updateAssessmentValidationStatus(label, index, total);

@@ -1111,8 +1111,18 @@ async function requestStudentApBackup(code, lobbyCode, assessmentId, btn) {
     }
     var scoreText = (backup.score != null ? backup.score + ' / ' + (backup.maxScore || '?') : 'unknown score');
     var savedTime = backup.savedAt ? new Date(backup.savedAt).toLocaleTimeString('en-GB') : 'unknown time';
-    if (!confirm('Local backup found for ' + (backup.savedAt ? new Date(backup.savedAt).toLocaleString('en-GB') : 'this session') + '.\nScore in backup: ' + scoreText + ' (saved ' + savedTime + ').\n\nApply this backup to results?')) return;
+    var sb3Text = backup.scratchSb3Base64
+      ? '\nA local SB3 project backup was also recovered and will be downloaded for manual review.'
+      : (backup.scratchSb3TooLarge ? '\nThe student had a local SB3 backup, but it was too large to transfer through Firebase safely.' : '');
+    if (!confirm('Local backup found for ' + (backup.savedAt ? new Date(backup.savedAt).toLocaleString('en-GB') : 'this session') + '.\nScore in backup: ' + scoreText + ' (saved ' + savedTime + ').' + sb3Text + '\n\nApply this backup to results?')) {
+      if (backup.scratchSb3Base64) {
+        try { await responseRef.remove(); } catch(e) {}
+      }
+      return;
+    }
+    if (backup.scratchSb3Base64) downloadRecoveredScratchSb3(code, lobbyCode, backup);
     await applyStudentApBackup(code, assessmentId, lobbyCode, backup);
+    try { await responseRef.remove(); } catch(e) {}
     alert('Backup applied successfully.');
     renderAssessmentResultsPanel();
   } catch(e) {
@@ -1145,6 +1155,11 @@ async function applyStudentApBackup(code, assessmentId, lobbyCode, backup) {
     rubric: rubric
   };
   if (backup.answers) record.answers = backup.answers;
+  if (backup.scratchSb3SavedAt) {
+    record.recoveredScratchSb3Available = !!backup.scratchSb3Base64;
+    record.recoveredScratchSb3SavedAt = backup.scratchSb3SavedAt;
+    record.recoveredScratchSb3SizeBytes = backup.scratchSb3SizeBytes || null;
+  }
   // Update session record if lobby code is available
   if (lobbyCode) {
     try {
@@ -1156,6 +1171,22 @@ async function applyStudentApBackup(code, assessmentId, lobbyCode, backup) {
     recoveredFromBackup: true,
     className: state.className || null
   }, record));
+}
+
+function downloadRecoveredScratchSb3(code, lobbyCode, backup) {
+  try {
+    var binary = atob(backup.scratchSb3Base64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    var blob = new Blob([bytes], { type: 'application/octet-stream' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Recovered-' + (studentName(code) || code) + '-' + (lobbyCode || 'AP') + '.sb3';
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+  } catch(e) {
+    alert('The score backup was recovered, but the SB3 download failed: ' + e.message);
+  }
 }
 
 function csvCell(value) {

@@ -760,6 +760,10 @@ function showAssessmentCompleted(record) {
   var spec = ASSESSMENTS[assessment.assessmentId] || {};
   var maxScore = record.maxScore || spec.maxScore || 21;
   assessment.completed = true;
+  if (assessment.localScratchSb3Timer) {
+    clearInterval(assessment.localScratchSb3Timer);
+    assessment.localScratchSb3Timer = null;
+  }
   if (assessment.individualForced && state.db && state.uid) {
     var _completedAt = Date.now();
     if (state.className) {
@@ -800,6 +804,8 @@ document.getElementById('btn-ap-student-home').onclick = function() {
 function returnToLessonsFromCompletedAssessment() {
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
   assessment.saveTimer = null;
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
+  assessment.localScratchSb3Timer = null;
   if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
   assessment.questionAutosaveTimer = null;
   if (assessment.studentListener && assessment.studentListenerRef) assessment.studentListenerRef.off('value', assessment.studentListener);
@@ -819,6 +825,8 @@ function exitAssessmentStudent(opts) {
   if (assessment.forced && !opts.keepForced) return;
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
   assessment.saveTimer = null;
+  if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
+  assessment.localScratchSb3Timer = null;
   if (assessment.projectChangeTimer) clearTimeout(assessment.projectChangeTimer);
   assessment.projectChangeTimer = null;
   if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
