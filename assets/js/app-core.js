@@ -245,11 +245,15 @@ async function markStepComplete(lid, sid) {
 }
 
 // ── Load app data ─────────────────────────────────────────────
+// Lesson/config JSON is fetched with revalidation so edits are always picked up
+// (browsers otherwise serve a stale cached copy, breaking updated lesson code).
+var NOCACHE = { cache: 'no-cache' };
+
 async function loadApp() {
   // Fetch firebase config and lesson index in parallel
   var results = await Promise.all([
-    fetch('config/firebase.json').then(function(r) { return r.json(); }),
-    fetch('lessons/index.json').then(function(r) { return r.json(); }),
+    fetch('config/firebase.json', NOCACHE).then(function(r) { return r.json(); }),
+    fetch('lessons/index.json', NOCACHE).then(function(r) { return r.json(); }),
   ]);
   state.config      = results[0];  // { firebase, adminCode }
   state.lessonIndex = results[1];  // { yearGroups: [...] }
@@ -300,7 +304,7 @@ async function loadApp() {
   });
 
   var fetchedData = await Promise.all(
-    uniqueFiles.map(function(meta) { return fetch(meta.file).then(function(r) { return r.json(); }); })
+    uniqueFiles.map(function(meta) { return fetch(meta.file, NOCACHE).then(function(r) { return r.json(); }); })
   );
 
   var fileDataMap = {};
