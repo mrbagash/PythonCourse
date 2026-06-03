@@ -19,6 +19,15 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+function base64ToArrayBuffer(base64) {
+  var binary = atob(base64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 function saveLocalApBackup(result) {
   if (!assessment.lobbyCode || !state.uid || assessment.debugMode) return;
   try {
@@ -87,6 +96,31 @@ async function saveLocalApScratchSb3Backup(opts) {
     return null;
   } finally {
     assessment.localScratchSb3SaveInFlight = false;
+  }
+}
+
+// Restore a locally-saved SB3 into the Scratch VM after a page refresh, so the
+// student does not lose their work. Returns true if a project was loaded.
+async function restoreLocalApScratchSb3Backup() {
+  if (!assessment.lobbyCode || !state.uid || assessment.debugMode || assessment.completed) return false;
+  var frame = document.getElementById('aps-scratch-frame');
+  var vm = frame && frame.contentWindow && frame.contentWindow.vm;
+  if (!vm || typeof vm.loadProject !== 'function') return false;
+  var raw;
+  try { raw = localStorage.getItem(localApScratchSb3Key(assessment.lobbyCode)); } catch(e) { return false; }
+  if (!raw) return false;
+  var record;
+  try { record = JSON.parse(raw); } catch(e) { return false; }
+  // Only restore a backup that belongs to this student and this AP attempt
+  if (!record || !record.base64 || record.uid !== state.uid || record.lobbyCode !== assessment.lobbyCode) return false;
+  try {
+    var buffer = base64ToArrayBuffer(record.base64);
+    await vm.loadProject(buffer);
+    var statusEl = document.getElementById('aps-save-status');
+    if (statusEl) statusEl.textContent = 'Restored your saved work from ' + new Date(record.savedAt).toLocaleTimeString('en-GB');
+    return true;
+  } catch(e) {
+    return false;
   }
 }
 
@@ -618,8 +652,10 @@ function loadAssessmentScratchEditor() {
     if (assessment.debugMode) {
       document.getElementById('aps-save-status').textContent = 'Debug mode - not saved';
     } else {
+      // Restore any locally-saved work first (e.g. after a page refresh), then start autosave
+      var restored = await restoreLocalApScratchSb3Backup();
       startAssessmentAutosave();
-      document.getElementById('aps-save-status').textContent = 'Autosave on';
+      if (!restored) document.getElementById('aps-save-status').textContent = 'Autosave on';
     }
   };
   frame.src = './scratch/editor.html?assessment=' + encodeURIComponent(assessment.lobbyCode || 'ap') + '&suppressBeforeUnload=1&_ap=' + Date.now();
