@@ -202,15 +202,9 @@
           "lessons": [
             {
               "id": "btec-dit-spreadsheets-lesson-1",
-              "title": "L1: Spreadsheet Basics",
+              "title": "L1: Formulas & Cell References",
               "file": "lessons/btec-dit-spreadsheets-lesson-1.json",
               "order": 1
-            },
-            {
-              "id": "btec-dit-spreadsheets-lesson-2",
-              "title": "L2: Formulas & Cell References",
-              "file": "lessons/btec-dit-spreadsheets-lesson-2.json",
-              "order": 2
             }
           ]
         }

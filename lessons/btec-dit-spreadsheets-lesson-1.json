@@ -1,211 +1,63 @@
 {
   "id": "btec-dit-spreadsheets-lesson-1",
-  "title": "L1: Spreadsheet Basics",
-  "description": "Data, information, spreadsheet structure, fields, records, and qualitative and quantitative data for BTEC DIT Component 2.",
+  "title": "L1: Formulas & Cell References",
+  "description": "Build, understand and replicate spreadsheet formulas (Income = Quantity x Price), introduced step by step, ready for BTEC DIT Component 2 Task 2a.",
   "steps": [
     {
-      "id": "do-now",
-      "title": "Do Now Activity",
+      "id": "what-is-formula",
+      "title": "What is a Formula?",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do Now Activity</h2><p class='text-gray-700 mb-4'>Answer these starter questions from your previous knowledge. Use short answers.</p><div id='dit-dna' class='ex-box'></div>",
-      "js": "(function(){var qs=[{q:'What is data?',a:['raw facts and figures','facts and figures','raw facts','facts']},{q:'How can we visually represent data in a table?',a:['chart','charts','graph','graphs','chart or graph','charts or graphs']},{q:'What is a spreadsheet?',a:['a document that displays data using rows and columns','document that displays data using rows and columns','rows and columns','a document that organises data into rows and columns']},{q:'Which Microsoft software can we use to manipulate spreadsheets?',a:['excel','microsoft excel']}];var c=document.getElementById('dit-dna');c.innerHTML=qs.map(function(x,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+(i+1)+'. '+x.q+'</span><input id=\"dit-dna-'+i+'\" class=\"ex-input mt-1\" autocomplete=\"off\"></label>';}).join('')+'<button id=\"dit-dna-check\" class=\"ex-btn\">Check answers</button><div id=\"dit-dna-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-dna-check').onclick=function(){var ok=0;qs.forEach(function(x,i){var el=document.getElementById('dit-dna-'+i);var v=el.value.trim().toLowerCase().replace(/\\s+/g,' ');var pass=x.a.some(function(a){return v===a||v.indexOf(a)!==-1;});el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-dna-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Good start. You have remembered the key starter ideas.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='You have '+ok+' / '+qs.length+'. Improve any red answers, then check again.';}};})();"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a formula?</h2><p class='text-gray-700 mb-3'>A spreadsheet can do your maths <strong>for</strong> you. You just give it an instruction. That instruction is called a <strong>formula</strong>.</p><p class='text-gray-700 mb-2'>There is one golden rule:</p><div class='ex-box mb-4'><p class='bb-answer-line'>Every formula starts with an equals sign  =</p></div><p class='text-gray-700 mb-4'>When you press Enter, the cell shows the <strong>answer</strong> &ndash; not the formula. You can still see the formula in the <strong>formula bar</strong> at the top of the sheet.</p><h3 class='font-semibold text-gray-800 mb-2'>Worked example</h3><p class='text-gray-700 mb-2'>Type <code>=5+3</code> into a cell and press Enter:</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>What you type</th><th>What the cell shows</th><th>What the formula bar shows</th></tr></thead><tbody><tr><td>=5+3</td><td><strong>8</strong></td><td>=5+3</td></tr></tbody></table></div><h3 class='font-semibold text-gray-800 mb-2'>Now you try</h3><p class='text-gray-700 mb-3'>In the sheet below, click cell <strong>B2</strong>, type <code>=5+3</code> and press <strong>Enter</strong>. Watch the formula bar at the top. Then click Check.</p><div id='l1-try-sheet' class='mb-3 overflow-x-auto'></div><button id='l1-try-check' class='ex-btn'>Check</button><div id='l1-try-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=4',function(){var sheet=jspreadsheet(document.getElementById('l1-try-sheet'),{data:[['','',''],['','',''],['','','']],columns:[{width:110},{width:110},{width:110}],minDimensions:[3,3],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l1-try-sheet'),sheet);document.getElementById('l1-try-check').onclick=function(){var fb=document.getElementById('l1-try-fb');var grid=sheet.getData();var found=false;for(var y=0;y<grid.length;y++){for(var x=0;x<grid[y].length;x++){var raw=String(sheet.getValueFromCoords(x,y,false)||'');var val=parseFloat(grid[y][x]);if(raw.charAt(0)==='='&&Math.abs(val-8)<0.001){found=true;}}}if(found){fb.className='ex-feedback ok';fb.textContent='Perfect. =5+3 gives 8. The cell shows the answer; the formula bar shows the formula.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='Type =5+3 into a cell (do not forget the = sign) and press Enter, then Check.';}};});});});})();"
     },
     {
-      "id": "spreadsheet-basics",
-      "title": "Spreadsheet Basics",
-      "autoComplete": true,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a spreadsheet?</h2><p class='text-gray-700 mb-4'>A spreadsheet is a document that organises data using <strong>rows</strong> and <strong>columns</strong>. It is useful because data can be stored, sorted, calculated and turned into charts.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Cell</td><td>A single box in a spreadsheet</td></tr><tr><td>Row</td><td>A horizontal line, labelled with numbers</td></tr><tr><td>Column</td><td>A vertical line, labelled with letters</td></tr><tr><td>Cell reference</td><td>The column letter followed by the row number, such as B4</td></tr><tr><td>Workbook</td><td>All of the sheets in one spreadsheet file</td></tr></tbody></table></div><p class='text-gray-700'>In Microsoft Excel, the cell reference tells you exactly where a piece of data is stored.</p>"
+      "id": "operators",
+      "title": "The Four Operators",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>The four maths operators</h2><p class='text-gray-700 mb-3'>A formula can <strong>add</strong>, <strong>subtract</strong>, <strong>multiply</strong> or <strong>divide</strong>. The symbols are a little different from the ones you write by hand:</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>To do this</th><th>Use this symbol</th><th>Example</th><th>Answer</th></tr></thead><tbody><tr><td>Add</td><td>+</td><td>=4+6</td><td>10</td></tr><tr><td>Subtract</td><td>-</td><td>=10-2</td><td>8</td></tr><tr><td>Multiply</td><td>*  (not &times;)</td><td>=5*3</td><td>15</td></tr><tr><td>Divide</td><td>/  (not &divide;)</td><td>=20/4</td><td>5</td></tr></tbody></table></div><p class='text-gray-700 mb-4'>The two to remember: multiply is the <strong>star</strong> <code>*</code> and divide is the <strong>slash</strong> <code>/</code>.</p><h3 class='font-semibold text-gray-800 mb-2'>Your turn</h3><p class='text-gray-700 mb-3'>Write each formula. Start with <code>=</code> and pick the right symbol. Spaces do not matter.</p><div id='l1-ops' class='ex-box'></div>",
+      "js": "(function(){var qs=[{q:'Write a formula that adds 4 and 6.',p:'^=\\\\s*(4\\\\s*\\\\+\\\\s*6|6\\\\s*\\\\+\\\\s*4)\\\\s*$',hint:'=4+6'},{q:'Write a formula that multiplies 5 by 3.',p:'^=\\\\s*(5\\\\s*\\\\*\\\\s*3|3\\\\s*\\\\*\\\\s*5)\\\\s*$',hint:'=5*3'},{q:'Write a formula that subtracts 2 from 10.',p:'^=\\\\s*10\\\\s*-\\\\s*2\\\\s*$',hint:'=10-2'},{q:'Write a formula that divides 20 by 4.',p:'^=\\\\s*20\\\\s*/\\\\s*4\\\\s*$',hint:'=20/4'}];var c=document.getElementById('l1-ops');c.innerHTML=qs.map(function(x,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+(i+1)+'. '+x.q+'</span><input id=\"l1-ops-'+i+'\" class=\"ex-input mt-1\" autocomplete=\"off\" spellcheck=\"false\"></label>';}).join('')+'<button id=\"l1-ops-c\" class=\"ex-btn\">Check</button><div id=\"l1-ops-fb\" class=\"ex-feedback\"></div>';document.getElementById('l1-ops-c').onclick=function(){var ok=0;qs.forEach(function(x,i){var el=document.getElementById('l1-ops-'+i);var pass=new RegExp(x.p).test(el.value.trim());el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('l1-ops-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='All correct. You can now build any calculation.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='You have '+ok+' / '+qs.length+'. Remember: * for multiply, / for divide, and always start with =.';}};})();"
     },
     {
-      "id": "spreadsheet-task",
-      "title": "Spreadsheet Vocabulary",
+      "id": "cell-references",
+      "title": "Pointing at Cells",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What is a spreadsheet? - Task</h2><p class='text-gray-700 mb-4'>Use the word bank to complete each sentence.</p><div class='ex-box'><p class='bb-question-title'>Word bank</p><p class='text-gray-200'>Numbers | Letters | Workbook | Cell | Range | Number | Letter</p></div><div id='dit-vocab-task' class='ex-box'></div>",
-      "js": "(function(){var qs=[{text:'A single box in a spreadsheet is known as a',ans:'Cell',opts:['Cell','Range','Workbook']},{text:'Rows are labelled with',ans:'Numbers',opts:['Numbers','Letters','Workbook']},{text:'Columns are labelled with',ans:'Letters',opts:['Letters','Numbers','Range']},{text:'A cell is referenced using the column',ans:'Letter',opts:['Letter','Number','Workbook']},{text:'followed by the row',ans:'Number',opts:['Number','Letter','Cell']},{text:'All of the sheets in a spreadsheet make up a',ans:'Workbook',opts:['Workbook','Range','Cell']}];var c=document.getElementById('dit-vocab-task');c.innerHTML=qs.map(function(q,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+q.text+'</span><select id=\"dit-vocab-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose...</option>'+q.opts.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></label>';}).join('')+'<button id=\"dit-vocab-check\" class=\"ex-btn\">Check</button><div id=\"dit-vocab-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-vocab-check').onclick=function(){var ok=0;qs.forEach(function(q,i){var el=document.getElementById('dit-vocab-'+i);var pass=el.value===q.ans;el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-vocab-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Correct. You can now identify the core parts of a spreadsheet.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='You have '+ok+' / '+qs.length+'. Re-read the sentence and try again.';}};})();"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Pointing at cells instead of numbers</h2><p class='text-gray-700 mb-3'>So far we put numbers straight into the formula, like <code>=5*3</code>. But spreadsheets become really powerful when we <strong>point at the cells</strong> that hold the numbers instead.</p><p class='text-gray-700 mb-3'><code>=A2*B2</code> means: &ldquo;multiply whatever is in cell <strong>A2</strong> by whatever is in cell <strong>B2</strong>&rdquo;.</p><h3 class='font-semibold text-gray-800 mb-2'>Worked example</h3><div class='ex-box mb-3'><table class='bb-table'><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Price</td><td>Quantity</td><td>Total</td></tr><tr><td><strong>2</strong></td><td>2</td><td>3</td><td>=A2*B2  &rarr;  <strong>6</strong></td></tr></tbody></table></div><p class='text-gray-700 mb-4'>Here is the magic: if you change the Price or the Quantity, the Total <strong>updates by itself</strong>. You never have to work it out again. This is exactly what BTEC Component 2 needs.</p><h3 class='font-semibold text-gray-800 mb-2'>See it happen</h3><p class='text-gray-700 mb-3'>Cell <strong>C2</strong> below already contains <code>=A2*B2</code> and shows <strong>6</strong>. Change the <strong>Quantity in B2</strong> to <code>10</code> and press Enter. Watch the Total change on its own, then click Check.</p><div id='l1-ref-sheet' class='mb-3 overflow-x-auto'></div><button id='l1-ref-check' class='ex-btn'>Check</button><div id='l1-ref-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=4',function(){var sheet=jspreadsheet(document.getElementById('l1-ref-sheet'),{data:[['Price (£)','Quantity','Total (£)'],[2,3,'=A2*B2']],columns:[{width:100},{width:100},{width:110}],minDimensions:[3,2],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l1-ref-sheet'),sheet);document.getElementById('l1-ref-check').onclick=function(){var fb=document.getElementById('l1-ref-fb');var grid=sheet.getData();var total=parseFloat(grid[1][2]);if(Math.abs(total-20)<0.001){fb.className='ex-feedback ok';fb.textContent='Exactly! You did not retype the answer - the formula recalculated by itself. That is why we point at cells.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='Change B2 to 10 so the Total becomes 20, then click Check. The formula =A2*B2 does the rest.';}};});});});})();"
     },
     {
-      "id": "data-information",
-      "title": "Data and Information",
+      "id": "income-example",
+      "title": "Income (Worked Example)",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Data and information</h2><p class='text-gray-700 mb-4'>Click through each stage. The important idea is that information is data with meaning.</p><div id='dit-data-stepper' class='ex-box'></div>",
-      "js": "(function(){var steps=[{t:'1. Raw data',h:'<p class=\"text-gray-200\">5, Yes, 25%, Red, 12</p>',n:'These are facts and figures, but we do not know what they describe yet.'},{t:'2. Add field names',h:'<table class=\"bb-table\"><thead><tr><th>Age</th><th>Member?</th><th>Discount</th><th>House colour</th><th>Points</th></tr></thead><tbody><tr><td>5</td><td>Yes</td><td>25%</td><td>Red</td><td>12</td></tr></tbody></table>',n:'The headers give the data context. Now it has meaning.'},{t:'3. Key fact',h:'<p class=\"bb-answer-line\">All information is data, but not all data is information.</p>',n:'Information is data that has been given context or meaning.'}];var i=0,c=document.getElementById('dit-data-stepper');function render(){var s=steps[i];c.innerHTML='<p class=\"bb-question-title\">'+s.t+'</p>'+s.h+'<p class=\"ex-feedback hint\">'+s.n+'</p><div class=\"bb-step-controls\"><button id=\"dit-prev\" class=\"ex-btn\" '+(i===0?'disabled':'')+'>Previous</button><span class=\"bb-step-pill\">Step '+(i+1)+' of '+steps.length+'</span><button id=\"dit-next\" class=\"ex-btn\">'+(i===steps.length-1?'Complete':'Next')+'</button></div>';document.getElementById('dit-prev').onclick=function(){if(i>0){i--;render();}};document.getElementById('dit-next').onclick=function(){if(i<steps.length-1){i++;render();}else{__markStepComplete();}};}render();})();"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Putting it together: Income from sales</h2><p class='text-gray-700 mb-3'>In BTEC Component 2 you are given a company&rsquo;s sales data and asked to work out the <strong>Income from sales</strong> for each item. Income is just:</p><div class='ex-box mb-4'><p class='bb-answer-line'>Income = Quantity &times; Price</p></div><p class='text-gray-700 mb-4'>Click through how to build the formula for the first item.</p><div id='l1-step' class='ex-box'></div>",
+      "js": "(function(){var steps=[{t:'1. The data',h:'<table class=\"bb-table\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Item</td><td>Quantity</td><td>Price</td><td>Income</td></tr><tr><td><strong>2</strong></td><td>Pens</td><td>12</td><td>0.50</td><td>?</td></tr></tbody></table>',n:'We want the Income for Pens. It goes in cell D2.'},{t:'2. The thinking',h:'<p class=\"bb-answer-line\">Income = Quantity &times; Price</p>',n:'The Quantity is in B2. The Price is in C2.'},{t:'3. Build the formula',h:'<p class=\"bb-answer-line\">=B2*C2</p>',n:'Start with =, point at B2, use * to multiply, then point at C2.'},{t:'4. The result',h:'<table class=\"bb-table\"><tbody><tr><td>Pens</td><td>12</td><td>0.50</td><td><strong>6.00</strong></td></tr></tbody></table>',n:'12 × 0.50 = 6.00. The cell shows 6, the formula bar shows =B2*C2. Next step: your turn.'}];var i=0,c=document.getElementById('l1-step');function render(){var s=steps[i];c.innerHTML='<p class=\"bb-question-title\">'+s.t+'</p>'+s.h+'<p class=\"ex-feedback hint\">'+s.n+'</p><div class=\"bb-step-controls\"><button id=\"l1-prev\" class=\"ex-btn\" '+(i===0?'disabled':'')+'>Previous</button><span class=\"bb-step-pill\">Step '+(i+1)+' of '+steps.length+'</span><button id=\"l1-next\" class=\"ex-btn\">'+(i===steps.length-1?'Got it':'Next')+'</button></div>';document.getElementById('l1-prev').onclick=function(){if(i>0){i--;render();}};document.getElementById('l1-next').onclick=function(){if(i<steps.length-1){i++;render();}else{__markStepComplete();}};}render();})();"
     },
     {
-      "id": "fields-records",
-      "title": "Fields and Records",
+      "id": "income-practice",
+      "title": "Income (Your Turn)",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Fields and records</h2><p class='text-gray-700 mb-4'>Tables are made from fields and records. A <strong>field</strong> describes one column. A <strong>record</strong> is one full entry, usually one row.</p><div class='ex-box'><table class='bb-table'><thead><tr><th>Name</th><th>Age</th><th>Favourite game</th></tr></thead><tbody><tr><td>Amira</td><td>14</td><td>Minecraft</td></tr><tr><td>Ben</td><td>15</td><td>FC 26</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>In this table, how many records are there?</p><div id='dit-record-q'></div>",
-      "js": "createMCQ('dit-record-q',['2 records','3 records','6 records','1 record'],0,'Correct. There are two rows of entries, so there are two records.','Not quite. A record is one full entry, usually one row.');"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Your turn: calculate the Income</h2><p class='text-gray-700 mb-2'>You just saw how to write <code>=B2*C2</code> for Pens. Now do the same for every item in the <strong>Income</strong> column (column D).</p><p class='text-gray-700 mb-2'>Click <strong>D2</strong>, type <code>=B2*C2</code>, press Enter. Then D3 is <code>=B3*C3</code>, and so on for each row.</p><p class='text-gray-500 text-sm mb-3'>Tip: the formula bar at the top always shows the formula in the cell you have selected.</p><div id='l1-income-sheet' class='mb-3 overflow-x-auto'></div><button id='l1-income-check' class='ex-btn'>Check my Income column</button><div id='l1-income-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=4',function(){var data=[['Item','Quantity','Price (£)','Income (£)'],['Pens',12,0.5,''],['Notebooks',8,1.2,''],['Erasers',20,0.3,''],['Folders',5,1.5,'']];var sheet=jspreadsheet(document.getElementById('l1-income-sheet'),{data:data,columns:[{width:120},{width:90},{width:90},{width:110}],minDimensions:[4,5],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l1-income-sheet'),sheet);document.getElementById('l1-income-check').onclick=function(){var fb=document.getElementById('l1-income-fb');var grid=sheet.getData();var rows=[[1,12,0.5],[2,8,1.2],[3,20,0.3],[4,5,1.5]];var usedFormula=true,allOk=true;for(var i=0;i<rows.length;i++){var y=rows[i][0];var raw=String(sheet.getValueFromCoords(3,y,false)||'');var val=parseFloat(grid[y][3]);var expect=rows[i][1]*rows[i][2];if(raw.charAt(0)!=='=')usedFormula=false;if(isNaN(val)||Math.abs(val-expect)>0.005)allOk=false;}if(!usedFormula){fb.className='ex-feedback hint';fb.textContent='Use a FORMULA in every Income cell (start with =). Pens is =B2*C2, Notebooks is =B3*C3, and so on.';return;}if(!allOk){fb.className='ex-feedback err';fb.textContent='Some Income values are not right yet. Income = Quantity × Price for that row.';return;}fb.className='ex-feedback ok';fb.textContent='Brilliant - every Income is worked out with a formula. That is the exact skill marked in Task 2a.';__markStepComplete();};});});});})();"
     },
     {
-      "id": "definitions-task",
-      "title": "Definitions Task",
+      "id": "replicate",
+      "title": "Replicating a Formula",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Definitions - Task</h2><p class='text-gray-700 mb-4'>Match each key term to the correct definition.</p><div id='dit-def-task' class='ex-box'></div>",
-      "js": "(function(){var defs=[['Spreadsheet','A document that organises data into rows and columns.'],['Table','A structure that organises data into rows and columns.'],['Field','Describes data in one column and groups data of the same type.'],['Record','A single entry in a table, usually a whole row.'],['Data','Raw facts and figures.'],['Information','Data with context or meaning.']];var options=defs.map(function(d){return d[1];}).sort(function(){return Math.random()-0.5;});var c=document.getElementById('dit-def-task');c.innerHTML=defs.map(function(d,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+d[0]+'</span><select id=\"dit-def-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose a definition...</option>'+options.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select></label>';}).join('')+'<button id=\"dit-def-check\" class=\"ex-btn\">Check definitions</button><div id=\"dit-def-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-def-check').onclick=function(){var ok=0;defs.forEach(function(d,i){var el=document.getElementById('dit-def-'+i);var pass=el.value===d[1];el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-def-fb');if(ok===defs.length){fb.className='ex-feedback ok';fb.textContent='Excellent. These definitions are secure.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='You have '+ok+' / '+defs.length+'. Check the highlighted rows and try again.';}};})();"
-    },
-    {
-      "id": "representing-information",
-      "title": "Representing Information",
-      "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Qualitative and quantitative data</h2><p class='text-gray-700 mb-4'>Text is often used for qualitative data. Numbers are often used for quantitative data.</p><div class='ex-box'><p><strong class='text-gray-100'>Qualitative:</strong> data that cannot be measured, such as a name, colour, opinion or review.</p><p class='mt-2'><strong class='text-gray-100'>Quantitative:</strong> data that can be counted or measured, such as age, score, price or percentage.</p></div><div id='dit-type-task' class='ex-box'></div>",
-      "js": "(function(){var qs=[['Student name','Qualitative'],['Age','Quantitative'],['Favourite colour','Qualitative'],['Test score','Quantitative'],['Review comment','Qualitative'],['Attendance percentage','Quantitative']];var c=document.getElementById('dit-type-task');c.innerHTML=qs.map(function(q,i){return '<label class=\"block mb-3\"><span class=\"bb-question-title\">'+q[0]+'</span><select id=\"dit-type-'+i+'\" class=\"ex-input mt-1\"><option value=\"\">Choose...</option><option>Qualitative</option><option>Quantitative</option></select></label>';}).join('')+'<button id=\"dit-type-check\" class=\"ex-btn\">Check</button><div id=\"dit-type-fb\" class=\"ex-feedback\"></div>';document.getElementById('dit-type-check').onclick=function(){var ok=0;qs.forEach(function(q,i){var el=document.getElementById('dit-type-'+i);var pass=el.value===q[1];el.classList.toggle('correct',pass);el.classList.toggle('wrong',!pass);if(pass)ok++;});var fb=document.getElementById('dit-type-fb');if(ok===qs.length){fb.className='ex-feedback ok';fb.textContent='Correct. You can now separate measured data from descriptive data.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='You have '+ok+' / '+qs.length+'. Ask: can this be measured or counted?';}};})();"
-    },
-    {
-      "id": "storing-data-task",
-      "title": "Storing Data Task",
-      "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Create your data tables</h2><p class='text-gray-700 mb-2'>Build two tables using the spreadsheets below.</p><ul class='list-disc ml-5 text-gray-700 mb-4 text-sm space-y-1'><li><strong>Table 1</strong> — a topic with qualitative data (names, colours, opinions, reviews).</li><li><strong>Table 2</strong> — a topic with quantitative data (scores, prices, counts, percentages).</li></ul><p class='text-gray-500 text-sm mb-4'>Put your <strong>field names in row 1</strong>. Add at least <strong>3 records</strong> (data rows) in each table.</p><p class='text-sm font-semibold text-gray-300 mb-1'>Table 1 — Qualitative data</p><div id='dit-qual-sheet' class='mb-6 overflow-x-auto'></div><p class='text-sm font-semibold text-gray-300 mt-2 mb-1'>Table 2 — Quantitative data</p><div id='dit-quant-sheet' class='mb-5 overflow-x-auto'></div><button id='dit-sheet-check' class='ex-btn'>Check tables</button><div id='dit-sheet-fb' class='ex-feedback'></div>",
-      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page and try again.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');function blank(){return Array.from({length:10},function(){return new Array(6).fill('');});}function mkSheet(id){return jspreadsheet(document.getElementById(id),{data:blank(),columns:[{width:120},{width:120},{width:120},{width:120},{width:120},{width:120}],minDimensions:[6,10],tableOverflow:true,tableWidth:'100%',toolbar:true,about:false});}ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js',function(){var s1=mkSheet('dit-qual-sheet');var s2=mkSheet('dit-quant-sheet');JHNCCAddFormulaBar(document.getElementById('dit-qual-sheet'),s1);JHNCCAddFormulaBar(document.getElementById('dit-quant-sheet'),s2);JHNCCAddSheetTabs(document.getElementById('dit-qual-sheet'),s1);JHNCCAddSheetTabs(document.getElementById('dit-quant-sheet'),s2);document.getElementById('dit-sheet-check').onclick=function(){var fb=document.getElementById('dit-sheet-fb');var d1=s1.getData(),d2=s2.getData();var h1=d1[0].filter(function(c){return String(c).trim()!=='';}).length;var r1=d1.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});}).length;var h2=d2[0].filter(function(c){return String(c).trim()!=='';}).length;var r2=d2.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});}).length;if(h1<3){fb.className='ex-feedback err';fb.textContent='Qualitative table: add at least 3 field names in row 1.';return;}if(r1<3){fb.className='ex-feedback err';fb.textContent='Qualitative table: add at least 3 data records below the header row.';return;}if(h2<3){fb.className='ex-feedback err';fb.textContent='Quantitative table: add at least 3 field names in row 1.';return;}if(r2<3){fb.className='ex-feedback err';fb.textContent='Quantitative table: add at least 3 data records below the header row.';return;}fb.className='ex-feedback ok';fb.textContent='Both tables complete. Well done.';__markStepComplete();};})});});})();"
-    },
-    {
-      "id": "formatting-extension",
-      "title": "Formatting Extension",
-      "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Extension: formatting your spreadsheet</h2><p class='text-gray-700 mb-3'>Use the toolbar above the spreadsheet to improve the sample data below. Make it readable and professional, then tick each box to confirm what you have done.</p><div id='dit-fmt-sheet' class='mb-5 overflow-x-auto'></div><div class='ex-box'><p class='bb-question-title mb-3'>Formatting checklist</p><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Bold field names in row 1</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Background colour applied to the header row</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Columns widened so all data is visible</label><label class='block mb-2'><input type='checkbox' class='dit-fmt-chk mr-2'>Number formatting applied to numeric columns</label><label class='block mb-3'><input type='checkbox' class='dit-fmt-chk mr-2'>Borders added to the table</label><button id='dit-fmt-check' class='ex-btn'>Confirm formatting complete</button><div id='dit-fmt-fb' class='ex-feedback'></div></div>",
-      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page and try again.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');var data=[['Student','Score','Grade','Attendance %'],['Amira','85','A','95'],['Ben','62','C','88'],['Charlie','74','B','91'],['Diana','91','A*','99'],['Ethan','55','D','76'],['Fatima','78','B','87'],['George','83','A','93']];ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js',function(){var _fmt=jspreadsheet(document.getElementById('dit-fmt-sheet'),{data:data,columns:[{type:'text',width:130,title:'Student'},{type:'numeric',width:80,title:'Score'},{type:'text',width:80,title:'Grade'},{type:'numeric',width:130,title:'Attendance %'}],tableOverflow:true,tableWidth:'460px',toolbar:true,about:false});JHNCCAddFormulaBar(document.getElementById('dit-fmt-sheet'),_fmt);JHNCCAddSheetTabs(document.getElementById('dit-fmt-sheet'),_fmt);document.getElementById('dit-fmt-check').onclick=function(){var fb=document.getElementById('dit-fmt-fb');var done=[].slice.call(document.querySelectorAll('.dit-fmt-chk')).filter(function(c){return c.checked;}).length;if(done<4){fb.className='ex-feedback hint';fb.textContent='Complete at least 4 formatting steps and tick each box before confirming.';return;}fb.className='ex-feedback ok';fb.textContent='Good work. Your spreadsheet is now readable and professional.';__markStepComplete();};})});});})();"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Replicating (copying) a formula</h2><p class='text-gray-700 mb-3'>Typing <code>=B2*C2</code>, then <code>=B3*C3</code>, then <code>=B4*C4</code> by hand is slow. BTEC asks you to write the formula <strong>once</strong> and then <strong>replicate</strong> it. Replicate just means <strong>copy it down</strong>.</p><h3 class='font-semibold text-gray-800 mb-2'>The clever bit</h3><p class='text-gray-700 mb-2'>When you copy a formula down one row, the cell references move with it automatically:</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Cell</th><th>Formula after copying down</th></tr></thead><tbody><tr><td>D2</td><td>=B2*C2  (the one you typed)</td></tr><tr><td>D3</td><td>=B3*C3  (copied)</td></tr><tr><td>D4</td><td>=B4*C4  (copied)</td></tr></tbody></table></div><h3 class='font-semibold text-gray-800 mb-2'>How to replicate</h3><div class='ex-box mb-4'><p class='text-gray-200 text-sm'>1. Click the cell that already has the formula (D2).<br>2. Copy it: <strong>Ctrl + C</strong>.<br>3. Select the empty cells below (D3 to D5).<br>4. Paste: <strong>Ctrl + V</strong>.</p></div><h3 class='font-semibold text-gray-800 mb-2'>Your turn</h3><p class='text-gray-700 mb-3'>D2 below already contains <code>=B2*C2</code>. Replicate it down so every row has an Income, then click Check.</p><div id='l1-rep-sheet' class='mb-3 overflow-x-auto'></div><button id='l1-rep-check' class='ex-btn'>Check</button><div id='l1-rep-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=4',function(){var data=[['Item','Quantity','Price (£)','Income (£)'],['Rulers',15,0.4,'=B2*C2'],['Markers',6,1.1,''],['Glue sticks',10,0.8,''],['Scissors',4,2.5,'']];var sheet=jspreadsheet(document.getElementById('l1-rep-sheet'),{data:data,columns:[{width:120},{width:90},{width:90},{width:110}],minDimensions:[4,5],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l1-rep-sheet'),sheet);document.getElementById('l1-rep-check').onclick=function(){var fb=document.getElementById('l1-rep-fb');var grid=sheet.getData();var rows=[[2,6,1.1],[3,10,0.8],[4,4,2.5]];var usedFormula=true,allOk=true;for(var i=0;i<rows.length;i++){var y=rows[i][0];var raw=String(sheet.getValueFromCoords(3,y,false)||'');var val=parseFloat(grid[y][3]);var expect=rows[i][1]*rows[i][2];if(raw.charAt(0)!=='=')usedFormula=false;if(isNaN(val)||Math.abs(val-expect)>0.005)allOk=false;}if(!usedFormula){fb.className='ex-feedback hint';fb.textContent='Copy the formula in D2 and paste it into D3, D4 and D5 - do not type the answers.';return;}if(!allOk){fb.className='ex-feedback err';fb.textContent='Not quite - make sure you replicated D2 into every row below it.';return;}fb.className='ex-feedback ok';fb.textContent='Replicated perfectly. Each row used its own =B?*C? - the references adjusted by themselves.';__markStepComplete();};});});});})();"
     },
     {
       "id": "exam",
-      "title": "End of Lesson Exam",
+      "title": "Check What You Have Learned",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>End of lesson exam</h2><p class='text-gray-700 mb-4'>Answer every question. Feedback appears after each one.</p><div id='dit-exam'></div>",
-      "js": "createMCQSet('dit-exam',[{q:'A single box in a spreadsheet is called a...',options:['Cell','Workbook','Field','Record'],answer:0,right:'Correct. A cell is one box.'},{q:'Rows in a spreadsheet are labelled with...',options:['Numbers','Letters','Colours','Formulas'],answer:0,right:'Correct. Rows use numbers.'},{q:'Columns in a spreadsheet are labelled with...',options:['Letters','Numbers','Records','Sheets'],answer:0,right:'Correct. Columns use letters.'},{q:'Which term means data with context or meaning?',options:['Information','Raw data','A range','A record'],answer:0,right:'Correct. Information has meaning.'},{q:'Which option is quantitative?',options:['Age','Favourite colour','Surname','Review comment'],answer:0,right:'Correct. Age can be measured.'},{q:'What is a field?',options:['A column heading that describes a type of data','A whole spreadsheet file','One row entry','A chart'],answer:0,right:'Correct. A field describes a column.'},{q:'What is a record?',options:['One full entry in a table','One column heading','A spreadsheet formula','A workbook'],answer:0,right:'Correct. A record is usually one row.'},{q:'All of the sheets in one spreadsheet file make up a...',options:['Workbook','Cell','Field','Record'],answer:0,right:'Correct. The whole file is a workbook.'}]);"
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Check what you have learned</h2><p class='text-gray-700 mb-4'>These questions cover everything from this lesson. Feedback appears after each one.</p><div id='l1-exam'></div>",
+      "js": "createMCQSet('l1-exam',[{q:'Every spreadsheet formula must start with which symbol?',options:['=','+','#','@'],answer:0,right:'Correct. All formulas start with =.'},{q:'Which symbol means multiply?',options:['*','x','%','&'],answer:0,right:'Correct. * means multiply.'},{q:'What does =A2*B2 mean?',options:['Multiply the value in A2 by the value in B2','Add A2 and B2','Print the letters A2 B2','Multiply 2 by 2'],answer:0,right:'Correct.'},{q:'Income = Quantity × Price. Quantity is in B2 and Price is in C2. Which formula is correct?',options:['=B2*C2','=B2+C2','=Quantity*Price','B2*C2'],answer:0,right:'Correct - and never forget the = sign.'},{q:'You copy =B2*C2 from D2 down into D3. What does it become?',options:['=B3*C3','=B2*C2','=C2*D2','=B4*C4'],answer:0,right:'Correct. The references move down with the formula.'},{q:'Why is =A2*B2 better than typing =2*3 directly?',options:['If the numbers change, the answer updates automatically','It looks nicer','It is shorter to type','It uses less memory'],answer:0,right:'Correct. Cell references keep results up to date.'}]);"
     },
     {
-      "id": "endless-practice",
+      "id": "endless",
       "title": "Endless Practice",
       "autoComplete": false,
-      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 generated questions correctly. The step marks complete automatically.</p><div id='dit-endless' class='ex-box'></div>",
-      "js": "(function(){var bank=[{q:'A single box in a spreadsheet is called a...',o:['Cell','Workbook','Record','Table'],a:0},{q:'Data with context or meaning is...',o:['Information','Raw data','A field','A range'],a:0},{q:'A whole row entry in a table is a...',o:['Record','Field','Workbook','Column'],a:0},{q:'A column heading that describes data is a...',o:['Field','Record','Cell','Sheet'],a:0},{q:'Favourite colour is...',o:['Qualitative','Quantitative','A workbook','A formula'],a:0},{q:'Test score is...',o:['Quantitative','Qualitative','A record','A field'],a:0},{q:'Rows are labelled using...',o:['Numbers','Letters','Cells','Workbooks'],a:0},{q:'Columns are labelled using...',o:['Letters','Numbers','Rows','Records'],a:0}];var solved=0,c=document.getElementById('dit-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return {x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct answers: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question loading.';if(solved>=5)__markStepComplete();else setTimeout(render,800);}else{fb.className='ex-feedback err';fb.textContent='Not quite. Think about the exact definition, then try another.';setTimeout(render,1200);}};});}render();})();"
-    }
-  ],
-  "quizQuestions": [
-    {
-      "type": "mcq",
-      "q": "What is data?",
-      "options": [
-        "Raw facts and figures",
-        "Data with meaning",
-        "A chart only",
-        "A finished report"
-      ],
-      "answer": 0,
-      "duration": 45
-    },
-    {
-      "type": "text_input",
-      "q": "What is one single box in a spreadsheet called?",
-      "answer": "CELL",
-      "duration": 45
-    },
-    {
-      "type": "mcq",
-      "q": "Rows and columns in a spreadsheet are used to...",
-      "options": [
-        "Organise data",
-        "Delete data automatically",
-        "Stop calculations",
-        "Create passwords"
-      ],
-      "answer": 0,
-      "duration": 45
-    },
-    {
-      "type": "text_input",
-      "q": "What Microsoft software is commonly used to manipulate spreadsheets?",
-      "answer": "EXCEL",
-      "duration": 45
-    },
-    {
-      "type": "mcq",
-      "q": "Which statement best describes information?",
-      "options": [
-        "Data with context or meaning",
-        "Random values without labels",
-        "Only numbers",
-        "Only text"
-      ],
-      "answer": 0,
-      "duration": 60
-    },
-    {
-      "type": "mcq",
-      "q": "What is a field in a table?",
-      "options": [
-        "A column heading that describes a type of data",
-        "A single spreadsheet file",
-        "One complete row entry",
-        "A blank cell"
-      ],
-      "answer": 0,
-      "duration": 60
-    },
-    {
-      "type": "mcq",
-      "q": "What is a record in a table?",
-      "options": [
-        "One full entry, usually a row",
-        "One column heading",
-        "All sheets in a file",
-        "A graph"
-      ],
-      "answer": 0,
-      "duration": 60
-    },
-    {
-      "type": "mcq",
-      "q": "Which example is qualitative data?",
-      "options": [
-        "Favourite colour",
-        "Age",
-        "Score out of 20",
-        "Attendance percentage"
-      ],
-      "answer": 0,
-      "duration": 45
-    },
-    {
-      "type": "mcq",
-      "q": "Which example is quantitative data?",
-      "options": [
-        "Number of tickets sold",
-        "Surname",
-        "Review comment",
-        "Favourite game genre"
-      ],
-      "answer": 0,
-      "duration": 45
-    },
-    {
-      "type": "text_input",
-      "q": "All of the sheets in one spreadsheet file make up a what?",
-      "answer": "WORKBOOK",
-      "duration": 45
-    },
-    {
-      "type": "mcq",
-      "q": "Which cell reference is written correctly?",
-      "options": [
-        "B4",
-        "4B",
-        "Row B Column 4",
-        "B-4 only"
-      ],
-      "answer": 0,
-      "duration": 45
-    },
-    {
-      "type": "mcq",
-      "q": "Why do field names make data more useful?",
-      "options": [
-        "They give the values meaning",
-        "They remove every record",
-        "They stop sorting",
-        "They turn numbers into text"
-      ],
-      "answer": 0,
-      "duration": 60
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to finish. If you get one wrong, the streak resets - so take your time.</p><div id='l1-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'Quantity is in B2, Price is in C2. Formula for Income?',o:['=B2*C2','=B2+C2','=C2-B2','B2*C2'],a:0},{q:'Which symbol divides?',o:['/','*','-','+'],a:0},{q:'A formula always starts with...',o:['=','+','!','?'],a:0},{q:'Copy =D2*E2 down one row. It becomes...',o:['=D3*E3','=D2*E2','=E2*F2','=D1*E1'],a:0},{q:'Cost is in A4, VAT is in B4. Formula to add them?',o:['=A4+B4','=A4*B4','=A4-B4','A4+B4'],a:0},{q:'Which symbol means multiply?',o:['*','x','/','+'],a:0},{q:'Total in C2 = Price A2 times Quantity B2. Formula?',o:['=A2*B2','=A2/B2','=A2+B2','=A2-B2'],a:0},{q:'Why use cell references in formulas?',o:['Results update when the data changes','They look colourful','They are faster to delete','They hide the data'],a:0}];var solved=0,c=document.getElementById('l1-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete. Well done!':'Correct. Next question loading.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite - your streak resets. Try again.';setTimeout(render,1100);}};});}render();})();"
     }
   ]
 }

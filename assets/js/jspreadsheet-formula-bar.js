@@ -223,6 +223,13 @@
     }
 
     // First tab = the existing primary sheet. Move its [bar + holder] into a panel.
+    // The holder often carries a bottom margin (e.g. Tailwind mb-5) which would leave a
+    // gap between the sheet and the tab bar. Move that spacing to the whole widget instead.
+    try {
+      var holderMb = window.getComputedStyle(holder).marginBottom;
+      if (holderMb && holderMb !== '0px') wrapper.style.marginBottom = holderMb;
+      holder.style.marginBottom = '0';
+    } catch (e) {}
     var panel0 = document.createElement('div');
     panel0.className = 'jhncc-sheet-panel';
     if (bar) panel0.appendChild(bar);
