@@ -136,14 +136,16 @@ function hasLocalApScratchSb3(lobbyCode) {
 }
 
 // Let the student download their own AP project straight from localStorage.
-function downloadOwnApScratchSb3(lobbyCode) {
+// opts.silent suppresses alerts (used during page-unload where alerts are not allowed).
+function downloadOwnApScratchSb3(lobbyCode, opts) {
+  opts = opts || {};
   if (!lobbyCode) return false;
   var raw;
   try { raw = localStorage.getItem(localApScratchSb3Key(lobbyCode)); } catch(e) { return false; }
-  if (!raw) { alert('No saved project was found on this device.'); return false; }
+  if (!raw) { if (!opts.silent) alert('No saved project was found on this device.'); return false; }
   var record;
   try { record = JSON.parse(raw); } catch(e) { return false; }
-  if (!record || !record.base64) { alert('No saved project was found on this device.'); return false; }
+  if (!record || !record.base64) { if (!opts.silent) alert('No saved project was found on this device.'); return false; }
   try {
     var buffer = base64ToArrayBuffer(record.base64);
     var blob = new Blob([buffer], { type: 'application/octet-stream' });
@@ -154,9 +156,34 @@ function downloadOwnApScratchSb3(lobbyCode) {
     setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
     return true;
   } catch(e) {
-    alert('Could not download the project: ' + e.message);
+    if (!opts.silent) alert('Could not download the project: ' + e.message);
     return false;
   }
+}
+
+// Guard against accidental tab close/refresh during a live Scratch AP.
+// Triggers a best-effort local download and shows the browser's native
+// "leave site?" prompt so the student is warned to wait. No Firebase involved.
+var apUnloadGuardHandler = null;
+function registerApUnloadGuard() {
+  if (apUnloadGuardHandler) return;
+  apUnloadGuardHandler = function(e) {
+    if (assessment.completed || assessment.debugMode || !assessment.lobbyCode) return;
+    // Kick off a fresh local SB3 save (best-effort; may not finish before unload) and
+    // immediately download whatever is currently in localStorage so nothing is lost.
+    try { saveLocalApScratchSb3Backup({ updateStatus: false }); } catch(_e) {}
+    try { downloadOwnApScratchSb3(assessment.lobbyCode, { silent: true }); } catch(_e2) {}
+    var msg = 'Your AP project is downloading. Please wait for the download to finish before closing this tab.';
+    e.preventDefault();
+    e.returnValue = msg;
+    return msg;
+  };
+  window.addEventListener('beforeunload', apUnloadGuardHandler);
+}
+function removeApUnloadGuard() {
+  if (!apUnloadGuardHandler) return;
+  window.removeEventListener('beforeunload', apUnloadGuardHandler);
+  apUnloadGuardHandler = null;
 }
 
 function setupApRecoveryListener() {
@@ -690,6 +717,7 @@ function loadAssessmentScratchEditor() {
       // Restore any locally-saved work first (e.g. after a page refresh), then start autosave
       var restored = await restoreLocalApScratchSb3Backup();
       startAssessmentAutosave();
+      registerApUnloadGuard();
       if (!restored) document.getElementById('aps-save-status').textContent = 'Autosave on';
     }
   };
@@ -1217,6 +1245,9 @@ function startAssessmentAutosave() {
       assessment.projectChangeListener = function() {
         clearTimeout(assessment.projectChangeTimer);
         assessment.projectChangeTimer = setTimeout(function() { saveAssessmentProject({ force: false }); }, 15000);
+        // Keep the local SB3 backup close to current so a refresh/close download isn't stale
+        clearTimeout(assessment.localSb3ChangeTimer);
+        assessment.localSb3ChangeTimer = setTimeout(function() { saveLocalApScratchSb3Backup({ updateStatus: false }); }, 4000);
       };
       runtime.on('PROJECT_CHANGED', assessment.projectChangeListener);
     }
@@ -1256,7 +1287,10 @@ document.getElementById('btn-ap-finish').onclick = async function() {
   if (assessment.validating) return;
   if (!assessment.debugMode && !confirm('Submit your final assessment? You cannot do this AP again after submitting.')) return;
   await runAssessmentValidation('Final validation before submitting...', async function() {
+    // Capture a fresh local copy and download it to the student's machine (no Firebase needed).
+    // Done before validation runs so the downloaded project is in its clean, pre-test state.
     await saveLocalApScratchSb3Backup({ updateStatus: true });
+    downloadOwnApScratchSb3(assessment.lobbyCode);
     await saveAssessmentProject({ force: true });
     var result = await validateAssessmentProject(function(label, index, total) {
       updateAssessmentValidationStatus(label, index, total);

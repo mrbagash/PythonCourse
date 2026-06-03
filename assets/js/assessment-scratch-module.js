@@ -760,9 +760,14 @@ function showAssessmentCompleted(record) {
   var spec = ASSESSMENTS[assessment.assessmentId] || {};
   var maxScore = record.maxScore || spec.maxScore || 21;
   assessment.completed = true;
+  if (typeof removeApUnloadGuard === 'function') removeApUnloadGuard();
   if (assessment.localScratchSb3Timer) {
     clearInterval(assessment.localScratchSb3Timer);
     assessment.localScratchSb3Timer = null;
+  }
+  if (assessment.localSb3ChangeTimer) {
+    clearTimeout(assessment.localSb3ChangeTimer);
+    assessment.localSb3ChangeTimer = null;
   }
   if (assessment.individualForced && state.db && state.uid) {
     var _completedAt = Date.now();
@@ -835,10 +840,13 @@ function returnToLessonsFromCompletedAssessment() {
 function exitAssessmentStudent(opts) {
   opts = opts || {};
   if (assessment.forced && !opts.keepForced) return;
+  if (typeof removeApUnloadGuard === 'function') removeApUnloadGuard();
   if (assessment.saveTimer) clearInterval(assessment.saveTimer);
   assessment.saveTimer = null;
   if (assessment.localScratchSb3Timer) clearInterval(assessment.localScratchSb3Timer);
   assessment.localScratchSb3Timer = null;
+  if (assessment.localSb3ChangeTimer) clearTimeout(assessment.localSb3ChangeTimer);
+  assessment.localSb3ChangeTimer = null;
   if (assessment.projectChangeTimer) clearTimeout(assessment.projectChangeTimer);
   assessment.projectChangeTimer = null;
   if (assessment.questionAutosaveTimer) clearTimeout(assessment.questionAutosaveTimer);
