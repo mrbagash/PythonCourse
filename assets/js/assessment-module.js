@@ -620,6 +620,21 @@ function startIndividualForcedApWatcher(className, uid) {
 async function joinAssessmentByCode(code, opts) {
   opts = opts || {};
   if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join an assessment.');
+  // Prevent concurrent joins — if a join is already in flight for this code, bail out.
+  // This stops both forced-AP watchers firing simultaneously and writing two different
+  // activeClientIds (which would kick the first tab/join).
+  if (assessment._joinInFlight === code) return;
+  assessment._joinInFlight = code;
+  try {
+    await _joinAssessmentByCode(code, opts);
+  } finally {
+    assessment._joinInFlight = null;
+  }
+}
+
+async function _joinAssessmentByCode(code, opts) {
+  opts = opts || {};
+  if (!state.uid || state.isAdmin) throw new Error('Students need to be logged in to join an assessment.');
   var sessionRef = state.db.ref('quizSessions/' + code);
   var snap = await sessionRef.get();
   if (!snap.exists()) throw new Error('No quiz or assessment found with that code.');
@@ -689,6 +704,11 @@ function showAssessmentStudentScreen(session) {
         if (!assessment.completed) exitAssessmentStudent({ keepForced: true });
       }
     });
+    // Clean up any previous activeClientRef listener before attaching a new one,
+    // otherwise the old listener leaks and can fire spuriously.
+    if (assessment.activeClientRef && assessment.activeClientListener) {
+      assessment.activeClientRef.off('value', assessment.activeClientListener);
+    }
     assessment.activeClientRef = assessment.responseRef.child('activeClientId');
     assessment.activeClientListener = assessment.activeClientRef.on('value', function(snap) {
       var activeClientId = snap.val();

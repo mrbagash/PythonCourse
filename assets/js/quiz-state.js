@@ -88,11 +88,14 @@ var assessment = {
   questionAutosaveTimer: null,
   questionWidget: null,
   clientId: (function(){
+    // Use localStorage (not sessionStorage) so all tabs on the same device share
+    // the same clientId — prevents a second tab's forced-AP join from kicking the first.
+    // Different physical devices still get different clientIds (separate localStorage).
     try {
-      var existing = sessionStorage.getItem('pylearn_ap_client_id');
+      var existing = localStorage.getItem('pylearn_ap_client_id');
       if (existing) return existing;
       var id = Date.now() + '-' + Math.random().toString(36).slice(2);
-      sessionStorage.setItem('pylearn_ap_client_id', id);
+      localStorage.setItem('pylearn_ap_client_id', id);
       return id;
     } catch(e) { return Date.now() + '-' + Math.random().toString(36).slice(2); }
   })()
