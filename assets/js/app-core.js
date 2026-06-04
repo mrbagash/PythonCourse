@@ -325,11 +325,14 @@ async function loadApp() {
     ygSelect.appendChild(opt);
   });
 
-  // Restore saved year group preference (or default to first)
+  // Restore from URL hash first, then localStorage, then default to first
+  var _urlHash = parseUrlHash();
   var savedYG = localStorage.getItem('pylearn_year_group');
-  var initialYG = (savedYG && state.yearGroups.find(function(y){ return y.id === savedYG; }))
-    ? savedYG
-    : state.yearGroups[0].id;
+  var initialYG = (_urlHash && state.yearGroups.find(function(y){ return y.id === _urlHash.yearGroupId; }))
+    ? _urlHash.yearGroupId
+    : (savedYG && state.yearGroups.find(function(y){ return y.id === savedYG; }))
+      ? savedYG
+      : state.yearGroups[0].id;
 
   ygSelect.value = initialYG;
   ygSelect.onchange = function() {
@@ -366,10 +369,13 @@ function applyYearGroup(ygId) {
 
   courseSelect.classList.toggle('hidden', courses.length === 0);
 
+  var _hashForCourse = parseUrlHash();
   var savedCourse = localStorage.getItem('pylearn_course_' + ygId);
-  var initialCourse = (savedCourse && courses.find(function(c){ return c.id === savedCourse; }))
-    ? savedCourse
-    : (courses[0] ? courses[0].id : null);
+  var initialCourse = (_hashForCourse && _hashForCourse.yearGroupId === ygId && courses.find(function(c){ return c.id === _hashForCourse.courseId; }))
+    ? _hashForCourse.courseId
+    : (savedCourse && courses.find(function(c){ return c.id === savedCourse; }))
+      ? savedCourse
+      : (courses[0] ? courses[0].id : null);
 
   courseSelect.value = initialCourse;
   courseSelect.onchange = function() {
@@ -395,7 +401,14 @@ function applyCourse(courseId) {
 
   renderLessonTabs();
   if (state.lessons.length > 0) {
-    loadStep(0, 0);
+    // If the URL hash points into this exact course, restore that position.
+    // Otherwise load from the beginning.
+    var _hash = parseUrlHash();
+    if (_hash && _hash.yearGroupId === state.currentYearGroup && _hash.courseId === courseId) {
+      applyHashToCurrentCourse(_hash);
+    } else {
+      loadStep(0, 0);
+    }
   }
 }
 
@@ -445,6 +458,50 @@ function loadLesson(idx) {
   state.currentStepIdx   = 0;
   renderLessonTabs();
   loadStep(idx, 0);
+}
+
+// ── URL hash routing ─────────────────────────────────────────────────────────
+// Format: #yearGroupId/courseId/lessonId/stepId
+// e.g.   #year7/scratch/year7-scratch-basics/build-1
+function updateUrlHash() {
+  if (!state.currentYearGroup || !state.currentCourse || !state.lessons.length) return;
+  var lesson = state.lessons[state.currentLessonIdx];
+  var step   = lesson && lesson.data.steps[state.currentStepIdx];
+  if (!lesson || !step) return;
+  var hash = '#' + [
+    state.currentYearGroup,
+    state.currentCourse,
+    lesson.meta.id,
+    step.id
+  ].join('/');
+  if (window.location.hash !== hash) {
+    history.replaceState(null, '', hash);
+  }
+}
+
+function parseUrlHash() {
+  var hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return null;
+  var parts = hash.split('/');
+  if (parts.length < 4) return null;
+  return { yearGroupId: parts[0], courseId: parts[1], lessonId: parts[2], stepId: parts[3] };
+}
+
+// Apply a parsed hash to navigate to the right lesson/step.
+// Call after applyCourse has filtered state.lessons.
+function applyHashToCurrentCourse(parsed) {
+  if (!parsed) return;
+  var lessonIdx = -1;
+  for (var i = 0; i < state.lessons.length; i++) {
+    if (state.lessons[i].meta.id === parsed.lessonId) { lessonIdx = i; break; }
+  }
+  if (lessonIdx === -1) return;
+  var steps = state.lessons[lessonIdx].data.steps || [];
+  var stepIdx = 0;
+  for (var j = 0; j < steps.length; j++) {
+    if (steps[j].id === parsed.stepId) { stepIdx = j; break; }
+  }
+  loadStep(lessonIdx, stepIdx);
 }
 
 async function loadStep(lessonIdx, stepIdx) {
@@ -558,6 +615,9 @@ async function loadStep(lessonIdx, stepIdx) {
       try { eval(step.js); } catch(e) { console.error('Step JS error:', e); }
     }, 50);
   }
+
+  // Update URL hash so the page is bookmarkable / auto-restores on reload
+  updateUrlHash();
 }
 
 // ── Navigation ────────────────────────────────────────────────
