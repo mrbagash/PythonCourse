@@ -28,6 +28,18 @@
 	<script>
 		// Suppress beforeunload dialog so navigating lessons doesn't trigger browser warnings
 		(function(){var _ael=window.addEventListener.bind(window);window.addEventListener=function(t,f,o){if(t==='beforeunload')return;return _ael(t,f,o);};Object.defineProperty(window,'onbeforeunload',{get:function(){return null;},set:function(){},configurable:true});})();
+		// Auto-open a Generic Model project when embedded in lessons, skipping the start screen.
+		// Poll for Blockbench.setup_successful, then call newProject('free') (Generic Model format).
+		// Respects ?bb_skip_auto=1 so direct visits to /blockbench/index.html still show the menu.
+		(function(){
+			if(window.self===window.top)return; // only auto-start when in an iframe
+			var t=setInterval(function(){
+				if(window.Blockbench&&window.Blockbench.setup_successful&&typeof window.newProject==='function'&&!window.Project){
+					clearInterval(t);
+					window.newProject('free');
+				}
+			},100);
+		})();
 		if (typeof module === 'object') {window.module = module; module = undefined;}//jQuery Fix
 		
 		if (localStorage.getItem('theme')) {

@@ -475,9 +475,31 @@ function updateUrlHash() {
     step.id
   ].join('/');
   if (window.location.hash !== hash) {
-    history.replaceState(null, '', hash);
+    history.pushState(null, '', hash);
   }
 }
+
+// Handle browser back/forward — re-navigate to whatever hash the browser restored.
+window.addEventListener('popstate', function() {
+  var parsed = parseUrlHash();
+  if (!parsed) return;
+  // Year group changed — rebuild everything from the top
+  if (parsed.yearGroupId !== state.currentYearGroup) {
+    var ygSelect = document.getElementById('year-group-select');
+    if (ygSelect) ygSelect.value = parsed.yearGroupId;
+    applyYearGroup(parsed.yearGroupId);
+    return;
+  }
+  // Course changed — rebuild lessons list
+  if (parsed.courseId !== state.currentCourse) {
+    var cSelect = document.getElementById('course-select');
+    if (cSelect) cSelect.value = parsed.courseId;
+    applyCourse(parsed.courseId);
+    return;
+  }
+  // Same year group + course — just jump to the right lesson/step
+  applyHashToCurrentCourse(parsed);
+});
 
 function parseUrlHash() {
   var hash = window.location.hash.replace(/^#/, '');
