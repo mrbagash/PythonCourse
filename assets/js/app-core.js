@@ -463,6 +463,10 @@ function loadLesson(idx) {
 // ── URL hash routing ─────────────────────────────────────────────────────────
 // Format: #yearGroupId/courseId/lessonId/stepId
 // e.g.   #year7/scratch/year7-scratch-basics/build-1
+// The last hash value we set ourselves. When our own write triggers a hashchange
+// event, we recognise it here and skip re-navigating (avoids an infinite loop).
+var _selfSetHash = null;
+
 function updateUrlHash() {
   if (!state.currentYearGroup || !state.currentCourse || !state.lessons.length) return;
   var lesson = state.lessons[state.currentLessonIdx];
@@ -474,13 +478,21 @@ function updateUrlHash() {
     lesson.meta.id,
     step.id
   ].join('/');
-  if (window.location.hash !== hash) {
-    history.pushState(null, '', hash);
-  }
+  if (window.location.hash === hash) return;
+  // Setting location.hash reliably creates a back/forward-able history entry and
+  // (asynchronously) fires a hashchange event. Record it so our own handler ignores it.
+  _selfSetHash = hash;
+  window.location.hash = hash;
 }
 
-// Handle browser back/forward — re-navigate to whatever hash the browser restored.
-window.addEventListener('popstate', function() {
+// Browser back/forward (and manual URL edits) fire hashchange — re-navigate to the
+// restored hash. Our own updateUrlHash writes are recognised via _selfSetHash and skipped.
+window.addEventListener('hashchange', function() {
+  if (_selfSetHash !== null && window.location.hash === _selfSetHash) {
+    // This hashchange was caused by our own updateUrlHash — consume and ignore it.
+    _selfSetHash = null;
+    return;
+  }
   var parsed = parseUrlHash();
   if (!parsed) return;
   // Year group changed — rebuild everything from the top
