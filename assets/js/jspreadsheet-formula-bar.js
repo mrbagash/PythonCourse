@@ -36,6 +36,7 @@
       '.jhncc-tab-add{padding:4px 13px;background:transparent;border:0;color:#107c41;' +
       'font-size:17px;line-height:1;cursor:pointer}' +
       '.jhncc-tab-add:hover{background:#e0e0e0}' +
+      '.jhncc-sheets{display:block;width:100%;clear:both}' +
       '.jhncc-sheet-panel{width:100%}' +
       /* persistent selection marker that survives the sheet losing focus */
       '.jhncc-active-cell{box-shadow:inset 0 0 0 2px #107c41 !important}' +
@@ -56,7 +57,30 @@
       '.jhncc-cf-pop{border:1px solid #cfcfcf;background:#fff;border-radius:6px;padding:10px;' +
       'margin-top:6px;font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:13px;color:#222}' +
       '.jhncc-cf-pop select,.jhncc-cf-pop input{border:1px solid #c8c8c8;border-radius:4px;' +
-      'padding:3px 6px;font-size:13px;margin:0 4px 4px 0}';
+      'padding:3px 6px;font-size:13px;margin:0 4px 4px 0}' +
+      /* conditional formatting menu */
+      '.jhncc-menu{position:fixed;z-index:10000;background:#fff;border:1px solid #b0b0b0;' +
+      'border-radius:4px;box-shadow:0 4px 18px rgba(0,0,0,.22);min-width:200px;padding:4px 0;' +
+      'font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:13px;color:#222}' +
+      '.jhncc-menu-item{display:flex;justify-content:space-between;align-items:center;gap:18px;' +
+      'padding:6px 12px;cursor:pointer;white-space:nowrap}' +
+      '.jhncc-menu-item:hover{background:#eef4ff}' +
+      '.jhncc-menu-sep{height:1px;background:#e3e3e3;margin:4px 0}' +
+      '.jhncc-menu-arrow{color:#999}' +
+      /* conditional formatting modal */
+      '.jhncc-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10001;' +
+      'display:flex;align-items:center;justify-content:center}' +
+      '.jhncc-modal{background:#fff;border-radius:8px;min-width:360px;max-width:92vw;' +
+      'box-shadow:0 12px 44px rgba(0,0,0,.3);font-family:Calibri,"Segoe UI",Arial,sans-serif}' +
+      '.jhncc-modal-h{display:flex;justify-content:space-between;align-items:center;' +
+      'padding:12px 16px;font-weight:700;font-size:15px;border-bottom:1px solid #eee}' +
+      '.jhncc-modal-x{cursor:pointer;color:#888;font-size:20px;line-height:1}' +
+      '.jhncc-modal-b{padding:16px;font-size:14px;color:#222}' +
+      '.jhncc-modal-b input,.jhncc-modal-b select{border:1px solid #c8c8c8;border-radius:4px;' +
+      'padding:5px 8px;font-size:14px;margin:0 5px}' +
+      '.jhncc-modal-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #eee}' +
+      '.jhncc-modal-btn{padding:6px 18px;border-radius:5px;border:1px solid #c8c8c8;cursor:pointer;font-size:13px;background:#fff}' +
+      '.jhncc-modal-btn.ok{background:#107c41;color:#fff;border-color:#107c41}';
     document.head.appendChild(s);
   }
 
@@ -175,26 +199,75 @@
       if (typeof prevSel === 'function') prevSel.apply(this, arguments);
     };
 
-    function mergeStyle(cell, props) {
-      var m = parseCss(sheet.getStyle(cell) || '');
-      Object.keys(props).forEach(function (k) { if (props[k] === null) delete m[k]; else m[k] = props[k]; });
-      return cssToString(m);
+    // Write styles by setting individual properties DIRECTLY on each cell element,
+    // rather than jspreadsheet's setStyle which clears the whole style attribute first
+    // (that wiped jspreadsheet's own rendering styles, e.g. the default centring).
+    function cellElOf(cn) { var xy = cellToXY(cn); if (!xy) return null; try { return sheet.getCellFromCoords(xy[0], xy[1]); } catch (e) { return null; } }
+    function writeProps(cn, props) {
+      var el = cellElOf(cn); if (!el) return;
+      Object.keys(props).forEach(function (k) { var v = props[k]; if (v === null || v === undefined) el.style.removeProperty(k); else el.style.setProperty(k, v); });
     }
+    function readProps(cn) { var el = cellElOf(cn); return el ? parseCss(el.getAttribute('style') || '') : {}; }
+    function mergeStyle(cell, props) { var m = parseCss(sheet.getStyle(cell) || ''); Object.keys(props).forEach(function (k) { if (props[k] === null) delete m[k]; else m[k] = props[k]; }); return cssToString(m); }
+
     function applyToSelection(props) {
-      var updates = {};
       for (var y = sel.y1; y <= sel.y2; y++) {
         for (var x = sel.x1; x <= sel.x2; x++) {
           var cn = colName(x) + (y + 1);
-          updates[cn] = mergeStyle(cn, props);
+          writeProps(cn, props); // only the given properties change; everything else is preserved
+          // If a CF rule currently overrides one of these props, update the value it would
+          // restore to, so manual changes stick rather than being undone on re-evaluation.
+          if (sheet._cf && sheet._cf.applied[cn]) {
+            Object.keys(props).forEach(function (k) {
+              if (k in sheet._cf.applied[cn]) sheet._cf.applied[cn][k] = (props[k] === null ? undefined : props[k]);
+            });
+          }
         }
       }
-      try { sheet.setStyle(updates); } catch (e) {}
     }
-    function anchorHas(prop, val) {
-      var cur = parseCss(sheet.getStyle(colName(sel.x1) + (sel.y1 + 1)) || '');
-      return (cur[prop] || '').indexOf(val) !== -1;
+    // Robust on/off toggle for a text style. detect(styleMap) decides the current state
+    // from the anchor cell; removeNames lists every property to delete when turning it off
+    // (text-decoration can serialise to longhands via CSSOM, so we clear the whole family).
+    // Each toggle uses a distinct property, so Bold + Italic + Underline stack independently.
+    function toggleStyle(detect, setProp, setVal, removeNames) {
+      var isOn = detect(readProps(colName(sel.x1) + (sel.y1 + 1)));
+      for (var y = sel.y1; y <= sel.y2; y++) {
+        for (var x = sel.x1; x <= sel.x2; x++) {
+          var cn = colName(x) + (y + 1);
+          if (isOn) { var rm = {}; removeNames.forEach(function (n) { rm[n] = null; }); writeProps(cn, rm); }
+          else { var ad = {}; ad[setProp] = setVal; writeProps(cn, ad); }
+          if (sheet._cf && sheet._cf.applied[cn]) {
+            removeNames.forEach(function (n) { if (n in sheet._cf.applied[cn]) sheet._cf.applied[cn][n] = undefined; });
+            if (!isOn && setProp in sheet._cf.applied[cn]) sheet._cf.applied[cn][setProp] = setVal;
+          }
+        }
+      }
     }
-    function toggle(prop, val) { var p = {}; p[prop] = anchorHas(prop, val) ? null : val; applyToSelection(p); }
+
+    // ── Borders (Excel-style, per cell-edge) ─────────────────────────────
+    // Borders use per-side longhand properties (border-top/right/bottom/left) so they
+    // add and remove reliably (the 'border' shorthand can serialise back as longhands
+    // via CSSOM, which made naive removal fail).
+    //
+    // Like Excel, borders are an EDGE between two cells. "No border" on a range removes
+    // only the selected cells' own edges — it does NOT touch the neighbouring cells. So
+    // a shared edge stays visible if the cell on the other side still has a border
+    // (e.g. clearing B2:B4 leaves the column outline from A and C, but removes the
+    // internal dividers between B2/B3/B4).
+    var BORDER = '1px solid #555';
+    function eachInSel(fn) { for (var y = sel.y1; y <= sel.y2; y++) for (var x = sel.x1; x <= sel.x2; x++) fn(colName(x) + (y + 1), x, y); }
+    function applyAllBorders() {
+      eachInSel(function (cn) { writeProps(cn, { 'border': null, 'border-top': BORDER, 'border-right': BORDER, 'border-bottom': BORDER, 'border-left': BORDER }); });
+    }
+    function clearBorders() {
+      eachInSel(function (cn) {
+        var el = cellElOf(cn); if (!el) return;
+        var rm = [];
+        for (var i = 0; i < el.style.length; i++) { if (el.style[i].indexOf('border') === 0) rm.push(el.style[i]); }
+        rm.forEach(function (p) { el.style.removeProperty(p); });
+        if (sheet._cf && sheet._cf.applied[cn]) Object.keys(sheet._cf.applied[cn]).forEach(function (k) { if (k.indexOf('border') === 0) delete sheet._cf.applied[cn][k]; });
+      });
+    }
 
     var bar = document.createElement('div');
     bar.className = 'jhncc-toolbar';
@@ -214,58 +287,215 @@
       w.appendChild(inp); bar.appendChild(w);
     }
 
-    btn('jhncc-tb-b', 'B', 'Bold', function () { toggle('font-weight', 'bold'); });
-    btn('jhncc-tb-i', 'I', 'Italic', function () { toggle('font-style', 'italic'); });
-    btn('jhncc-tb-u', 'U', 'Underline', function () { toggle('text-decoration', 'underline'); });
+    btn('jhncc-tb-b', 'B', 'Bold (click again to remove)', function () { toggleStyle(function (m) { var v = (m['font-weight'] || '').toLowerCase(); return v.indexOf('bold') !== -1 || parseInt(v, 10) >= 600; }, 'font-weight', 'bold', ['font-weight']); });
+    btn('jhncc-tb-i', 'I', 'Italic (click again to remove)', function () { toggleStyle(function (m) { return (m['font-style'] || '').indexOf('italic') !== -1; }, 'font-style', 'italic', ['font-style']); });
+    btn('jhncc-tb-u', 'U', 'Underline (click again to remove)', function () { toggleStyle(function (m) { return ((m['text-decoration'] || '') + ' ' + (m['text-decoration-line'] || '')).indexOf('underline') !== -1; }, 'text-decoration', 'underline', ['text-decoration', 'text-decoration-line', 'text-decoration-style', 'text-decoration-color']); });
     sep();
     colorPicker('A', 'Font colour', '#c00000', function (v) { applyToSelection({ 'color': v }); });
     colorPicker('Fill', 'Fill (cell shading)', '#ffff00', function (v) { applyToSelection({ 'background-color': v }); });
     sep();
-    btn('', 'Borders', 'Add borders to the selected cells', function () { applyToSelection({ 'border': '1px solid #444' }); });
-    btn('', 'No border', 'Remove borders from the selected cells', function () { applyToSelection({ 'border': null }); });
+    btn('', 'Borders', 'Add borders to the selected cells', function () { applyAllBorders(); });
+    btn('', 'No border', 'Remove borders from the selected cells (and the touching edges of neighbours)', function () { clearBorders(); });
     sep();
     btn('', '&#8676;', 'Align left', function () { applyToSelection({ 'text-align': 'left' }); });
     btn('', '&#8596;', 'Align centre', function () { applyToSelection({ 'text-align': 'center' }); });
     btn('', '&#8677;', 'Align right', function () { applyToSelection({ 'text-align': 'right' }); });
     sep();
 
-    var cfPop = null;
-    btn('', 'Conditional&hellip;', 'Conditional formatting', function () {
-      if (cfPop) { cfPop.parentNode.removeChild(cfPop); cfPop = null; return; }
-      cfPop = document.createElement('div');
-      cfPop.className = 'jhncc-cf-pop';
-      var grid0 = sheet.getData();
-      var ncols = grid0[0] ? grid0[0].length : 6;
-      var colOpts = '';
-      for (var i = 0; i < ncols; i++) colOpts += '<option value="' + i + '">Column ' + colName(i) + '</option>';
-      cfPop.innerHTML =
-        '<div style="margin-bottom:6px"><strong>Highlight cells</strong> that meet a rule (e.g. make &ldquo;Shop&rdquo; stand out):</div>' +
-        'in <select class="cf-col">' + colOpts + '</select> ' +
-        '<select class="cf-op"><option value="eq">is equal to</option><option value="contains">contains</option><option value="gt">is greater than</option><option value="lt">is less than</option></select> ' +
-        '<input class="cf-val" placeholder="value" style="width:90px"> ' +
-        'colour <input class="cf-color" type="color" value="#ffe08a"> ' +
-        '<button class="jhncc-tb-btn cf-apply">Apply</button>';
-      bar.parentNode.insertBefore(cfPop, bar.nextSibling);
-      cfPop.querySelector('.cf-apply').onclick = function () {
-        var col = parseInt(cfPop.querySelector('.cf-col').value, 10);
-        var op = cfPop.querySelector('.cf-op').value;
-        var val = cfPop.querySelector('.cf-val').value;
-        var colr = cfPop.querySelector('.cf-color').value;
-        var grid = sheet.getData();
-        var updates = {};
-        for (var y = 0; y < grid.length; y++) {
-          var s = String(grid[y][col] == null ? '' : grid[y][col]).trim();
-          var num = parseFloat(s), vnum = parseFloat(val);
-          var match = false;
-          if (op === 'eq') match = s.toLowerCase() === String(val).trim().toLowerCase();
-          else if (op === 'contains') match = val !== '' && s.toLowerCase().indexOf(String(val).trim().toLowerCase()) !== -1;
-          else if (op === 'gt') match = !isNaN(num) && !isNaN(vnum) && num > vnum;
-          else if (op === 'lt') match = !isNaN(num) && !isNaN(vnum) && num < vnum;
-          if (match) { var cn = colName(col) + (y + 1); updates[cn] = mergeStyle(cn, { 'background-color': colr }); }
-        }
-        try { sheet.setStyle(updates); } catch (e) {}
-        if (cfPop) { cfPop.parentNode.removeChild(cfPop); cfPop = null; }
+    // ── Conditional formatting (Excel-style) ──────────────────────────────
+    var CF_PRESETS = [
+      { label: 'Light Red Fill with Dark Red Text', css: { 'background-color': '#ffc7ce', 'color': '#9c0006' } },
+      { label: 'Yellow Fill with Dark Yellow Text', css: { 'background-color': '#ffeb9c', 'color': '#9c6500' } },
+      { label: 'Green Fill with Dark Green Text', css: { 'background-color': '#c6efce', 'color': '#006100' } },
+      { label: 'Light Red Fill', css: { 'background-color': '#ffc7ce' } },
+      { label: 'Red Text', css: { 'color': '#9c0006' } },
+      { label: 'Red Border', css: { 'border': '1px solid #9c0006' } }
+    ];
+    function presetSelectHtml() {
+      return '<select class="cf-fmt">' + CF_PRESETS.map(function (p, i) { return '<option value="' + i + '">' + p.label + '</option>'; }).join('') + '</select>';
+    }
+    function presetCss(ov) { return CF_PRESETS[parseInt(ov.querySelector('.cf-fmt').value, 10) || 0].css; }
+
+    function cellToXY(cn) {
+      var m = /^([A-Z]+)(\d+)$/.exec(cn); if (!m) return null;
+      var x = 0; for (var i = 0; i < m[1].length; i++) x = x * 26 + (m[1].charCodeAt(i) - 64);
+      return [x - 1, parseInt(m[2], 10) - 1];
+    }
+    function cnInSelection(cn) { var xy = cellToXY(cn); return xy && xy[0] >= sel.x1 && xy[0] <= sel.x2 && xy[1] >= sel.y1 && xy[1] <= sel.y2; }
+    function selCells() {
+      var grid = sheet.getData(); var out = [];
+      for (var y = sel.y1; y <= sel.y2; y++) for (var x = sel.x1; x <= sel.x2; x++) {
+        var raw = (grid[y] && grid[y][x] != null) ? grid[y][x] : '';
+        out.push({ cn: colName(x) + (y + 1), x: x, y: y, raw: String(raw).trim(), num: parseFloat(raw) });
+      }
+      return out;
+    }
+
+    // ── Dynamic conditional-formatting engine ──────────────────────────────
+    // Rules are stored and re-evaluated whenever data changes, so the formatting
+    // updates live (just like Excel). CF manages ONLY the CSS properties it sets,
+    // layering them over the cell's manual style (bold, borders, fills) and
+    // restoring the underlying value when a rule stops matching. This means manual
+    // borders/formatting are never disturbed by a re-evaluation.
+    if (!sheet._cf) sheet._cf = { rules: [], applied: {} };  // applied: cn -> {prop: underlyingValue}
+    var CF = sheet._cf;
+
+    function rangeCells(r) {
+      var grid = sheet.getData(); var out = [];
+      for (var y = r.y1; y <= r.y2; y++) for (var x = r.x1; x <= r.x2; x++) {
+        var raw = (grid[y] && grid[y][x] != null) ? grid[y][x] : '';
+        out.push({ cn: colName(x) + (y + 1), x: x, y: y, raw: String(raw).trim(), num: parseFloat(raw) });
+      }
+      return out;
+    }
+    function rangesOverlap(a, b) { return !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2); }
+    function minMaxC(cells) { var n = cells.map(function (c) { return c.num; }); var mn = Math.min.apply(null, n), mx = Math.max.apply(null, n); if (mx <= mn) mx = mn + 1; return [mn, mx]; }
+    function hx(c) { c = Math.max(0, Math.min(255, Math.round(c))); return ('0' + c.toString(16)).slice(-2); }
+    function mix(a, b, t) { return '#' + hx(a[0] + (b[0] - a[0]) * t) + hx(a[1] + (b[1] - a[1]) * t) + hx(a[2] + (b[2] - a[2]) * t); }
+
+    // Each "compute" factory returns fn(cells) -> { cellName: cssProps } evaluated live.
+    function cTest(test, css) { return function (cells) { var m = {}; cells.forEach(function (c) { if (test(c)) m[c.cn] = css; }); return m; }; }
+    function cTopBottom(n, isPct, isTop, css) { return function (cells) { var nc = cells.filter(function (c) { return !isNaN(c.num); }); nc.sort(function (a, b) { return isTop ? b.num - a.num : a.num - b.num; }); var count = isPct ? Math.max(1, Math.round(nc.length * n / 100)) : n; var m = {}; nc.slice(0, count).forEach(function (c) { m[c.cn] = css; }); return m; }; }
+    function cAvg(above, css) { return function (cells) { var nc = cells.filter(function (c) { return !isNaN(c.num); }); if (!nc.length) return {}; var avg = nc.reduce(function (s, c) { return s + c.num; }, 0) / nc.length; var m = {}; nc.forEach(function (c) { if (above ? c.num > avg : c.num < avg) m[c.cn] = css; }); return m; }; }
+    function cDup(css) { return function (cells) { var counts = {}; cells.forEach(function (c) { if (c.raw !== '') counts[c.raw.toLowerCase()] = (counts[c.raw.toLowerCase()] || 0) + 1; }); var m = {}; cells.forEach(function (c) { if (c.raw !== '' && counts[c.raw.toLowerCase()] > 1) m[c.cn] = css; }); return m; }; }
+    function cDataBars(color) { return function (cells) { var nc = cells.filter(function (c) { return !isNaN(c.num); }); if (!nc.length) return {}; var mm = minMaxC(nc), m = {}; nc.forEach(function (c) { var pct = Math.max(0, Math.min(100, Math.round((c.num - mm[0]) / (mm[1] - mm[0]) * 100))); m[c.cn] = { 'background': 'linear-gradient(90deg, ' + color + ' ' + pct + '%, transparent ' + pct + '%)' }; }); return m; }; }
+    function cColourScale(stops) { return function (cells) { var nc = cells.filter(function (c) { return !isNaN(c.num); }); if (!nc.length) return {}; var mm = minMaxC(nc), m = {}; nc.forEach(function (c) { var t = (c.num - mm[0]) / (mm[1] - mm[0]); var col = stops.length === 2 ? mix(stops[0], stops[1], t) : (t < 0.5 ? mix(stops[0], stops[1], t * 2) : mix(stops[1], stops[2], (t - 0.5) * 2)); m[c.cn] = { 'background-color': col }; }); return m; }; }
+    function cIcons(redHigh) { return function (cells) { var nc = cells.filter(function (c) { return !isNaN(c.num); }); if (!nc.length) return {}; var mm = minMaxC(nc), pal = redHigh ? ['#e03b3b', '#f0a020', '#2e9e3a'] : ['#2e9e3a', '#f0a020', '#e03b3b'], m = {}; nc.forEach(function (c) { var t = (c.num - mm[0]) / (mm[1] - mm[0]); var idx = t >= 2 / 3 ? 0 : (t >= 1 / 3 ? 1 : 2); m[c.cn] = { 'background-image': 'radial-gradient(circle at 9px center, ' + pal[idx] + ' 0 5px, transparent 6px)', 'background-repeat': 'no-repeat', 'padding-left': '20px' }; }); return m; }; }
+
+    function reevaluate() {
+      // 1. Work out the CF properties every rule wants on each cell, right now.
+      var newCf = {}; // cn -> { prop: value }
+      CF.rules.forEach(function (rule) {
+        var contrib = rule.compute(rangeCells(rule.range));
+        Object.keys(contrib).forEach(function (cn) {
+          if (!newCf[cn]) newCf[cn] = {};
+          var props = contrib[cn]; Object.keys(props).forEach(function (k) { newCf[cn][k] = props[k]; });
+        });
+      });
+      // 2. Touch only cells that have (or had) CF, never the rest of the sheet.
+      //    Write directly to each cell element so manual styles (alignment, borders,
+      //    bold) are never disturbed — only the CF properties are changed.
+      var cells = {};
+      Object.keys(CF.applied).forEach(function (cn) { cells[cn] = true; });
+      Object.keys(newCf).forEach(function (cn) { cells[cn] = true; });
+      Object.keys(cells).forEach(function (cn) {
+        var el = cellElOf(cn); if (!el) return;
+        // Undo last time's CF: restore the underlying (manual) value of each CF prop.
+        var prev = CF.applied[cn] || {};
+        Object.keys(prev).forEach(function (prop) { if (prev[prop] === undefined) el.style.removeProperty(prop); else el.style.setProperty(prop, prev[prop]); });
+        // Apply this time's CF, remembering what was underneath so we can restore it later.
+        var now = {}, np = newCf[cn] || {};
+        Object.keys(np).forEach(function (prop) { var cur = el.style.getPropertyValue(prop); now[prop] = cur ? cur : undefined; el.style.setProperty(prop, np[prop]); });
+        if (Object.keys(now).length) CF.applied[cn] = now; else delete CF.applied[cn];
+      });
+    }
+    function addRule(compute) { CF.rules.push({ range: { x1: sel.x1, y1: sel.y1, x2: sel.x2, y2: sel.y2 }, compute: compute }); reevaluate(); }
+    function clearRules(allSheet) {
+      if (allSheet) CF.rules = [];
+      else CF.rules = CF.rules.filter(function (rule) { return !rangesOverlap(rule.range, sel); });
+      reevaluate();
+    }
+
+    // Live update: re-evaluate every rule whenever a value changes (chained onchange).
+    if (!sheet._cfHooked) {
+      sheet._cfHooked = true;
+      var prevChange = sheet.options.onchange;
+      sheet.options.onchange = function (el, cell, x, y, value) {
+        if (typeof prevChange === 'function') prevChange.apply(this, arguments);
+        if (sheet._cf && sheet._cf.rules.length) setTimeout(reevaluate, 0);
       };
+    }
+
+    function cfModal(title, bodyHtml, onOk) {
+      var ov = document.createElement('div'); ov.className = 'jhncc-modal-ov';
+      ov.innerHTML = '<div class="jhncc-modal"><div class="jhncc-modal-h"><span>' + title + '</span><span class="jhncc-modal-x">&times;</span></div>' +
+        '<div class="jhncc-modal-b">' + bodyHtml + '</div>' +
+        '<div class="jhncc-modal-f"><button class="jhncc-modal-btn cancel">Cancel</button><button class="jhncc-modal-btn ok">OK</button></div></div>';
+      document.body.appendChild(ov);
+      function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+      ov.querySelector('.jhncc-modal-x').onclick = close;
+      ov.querySelector('.cancel').onclick = close;
+      ov.onclick = function (e) { if (e.target === ov) close(); };
+      ov.querySelector('.ok').onclick = function () { if (onOk(ov) !== false) close(); };
+      var fi = ov.querySelector('input,select'); if (fi) { try { fi.focus(); } catch (e) {} }
+    }
+    function dlgGT() { cfModal('Greater Than', 'Format cells that are GREATER THAN: <input class="v1" type="number" style="width:90px"> with ' + presetSelectHtml(), function (ov) { var v = parseFloat(ov.querySelector('.v1').value); if (isNaN(v)) return false; var css = presetCss(ov); addRule(cTest(function (c) { return !isNaN(c.num) && c.num > v; }, css)); }); }
+    function dlgLT() { cfModal('Less Than', 'Format cells that are LESS THAN: <input class="v1" type="number" style="width:90px"> with ' + presetSelectHtml(), function (ov) { var v = parseFloat(ov.querySelector('.v1').value); if (isNaN(v)) return false; var css = presetCss(ov); addRule(cTest(function (c) { return !isNaN(c.num) && c.num < v; }, css)); }); }
+    function dlgBT() { cfModal('Between', 'Format cells BETWEEN: <input class="v1" type="number" style="width:70px"> and <input class="v2" type="number" style="width:70px"> with ' + presetSelectHtml(), function (ov) { var a = parseFloat(ov.querySelector('.v1').value), b = parseFloat(ov.querySelector('.v2').value); if (isNaN(a) || isNaN(b)) return false; var lo = Math.min(a, b), hi = Math.max(a, b); var css = presetCss(ov); addRule(cTest(function (c) { return !isNaN(c.num) && c.num >= lo && c.num <= hi; }, css)); }); }
+    function dlgEQ() { cfModal('Equal To', 'Format cells that are EQUAL TO: <input class="v1" style="width:110px"> with ' + presetSelectHtml(), function (ov) { var val = String(ov.querySelector('.v1').value).trim(); if (val === '') return false; var vn = parseFloat(val); var css = presetCss(ov); addRule(cTest(function (c) { return (!isNaN(vn) && !isNaN(c.num)) ? c.num === vn : c.raw.toLowerCase() === val.toLowerCase(); }, css)); }); }
+    function dlgCONT() { cfModal('Text That Contains', 'Format cells that CONTAIN: <input class="v1" style="width:110px"> with ' + presetSelectHtml(), function (ov) { var val = String(ov.querySelector('.v1').value).trim(); if (val === '') return false; var css = presetCss(ov); addRule(cTest(function (c) { return c.raw.toLowerCase().indexOf(val.toLowerCase()) !== -1; }, css)); }); }
+    function dlgDUP() { cfModal('Duplicate Values', 'Format DUPLICATE values with ' + presetSelectHtml(), function (ov) { addRule(cDup(presetCss(ov))); }); }
+    function dlgTB(which, isPct) { cfModal(which + (isPct ? ' %' : ' Items'), 'Format the ' + which.toUpperCase() + ': <input class="v1" type="number" value="10" style="width:70px">' + (isPct ? '%' : '') + ' with ' + presetSelectHtml(), function (ov) { var n = parseFloat(ov.querySelector('.v1').value); if (isNaN(n) || n <= 0) return false; addRule(cTopBottom(n, isPct, which === 'Top', presetCss(ov))); }); }
+
+    var MAIN_ITEMS = [
+      { label: 'Highlight Cells Rules', submenu: [
+        { label: 'Greater Than&hellip;', onClick: dlgGT }, { label: 'Less Than&hellip;', onClick: dlgLT },
+        { label: 'Between&hellip;', onClick: dlgBT }, { label: 'Equal To&hellip;', onClick: dlgEQ },
+        { label: 'Text that Contains&hellip;', onClick: dlgCONT }, { label: 'Duplicate Values&hellip;', onClick: dlgDUP } ] },
+      { label: 'Top/Bottom Rules', submenu: [
+        { label: 'Top 10 Items&hellip;', onClick: function () { dlgTB('Top', false); } },
+        { label: 'Bottom 10 Items&hellip;', onClick: function () { dlgTB('Bottom', false); } },
+        { label: 'Top 10%&hellip;', onClick: function () { dlgTB('Top', true); } },
+        { label: 'Bottom 10%&hellip;', onClick: function () { dlgTB('Bottom', true); } },
+        { label: 'Above Average', onClick: function () { addRule(cAvg(true, CF_PRESETS[0].css)); } },
+        { label: 'Below Average', onClick: function () { addRule(cAvg(false, CF_PRESETS[2].css)); } } ] },
+      { sep: true },
+      { label: 'Data Bars', submenu: [
+        { label: 'Blue', onClick: function () { addRule(cDataBars('#638ec6')); } }, { label: 'Green', onClick: function () { addRule(cDataBars('#63c384')); } },
+        { label: 'Red', onClick: function () { addRule(cDataBars('#ff8f8f')); } }, { label: 'Orange', onClick: function () { addRule(cDataBars('#ffb84d')); } },
+        { label: 'Purple', onClick: function () { addRule(cDataBars('#b39ddb')); } } ] },
+      { label: 'Colour Scales', submenu: [
+        { label: 'Green - Yellow - Red', onClick: function () { addRule(cColourScale([[99, 190, 123], [255, 235, 132], [248, 105, 107]])); } },
+        { label: 'Red - Yellow - Green', onClick: function () { addRule(cColourScale([[248, 105, 107], [255, 235, 132], [99, 190, 123]])); } },
+        { label: 'White - Blue', onClick: function () { addRule(cColourScale([[255, 255, 255], [99, 142, 198]])); } },
+        { label: 'Blue - White - Red', onClick: function () { addRule(cColourScale([[90, 138, 198], [255, 255, 255], [230, 90, 90]])); } } ] },
+      { label: 'Icon Sets', submenu: [
+        { label: '3 Traffic Lights (green = high)', onClick: function () { addRule(cIcons(false)); } },
+        { label: '3 Traffic Lights (red = high)', onClick: function () { addRule(cIcons(true)); } } ] },
+      { sep: true },
+      { label: 'Clear Rules', submenu: [
+        { label: 'Clear Rules from Selected Cells', onClick: function () { clearRules(false); } },
+        { label: 'Clear Rules from Entire Sheet', onClick: function () { clearRules(true); } } ] }
+    ];
+
+    var mainMenu = null, subMenu = null;
+    function closeMenus() { [subMenu, mainMenu].forEach(function (m) { if (m && m.parentNode) m.parentNode.removeChild(m); }); mainMenu = subMenu = null; }
+    function clampMenu(m) { var r = m.getBoundingClientRect(); if (r.right > window.innerWidth) m.style.left = Math.max(4, window.innerWidth - r.width - 4) + 'px'; if (r.bottom > window.innerHeight) m.style.top = Math.max(4, window.innerHeight - r.height - 4) + 'px'; }
+    function buildMenuEl(items, onItem) {
+      var menu = document.createElement('div'); menu.className = 'jhncc-menu';
+      items.forEach(function (it) {
+        if (it.sep) { var s = document.createElement('div'); s.className = 'jhncc-menu-sep'; menu.appendChild(s); return; }
+        var el = document.createElement('div'); el.className = 'jhncc-menu-item';
+        el.innerHTML = '<span>' + it.label + '</span>' + (it.submenu ? '<span class="jhncc-menu-arrow">&#9656;</span>' : '');
+        el.onclick = function (ev) { ev.stopPropagation(); onItem(it, el); };
+        menu.appendChild(el);
+      });
+      return menu;
+    }
+    function openMain(x, y) {
+      closeMenus();
+      mainMenu = buildMenuEl(MAIN_ITEMS, function (it, el) {
+        if (it.submenu) {
+          if (subMenu && subMenu.parentNode) subMenu.parentNode.removeChild(subMenu);
+          var r = el.getBoundingClientRect();
+          subMenu = buildMenuEl(it.submenu, function (sit) { closeMenus(); if (sit.onClick) sit.onClick(); });
+          subMenu.style.left = (r.right - 3) + 'px'; subMenu.style.top = r.top + 'px';
+          document.body.appendChild(subMenu); clampMenu(subMenu);
+        } else { closeMenus(); if (it.onClick) it.onClick(); }
+      });
+      mainMenu.style.left = x + 'px'; mainMenu.style.top = y + 'px';
+      document.body.appendChild(mainMenu); clampMenu(mainMenu);
+    }
+    document.addEventListener('mousedown', function (e) {
+      if (!mainMenu) return;
+      var t = e.target;
+      if (t.closest && (t.closest('.jhncc-menu') || t.closest('.jhncc-cf-btn'))) return;
+      closeMenus();
+    });
+
+    var cfBtn = btn('jhncc-cf-btn', 'Conditional Formatting &#9662;', 'Conditional formatting', function () {
+      if (mainMenu) { closeMenus(); return; }
+      var r = cfBtn.getBoundingClientRect(); openMain(r.left, r.bottom + 2);
     });
 
     // Place the toolbar at the very top of this sheet's stack (above the formula bar).
