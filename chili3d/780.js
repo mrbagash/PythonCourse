@@ -1,0 +1,1 @@
+"use strict";(self.rspackChunkchili3d=self.rspackChunkchili3d||[]).push([[780],{1084(c,s,e){e.r(c.exports={button:"cc5dc23f8ecc0cf3"})}}]);
