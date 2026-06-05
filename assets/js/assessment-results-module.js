@@ -343,7 +343,7 @@ function scaleApScratchFrame() {
   var wW = Math.floor(bounds.width) - 4;
   var wH = Math.floor(bounds.height) - 4;
   if (wW < 1 || wH < 1) return;
-  var sc = Math.min(1, wW / NW, wH / NH);
+  var sc = Math.min(1, wW / NW);
   // Keep TurboWarp at its normal editor size, then scale the whole editor into
   // the AP panel. Rendering the iframe too small makes Scratch crop its panes
   // before browser scaling is applied.
@@ -355,9 +355,8 @@ function scaleApScratchFrame() {
   box.style.height = scaledH + 'px';
   box.style.marginLeft = 'auto';
   box.style.marginRight = 'auto';
-  var marginY = Math.max(0, Math.floor((wH - scaledH) / 2));
-  box.style.marginTop = marginY + 'px';
-  box.style.marginBottom = marginY + 'px';
+  box.style.marginTop = '0';
+  box.style.marginBottom = '0';
   box.style.overflow = 'hidden';
   frame.style.position = 'absolute';
   frame.style.width = NW + 'px';
