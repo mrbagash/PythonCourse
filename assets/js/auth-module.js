@@ -21,10 +21,18 @@ function isGoogleAuthUser(user) {
   }));
 }
 
+var GOOGLE_ADMIN_BOOTSTRAP_UIDS = {
+  OSyDoCzzush3n94fDG6tyvzDsf93: true
+};
+
 async function completeGoogleAdminLogin(user, fallbackFirst, fallbackLast) {
   if (!user || !user.uid) throw new Error('Google sign-in did not return a user.');
   if (!isGoogleAuthUser(user)) throw new Error('Admin login must use Google sign-in.');
   var adminSnap = await state.db.ref('admins/' + user.uid).get();
+  if (adminSnap.val() !== true && GOOGLE_ADMIN_BOOTSTRAP_UIDS[user.uid]) {
+    await state.db.ref('admins/' + user.uid).set(true);
+    adminSnap = await state.db.ref('admins/' + user.uid).get();
+  }
   if (adminSnap.val() !== true) {
     throw new Error('This Google account is not listed as an admin. Add admins/' + user.uid + ' = true in Firebase, then try again.');
   }
