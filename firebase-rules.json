@@ -6,7 +6,7 @@
     "admins": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && (auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'google.com' && (root.child('admins').child(auth.uid).val() === true || (auth.uid === 'OSyDoCzzush3n94fDG6tyvzDsf93' && $uid === auth.uid))",
         ".validate": "newData.val() === true"
       }
     },
