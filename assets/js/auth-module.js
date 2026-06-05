@@ -30,7 +30,11 @@ async function completeGoogleAdminLogin(user, fallbackFirst, fallbackLast) {
   if (!isGoogleAuthUser(user)) throw new Error('Admin login must use Google sign-in.');
   var adminSnap = await state.db.ref('admins/' + user.uid).get();
   if (adminSnap.val() !== true && GOOGLE_ADMIN_BOOTSTRAP_UIDS[user.uid]) {
-    await state.db.ref('admins/' + user.uid).set(true);
+    try {
+      await state.db.ref('admins/' + user.uid).set(true);
+    } catch(e) {
+      throw new Error('Admin bootstrap was allowed by the app, but Firebase rules blocked the write. Make sure the updated rules with your UID are published.');
+    }
     adminSnap = await state.db.ref('admins/' + user.uid).get();
   }
   if (adminSnap.val() !== true) {
