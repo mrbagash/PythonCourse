@@ -1735,7 +1735,26 @@ async function importNamesFromGoogleDrive() {
       btnNone.onclick = function() { listEl.querySelectorAll('.drive-file-cb').forEach(function(cb){ cb.checked = false; }); btnImport.disabled = true; };
     }
 
-    btnBrowse.onclick = browseSheets;
+    // Restore folder: personal override (localStorage) → config default → none
+    try {
+      var saved = JSON.parse(localStorage.getItem('pylearn_drive_folder') || 'null');
+      var defaultId = (!saved && state.config && state.config.driveFolderId) || null;
+      var restoreId = (saved && saved.id) || defaultId;
+      if (restoreId && folderSel.querySelector('option[value="' + restoreId + '"]')) {
+        folderSel.value = restoreId;
+        await browseSheets();
+      }
+    } catch(e) {}
+
+    btnBrowse.onclick = function() {
+      var opt = folderSel.options[folderSel.selectedIndex];
+      if (opt && opt.value) {
+        localStorage.setItem('pylearn_drive_folder', JSON.stringify({ id: opt.value, name: opt.textContent }));
+      } else {
+        localStorage.removeItem('pylearn_drive_folder');
+      }
+      return browseSheets();
+    };
 
     btnImport.onclick = async function() {
       var selected = Array.from(listEl.querySelectorAll('.drive-file-cb:checked'));
