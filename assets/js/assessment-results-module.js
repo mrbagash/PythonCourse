@@ -313,6 +313,10 @@ function setAssessmentInstructionsCollapsed(collapsed) {
     toggle.setAttribute('aria-label', 'Hide instructions');
     active.className = 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 p-4';
   }
+  requestAnimationFrame(function() {
+    scaleApScratchFrame();
+    scaleApQuestionPanel();
+  });
 }
 
 var _apsScratchRO = null;
@@ -321,14 +325,13 @@ function scaleApScratchFrame() {
   var wrap = document.getElementById('aps-scratch-wrap');
   var frame = document.getElementById('aps-scratch-frame');
   if (!wrap || !frame || frame.classList.contains('hidden')) return;
-  var NW = 900, NH = 540;
+  var NW = 1100, NH = 650;
   var wW = wrap.clientWidth, wH = wrap.clientHeight;
   if (wW < 1 || wH < 1) return;
-  var sc = Math.min(wW / NW, wH / NH);
-  // Always letterbox: pin the iframe to exactly NW×NH and CSS-scale it to fit.
-  // This guarantees Scratch always renders at its intended 900×540 viewport
-  // regardless of wrap size — no unexpected viewport dimensions that could
-  // cause internal Scratch layout overflow or scrollbars.
+  var sc = Math.min(1, wW / NW, wH / NH);
+  // Keep TurboWarp at its normal editor size, then scale the whole editor into
+  // the AP panel. Rendering the iframe too small makes Scratch crop its panes
+  // before browser scaling is applied.
   var scaledW = Math.round(NW * sc);
   var scaledH = Math.round(NH * sc);
   frame.style.position = 'absolute';
@@ -340,6 +343,8 @@ function scaleApScratchFrame() {
   frame.style.transformOrigin = 'top left';
   frame.style.left = Math.max(0, Math.round((wW - scaledW) / 2)) + 'px';
   frame.style.top = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  frame.style.maxWidth = 'none';
+  frame.style.maxHeight = 'none';
 }
 
 function initApScratchLetterbox() {
