@@ -1637,6 +1637,7 @@ async function importNamesFromGoogleDrive() {
   var btnImport  = document.getElementById('btn-drive-import-selected');
   var btnAll     = document.getElementById('btn-drive-select-all');
   var btnNone    = document.getElementById('btn-drive-select-none');
+  var configuredFolderId = state.config && state.config.driveFolderId ? String(state.config.driveFolderId).trim() : '';
 
   // Reset
   modal.classList.remove('hidden');
@@ -1670,46 +1671,65 @@ async function importNamesFromGoogleDrive() {
       client.requestAccessToken();
     });
 
-    // Fetch folders to populate the selector
-    statusEl.textContent = 'Fetching folders…';
+    function driveFilesUrl(q, fields, pageSize) {
+      return 'https://www.googleapis.com/drive/v3/files' +
+        '?q=' + encodeURIComponent(q) +
+        '&fields=' + encodeURIComponent(fields || 'files(id,name)') +
+        '&pageSize=' + encodeURIComponent(String(pageSize || 100)) +
+        '&orderBy=name' +
+        '&supportsAllDrives=true&includeItemsFromAllDrives=true';
+    }
+
+    async function fetchDriveFiles(q, fields, pageSize) {
+      var resp = await fetch(driveFilesUrl(q, fields, pageSize), {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!resp.ok) throw new Error('Drive API error ' + resp.status);
+      var data = await resp.json();
+      return data.files || [];
+    }
+
+    async function getDriveFolderName(folderId) {
+      if (!folderId) return '';
+      try {
+        var resp = await fetch(
+          'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(folderId) +
+          '?fields=' + encodeURIComponent('id,name') +
+          '&supportsAllDrives=true',
+          { headers: { Authorization: 'Bearer ' + token } }
+        );
+        if (!resp.ok) return '';
+        var data = await resp.json();
+        return data && data.name ? data.name : '';
+      } catch(e) {
+        return '';
+      }
+    }
+
+    // Fetch folders to populate the selector only when no site-wide folder is configured.
+    statusEl.textContent = configuredFolderId ? 'Opening configured folder...' : 'Fetching folders...';
     listEl.innerHTML = '';
-    var foldersResp = await fetch(
-      'https://www.googleapis.com/drive/v3/files' +
-      '?q=' + encodeURIComponent("mimeType='application/vnd.google-apps.folder' and trashed=false") +
-      '&fields=' + encodeURIComponent('files(id,name)') +
-      '&pageSize=200&orderBy=name',
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    if (!foldersResp.ok) throw new Error('Drive API error ' + foldersResp.status);
-    var foldersData = await foldersResp.json();
-    var folders = foldersData.files || [];
+    var folders = configuredFolderId
+      ? []
+      : await fetchDriveFiles("mimeType='application/vnd.google-apps.folder' and trashed=false", 'files(id,name)', 200);
 
     folderSel.innerHTML = '<option value="">— All spreadsheets —</option>' +
       folders.map(function(f) {
         return '<option value="' + escapeHtml(f.id) + '">' + escapeHtml(f.name) + '</option>';
       }).join('');
-    folderRow.classList.remove('hidden');
-    statusEl.textContent = 'Choose a folder then click Browse, or Browse all.';
+    folderRow.classList.toggle('hidden', !!configuredFolderId);
+    statusEl.textContent = configuredFolderId ? 'Using configured Drive folder.' : 'Choose a folder then click Browse, or Browse all.';
 
     // Browse: fetch sheets for the selected folder (or all)
     async function browseSheets() {
-      var folderId = folderSel.value;
+      var folderId = configuredFolderId || folderSel.value;
       listEl.innerHTML = '<p class="text-gray-400 text-sm p-3">Loading…</p>';
       [btnImport, btnAll, btnNone].forEach(function(b) { b.classList.add('hidden'); });
 
       var q = folderId
         ? "'" + folderId + "' in parents and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
         : "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false";
-      var sheetsResp = await fetch(
-        'https://www.googleapis.com/drive/v3/files' +
-        '?q=' + encodeURIComponent(q) +
-        '&fields=' + encodeURIComponent('files(id,name)') +
-        '&pageSize=100&orderBy=name',
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
-      if (!sheetsResp.ok) throw new Error('Drive API error ' + sheetsResp.status);
-      var sheetsData = await sheetsResp.json();
-      var files = sheetsData.files || [];
+      var files = await fetchDriveFiles(q, 'files(id,name)', 100);
 
       if (!files.length) {
         listEl.innerHTML = '<p class="text-gray-400 text-sm p-3">No spreadsheets found here.</p>';
@@ -1735,16 +1755,20 @@ async function importNamesFromGoogleDrive() {
       btnNone.onclick = function() { listEl.querySelectorAll('.drive-file-cb').forEach(function(cb){ cb.checked = false; }); btnImport.disabled = true; };
     }
 
-    // Restore folder: personal override (localStorage) → config default → none
-    try {
-      var saved = JSON.parse(localStorage.getItem('pylearn_drive_folder') || 'null');
-      var defaultId = (!saved && state.config && state.config.driveFolderId) || null;
-      var restoreId = (saved && saved.id) || defaultId;
-      if (restoreId && folderSel.querySelector('option[value="' + restoreId + '"]')) {
-        folderSel.value = restoreId;
-        await browseSheets();
-      }
-    } catch(e) {}
+    if (configuredFolderId) {
+      var configuredFolderName = await getDriveFolderName(configuredFolderId);
+      statusEl.textContent = configuredFolderName ? 'Using configured folder: ' + configuredFolderName : 'Using configured Drive folder.';
+      await browseSheets();
+    } else {
+      try {
+        var saved = JSON.parse(localStorage.getItem('pylearn_drive_folder') || 'null');
+        var restoreId = saved && saved.id;
+        if (restoreId && folderSel.querySelector('option[value="' + restoreId + '"]')) {
+          folderSel.value = restoreId;
+          await browseSheets();
+        }
+      } catch(e) {}
+    }
 
     btnBrowse.onclick = function() {
       var opt = folderSel.options[folderSel.selectedIndex];
