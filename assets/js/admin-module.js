@@ -1,6 +1,19 @@
 // ── Admin ─────────────────────────────────────────────────────
 async function showAdmin() {
   document.getElementById('modal-admin').classList.remove('hidden');
+
+  // For teacher accounts, guarantee teacherSessions/{uid} exists in Firebase before
+  // attempting any reads — the rules gate everything on this node, and the initial
+  // write on login is fire-and-forget so it may have failed silently.
+  if (state.isTeacher && state.teacherCode) {
+    var _uid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+    if (_uid) {
+      try {
+        await state.db.ref('teacherSessions/' + _uid).set({ code: state.teacherCode, loggedInAt: Date.now() });
+      } catch(e) {}
+    }
+  }
+
   applyAdminPermissions();
   var needsClasses = !state.isTeacher || canDo('viewClasses') || canDo('hostQuiz') || canDo('forceQuiz') || canDo('viewAP') || canDo('forceAP') || canDo('viewProgress') || canDo('exportProgress') || canDo('manageClasses');
   var initialTab = needsClasses ? 'classes' : (canDo('manageTeachers') ? 'teachers' : 'quiz-results');
