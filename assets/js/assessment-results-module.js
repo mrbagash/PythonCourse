@@ -321,6 +321,17 @@ function setAssessmentInstructionsCollapsed(collapsed) {
 
 var _apsScratchRO = null;
 
+function ensureApScratchScaleBox(wrap, frame) {
+  var box = document.getElementById('aps-scratch-scale-box');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'aps-scratch-scale-box';
+    wrap.insertBefore(box, wrap.firstChild);
+  }
+  if (frame.parentNode !== box) box.appendChild(frame);
+  return box;
+}
+
 function scaleApScratchFrame() {
   var wrap = document.getElementById('aps-scratch-wrap');
   var frame = document.getElementById('aps-scratch-frame');
@@ -334,15 +345,25 @@ function scaleApScratchFrame() {
   // before browser scaling is applied.
   var scaledW = Math.round(NW * sc);
   var scaledH = Math.round(NH * sc);
+  var box = ensureApScratchScaleBox(wrap, frame);
+  box.style.position = 'relative';
+  box.style.width = scaledW + 'px';
+  box.style.height = scaledH + 'px';
+  box.style.marginLeft = 'auto';
+  box.style.marginRight = 'auto';
+  box.style.marginTop = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  box.style.marginBottom = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  box.style.overflow = 'hidden';
   frame.style.position = 'absolute';
   frame.style.width = NW + 'px';
   frame.style.height = NH + 'px';
-  frame.style.right = '';   // clear inset:0 remnants from HTML attribute
+  frame.style.inset = '';
+  frame.style.right = '';
   frame.style.bottom = '';
   frame.style.transform = sc === 1 ? '' : 'scale(' + sc.toFixed(4) + ')';
   frame.style.transformOrigin = 'top left';
-  frame.style.left = Math.max(0, Math.round((wW - scaledW) / 2)) + 'px';
-  frame.style.top = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  frame.style.left = '0';
+  frame.style.top = '0';
   frame.style.maxWidth = 'none';
   frame.style.maxHeight = 'none';
 }
