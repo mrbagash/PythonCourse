@@ -429,14 +429,17 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
-  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot);
+  var isBlockbench = q.type === 'blockbench_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
+  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench);
   document.getElementById('qs-code-answer').classList.toggle('hidden', !isCodeQuestion);
   document.getElementById('qs-text-answer').classList.toggle('hidden', !isTextInput);
   document.getElementById('qs-widget-answer').classList.toggle('hidden', !isWidget);
   document.getElementById('qs-scratch-answer').classList.toggle('hidden', !isScratch);
   document.getElementById('qs-pybot-answer').classList.toggle('hidden', !isPyBot);
+  document.getElementById('qs-blockbench-answer').classList.toggle('hidden', !isBlockbench);
   if (!isScratch) resetScratchQuizFrame();
+  if (!isBlockbench) resetBlockbenchQuizFrame();
   if (isWidget) {
     quiz.currentWidget = null;
     var widgetContainer = document.getElementById('qs-widget-container');
@@ -555,6 +558,34 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
       }
     };
     document.addEventListener('keydown', window._qsPyBotEsc);
+  } else if (isBlockbench) {
+    var blockbenchFrame = document.getElementById('qs-blockbench-frame');
+    var blockbenchSubmitBtn = document.getElementById('btn-quiz-submit-blockbench');
+    if (blockbenchSubmitBtn) {
+      blockbenchSubmitBtn.disabled = true;
+      blockbenchSubmitBtn.textContent = 'Loading editor...';
+      blockbenchSubmitBtn.onclick = null;
+    }
+    document.getElementById('qs-blockbench-feedback').textContent = 'Loading Blockbench editor...';
+    var blockbenchLoadKey = qIdx + ':' + questionStart;
+    if (blockbenchFrame && blockbenchFrame.dataset.quizLoadKey !== blockbenchLoadKey) {
+      loadBlockbenchQuizEditor(qIdx, blockbenchLoadKey, 0);
+    } else {
+      requestAnimationFrame(scaleBlockbenchQuizFrame);
+      waitForBlockbenchQuizReady(qIdx, blockbenchLoadKey, 0);
+    }
+    document.getElementById('btn-qs-blockbench-fs').onclick = toggleQsBlockbenchFullscreen;
+    if (window._qsBlockbenchResize) window.removeEventListener('resize', window._qsBlockbenchResize);
+    window._qsBlockbenchResize = scaleBlockbenchQuizFrame;
+    window.addEventListener('resize', window._qsBlockbenchResize);
+    if (window._qsBlockbenchEsc) document.removeEventListener('keydown', window._qsBlockbenchEsc);
+    window._qsBlockbenchEsc = function(e) {
+      if (e.key === 'Escape') {
+        var w = document.getElementById('qs-blockbench-wrap');
+        if (w && w.classList.contains('qs-blockbench-fullscreen')) toggleQsBlockbenchFullscreen();
+      }
+    };
+    document.addEventListener('keydown', window._qsBlockbenchEsc);
   } else {
     document.querySelectorAll('.quiz-ans-btn').forEach(function(btn, i) {
       // Restore structure if a previous scratch_mcq removed the bullet + span

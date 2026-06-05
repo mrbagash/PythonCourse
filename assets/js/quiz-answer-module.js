@@ -16,6 +16,10 @@ function lockStudentAnswers() {
   if (scratchBtn) scratchBtn.disabled = true;
   var scratchWrap = document.getElementById('qs-scratch-wrap');
   if (scratchWrap && scratchWrap.classList.contains('qs-scratch-fullscreen')) toggleQsScratchFullscreen();
+  var blockbenchBtn = document.getElementById('btn-quiz-submit-blockbench');
+  if (blockbenchBtn) blockbenchBtn.disabled = true;
+  var blockbenchWrap = document.getElementById('qs-blockbench-wrap');
+  if (blockbenchWrap && blockbenchWrap.classList.contains('qs-blockbench-fullscreen')) toggleQsBlockbenchFullscreen();
   var pyBotWrap = document.getElementById('qs-pybot-wrap');
   if (pyBotWrap && pyBotWrap.classList.contains('qs-pybot-fullscreen')) toggleQsPyBotFullscreen();
   if (window._qsPyBotMsg) { window.removeEventListener('message', window._qsPyBotMsg); window._qsPyBotMsg = null; }
@@ -133,13 +137,15 @@ function renderStudentReveal(q, qIdx) {
   setStudentView('reveal');
   if (!q) return;
   if (q.type === 'scratch_build') resetScratchQuizFrame();
+  if (q.type === 'blockbench_build') resetBlockbenchQuizFrame();
 
   quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).get().then(function(snap) {
     var isTextInput = q.type === 'text_input';
     var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
     var isScratch = q.type === 'scratch_build';
     var isPyBot = q.type === 'pybot_level';
-    var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
+    var isBlockbench = q.type === 'blockbench_build';
+    var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
     var points = snap.exists() ? quizAnswerPoints(q, snap) : 0;
     var correct = points > 0;
     if (points > 0 && !quiz.myScored[qIdx]) {
@@ -158,6 +164,9 @@ function renderStudentReveal(q, qIdx) {
       revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 font-mono whitespace-pre-wrap';
     } else if (isScratch) {
       revealEl.textContent = q.sampleAnswer || "See your teacher's screen";
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
+    } else if (isBlockbench) {
+      revealEl.textContent = q.sampleAnswer || 'Model checked automatically';
       revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
     } else if (isCodeQuestion) {
       revealEl.textContent = 'Example: ' + (q.sampleAnswer || 'See teacher');

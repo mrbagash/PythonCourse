@@ -51,5 +51,56 @@
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Practice: Build a Simple House</h2>\n<p class='text-gray-700 mb-3'>\n  Use everything you have learned to build a simple house from cubes.\n</p>\n<div class='ex-box' style='background:#fefce8;border-color:#fde68a;margin-bottom:1rem'>\n  <p class='font-semibold text-yellow-800 mb-2'>🏠 Challenge — A house made of cubes</p>\n  <ul class='text-sm text-gray-700' style='list-style:disc;padding-left:1.4rem;line-height:2.2'>\n    <li><strong>1 wide, tall cube</strong> — the main walls of the house</li>\n    <li><strong>1 flat, wide cube</strong> — the roof (position it on top, make it slightly wider)</li>\n    <li><strong>1 small, thin cube</strong> — a chimney sticking up from the roof</li>\n  </ul>\n  <p class='text-sm text-gray-700 mt-2'>\n    Tip: use the Properties panel to set exact sizes. Position each piece by typing coordinates\n    or dragging the move handles. The Outliner should show 3 separate cubes when you are done.\n  </p>\n</div>\n<div class='ex-box' style='background:#f0fdf4;border-color:#bbf7d0;margin-bottom:1rem'>\n  <p class='font-semibold text-green-800 mb-1'>Extension — if you finish early</p>\n  <ul class='text-sm text-gray-700' style='list-style:disc;padding-left:1.4rem;line-height:2'>\n    <li>Add window cubes — thin flat slabs positioned on the front face of the walls</li>\n    <li>Add a door — a taller thin slab at the base of the front wall</li>\n    <li>Switch to <strong>Paint Mode</strong> and colour different parts of the house</li>\n  </ul>\n</div>\n<div class='bb-wrap'><iframe id='bb-house' class='bb-frame' src='./blockbench/index.html' allow='fullscreen'></iframe><div class='bb-bar'><button id='bb-house-fs' class='y7-fs-btn' title='Fullscreen'>&#x26F6;</button></div></div>\n<div style='margin-top:1rem'>\n  <button id='bb-house-check' class='ex-btn'>Check — I have built my house</button>\n  <div id='bb-house-fb' class='ex-feedback'></div>\n</div>",
       "js": "(function(){\n  var NW=1280,NH=720;\n  function sf(){\n    var f=document.getElementById('bb-house');if(!f)return;\n    var w=f.parentElement,bar=w.querySelector('.bb-bar'),bH=bar?bar.offsetHeight:44;\n    var fs=w.classList.contains('bb-fullscreen'),aW=fs?window.innerWidth:w.clientWidth;\n    var sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;\n    f.style.width=NW+'px';f.style.height=NH+'px';\n    f.style.transform='scale('+sc+')';f.style.transformOrigin='top left';\n    f.style.marginBottom=Math.round(NH*(sc-1))+'px';\n    f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';\n  }\n  function tfs(){\n    var f=document.getElementById('bb-house'),w=f.parentElement,b=document.getElementById('bb-house-fs');\n    var fs=w.classList.toggle('bb-fullscreen');b.textContent=fs?'\\u2715':'\\u26F6';\n    if(fs){window._bby=window.scrollY;document.body.style.overflow='hidden';}\n    else{document.body.style.overflow='';window.scrollTo(0,window._bby||0);}sf();\n  }\n  sf();\n  if(window._bbR)window.removeEventListener('resize',window._bbR);\n  window._bbR=sf;window.addEventListener('resize',sf);\n  if(window._bbK)document.removeEventListener('keydown',window._bbK);\n  window._bbK=function(e){if(e.key==='Escape'){var f=document.getElementById('bb-house');if(f&&f.parentElement.classList.contains('bb-fullscreen'))tfs();}};\n  document.addEventListener('keydown',window._bbK);\n  document.getElementById('bb-house-fs').onclick=tfs;\n  document.getElementById('bb-house-check').onclick=function(){var fb=document.getElementById('bb-house-fb');var f=document.getElementById('bb-house');if(!f||!f.contentWindow||!f.contentWindow.Blockbench){fb.className='ex-feedback hint';fb.textContent='Blockbench is still loading — wait a moment then try again.';return;}var cw=f.contentWindow;var els=cw.Outliner&&cw.Outliner.elements?cw.Outliner.elements:[];var boxes=els.filter(function(el){return el.faces&&Object.keys(el.faces).length>=6;}).length;if(boxes<3){fb.className='ex-feedback hint';fb.textContent='Not yet — fewer than 3 box shapes found — build walls, roof and chimney (3 shapes minimum). Try it in Blockbench first, then click Check.';return;}fb.className='ex-feedback ok';fb.textContent='House complete! 3 or more 6-faced shapes detected. Well done — your first full 3D model!';__markStepComplete();};\n})()"
     }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "Which mouse action orbits/rotates the 3D view in Blockbench?",
+      "options": ["Left-click and drag", "Right-click and drag", "Type in the Outliner", "Press Ctrl+A"],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "mcq",
+      "q": "In Blockbench, where can you type exact position and size values for a selected cube?",
+      "options": ["The Properties panel", "The browser address bar", "The Paint bucket only", "The start screen"],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "blockbench_build",
+      "q": "Open Blockbench, create a Generic Model if asked, then add one cube/cuboid to the model.",
+      "sampleAnswer": "A model containing at least 1 cube/cuboid.",
+      "blockbenchCheck": { "minCubes": 1 },
+      "duration": 150
+    },
+    {
+      "type": "blockbench_build",
+      "q": "Create a Generic Model, add a cube, then resize it into a cuboid that is not equal on all sides.",
+      "sampleAnswer": "A model containing at least 1 cuboid that is not equal on all sides.",
+      "blockbenchCheck": { "minCubes": 1, "requireResized": true },
+      "duration": 180
+    },
+    {
+      "type": "blockbench_build",
+      "q": "Create a Generic Model and build a wide, flat cuboid, like a floor, platform, wall, or roof slab.",
+      "sampleAnswer": "A model containing at least 1 wide, flat cuboid.",
+      "blockbenchCheck": { "minCubes": 1, "requireFlatWide": true },
+      "duration": 210
+    },
+    {
+      "type": "blockbench_build",
+      "q": "Create a Generic Model and build a simple object using at least 2 separate cubes/cuboids.",
+      "sampleAnswer": "A model containing at least 2 separate cubes/cuboids.",
+      "blockbenchCheck": { "minCubes": 2 },
+      "duration": 240
+    },
+    {
+      "type": "blockbench_build",
+      "q": "Create a Generic Model and build a small house or tower using at least 3 separate cuboids. Include one wide/flat part and one tall/narrow part.",
+      "sampleAnswer": "A model containing at least 3 cuboids, including a wide/flat part and a tall/narrow part.",
+      "blockbenchCheck": { "minCubes": 3, "requireFlatWide": true, "requireTallNarrow": true },
+      "duration": 300
+    }
   ]
 }

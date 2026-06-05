@@ -329,6 +329,7 @@ async function createHostedQuizLobby(lesson, selectedQs, forceClass) {
         checkFields: normaliseScratchCheckFields(q.checkFields),
         checkAlternatives: normaliseScratchCheckAlternatives(q.checkAlternatives),
         runtimeTest: q.runtimeTest || null,
+        blockbenchCheck: q.blockbenchCheck || null,
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -612,13 +613,15 @@ function renderHostQuestionView(qIdx, questionStart, duration) {
   var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
+  var isBlockbench = q.type === 'blockbench_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
   var hostOptions = ['qh-opt-0','qh-opt-1','qh-opt-2','qh-opt-3'].map(function(id) { return document.getElementById(id); });
-  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench) {
     var label = isWidget ? 'Interactive answer'
       : isTextInput ? 'Typed answer'
       : isScratch ? 'Scratch build'
       : isPyBot ? 'PyBot level'
+      : isBlockbench ? 'Blockbench build'
       : 'Code answer';
     hostOptions.forEach(function(el) {
       el.textContent = label;
@@ -760,7 +763,8 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
+  var isBlockbench = q.type === 'blockbench_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
   await renderHostRevealView(qIdx, now);
@@ -776,7 +780,8 @@ async function renderHostRevealView(qIdx, revealStart) {
   var isWidget = q.type === 'bit_input' || q.type === 'addition_input';
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot;
+  var isBlockbench = q.type === 'blockbench_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
   if (isTextInput || isWidget) {
     safeText(revealEl, 'Answer: ' + q.answer);
     revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono';
@@ -785,6 +790,9 @@ async function renderHostRevealView(qIdx, revealStart) {
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
   } else if (isScratch) {
     safeText(revealEl, q.sampleAnswer || "See your teacher's screen");
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
+  } else if (isBlockbench) {
+    safeText(revealEl, q.sampleAnswer || 'Model checked automatically');
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
   } else if (isCodeQuestion) {
     safeText(revealEl, q.sampleAnswer || 'Teacher checks accepted code');
@@ -818,7 +826,7 @@ async function renderHostRevealView(qIdx, revealStart) {
   var distEl = document.createElement('div');
   distEl.className = 'flex flex-col gap-2 min-w-48';
   var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
-  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench) {
     var codeCorrect = 0, codeTotal = 0;
     var pyBotPoints = 0;
     if (currentQSnap && currentQSnap.exists()) {

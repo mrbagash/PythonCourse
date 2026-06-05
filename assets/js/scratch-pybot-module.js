@@ -142,6 +142,121 @@ function resetScratchQuizFrame() {
   if (frame.src !== 'about:blank') frame.src = 'about:blank';
 }
 
+function scaleBlockbenchQuizFrame() {
+  var frame  = document.getElementById('qs-blockbench-frame');
+  var wrap   = document.getElementById('qs-blockbench-wrap');
+  var scroll = document.getElementById('qs-blockbench-scroll');
+  if (!frame || !wrap || !scroll) return;
+  var NW = 1280, NH = 720;
+  var checkBarEl = wrap.querySelector('.qs-blockbench-checkbar');
+  var checkBarH  = checkBarEl ? checkBarEl.offsetHeight : 44;
+  var isFs = wrap.classList.contains('qs-blockbench-fullscreen');
+  var scale, availW;
+
+  if (isFs) {
+    availW = window.innerWidth;
+    scale  = Math.min(1, availW / NW, (window.innerHeight - checkBarH) / NH);
+  } else {
+    var headerEl = document.querySelector('#quiz-student-screen > div:first-child');
+    var qTextEl  = document.getElementById('qs-q-text');
+    var headerH  = headerEl ? headerEl.offsetHeight     : 44;
+    var qTextH   = qTextEl  ? qTextEl.offsetHeight + 40 : 80;
+    var maxH     = Math.max(300, window.innerHeight - headerH - 42 - qTextH - checkBarH - 16);
+    availW       = Math.max(320, window.innerWidth - 48);
+    scale        = Math.min(1, availW / NW);
+    scroll.style.maxHeight = Math.min(Math.ceil(NH * scale), maxH) + 'px';
+    scroll.scrollLeft      = 0;
+  }
+
+  frame.style.width        = NW + 'px';
+  frame.style.height       = NH + 'px';
+  frame.style.transform    = 'scale(' + scale + ')';
+  frame.style.transformOrigin = 'top left';
+  frame.style.marginBottom = Math.round(NH * (scale - 1)) + 'px';
+  frame.style.marginLeft   = Math.max(0, Math.round((availW - NW * scale) / 2)) + 'px';
+}
+
+function toggleQsBlockbenchFullscreen() {
+  var wrap = document.getElementById('qs-blockbench-wrap');
+  var btn  = document.getElementById('btn-qs-blockbench-fs');
+  var isFs = wrap.classList.toggle('qs-blockbench-fullscreen');
+  btn.textContent = isFs ? '\u00d7' : '\u26f6';
+  btn.title = isFs ? 'Exit full screen (Esc)' : 'Full screen';
+  scaleBlockbenchQuizFrame();
+}
+
+function blockbenchQuizEditorUrl(loadKey, attempt) {
+  return './blockbench/index.html?quiz=' + encodeURIComponent(loadKey) +
+    '&attempt=' + encodeURIComponent(attempt || 0);
+}
+
+function loadBlockbenchQuizEditor(qIdx, loadKey, attempt) {
+  var frame = document.getElementById('qs-blockbench-frame');
+  var fb = document.getElementById('qs-blockbench-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-blockbench');
+  if (!frame || !submitBtn) return;
+  frame.dataset.quizLoadKey = loadKey;
+  frame.dataset.quizLoadAttempt = String(attempt || 0);
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Loading editor...';
+  submitBtn.onclick = null;
+  if (fb) fb.textContent = attempt ? 'Reloading Blockbench editor...' : 'Loading Blockbench editor...';
+  frame.onload = function() {
+    requestAnimationFrame(scaleBlockbenchQuizFrame);
+    waitForBlockbenchQuizReady(qIdx, loadKey, attempt || 0);
+  };
+  frame.src = blockbenchQuizEditorUrl(loadKey, attempt || 0);
+  waitForBlockbenchQuizReady(qIdx, loadKey, attempt || 0);
+}
+
+function waitForBlockbenchQuizReady(qIdx, loadKey, attempt) {
+  var frame = document.getElementById('qs-blockbench-frame');
+  var fb = document.getElementById('qs-blockbench-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-blockbench');
+  if (!frame || !submitBtn || frame.dataset.quizLoadKey !== loadKey) return;
+  var started = Date.now();
+  function isReady() {
+    try {
+      return !!(frame.contentWindow && frame.contentWindow.Blockbench && frame.contentWindow.Outliner);
+    } catch(e) {
+      return false;
+    }
+  }
+  function finishReady() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Check & Submit';
+    submitBtn.onclick = function() { submitStudentBlockbenchAnswer(qIdx); };
+    if (fb) fb.textContent = 'Create a Generic Model if Blockbench asks, then build the required model.';
+  }
+  function poll() {
+    var answerBox = document.getElementById('qs-blockbench-answer');
+    if (!answerBox || answerBox.classList.contains('hidden') || frame.dataset.quizLoadKey !== loadKey) return;
+    if (isReady()) { finishReady(); return; }
+    if (Date.now() - started > 12000) {
+      if ((attempt || 0) < 1) loadBlockbenchQuizEditor(qIdx, loadKey, (attempt || 0) + 1);
+      else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Reload editor';
+        submitBtn.onclick = function() { loadBlockbenchQuizEditor(qIdx, loadKey, (attempt || 0) + 1); };
+        if (fb) fb.textContent = 'Blockbench is taking too long to load. Reload the editor, then try again.';
+      }
+      return;
+    }
+    setTimeout(poll, 250);
+  }
+  poll();
+}
+
+function resetBlockbenchQuizFrame() {
+  var frame = document.getElementById('qs-blockbench-frame');
+  if (!frame) return;
+  var wrap = document.getElementById('qs-blockbench-wrap');
+  if (wrap && wrap.classList.contains('qs-blockbench-fullscreen')) toggleQsBlockbenchFullscreen();
+  frame.onload = null;
+  frame.dataset.quizLoadKey = '';
+  if (frame.src !== 'about:blank') frame.src = 'about:blank';
+}
+
 function scalePyBotQuizFrame() {
   var frame  = document.getElementById('qs-pybot-frame');
   var wrap   = document.getElementById('qs-pybot-wrap');
@@ -244,6 +359,129 @@ async function submitStudentScratchAnswer(qIdx) {
     unlockScratchTesting(frame, submitBtn, originalText);
     if (fb) fb.textContent = 'Could not check: ' + e.message;
   }
+}
+
+async function submitStudentBlockbenchAnswer(qIdx) {
+  if (quiz.myAnswered) return;
+  var q = quiz.questions[qIdx];
+  var frame = document.getElementById('qs-blockbench-frame');
+  var fb = document.getElementById('qs-blockbench-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-blockbench');
+  var originalText = submitBtn ? submitBtn.textContent : '';
+  try {
+    var cw = frame && frame.contentWindow;
+    if (!cw || !cw.Outliner) {
+      if (fb) fb.textContent = 'Editor still loading - wait a moment and try again.';
+      return;
+    }
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Checking...';
+    }
+    if (frame) frame.style.pointerEvents = 'none';
+    if (fb) fb.textContent = 'Inspecting your Blockbench model...';
+    var result = validateBlockbenchQuizModel(q, cw);
+    if (!result.correct) {
+      if (fb) fb.textContent = result.message || 'Not quite yet. Check the required shapes and try again.';
+      unlockBlockbenchTesting(frame, submitBtn, originalText);
+      return;
+    }
+    quiz.myAnswered = true;
+    lockStudentAnswers();
+    await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
+      correct: true,
+      cubeCount: result.cubeCount || 0,
+      answeredAt: Date.now()
+    });
+    document.getElementById('qs-answered-msg').classList.remove('hidden');
+    document.getElementById('qs-blockbench-answer').classList.add('hidden');
+  } catch(e) {
+    unlockBlockbenchTesting(frame, submitBtn, originalText);
+    if (fb) fb.textContent = 'Could not check: ' + e.message;
+  }
+}
+
+function unlockBlockbenchTesting(frame, submitBtn, originalText) {
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText || 'Check & Submit';
+  }
+  if (frame) frame.style.pointerEvents = '';
+}
+
+function validateBlockbenchQuizModel(q, cw) {
+  var check = q.blockbenchCheck || {};
+  var cubes = collectBlockbenchCubes(cw);
+  var minCubes = check.minCubes || 1;
+  if (cubes.length < minCubes) {
+    return { correct: false, cubeCount: cubes.length, message: 'Not yet - found ' + cubes.length + ' cube' + (cubes.length === 1 ? '' : 's') + ', but this question needs at least ' + minCubes + '.' };
+  }
+  if (check.requireResized && !cubes.some(blockbenchCubeIsResized)) {
+    return { correct: false, cubeCount: cubes.length, message: 'A cube was found, but it still looks like the default size. Resize at least one cube.' };
+  }
+  if (check.requireFlatWide && !cubes.some(blockbenchCubeIsFlatWide)) {
+    return { correct: false, cubeCount: cubes.length, message: 'A cube was found, but none look wide and flat yet.' };
+  }
+  if (check.requireTallNarrow && !cubes.some(blockbenchCubeIsTallNarrow)) {
+    return { correct: false, cubeCount: cubes.length, message: 'Add or resize a cube so one part is tall and narrow.' };
+  }
+  return { correct: true, cubeCount: cubes.length, message: 'Model checked.' };
+}
+
+function collectBlockbenchCubes(cw) {
+  var raw = [];
+  try {
+    if (cw.Cube && Array.isArray(cw.Cube.all)) raw = raw.concat(cw.Cube.all);
+  } catch(e) {}
+  try {
+    var els = cw.Outliner && cw.Outliner.elements ? cw.Outliner.elements : [];
+    raw = raw.concat(els);
+  } catch(e2) {}
+  var seen = [];
+  return raw.filter(function(el) {
+    if (!el || seen.indexOf(el) !== -1) return false;
+    seen.push(el);
+    return !!(el.faces && Object.keys(el.faces).length >= 6);
+  }).map(function(el) {
+    var dims = blockbenchCubeDimensions(el);
+    return { element: el, dims: dims };
+  });
+}
+
+function blockbenchCubeDimensions(el) {
+  var from = Array.isArray(el.from) ? el.from : null;
+  var to = Array.isArray(el.to) ? el.to : null;
+  if (from && to) {
+    return [
+      Math.abs(Number(to[0]) - Number(from[0])),
+      Math.abs(Number(to[1]) - Number(from[1])),
+      Math.abs(Number(to[2]) - Number(from[2]))
+    ].filter(function(n) { return isFinite(n); });
+  }
+  if (Array.isArray(el.size)) {
+    return el.size.map(Number).filter(function(n) { return isFinite(n); });
+  }
+  return [];
+}
+
+function blockbenchCubeIsResized(cube) {
+  var d = cube.dims || [];
+  if (d.length < 3) return true;
+  return Math.max.apply(null, d) - Math.min.apply(null, d) > 0.25;
+}
+
+function blockbenchCubeIsFlatWide(cube) {
+  var d = (cube.dims || []).slice().sort(function(a, b) { return a - b; });
+  if (d.length < 3) return blockbenchCubeIsResized(cube);
+  return d[2] >= d[0] * 2 && d[0] <= 5;
+}
+
+function blockbenchCubeIsTallNarrow(cube) {
+  var d = cube.dims || [];
+  if (d.length < 3) return blockbenchCubeIsResized(cube);
+  var y = d[1];
+  var xzMax = Math.max(d[0], d[2]);
+  return y >= xzMax * 1.5;
 }
 
 function unlockScratchTesting(frame, submitBtn, originalText) {
