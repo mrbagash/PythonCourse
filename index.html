@@ -78,6 +78,19 @@
     .quiz-code-feedback.err { color: #f87171; }
     #qs-scratch-wrap.qs-scratch-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
     #qs-scratch-wrap.qs-scratch-fullscreen #qs-scratch-scroll { flex:1; overflow:auto; max-height:none!important; }
+    /* Scratch AP layout: guarantee the editor is never cropped on small/short screens.
+       When stacked (below lg), cap the instruction sidebar and let the Scratch wrap
+       take all remaining space, so it can never be pushed off-screen. */
+    #aps-active { min-height: 0; }
+    #aps-active #aps-scratch-wrap { min-height: 0; }
+    @media (max-width: 1023px) {
+      #aps-active:not(.ap-instructions-collapsed) {
+        grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+      }
+      #aps-active:not(.ap-instructions-collapsed) #aps-sidebar {
+        max-height: 38vh;
+      }
+    }
     #btn-qs-scratch-fs:hover { background:#334155; color:#e2e8f0; }
     #qs-pybot-wrap.qs-pybot-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
     #qs-pybot-wrap.qs-pybot-fullscreen #qs-pybot-scroll { flex:1; overflow:auto; max-height:none!important; }
