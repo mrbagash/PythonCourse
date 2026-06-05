@@ -325,25 +325,21 @@ function scaleApScratchFrame() {
   var wW = wrap.clientWidth, wH = wrap.clientHeight;
   if (wW < 1 || wH < 1) return;
   var sc = Math.min(wW / NW, wH / NH);
-  if (sc >= 1) {
-    frame.style.position = 'absolute';
-    frame.style.width = '100%';
-    frame.style.height = '100%';
-    frame.style.transform = '';
-    frame.style.transformOrigin = '';
-    frame.style.left = '0';
-    frame.style.top = '0';
-  } else {
-    var scaledW = Math.round(NW * sc);
-    var scaledH = Math.round(NH * sc);
-    frame.style.position = 'absolute';
-    frame.style.width = NW + 'px';
-    frame.style.height = NH + 'px';
-    frame.style.transform = 'scale(' + sc.toFixed(4) + ')';
-    frame.style.transformOrigin = 'top left';
-    frame.style.left = Math.max(0, Math.round((wW - scaledW) / 2)) + 'px';
-    frame.style.top = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
-  }
+  // Always letterbox: pin the iframe to exactly NW×NH and CSS-scale it to fit.
+  // This guarantees Scratch always renders at its intended 900×540 viewport
+  // regardless of wrap size — no unexpected viewport dimensions that could
+  // cause internal Scratch layout overflow or scrollbars.
+  var scaledW = Math.round(NW * sc);
+  var scaledH = Math.round(NH * sc);
+  frame.style.position = 'absolute';
+  frame.style.width = NW + 'px';
+  frame.style.height = NH + 'px';
+  frame.style.right = '';   // clear inset:0 remnants from HTML attribute
+  frame.style.bottom = '';
+  frame.style.transform = sc === 1 ? '' : 'scale(' + sc.toFixed(4) + ')';
+  frame.style.transformOrigin = 'top left';
+  frame.style.left = Math.max(0, Math.round((wW - scaledW) / 2)) + 'px';
+  frame.style.top = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
 }
 
 function initApScratchLetterbox() {

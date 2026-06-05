@@ -11,6 +11,9 @@
       <link rel="manifest" href="manifest.webmanifest">
     
     <style>
+      /* Prevent the Scratch editor document from ever generating scrollbars when
+         embedded in an iframe (the parent letterboxes it to fit the available space). */
+      html, body { overflow: hidden; margin: 0; }
       .splash-screen {
         position: absolute;
         width: 100%;
