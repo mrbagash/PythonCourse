@@ -22,7 +22,8 @@ function isGoogleAuthUser(user) {
 }
 
 var GOOGLE_ADMIN_BOOTSTRAP_UIDS = {
-  OSyDoCzzush3n94fDG6tyvzDsf93: true
+  OSyDoCzzush3n94fDG6tyvzDsf93: true,
+  V3q0I1cfjjOrVSJJNZHHbdt4tsB3: true
 };
 
 async function completeGoogleAdminLogin(user, fallbackFirst, fallbackLast) {
