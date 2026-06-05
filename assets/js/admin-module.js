@@ -1786,21 +1786,26 @@ async function importNamesFromGoogleDrive() {
       btnImport.disabled = true;
       [btnAll, btnNone].forEach(function(b) { b.classList.add('hidden'); });
 
+      statusEl.textContent = 'Reading ' + selected.length + ' spreadsheet' + (selected.length !== 1 ? 's' : '') + '…';
+      var fetchResults = await Promise.all(selected.map(function(cb) {
+        return fetch(
+          'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(cb.dataset.id) + '/values/A:B',
+          { headers: { Authorization: 'Bearer ' + token } }
+        ).then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).then(function(data) {
+          return { ok: true, result: parseDriveSheetRows(data.values) };
+        }).catch(function() {
+          return { ok: false };
+        });
+      }));
+
       var totalImported = 0, totalSkipped = 0, done = 0, failed = 0;
-      for (var i = 0; i < selected.length; i++) {
-        statusEl.textContent = 'Reading ' + (i + 1) + ' / ' + selected.length + ': ' + selected[i].dataset.name + '…';
-        try {
-          var sheetResp = await fetch(
-            'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(selected[i].dataset.id) + '/values/A:B',
-            { headers: { Authorization: 'Bearer ' + token } }
-          );
-          if (!sheetResp.ok) throw new Error('HTTP ' + sheetResp.status);
-          var result = parseDriveSheetRows((await sheetResp.json()).values);
-          totalImported += result.imported;
-          totalSkipped  += result.skipped;
-          done++;
-        } catch(e) { failed++; }
-      }
+      fetchResults.forEach(function(r) {
+        if (r.ok) { totalImported += r.result.imported; totalSkipped += r.result.skipped; done++; }
+        else { failed++; }
+      });
 
       modal.classList.add('hidden');
       var source = done + ' spreadsheet' + (done !== 1 ? 's' : '') + ' from Google Drive';
