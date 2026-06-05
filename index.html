@@ -1146,7 +1146,11 @@
       <h2 class="text-lg font-semibold">Import Names from Google Drive</h2>
       <button id="btn-drive-import-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
     </div>
-    <p class="text-xs text-gray-500 mb-3">Signs in with your Google account and lists your accessible spreadsheets. Select the class roster sheets to import — names are saved locally only, never to Firebase.</p>
+    <p class="text-xs text-gray-500 mb-3">Signs in with your Google account. Pick a folder then click Browse to list spreadsheets inside it — names are saved locally only, never to Firebase.</p>
+    <div id="drive-folder-row" class="hidden flex gap-2 items-center mb-2">
+      <select id="drive-folder-select" class="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm min-w-0"></select>
+      <button id="btn-drive-browse-folder" class="jhncc-secondary px-3 py-1.5 rounded border text-sm whitespace-nowrap">Browse</button>
+    </div>
     <div id="drive-import-status" class="text-sm text-gray-500 mb-2"></div>
     <div id="drive-file-list" class="flex-1 overflow-y-auto border border-gray-200 rounded mb-3 min-h-[160px]"></div>
     <div class="flex gap-3 items-center">
