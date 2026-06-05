@@ -67,6 +67,7 @@ document.getElementById('btn-build-code-index').onclick = async function() {
       var codesVal = classSnap.child('codes').val() || {};
       Object.keys(codesVal).forEach(function(code) {
         updates['codeIndex/' + code.toLowerCase()] = { className: classSnap.key, storedCode: code };
+        updates['studentCodes/' + code] = { className: classSnap.key, indexedAt: Date.now() };
         total++;
       });
     });
@@ -674,7 +675,10 @@ async function loadClassDashboard(className, opts) {
         state.db.ref('classNames/' + className).remove().catch(function(){});
         if (codesSnap.exists()) {
           var indexCleanup = {};
-          Object.keys(codesSnap.val()).forEach(function(c) { indexCleanup['codeIndex/' + c.toLowerCase()] = null; });
+          Object.keys(codesSnap.val()).forEach(function(c) {
+            indexCleanup['codeIndex/' + c.toLowerCase()] = null;
+            indexCleanup['studentCodes/' + c] = null;
+          });
           state.db.ref().update(indexCleanup).catch(function(){});
         }
         actions.classList.add('hidden');
@@ -885,6 +889,7 @@ function renderAdminDashboard(className, codes, progMap, forced) {
       try {
         await state.db.ref('classes/' + btn.dataset.class + '/codes/' + btn.dataset.code).remove();
         state.db.ref('codeIndex/' + btn.dataset.code.toLowerCase()).remove().catch(function(){});
+        state.db.ref('studentCodes/' + btn.dataset.code).remove().catch(function(){});
         await loadClassDashboard(btn.dataset.class);
       } catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.textContent = 'Remove'; }
     };
@@ -1129,7 +1134,6 @@ function isSafeFirebaseKey(value) {
 
 async function findClassForCode(code) {
   if (!code || !state.db) return null;
-  // Try the fast index first
   try {
     var idxSnap = await state.db.ref('codeIndex/' + code.toLowerCase()).get();
     if (idxSnap.exists()) {
@@ -1137,7 +1141,8 @@ async function findClassForCode(code) {
       return (v && typeof v === 'object') ? (v.className || null) : (typeof v === 'string' ? v : null);
     }
   } catch(e) {}
-  // Fall back to full scan and backfill index for next time
+  if (!state.isAdmin && !state.isTeacher) return null;
+  // Admin/teacher-only recovery path for legacy databases missing codeIndex.
   var classesSnap = await state.db.ref('classes').get();
   if (!classesSnap.exists()) return null;
   var foundClass = null;
@@ -1180,6 +1185,7 @@ async function moveStudentToClass(code, sourceClass, targetClass) {
   var updates = {};
   updates['classes/' + sourceClass + '/codes/' + code] = null;
   updates['classes/' + targetClass + '/codes/' + code] = codeData;
+  updates['studentCodes/' + code + '/className'] = targetClass;
   await state.db.ref().update(updates);
   state.db.ref('codeIndex/' + code.toLowerCase() + '/className').set(targetClass).catch(function(){});
 }
@@ -1543,6 +1549,7 @@ document.getElementById('btn-gen-codes').onclick = async function() {
     generated.forEach(function(code) {
       classUpdates['classes/' + rawName + '/codes/' + code] = { createdAt: now };
       indexUpdates['codeIndex/' + code.toLowerCase()] = { className: rawName, storedCode: code };
+      indexUpdates['studentCodes/' + code] = { className: rawName, indexedAt: now };
     });
     await state.db.ref().update(classUpdates);
     state.db.ref().update(indexUpdates).catch(function(){});  // best-effort; self-heals on login
@@ -1573,6 +1580,7 @@ document.getElementById('btn-add-single').onclick = async function() {
     var code = codes[0];
     await state.db.ref('classes/' + className + '/codes/' + code).set({ createdAt: Date.now() });
     state.db.ref('codeIndex/' + code.toLowerCase()).set({ className: className, storedCode: code }).catch(function(){});
+    state.db.ref('studentCodes/' + code).set({ className: className, indexedAt: Date.now() }).catch(function(){});
     state.db.ref('classNames/' + className).set(true).catch(function(){});
     statusEl.textContent = '\u2705 Added code ' + code + ' to ' + className + '.';
     await refreshAdminTable();

@@ -1,4 +1,62 @@
 // ── Auth ──────────────────────────────────────────────────────
+function setLoginError(message) {
+  var errEl = document.getElementById('login-error');
+  if (!errEl) return;
+  errEl.textContent = message || '';
+  errEl.classList.toggle('hidden', !message);
+}
+
+function adminDisplayNameParts(user, fallbackFirst, fallbackLast) {
+  var display = (user && user.displayName ? user.displayName : '').trim();
+  var parts = display ? display.split(/\s+/) : [];
+  return {
+    first: fallbackFirst || parts[0] || 'Admin',
+    last: fallbackLast || parts.slice(1).join(' ') || ''
+  };
+}
+
+function isGoogleAuthUser(user) {
+  return !!(user && user.providerData && user.providerData.some(function(p) {
+    return p && p.providerId === 'google.com';
+  }));
+}
+
+async function completeGoogleAdminLogin(user, fallbackFirst, fallbackLast) {
+  if (!user || !user.uid) throw new Error('Google sign-in did not return a user.');
+  if (!isGoogleAuthUser(user)) throw new Error('Admin login must use Google sign-in.');
+  var adminSnap = await state.db.ref('admins/' + user.uid).get();
+  if (adminSnap.val() !== true) {
+    throw new Error('This Google account is not listed as an admin. Add admins/' + user.uid + ' = true in Firebase, then try again.');
+  }
+  var name = adminDisplayNameParts(user, fallbackFirst, fallbackLast);
+  localStorage.setItem('pylearn_name', JSON.stringify(name));
+  localStorage.setItem('pylearn_code', 'admin:' + user.uid);
+  localStorage.setItem('pylearn_auth_mode', 'google-admin');
+  localStorage.removeItem('pylearn_is_teacher');
+  localStorage.removeItem('pylearn_teacher_perms');
+  state.uid=user.uid; state.className=null; state.isAdmin=true; state.isTeacher=false;
+  state.teacherPermissions=null; state.teacherCode=null;
+  updateAuthUI(name.first,name.last,true,false);
+  return name;
+}
+
+async function signInGoogleAdmin() {
+  setLoginError('');
+  var first = document.getElementById('input-first').value.trim();
+  var last  = document.getElementById('input-last').value.trim();
+  var provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    var result = await state.auth.signInWithPopup(provider);
+    await completeGoogleAdminLogin(result.user, first, last);
+    document.getElementById('modal-login').classList.add('hidden');
+  } catch(e) {
+    try { await state.auth.signOut(); } catch(_e) {}
+    await ensureAnonymousAuth();
+    setLoginError(e && e.message ? e.message : 'Google admin sign-in failed.');
+  }
+}
+
 function setupAuthUI() {
   var modalLogin = document.getElementById('modal-login');
 
@@ -13,6 +71,7 @@ function setupAuthUI() {
   };
 
   document.getElementById('btn-login-cancel').onclick = function() { modalLogin.classList.add('hidden'); };
+  document.getElementById('btn-google-admin-login').onclick = signInGoogleAdmin;
 
   document.getElementById('btn-login-submit').onclick = async function() {
     var first = document.getElementById('input-first').value.trim();
@@ -24,20 +83,7 @@ function setupAuthUI() {
     if (!first||!last) { errEl.textContent='Please enter your name.';       errEl.classList.remove('hidden'); return; }
     if (!code)         { errEl.textContent='Please enter your login code.'; errEl.classList.remove('hidden'); return; }
 
-    if (code.toLowerCase() === state.config.adminCode.toLowerCase()) {
-      localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
-      localStorage.setItem('pylearn_code', state.config.adminCode);
-      state.isAdmin=true; state.uid='admin';
-      try {
-        var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
-        if (firebaseUid) {
-          await state.db.ref('admins/' + firebaseUid).set(state.config.adminCode);
-        }
-      } catch(e) { console.warn('Could not register admin session:', e.message); }
-      modalLogin.classList.add('hidden');
-      updateAuthUI(first,last,true);
-      return;
-    }
+    var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
     try {
       var teacherSnap = await state.db.ref('teachers/' + code.toLowerCase()).get();
       if (teacherSnap.exists()) {
@@ -46,8 +92,15 @@ function setupAuthUI() {
         localStorage.setItem('pylearn_code', code.toLowerCase());
         localStorage.setItem('pylearn_is_teacher', '1');
         localStorage.setItem('pylearn_teacher_perms', JSON.stringify(td.permissions || {}));
+        localStorage.removeItem('pylearn_auth_mode');
         state.isAdmin=false; state.isTeacher=true;
         state.uid=code.toLowerCase(); state.teacherPermissions=td.permissions||{}; state.teacherCode=code.toLowerCase();
+        if (firebaseUid) {
+          state.db.ref('teacherSessions/' + firebaseUid).set({
+            code: code.toLowerCase(),
+            loggedInAt: Date.now()
+          }).catch(function(){});
+        }
         modalLogin.classList.add('hidden');
         updateAuthUI(first,last,false,true);
         return;
@@ -62,29 +115,15 @@ function setupAuthUI() {
         var idxData = idxSnap.val() || {};
         foundCode = idxData.storedCode || code;
         foundClass = idxData.className || null;
-      } else {
-        // Index miss: fall back to full classes scan, then backfill the index
-        var classesSnap = await state.db.ref('classes').get();
-        if (classesSnap.exists()) {
-          classesSnap.forEach(function(classSnap) {
-            var codesVal = classSnap.child('codes').val() || {};
-            Object.keys(codesVal).forEach(function(storedCode) {
-              if (storedCode.toLowerCase() === code.toLowerCase()) {
-                foundCode = storedCode;  // use the correctly-cased stored code as uid
-                foundClass = classSnap.key;
-              }
-            });
-          });
-        }
-        // Backfill index so next login/refresh is fast
-        if (foundCode && foundClass) {
-          state.db.ref('codeIndex/' + foundCode.toLowerCase()).set({ className: foundClass, storedCode: foundCode }).catch(function(){});
-        }
       }
       if (!foundCode) { errEl.textContent='Invalid code. Please ask your teacher.'; errEl.classList.remove('hidden'); return; }
       localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
       localStorage.setItem('pylearn_code', foundCode);
+      localStorage.removeItem('pylearn_auth_mode');
       state.uid=foundCode; state.className=foundClass; state.isAdmin=false;
+      if (firebaseUid) {
+        state.db.ref('studentSessions/' + firebaseUid).set({ code: foundCode, className: foundClass || '', loggedInAt: Date.now() }).catch(function(){});
+      }
       await loadProgress();
       renderLessonTabs(); renderStepBar();
       modalLogin.classList.add('hidden');
@@ -98,6 +137,7 @@ function setupAuthUI() {
 
   document.getElementById('btn-logout').onclick = async function() {
     await saveStepTime();
+    var wasGoogleAdmin = localStorage.getItem('pylearn_auth_mode') === 'google-admin';
     localStorage.removeItem('pylearn_code');
     // Clear all saved per-step code so the next student doesn't see this one's work
     try {
@@ -112,6 +152,16 @@ function setupAuthUI() {
     stopForcedAssessmentWatcher();
     localStorage.removeItem('pylearn_is_teacher');
     localStorage.removeItem('pylearn_teacher_perms');
+    localStorage.removeItem('pylearn_auth_mode');
+    var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+    if (firebaseUid) {
+      state.db.ref('teacherSessions/' + firebaseUid).remove().catch(function(){});
+      state.db.ref('studentSessions/' + firebaseUid).remove().catch(function(){});
+    }
+    if (wasGoogleAdmin && state.auth) {
+      try { await state.auth.signOut(); } catch(e) {}
+      await ensureAnonymousAuth();
+    }
     state.uid=null; state.className=null; state.isAdmin=false; state.isTeacher=false; state.teacherPermissions=null; state.teacherCode=null; state.progress={};
     updateAuthUI(null,null,false,false);
     renderLessonTabs(); renderStepBar();
@@ -129,16 +179,25 @@ function setupAuthUI() {
   var savedName = localStorage.getItem('pylearn_name');
   if (savedCode && savedName) {
     var n = JSON.parse(savedName);
-    if (savedCode.toLowerCase() === state.config.adminCode.toLowerCase()) {
-      state.uid='admin'; state.className=null; state.isAdmin=true;
-      // Re-register admin UID on page refresh so Firebase rules still recognise them
-      try {
-        var firebaseUid = state.auth.currentUser && state.auth.currentUser.uid;
-        if (firebaseUid) {
-          state.db.ref('admins/' + firebaseUid).set(state.config.adminCode).catch(function(){});
+    if (savedCode.indexOf('admin:') === 0) {
+      var currentUser = state.auth && state.auth.currentUser;
+      if (!currentUser || savedCode !== 'admin:' + currentUser.uid) {
+        localStorage.removeItem('pylearn_code');
+        localStorage.removeItem('pylearn_name');
+        localStorage.removeItem('pylearn_auth_mode');
+        updateAuthUI(null,null,false,false);
+        if (state.auth && state.auth.currentUser && !state.auth.currentUser.isAnonymous) {
+          state.auth.signOut().then(ensureAnonymousAuth).catch(function(){ ensureAnonymousAuth(); });
         }
-      } catch(e) {}
-      updateAuthUI(n.first,n.last,true);
+      } else completeGoogleAdminLogin(currentUser, n.first, n.last).catch(function() {
+        localStorage.removeItem('pylearn_code');
+        localStorage.removeItem('pylearn_name');
+        localStorage.removeItem('pylearn_auth_mode');
+        updateAuthUI(null,null,false,false);
+        if (state.auth && state.auth.currentUser && !state.auth.currentUser.isAnonymous) {
+          state.auth.signOut().then(ensureAnonymousAuth).catch(function(){ ensureAnonymousAuth(); });
+        }
+      });
     } else if (localStorage.getItem('pylearn_is_teacher') === '1') {
       state.uid=savedCode.toLowerCase(); state.isTeacher=true; state.teacherCode=savedCode.toLowerCase();
       try { state.teacherPermissions=JSON.parse(localStorage.getItem('pylearn_teacher_perms')||'{}'); } catch(e){ state.teacherPermissions={}; }
@@ -148,14 +207,24 @@ function setupAuthUI() {
           localStorage.removeItem('pylearn_is_teacher'); localStorage.removeItem('pylearn_teacher_perms');
           document.getElementById('btn-logout').click();
         } else {
-          state.teacherPermissions=snap.val().permissions||{};
+          var savedTeacherData = snap.val() || {};
+          state.teacherPermissions=savedTeacherData.permissions||{};
           localStorage.setItem('pylearn_teacher_perms',JSON.stringify(state.teacherPermissions));
+          var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+          if (firebaseUid) {
+            state.db.ref('teacherSessions/' + firebaseUid).set({
+              code: savedCode.toLowerCase(),
+              loggedInAt: Date.now()
+            }).catch(function(){});
+          }
         }
       }).catch(function(){});
     } else {
       state.uid=savedCode;
       findClassForCode(savedCode).then(function(className) {
         state.className = className;
+        var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+        if (firebaseUid) state.db.ref('studentSessions/' + firebaseUid).set({ code: savedCode, className: className || '', loggedInAt: Date.now() }).catch(function(){});
         logStudentAccess(savedCode, n.first + ' ' + n.last, className);
         startForcedQuizWatcher(className);
         startForcedAssessmentWatcher(className);

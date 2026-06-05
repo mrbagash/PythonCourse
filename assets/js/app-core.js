@@ -181,6 +181,17 @@ function mergeFirebaseProgress(firebaseProgress) {
 // ── Firebase helpers ─────────────────────────────────────────
 function progressRef(lid, sid) { return state.db.ref('progress/'+state.uid+'/'+lid+'/'+sid); }
 
+async function ensureAnonymousAuth() {
+  if (!state.auth) return null;
+  if (state.auth.currentUser) return state.auth.currentUser;
+  return await state.auth.signInAnonymously().then(function(result) {
+    return result && result.user ? result.user : state.auth.currentUser;
+  }).catch(function(e) {
+    console.error('Firebase anonymous sign-in failed:', e.code, e.message);
+    return null;
+  });
+}
+
 async function loadProgress() {
   // Always load local progress first — instant, no network needed
   state.progress = readLocalProgress();
@@ -255,7 +266,7 @@ async function loadApp() {
     fetch('config/firebase.json', NOCACHE).then(function(r) { return r.json(); }),
     fetch('lessons/index.json', NOCACHE).then(function(r) { return r.json(); }),
   ]);
-  state.config      = results[0];  // { firebase, adminCode }
+  state.config      = results[0];  // { firebase }
   state.lessonIndex = results[1];  // { yearGroups: [...] }
   state.yearGroups  = state.lessonIndex.yearGroups;
 
@@ -269,15 +280,14 @@ async function loadApp() {
   // happen before the session is established.
   await new Promise(function(resolve) {
     var unsubscribe = state.auth.onAuthStateChanged(function(user) {
-      if (user) {
-        unsubscribe();
-        resolve();
-      }
-    });
-    state.auth.signInAnonymously().catch(function(e) {
-      console.error('Firebase anonymous sign-in failed:', e.code, e.message);
       unsubscribe();
-      resolve(); // continue anyway — local progress will still work
+      if (user) {
+        resolve();
+        return;
+      }
+      ensureAnonymousAuth().then(function() {
+        resolve();
+      });
     });
   });
 

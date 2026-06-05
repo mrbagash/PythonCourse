@@ -7,6 +7,5 @@ window.PYLEARN_CONFIG = {
     "storageBucket": "courses-57fbf.firebasestorage.app",
     "messagingSenderId": "116392131413",
     "appId": "1:116392131413:web:749085e191446e9e744ddc"
-  },
-  "adminCode": "ADMIN-X7K2-M9PQ-R4LW-V6NT"
+  }
 };

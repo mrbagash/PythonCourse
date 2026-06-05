@@ -5,7 +5,7 @@
 ```
 index.html               ← Main app (serve this)
 lessons/
-  index.json             ← Config: Firebase settings, lesson list, admin code
+  index.json             ← Lesson/course list
   python-print.json      ← Example lesson
 firebase-rules.json      ← Paste into Firebase Realtime Database Rules tab
 ```
@@ -30,10 +30,9 @@ For admin access to all progress data, either:
 
 ## 3. Admin Access
 
-The admin code is set in `lessons/index.json` → `"adminCode"`.
-Change this to any secret string before going live.
+Client-side admin-code login has been removed. Do not put admin credentials in a public GitHub Pages app.
 
-**Default admin code:** ``
+Use Firebase Auth users with server-issued custom claims such as `admin: true` or `teacher: true`, then apply `firebase-rules.json` in the Realtime Database Rules tab.
 
 The admin can:
 - Generate new student login codes
@@ -41,7 +40,7 @@ The admin can:
 
 ## 4. Generating Student Codes
 
-Log in with the admin code → click **Admin** → **Generate New Code**.
+Log in with an authorised admin/teacher account → click **Admin** → **Generate New Code**.
 Codes are saved to Firebase. Share each code with the student.
 
 ## 5. Adding Lessons

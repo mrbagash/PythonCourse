@@ -27,7 +27,7 @@ This document covers everything available to lesson authors: the JSON lesson for
 ```
 index.html
 lessons/
-  index.json              ← Master config: Firebase, admin code, lesson list
+  index.json              ← Master course/lesson list
   python-print.json       ← A lesson file (name is up to you)
   variables.json
   loops.json
@@ -54,7 +54,6 @@ The master configuration file. **Must** be present at `lessons/index.json`.
     "messagingSenderId": "YOUR_SENDER_ID",
     "appId":             "YOUR_APP_ID"
   },
-  "adminCode": "ADMIN-X7K2-M9PQ-R4LW-V6NT",
   "lessons": [
     {
       "id":    "python-print",
@@ -75,7 +74,6 @@ The master configuration file. **Must** be present at `lessons/index.json`.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `firebase` | object | Yes | Firebase project config — paste from Firebase Console |
-| `adminCode` | string | Yes | Secret string that grants admin access when used as a login code |
 | `lessons` | array | Yes | Ordered list of lessons to load |
 | `lessons[].id` | string | Yes | Unique identifier — must match the `id` inside the lesson file |
 | `lessons[].title` | string | Yes | Display name shown in the lesson tab bar |
