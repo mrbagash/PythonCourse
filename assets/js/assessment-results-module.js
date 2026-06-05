@@ -320,6 +320,7 @@ function setAssessmentInstructionsCollapsed(collapsed) {
 }
 
 var _apsScratchRO = null;
+var _apsScratchResizePending = false;
 
 function ensureApScratchScaleBox(wrap, frame) {
   var box = document.getElementById('aps-scratch-scale-box');
@@ -337,7 +338,10 @@ function scaleApScratchFrame() {
   var frame = document.getElementById('aps-scratch-frame');
   if (!wrap || !frame || frame.classList.contains('hidden')) return;
   var NW = 1100, NH = 650;
-  var wW = wrap.clientWidth, wH = wrap.clientHeight;
+  wrap.style.scrollbarGutter = 'stable both-edges';
+  var bounds = wrap.getBoundingClientRect();
+  var wW = Math.floor(bounds.width) - 4;
+  var wH = Math.floor(bounds.height) - 4;
   if (wW < 1 || wH < 1) return;
   var sc = Math.min(1, wW / NW, wH / NH);
   // Keep TurboWarp at its normal editor size, then scale the whole editor into
@@ -351,8 +355,9 @@ function scaleApScratchFrame() {
   box.style.height = scaledH + 'px';
   box.style.marginLeft = 'auto';
   box.style.marginRight = 'auto';
-  box.style.marginTop = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
-  box.style.marginBottom = Math.max(0, Math.round((wH - scaledH) / 2)) + 'px';
+  var marginY = Math.max(0, Math.floor((wH - scaledH) / 2));
+  box.style.marginTop = marginY + 'px';
+  box.style.marginBottom = marginY + 'px';
   box.style.overflow = 'hidden';
   frame.style.position = 'absolute';
   frame.style.width = NW + 'px';
@@ -372,7 +377,15 @@ function initApScratchLetterbox() {
   var wrap = document.getElementById('aps-scratch-wrap');
   if (!wrap) return;
   if (_apsScratchRO) _apsScratchRO.disconnect();
-  _apsScratchRO = new ResizeObserver(function() { scaleApScratchFrame(); scaleApQuestionPanel(); });
+  _apsScratchRO = new ResizeObserver(function() {
+    if (_apsScratchResizePending) return;
+    _apsScratchResizePending = true;
+    requestAnimationFrame(function() {
+      _apsScratchResizePending = false;
+      scaleApScratchFrame();
+      scaleApQuestionPanel();
+    });
+  });
   _apsScratchRO.observe(wrap);
   scaleApScratchFrame();
   scaleApQuestionPanel();

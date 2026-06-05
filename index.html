@@ -84,7 +84,7 @@
        Scratch wrap outside the visible area.  The @media rule below overrides this
        to two explicit rows for the stacked (<lg) layout. */
     #aps-active { min-height: 0; grid-template-rows: minmax(0, 1fr); overflow: hidden; }
-    #aps-active #aps-scratch-wrap { min-height: 0; }
+    #aps-active #aps-scratch-wrap { min-height: 0; scrollbar-gutter: stable both-edges; }
     @media (max-width: 1023px) {
       #aps-active:not(.ap-instructions-collapsed) {
         grid-template-rows: minmax(0, auto) minmax(0, 1fr);
