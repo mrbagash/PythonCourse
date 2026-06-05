@@ -108,10 +108,9 @@ function setupAuthUI() {
         state.isAdmin=false; state.isTeacher=true;
         state.uid=code.toLowerCase(); state.teacherPermissions=td.permissions||{}; state.teacherCode=code.toLowerCase();
         if (firebaseUid) {
-          state.db.ref('teacherSessions/' + firebaseUid).set({
-            code: code.toLowerCase(),
-            loggedInAt: Date.now()
-          }).catch(function(){});
+          // Await the session write so Firebase rules (which gate classes/progress reads on
+          // teacherSessions existing) are satisfied before the Teacher Panel can be opened.
+          try { await state.db.ref('teacherSessions/' + firebaseUid).set({ code: code.toLowerCase(), loggedInAt: Date.now() }); } catch(e) {}
         }
         modalLogin.classList.add('hidden');
         updateAuthUI(first,last,false,true);
@@ -213,6 +212,15 @@ function setupAuthUI() {
     } else if (localStorage.getItem('pylearn_is_teacher') === '1') {
       state.uid=savedCode.toLowerCase(); state.isTeacher=true; state.teacherCode=savedCode.toLowerCase();
       try { state.teacherPermissions=JSON.parse(localStorage.getItem('pylearn_teacher_perms')||'{}'); } catch(e){ state.teacherPermissions={}; }
+      // Write teacherSessions immediately using the anonymous UID that is already established
+      // by loadApp() — this must happen BEFORE updateAuthUI so the Teacher Panel button is
+      // only visible once the session exists in Firebase (rules gate all panel reads on it).
+      var _autoTeacherUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+      if (_autoTeacherUid) {
+        state.db.ref('teacherSessions/' + _autoTeacherUid).set({
+          code: savedCode.toLowerCase(), loggedInAt: Date.now()
+        }).catch(function(){});
+      }
       updateAuthUI(n.first,n.last,false,true);
       state.db.ref('teachers/'+savedCode.toLowerCase()).get().then(function(snap){
         if(!snap.exists()){
@@ -222,11 +230,11 @@ function setupAuthUI() {
           var savedTeacherData = snap.val() || {};
           state.teacherPermissions=savedTeacherData.permissions||{};
           localStorage.setItem('pylearn_teacher_perms',JSON.stringify(state.teacherPermissions));
+          // If UID wasn't available above (very rare), write the session now
           var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
-          if (firebaseUid) {
+          if (firebaseUid && !_autoTeacherUid) {
             state.db.ref('teacherSessions/' + firebaseUid).set({
-              code: savedCode.toLowerCase(),
-              loggedInAt: Date.now()
+              code: savedCode.toLowerCase(), loggedInAt: Date.now()
             }).catch(function(){});
           }
         }

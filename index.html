@@ -7,6 +7,7 @@
   <link rel="icon" type="image/webp" href="assets/JHNCC-Crest-Outlined.webp" />
   <link rel="shortcut icon" type="image/webp" href="assets/JHNCC-Crest-Outlined.webp" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -513,8 +514,11 @@
         <div class="border-l border-gray-200 pl-3 flex gap-2 items-end">
           <div>
             <label class="block text-xs text-gray-500 mb-1">Import names from spreadsheet</label>
-            <input type="file" id="input-import-names" accept=".xlsx,.xls,.zip" class="hidden" />
-            <button id="btn-import-names" class="jhncc-secondary px-3 py-1.5 rounded border text-sm whitespace-nowrap">&#x1F4C2; Import Names</button>
+            <div class="flex gap-2">
+              <input type="file" id="input-import-names" accept=".xlsx,.xls,.zip" class="hidden" />
+              <button id="btn-import-names" class="jhncc-secondary px-3 py-1.5 rounded border text-sm whitespace-nowrap">&#x1F4C2; From File / ZIP</button>
+              <button id="btn-import-names-drive" class="px-3 py-1.5 rounded border border-blue-400 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm whitespace-nowrap">&#x1F4C1; From Google Drive</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1132,6 +1136,25 @@
       <button id="btn-student-ap-feedback-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
     </div>
     <div id="student-ap-feedback-content" class="overflow-y-auto flex-1 text-sm text-gray-700"></div>
+  </div>
+</div>
+
+<!-- GOOGLE DRIVE NAME IMPORT MODAL -->
+<div id="modal-drive-import" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg font-semibold">Import Names from Google Drive</h2>
+      <button id="btn-drive-import-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Signs in with your Google account and lists your accessible spreadsheets. Select the class roster sheets to import — names are saved locally only, never to Firebase.</p>
+    <div id="drive-import-status" class="text-sm text-gray-500 mb-2"></div>
+    <div id="drive-file-list" class="flex-1 overflow-y-auto border border-gray-200 rounded mb-3 min-h-[160px]"></div>
+    <div class="flex gap-3 items-center">
+      <button id="btn-drive-select-all" class="text-xs text-blue-500 hover:underline hidden">Select all</button>
+      <button id="btn-drive-select-none" class="text-xs text-gray-400 hover:underline hidden">Clear</button>
+      <div class="flex-1"></div>
+      <button id="btn-drive-import-selected" class="jhncc-primary px-4 py-1.5 rounded text-sm font-semibold hidden">Import Selected</button>
+    </div>
   </div>
 </div>
 

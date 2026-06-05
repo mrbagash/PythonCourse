@@ -223,6 +223,9 @@ function openQuizSetup(className) {
     refreshQuizSetupQuestions();
   }
   document.getElementById('quiz-force-class').checked = false;
+  // Only teachers with forceQuiz permission (or full admins) can force the quiz class-wide
+  var forceRow = document.getElementById('quiz-force-class').closest('label');
+  if (forceRow) forceRow.classList.toggle('hidden', !canDo('forceQuiz'));
   yearEl.onchange = populateQuizLessonSelect;
   courseEl.onchange = populateQuizLessonSelect;
   document.getElementById('quiz-lesson-select').onchange = refreshQuizSetupQuestions;

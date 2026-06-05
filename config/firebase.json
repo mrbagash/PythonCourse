@@ -1,4 +1,5 @@
 {
+  "googleClientId": "",
   "firebase": {
     "apiKey": "AIzaSyABZJr3lLGveSBE3hsueT8Kf8N60uS8E_k",
     "authDomain": "courses-57fbf.firebaseapp.com",

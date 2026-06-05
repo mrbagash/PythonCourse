@@ -114,7 +114,8 @@ function canDo(perm) {
 function applyAdminPermissions() {
   if (state.isAdmin) {
     // Full admin — restore everything
-    ['admin-tab-classes','admin-tab-quiz-results','admin-tab-ap-results','admin-tab-teachers','admin-tab-debug',
+    ['admin-tab-classes','admin-tab-quiz-results','admin-tab-ap-results','admin-tab-force-ap',
+     'admin-tab-access','admin-tab-teachers','admin-tab-debug',
      'admin-gen-row','admin-add-row'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
@@ -128,6 +129,8 @@ function applyAdminPermissions() {
     'admin-tab-classes':      needsClasses,
     'admin-tab-quiz-results': canDo('viewQuizResults'),
     'admin-tab-ap-results':   canDo('viewAP'),
+    'admin-tab-force-ap':     canDo('forceAP'),
+    'admin-tab-access':       canDo('viewProgress') || canDo('viewClasses'),
     'admin-tab-teachers':     canDo('manageTeachers'),
     'admin-tab-debug':        canDo('viewDebug'),
   };
@@ -1603,6 +1606,158 @@ document.getElementById('input-import-names').onchange = function(e) {
     }
     e.target.value = '';
   }
+};
+
+// ── Import names from Google Drive ───────────────────────────
+
+function parseDriveSheetRows(rows) {
+  var imported = 0, skipped = 0;
+  (rows || []).forEach(function(row) {
+    var name = String(row[0] || '').trim();
+    var code = String(row[1] || '').trim();
+    if (name.toLowerCase() === 'name' && code.toLowerCase() === 'code') return;
+    if (!name && !code) return;
+    if (name && code && code.length >= 6) {
+      state.nameMap[code] = name;
+      imported++;
+    } else {
+      skipped++;
+    }
+  });
+  return { imported: imported, skipped: skipped };
+}
+
+async function importNamesFromGoogleDrive() {
+  var modal    = document.getElementById('modal-drive-import');
+  var statusEl = document.getElementById('drive-import-status');
+  var listEl   = document.getElementById('drive-file-list');
+  var btnImport = document.getElementById('btn-drive-import-selected');
+  var btnAll   = document.getElementById('btn-drive-select-all');
+  var btnNone  = document.getElementById('btn-drive-select-none');
+
+  // Reset modal state
+  modal.classList.remove('hidden');
+  statusEl.textContent = '';
+  listEl.innerHTML = '<p class="text-gray-400 text-sm p-3">Connecting to Google…</p>';
+  [btnImport, btnAll, btnNone].forEach(function(b) { b.classList.add('hidden'); });
+
+  var clientId = state.config && state.config.googleClientId;
+  if (!clientId) {
+    statusEl.textContent = '❌ googleClientId is not set in config/firebase.json.';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  try {
+    // Request an OAuth2 token with read-only Drive + Sheets scopes
+    var token = await new Promise(function(resolve, reject) {
+      if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+        reject(new Error('Google Identity Services script has not loaded yet — try again in a moment.'));
+        return;
+      }
+      var client = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+        callback: function(resp) {
+          if (resp.error) reject(new Error(resp.error_description || resp.error));
+          else resolve(resp.access_token);
+        },
+        error_callback: function(err) {
+          reject(new Error(err.type || 'OAuth error'));
+        }
+      });
+      client.requestAccessToken();
+    });
+
+    statusEl.textContent = 'Fetching spreadsheets…';
+    listEl.innerHTML = '';
+
+    // List all Google Sheets the user can access (up to 100)
+    var resp = await fetch(
+      'https://www.googleapis.com/drive/v3/files' +
+      '?q=' + encodeURIComponent("mimeType='application/vnd.google-apps.spreadsheet' and trashed=false") +
+      '&fields=' + encodeURIComponent('files(id,name)') +
+      '&pageSize=100&orderBy=name',
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    if (!resp.ok) throw new Error('Drive API returned ' + resp.status);
+    var data = await resp.json();
+    var files = data.files || [];
+
+    if (!files.length) {
+      statusEl.textContent = '⚠️ No Google Sheets found in your Drive.';
+      return;
+    }
+
+    statusEl.textContent = 'Found ' + files.length + ' spreadsheet' + (files.length !== 1 ? 's' : '') + ' — select which to import:';
+    listEl.innerHTML = files.map(function(f) {
+      return '<label class="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 border-b border-gray-100 cursor-pointer last:border-0">' +
+        '<input type="checkbox" class="drive-file-cb accent-[rgb(176,28,35)]"' +
+        ' data-id="' + escapeHtml(f.id) + '" data-name="' + escapeHtml(f.name) + '" />' +
+        '<span class="text-sm text-gray-800">' + escapeHtml(f.name) + '</span>' +
+        '</label>';
+    }).join('');
+
+    [btnAll, btnNone].forEach(function(b) { b.classList.remove('hidden'); });
+    btnImport.classList.remove('hidden');
+    btnImport.disabled = true;
+
+    listEl.onchange = function() {
+      btnImport.disabled = !listEl.querySelector('.drive-file-cb:checked');
+    };
+    btnAll.onclick = function() {
+      listEl.querySelectorAll('.drive-file-cb').forEach(function(cb) { cb.checked = true; });
+      btnImport.disabled = false;
+    };
+    btnNone.onclick = function() {
+      listEl.querySelectorAll('.drive-file-cb').forEach(function(cb) { cb.checked = false; });
+      btnImport.disabled = true;
+    };
+
+    btnImport.onclick = async function() {
+      var selected = Array.from(listEl.querySelectorAll('.drive-file-cb:checked'));
+      if (!selected.length) return;
+      btnImport.disabled = true;
+      [btnAll, btnNone].forEach(function(b) { b.classList.add('hidden'); });
+
+      var totalImported = 0, totalSkipped = 0, done = 0, failed = 0;
+      for (var i = 0; i < selected.length; i++) {
+        var fileId   = selected[i].dataset.id;
+        var fileName = selected[i].dataset.name;
+        statusEl.textContent = 'Reading ' + (i + 1) + ' / ' + selected.length + ': ' + fileName + '…';
+        try {
+          var sheetResp = await fetch(
+            'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(fileId) + '/values/A:B',
+            { headers: { Authorization: 'Bearer ' + token } }
+          );
+          if (!sheetResp.ok) throw new Error('HTTP ' + sheetResp.status);
+          var sheetData = await sheetResp.json();
+          var result = parseDriveSheetRows(sheetData.values);
+          totalImported += result.imported;
+          totalSkipped  += result.skipped;
+          done++;
+        } catch(e) {
+          failed++;
+        }
+      }
+
+      modal.classList.add('hidden');
+      var source = done + ' spreadsheet' + (done !== 1 ? 's' : '') + ' from Google Drive';
+      if (failed) source += ' (' + failed + ' could not be read)';
+      var importStatusEl = document.getElementById('import-status');
+      importStatusEl.classList.remove('hidden');
+      applyImportResult(totalImported, totalSkipped, importStatusEl, source);
+    };
+
+  } catch(e) {
+    statusEl.textContent = '❌ ' + (e.message || 'Could not connect to Google Drive.');
+    listEl.innerHTML = '';
+  }
+}
+
+document.getElementById('btn-import-names-drive').onclick = importNamesFromGoogleDrive;
+document.getElementById('btn-drive-import-close').onclick = function() {
+  document.getElementById('modal-drive-import').classList.add('hidden');
 };
 
 // ── Report ────────────────────────────────────────────────────
