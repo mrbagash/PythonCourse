@@ -78,10 +78,12 @@
     .quiz-code-feedback.err { color: #f87171; }
     #qs-scratch-wrap.qs-scratch-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
     #qs-scratch-wrap.qs-scratch-fullscreen #qs-scratch-scroll { flex:1; overflow:auto; max-height:none!important; }
-    /* Scratch AP layout: guarantee the editor is never cropped on small/short screens.
-       When stacked (below lg), cap the instruction sidebar and let the Scratch wrap
-       take all remaining space, so it can never be pushed off-screen. */
-    #aps-active { min-height: 0; }
+    /* Scratch AP layout: guarantee the editor is never cropped on any screen size.
+       grid-template-rows: minmax(0,1fr) locks the grid row to exactly the container
+       height on the side-by-side (lg+) layout so a tall sidebar can never push the
+       Scratch wrap outside the visible area.  The @media rule below overrides this
+       to two explicit rows for the stacked (<lg) layout. */
+    #aps-active { min-height: 0; grid-template-rows: minmax(0, 1fr); overflow: hidden; }
     #aps-active #aps-scratch-wrap { min-height: 0; }
     @media (max-width: 1023px) {
       #aps-active:not(.ap-instructions-collapsed) {
