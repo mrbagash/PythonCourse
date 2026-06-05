@@ -560,6 +560,7 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
     document.addEventListener('keydown', window._qsPyBotEsc);
   } else if (isBlockbench) {
     var blockbenchFrame = document.getElementById('qs-blockbench-frame');
+    if (blockbenchFrame) blockbenchFrame.style.pointerEvents = '';
     var blockbenchSubmitBtn = document.getElementById('btn-quiz-submit-blockbench');
     if (blockbenchSubmitBtn) {
       blockbenchSubmitBtn.disabled = true;

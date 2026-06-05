@@ -195,6 +195,7 @@ function loadBlockbenchQuizEditor(qIdx, loadKey, attempt) {
   var fb = document.getElementById('qs-blockbench-feedback');
   var submitBtn = document.getElementById('btn-quiz-submit-blockbench');
   if (!frame || !submitBtn) return;
+  frame.style.pointerEvents = '';
   frame.dataset.quizLoadKey = loadKey;
   frame.dataset.quizLoadAttempt = String(attempt || 0);
   submitBtn.disabled = true;
@@ -252,6 +253,7 @@ function resetBlockbenchQuizFrame() {
   if (!frame) return;
   var wrap = document.getElementById('qs-blockbench-wrap');
   if (wrap && wrap.classList.contains('qs-blockbench-fullscreen')) toggleQsBlockbenchFullscreen();
+  frame.style.pointerEvents = '';
   frame.onload = null;
   frame.dataset.quizLoadKey = '';
   if (frame.src !== 'about:blank') frame.src = 'about:blank';
