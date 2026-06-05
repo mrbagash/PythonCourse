@@ -96,9 +96,14 @@ function setupAuthUI() {
     if (!code)         { errEl.textContent='Please enter your login code.'; errEl.classList.remove('hidden'); return; }
 
     var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
+    // Teacher check must be completely isolated from the student path.
+    // If the lookup throws (network error), we show an error rather than
+    // silently falling through and logging a teacher in as a student.
+    var teacherCheckResult = null; // 'found' | 'not-found' | 'error'
     try {
       var teacherSnap = await state.db.ref('teachers/' + code.toLowerCase()).get();
       if (teacherSnap.exists()) {
+        teacherCheckResult = 'found';
         var td = teacherSnap.val();
         localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
         localStorage.setItem('pylearn_code', code.toLowerCase());
@@ -108,15 +113,22 @@ function setupAuthUI() {
         state.isAdmin=false; state.isTeacher=true;
         state.uid=code.toLowerCase(); state.teacherPermissions=td.permissions||{}; state.teacherCode=code.toLowerCase();
         if (firebaseUid) {
-          // Await the session write so Firebase rules (which gate classes/progress reads on
-          // teacherSessions existing) are satisfied before the Teacher Panel can be opened.
           try { await state.db.ref('teacherSessions/' + firebaseUid).set({ code: code.toLowerCase(), loggedInAt: Date.now() }); } catch(e) {}
         }
         modalLogin.classList.add('hidden');
         updateAuthUI(first,last,false,true);
         return;
+      } else {
+        teacherCheckResult = 'not-found';
       }
-    } catch(e) {}
+    } catch(e) {
+      teacherCheckResult = 'error';
+    }
+    if (teacherCheckResult === 'error') {
+      errEl.textContent = 'Error connecting. Please try again.';
+      errEl.classList.remove('hidden');
+      return;
+    }
     try {
       // Try the fast code index first (single point-read — avoids downloading the full classes tree)
       var foundCode = null;
