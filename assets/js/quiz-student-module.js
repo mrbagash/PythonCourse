@@ -439,6 +439,14 @@ function ensureQuizSpreadsheetAssets(cb) {
   });
 }
 
+function quizSpreadsheetCellToCoords(cell) {
+  var m = String(cell || '').toUpperCase().match(/^([A-Z]+)([0-9]+)$/);
+  if (!m) return null;
+  var x = 0;
+  for (var i = 0; i < m[1].length; i++) x = x * 26 + (m[1].charCodeAt(i) - 64);
+  return { x: x - 1, y: parseInt(m[2], 10) - 1 };
+}
+
 function renderQuizSpreadsheetTask(qIdx, q) {
   quiz.currentSpreadsheet = null;
   var holder = document.getElementById('qs-spreadsheet-sheet');
@@ -467,6 +475,14 @@ function renderQuizSpreadsheetTask(qIdx, q) {
       about: false
     });
     if (typeof JHNCCAddFormulaBar === 'function') JHNCCAddFormulaBar(holder, sheet);
+    var firstCheck = Array.isArray(q.checks) && q.checks.length ? quizSpreadsheetCellToCoords(q.checks[0].cell) : null;
+    if (firstCheck && typeof sheet.updateSelectionFromCoords === 'function') {
+      setTimeout(function() {
+        try {
+          sheet.updateSelectionFromCoords(firstCheck.x, firstCheck.y, firstCheck.x, firstCheck.y);
+        } catch(e) {}
+      }, 0);
+    }
     quiz.currentSpreadsheet = { sheet: sheet, question: q };
     fb.textContent = 'Complete the spreadsheet task, then submit.';
     btn.disabled = false;
