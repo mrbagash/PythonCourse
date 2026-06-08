@@ -146,7 +146,12 @@ function setupAuthUI() {
       localStorage.removeItem('pylearn_auth_mode');
       state.uid=foundCode; state.className=foundClass; state.isAdmin=false;
       if (firebaseUid) {
-        state.db.ref('studentSessions/' + firebaseUid).set({ code: foundCode, className: foundClass || '', loggedInAt: Date.now() }).catch(function(){});
+        state.db.ref('studentSessions/' + firebaseUid).set({
+          code: foundCode,
+          codeLower: foundCode.toLowerCase(),
+          className: foundClass || '',
+          loggedInAt: Date.now()
+        }).catch(function(){});
       }
       await loadProgress();
       renderLessonTabs(); renderStepBar();
@@ -257,7 +262,14 @@ function setupAuthUI() {
       findClassForCode(savedCode).then(function(className) {
         state.className = className;
         var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
-        if (firebaseUid) state.db.ref('studentSessions/' + firebaseUid).set({ code: savedCode, className: className || '', loggedInAt: Date.now() }).catch(function(){});
+        if (firebaseUid) {
+          state.db.ref('studentSessions/' + firebaseUid).set({
+            code: savedCode,
+            codeLower: savedCode.toLowerCase(),
+            className: className || '',
+            loggedInAt: Date.now()
+          }).catch(function(){});
+        }
         logStudentAccess(savedCode, n.first + ' ' + n.last, className);
         startForcedQuizWatcher(className);
         startForcedAssessmentWatcher(className);
