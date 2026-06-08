@@ -59,5 +59,321 @@
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to finish. If you get one wrong, the streak resets - so take your time.</p><div id='l1-endless' class='ex-box'></div>",
       "js": "(function(){var bank=[{q:'Quantity is in B2, Price is in C2. Formula for Income?',o:['=B2*C2','=B2+C2','=C2-B2','B2*C2'],a:0},{q:'Which symbol divides?',o:['/','*','-','+'],a:0},{q:'A formula always starts with...',o:['=','+','!','?'],a:0},{q:'Copy =D2*E2 down one row. It becomes...',o:['=D3*E3','=D2*E2','=E2*F2','=D1*E1'],a:0},{q:'Cost is in A4, VAT is in B4. Formula to add them?',o:['=A4+B4','=A4*B4','=A4-B4','A4+B4'],a:0},{q:'Which symbol means multiply?',o:['*','x','/','+'],a:0},{q:'Total in C2 = Price A2 times Quantity B2. Formula?',o:['=A2*B2','=A2/B2','=A2+B2','=A2-B2'],a:0},{q:'Why use cell references in formulas?',o:['Results update when the data changes','They look colourful','They are faster to delete','They hide the data'],a:0}];var solved=0,c=document.getElementById('l1-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete. Well done!':'Correct. Next question loading.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite - your streak resets. Try again.';setTimeout(render,1100);}};});}render();})();"
     }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A spreadsheet formula must start with which symbol?",
+      "options": [
+        "=",
+        "+",
+        "#",
+        "@"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which symbol should you use to multiply in a spreadsheet formula?",
+      "options": [
+        "*",
+        "x",
+        "/",
+        "+"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "In the spreadsheet, use a formula in D2 to calculate Income for Pens. Income = Quantity * Price.",
+      "sheetData": [
+        [
+          "Item",
+          "Quantity",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Pens",
+          12,
+          0.5,
+          ""
+        ],
+        [
+          "Notebooks",
+          8,
+          1.2,
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D2",
+          "expected": 6,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B2",
+            "C2",
+            "*"
+          ]
+        }
+      ],
+      "sampleAnswer": "D2: =B2*C2"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Complete the Income column using formulas. Each row should multiply Quantity by Price for that row.",
+      "sheetData": [
+        [
+          "Item",
+          "Quantity",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Rulers",
+          15,
+          0.4,
+          ""
+        ],
+        [
+          "Markers",
+          6,
+          1.1,
+          ""
+        ],
+        [
+          "Glue sticks",
+          10,
+          0.8,
+          ""
+        ],
+        [
+          "Scissors",
+          4,
+          2.5,
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D2",
+          "expected": 6,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B2",
+            "C2",
+            "*"
+          ]
+        },
+        {
+          "cell": "D3",
+          "expected": 6.6,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B3",
+            "C3",
+            "*"
+          ]
+        },
+        {
+          "cell": "D4",
+          "expected": 8,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B4",
+            "C4",
+            "*"
+          ]
+        },
+        {
+          "cell": "D5",
+          "expected": 10,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B5",
+            "C5",
+            "*"
+          ]
+        }
+      ],
+      "sampleAnswer": "D2 =B2*C2, then replicate down to D5."
+    },
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "If you copy =B2*C2 from D2 down into D3, what should it become?",
+      "options": [
+        "=B3*C3",
+        "=B2*C2",
+        "=C2*D2",
+        "=B4*C4"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "D2 has already been done. Replicate the formula down so D3 and D4 calculate the correct Income.",
+      "sheetData": [
+        [
+          "Item",
+          "Quantity",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Tickets",
+          20,
+          3,
+          "=B2*C2"
+        ],
+        [
+          "Programs",
+          14,
+          1.5,
+          ""
+        ],
+        [
+          "Badges",
+          30,
+          0.75,
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D3",
+          "expected": 21,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B3",
+            "C3",
+            "*"
+          ]
+        },
+        {
+          "cell": "D4",
+          "expected": 22.5,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B4",
+            "C4",
+            "*"
+          ]
+        }
+      ],
+      "sampleAnswer": "Copy D2 and paste into D3:D4, or enter =B3*C3 and =B4*C4."
+    },
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "Why is =B2*C2 better than typing =12*0.5 for the Pens income?",
+      "options": [
+        "If Quantity or Price changes, the Income updates automatically",
+        "It hides the data",
+        "It only works in row 2",
+        "It makes the sheet smaller"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "Use a formula in D2 to add the Price and Delivery Cost together. Total Cost = Price + Delivery Cost.",
+      "sheetData": [
+        [
+          "Product",
+          "Price (?)",
+          "Delivery (?)",
+          ""
+        ],
+        [
+          "Desk lamp",
+          18,
+          4,
+          ""
+        ],
+        [
+          "Storage box",
+          7,
+          2,
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 105
+        },
+        {
+          "width": 80
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D2",
+          "expected": 22,
+          "tolerance": 0.01,
+          "formulaContains": [
+            "B2",
+            "C2",
+            "+"
+          ]
+        }
+      ],
+      "sampleAnswer": "D2: =B2+C2"
+    }
   ]
 }

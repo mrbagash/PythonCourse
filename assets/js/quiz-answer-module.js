@@ -8,6 +8,8 @@ function lockStudentAnswers() {
   if (textBtn) textBtn.disabled = true;
   var widgetBtn = document.getElementById('btn-quiz-submit-widget');
   if (widgetBtn) widgetBtn.disabled = true;
+  var spreadsheetBtn = document.getElementById('btn-quiz-submit-spreadsheet');
+  if (spreadsheetBtn) spreadsheetBtn.disabled = true;
   var codeInput = document.getElementById('qs-code-input');
   var codeBtn = document.getElementById('btn-quiz-submit-code');
   if (codeInput) codeInput.disabled = true;
@@ -56,6 +58,109 @@ async function submitStudentWidgetAnswer(qIdx) {
   });
   document.getElementById('qs-answered-msg').classList.remove('hidden');
   document.getElementById('qs-widget-answer').classList.add('hidden');
+}
+
+function quizCellToCoords(cell) {
+  var m = String(cell || '').toUpperCase().match(/^([A-Z]+)([0-9]+)$/);
+  if (!m) return null;
+  var x = 0;
+  for (var i = 0; i < m[1].length; i++) x = x * 26 + (m[1].charCodeAt(i) - 64);
+  return { x: x - 1, y: parseInt(m[2], 10) - 1 };
+}
+
+function normaliseFormulaText(value) {
+  return String(value == null ? '' : value).toUpperCase().replace(/\s+/g, '');
+}
+
+function spreadsheetCellSnapshot(sheet, cell) {
+  var pos = quizCellToCoords(cell);
+  if (!pos) return { raw: '', value: '' };
+  return {
+    raw: sheet.getValueFromCoords(pos.x, pos.y, false),
+    value: sheet.getValueFromCoords(pos.x, pos.y, true)
+  };
+}
+
+function validateQuizSpreadsheet(q) {
+  if (!quiz.currentSpreadsheet || !quiz.currentSpreadsheet.sheet) {
+    return { correct: false, message: 'Spreadsheet not ready.', summary: '' };
+  }
+  var sheet = quiz.currentSpreadsheet.sheet;
+  var checks = Array.isArray(q.checks) ? q.checks : [];
+  var messages = [];
+  var summary = [];
+  var allCorrect = checks.length > 0;
+
+  checks.forEach(function(check) {
+    var snap = spreadsheetCellSnapshot(sheet, check.cell);
+    var raw = String(snap.raw == null ? '' : snap.raw);
+    var rawNorm = normaliseFormulaText(raw);
+    var display = String(snap.value == null ? '' : snap.value);
+    var numeric = parseFloat(display);
+    var ok = true;
+
+    if (check.requireFormula !== false && raw.charAt(0) !== '=') {
+      ok = false;
+      messages.push(check.cell + ' needs a formula starting with =.');
+    }
+    if (ok && check.functionName && rawNorm.indexOf(String(check.functionName).toUpperCase() + '(') === -1) {
+      ok = false;
+      messages.push(check.cell + ' should use ' + String(check.functionName).toUpperCase() + '.');
+    }
+    if (ok && Array.isArray(check.formulaContains)) {
+      check.formulaContains.forEach(function(part) {
+        if (rawNorm.indexOf(normaliseFormulaText(part)) === -1) {
+          ok = false;
+        }
+      });
+      if (!ok) messages.push(check.cell + ' formula is missing an expected cell/range/operator.');
+    }
+    if (ok && check.expected != null) {
+      var tolerance = check.tolerance != null ? Number(check.tolerance) : 0.01;
+      if (isNaN(numeric) || Math.abs(numeric - Number(check.expected)) > tolerance) {
+        ok = false;
+        messages.push(check.cell + ' gives ' + display + ' but should calculate to ' + check.expected + '.');
+      }
+    }
+    if (ok && check.expectedText != null) {
+      var gotText = display.trim().toLowerCase();
+      var expectedText = String(check.expectedText).trim().toLowerCase();
+      if (gotText !== expectedText) {
+        ok = false;
+        messages.push(check.cell + ' gives "' + display + '" but should give "' + check.expectedText + '".');
+      }
+    }
+    summary.push(check.cell + ': ' + raw + ' -> ' + display);
+    if (!ok) allCorrect = false;
+  });
+
+  return {
+    correct: allCorrect,
+    message: allCorrect ? 'Submitted.' : (messages[0] || 'Check the requested cells and try again.'),
+    summary: summary.join('\n')
+  };
+}
+
+async function submitStudentSpreadsheetAnswer(qIdx) {
+  if (quiz.myAnswered) return;
+  var q = quiz.questions[qIdx];
+  var btn = document.getElementById('btn-quiz-submit-spreadsheet');
+  var fb = document.getElementById('qs-spreadsheet-feedback');
+  if (btn) btn.disabled = true;
+  if (fb) fb.textContent = 'Checking...';
+  var validation = validateQuizSpreadsheet(q);
+  quiz.myAnswered = true;
+  lockStudentAnswers();
+
+  await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
+    answerText: validation.summary,
+    correct: validation.correct,
+    answeredAt: Date.now(),
+  });
+
+  if (fb) fb.textContent = validation.message;
+  document.getElementById('qs-answered-msg').classList.remove('hidden');
+  document.getElementById('qs-spreadsheet-answer').classList.add('hidden');
 }
 
 async function submitStudentTextAnswer(qIdx) {
@@ -145,7 +250,8 @@ function renderStudentReveal(q, qIdx) {
     var isScratch = q.type === 'scratch_build';
     var isPyBot = q.type === 'pybot_level';
     var isBlockbench = q.type === 'blockbench_build';
-    var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
+    var isSpreadsheet = q.type === 'spreadsheet_task';
+    var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
     var points = snap.exists() ? quizAnswerPoints(q, snap) : 0;
     var correct = points > 0;
     if (points > 0 && !quiz.myScored[qIdx]) {
@@ -168,6 +274,9 @@ function renderStudentReveal(q, qIdx) {
     } else if (isBlockbench) {
       revealEl.textContent = q.sampleAnswer || 'Model checked automatically';
       revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap';
+    } else if (isSpreadsheet) {
+      revealEl.textContent = q.sampleAnswer || 'Spreadsheet task checked automatically';
+      revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 whitespace-pre-wrap text-left';
     } else if (isCodeQuestion) {
       revealEl.textContent = 'Example: ' + (q.sampleAnswer || 'See teacher');
       revealEl.className = 'text-xl font-bold rounded-xl px-6 py-3 bg-green-600 mb-2 font-mono whitespace-pre-wrap text-left';

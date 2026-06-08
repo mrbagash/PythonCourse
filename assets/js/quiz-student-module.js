@@ -404,6 +404,76 @@ function safeText(el, text) {
   }
 }
 
+function ensureQuizSpreadsheetAssets(cb) {
+  function addCss(u) {
+    if (!document.querySelector('link[href="' + u + '"]')) {
+      var l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = u;
+      document.head.appendChild(l);
+    }
+  }
+  function addScript(u, done) {
+    var existing = document.querySelector('script[data-jhncc-src="' + u + '"]');
+    if (existing) {
+      if (existing.getAttribute('data-loaded') === '1') done();
+      else existing.addEventListener('load', done, { once: true });
+      return;
+    }
+    var s = document.createElement('script');
+    s.setAttribute('data-jhncc-src', u);
+    s.src = u;
+    s.onload = function() { s.setAttribute('data-loaded', '1'); done(); };
+    s.onerror = function() {
+      var fb = document.getElementById('qs-spreadsheet-feedback');
+      if (fb) fb.textContent = 'The spreadsheet tool could not load. Please refresh and try again.';
+    };
+    document.head.appendChild(s);
+  }
+  addCss('assets/css/jsuites.css');
+  addCss('assets/css/jspreadsheet.css');
+  addScript('assets/js/jsuites.js', function() {
+    addScript('assets/js/jspreadsheet.js', function() {
+      addScript('assets/js/jspreadsheet-formula-bar.js?v=13', cb);
+    });
+  });
+}
+
+function renderQuizSpreadsheetTask(qIdx, q) {
+  quiz.currentSpreadsheet = null;
+  var holder = document.getElementById('qs-spreadsheet-sheet');
+  var fb = document.getElementById('qs-spreadsheet-feedback');
+  var btn = document.getElementById('btn-quiz-submit-spreadsheet');
+  holder.innerHTML = '';
+  fb.textContent = 'Loading spreadsheet...';
+  btn.disabled = true;
+  btn.onclick = null;
+  ensureQuizSpreadsheetAssets(function() {
+    holder.innerHTML = '';
+    var columns = Array.isArray(q.columns) && q.columns.length ? q.columns : null;
+    if (!columns && Array.isArray(q.sheetData) && q.sheetData[0]) {
+      columns = q.sheetData[0].map(function() { return { width: 120 }; });
+    }
+    var sheet = jspreadsheet(holder, {
+      data: q.sheetData || [['']],
+      columns: columns,
+      minDimensions: [
+        Math.max((q.sheetData && q.sheetData[0] && q.sheetData[0].length) || 1, q.minColumns || 1),
+        Math.max((q.sheetData && q.sheetData.length) || 1, q.minRows || 1)
+      ],
+      tableOverflow: true,
+      tableWidth: '100%',
+      toolbar: false,
+      about: false
+    });
+    if (typeof JHNCCAddFormulaBar === 'function') JHNCCAddFormulaBar(holder, sheet);
+    quiz.currentSpreadsheet = { sheet: sheet, question: q };
+    fb.textContent = 'Complete the spreadsheet task, then submit.';
+    btn.disabled = false;
+    btn.onclick = function() { submitStudentSpreadsheetAnswer(qIdx); };
+  });
+}
+
 function renderStudentQuestion(qIdx, questionStart, duration) {
   setStudentView('question');
   var q = quiz.questions[qIdx];
@@ -430,14 +500,16 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
-  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench);
+  var isSpreadsheet = q.type === 'spreadsheet_task';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
+  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet);
   document.getElementById('qs-code-answer').classList.toggle('hidden', !isCodeQuestion);
   document.getElementById('qs-text-answer').classList.toggle('hidden', !isTextInput);
   document.getElementById('qs-widget-answer').classList.toggle('hidden', !isWidget);
   document.getElementById('qs-scratch-answer').classList.toggle('hidden', !isScratch);
   document.getElementById('qs-pybot-answer').classList.toggle('hidden', !isPyBot);
   document.getElementById('qs-blockbench-answer').classList.toggle('hidden', !isBlockbench);
+  document.getElementById('qs-spreadsheet-answer').classList.toggle('hidden', !isSpreadsheet);
   if (!isScratch) resetScratchQuizFrame();
   if (!isBlockbench) resetBlockbenchQuizFrame();
   if (isWidget) {
@@ -587,6 +659,8 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
       }
     };
     document.addEventListener('keydown', window._qsBlockbenchEsc);
+  } else if (isSpreadsheet) {
+    renderQuizSpreadsheetTask(qIdx, q);
   } else {
     document.querySelectorAll('.quiz-ans-btn').forEach(function(btn, i) {
       // Restore structure if a previous scratch_mcq removed the bullet + span

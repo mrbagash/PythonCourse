@@ -333,6 +333,11 @@ async function createHostedQuizLobby(lesson, selectedQs, forceClass) {
         checkAlternatives: normaliseScratchCheckAlternatives(q.checkAlternatives),
         runtimeTest: q.runtimeTest || null,
         blockbenchCheck: q.blockbenchCheck || null,
+        sheetData: q.sheetData || null,
+        columns: q.columns || null,
+        minColumns: q.minColumns || null,
+        minRows: q.minRows || null,
+        checks: q.checks || null,
         levelString: q.levelString || null,
         starterCode: q.starterCode || null
       };
@@ -617,14 +622,16 @@ function renderHostQuestionView(qIdx, questionStart, duration) {
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
+  var isSpreadsheet = q.type === 'spreadsheet_task';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
   var hostOptions = ['qh-opt-0','qh-opt-1','qh-opt-2','qh-opt-3'].map(function(id) { return document.getElementById(id); });
-  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet) {
     var label = isWidget ? 'Interactive answer'
       : isTextInput ? 'Typed answer'
       : isScratch ? 'Scratch build'
       : isPyBot ? 'PyBot level'
       : isBlockbench ? 'Blockbench build'
+      : isSpreadsheet ? 'Spreadsheet task'
       : 'Code answer';
     hostOptions.forEach(function(el) {
       el.textContent = label;
@@ -767,7 +774,8 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
+  var isSpreadsheet = q.type === 'spreadsheet_task';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
   await renderHostRevealView(qIdx, now);
@@ -784,7 +792,8 @@ async function renderHostRevealView(qIdx, revealStart) {
   var isScratch = q.type === 'scratch_build';
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench;
+  var isSpreadsheet = q.type === 'spreadsheet_task';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
   if (isTextInput || isWidget) {
     safeText(revealEl, 'Answer: ' + q.answer);
     revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono';
@@ -796,6 +805,9 @@ async function renderHostRevealView(qIdx, revealStart) {
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
   } else if (isBlockbench) {
     safeText(revealEl, q.sampleAnswer || 'Model checked automatically');
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
+  } else if (isSpreadsheet) {
+    safeText(revealEl, q.sampleAnswer || 'Spreadsheet task checked automatically');
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
   } else if (isCodeQuestion) {
     safeText(revealEl, q.sampleAnswer || 'Teacher checks accepted code');
@@ -829,7 +841,7 @@ async function renderHostRevealView(qIdx, revealStart) {
   var distEl = document.createElement('div');
   distEl.className = 'flex flex-col gap-2 min-w-48';
   var colours = ['bg-red-600','bg-blue-600','bg-yellow-500','bg-green-600'];
-  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet) {
     var codeCorrect = 0, codeTotal = 0;
     var pyBotPoints = 0;
     if (currentQSnap && currentQSnap.exists()) {

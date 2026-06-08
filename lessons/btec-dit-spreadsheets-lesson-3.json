@@ -52,5 +52,563 @@
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row to finish. A wrong answer resets the streak.</p><div id='l3-endless' class='ex-box'></div>",
       "js": "(function(){var bank=[{q:'=IF(A2>50,\"Yes\",\"No\"). A2=30. What is returned?',o:['No','Yes','30','TRUE'],a:0},{q:'=IF(A2>50,\"Yes\",\"No\"). A2=70. What is returned?',o:['Yes','No','70','FALSE'],a:0},{q:'Which function counts cells matching a condition?',o:['COUNTIF','COUNT','SUMIF','IF'],a:0},{q:'Which function sums only cells where a condition is met?',o:['SUMIF','SUM','COUNTIF','IF'],a:0},{q:'=SUMIF(B2:B6,\"East\",C2:C6). What does it add up?',o:['C values where B says East','B values where B says East','All of C2:C6','All of B2:B6'],a:0},{q:'How do you lock row 7 in a cell reference?',o:['B$7','$B7','B7$','$$7'],a:0},{q:'=COUNTIF(D2:D20,\">100\"). What does this count?',o:['Cells in D2:D20 with a value above 100','Cells equal to 100','All numeric cells','Cells below 100'],a:0},{q:'In =IF(condition, A, B), when is B returned?',o:['When the condition is FALSE','When the condition is TRUE','Always','Never'],a:0},{q:'You copy =C2/C$7*100 from D2 to D3. What does D3 contain?',o:['=C3/C$7*100','=C2/C$7*100','=C3/C8*100','=C3/C7*100'],a:0}];var solved=0,c=document.getElementById('l3-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete! Well done.':'Correct! Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite — streak reset. Try again.';setTimeout(render,1100);}};});} render();})();"
     }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "In =IF(C2>350,\"Top Seller\",\"Standard\"), what is returned when C2 is 334.33?",
+      "options": [
+        "Standard",
+        "Top Seller",
+        "334.33",
+        "TRUE"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Use IF in D2 and D3. If Income is above 350, show Top Seller. Otherwise show Standard.",
+      "sheetData": [
+        [
+          "Item",
+          "Region",
+          "Income (?)",
+          "Status"
+        ],
+        [
+          "Phone Cases",
+          "North",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          "South",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          "North",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          "South",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          "North",
+          149.85,
+          ""
+        ],
+        [
+          "North count",
+          "",
+          "",
+          ""
+        ],
+        [
+          "South total",
+          "",
+          "",
+          ""
+        ],
+        [
+          "High income count",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 90
+        },
+        {
+          "width": 110
+        },
+        {
+          "width": 130
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D2",
+          "functionName": "IF",
+          "expectedText": "Top Seller",
+          "formulaContains": [
+            "C2",
+            ">350"
+          ]
+        },
+        {
+          "cell": "D3",
+          "functionName": "IF",
+          "expectedText": "Top Seller",
+          "formulaContains": [
+            "C3",
+            ">350"
+          ]
+        }
+      ],
+      "sampleAnswer": "D2: =IF(C2>350,\"Top Seller\",\"Standard\")\nD3: =IF(C3>350,\"Top Seller\",\"Standard\")"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Complete D4:D6 using IF. If Income is above 350, show Top Seller. Otherwise show Standard.",
+      "sheetData": [
+        [
+          "Item",
+          "Region",
+          "Income (?)",
+          "Status"
+        ],
+        [
+          "Phone Cases",
+          "North",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          "South",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          "North",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          "South",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          "North",
+          149.85,
+          ""
+        ],
+        [
+          "North count",
+          "",
+          "",
+          ""
+        ],
+        [
+          "South total",
+          "",
+          "",
+          ""
+        ],
+        [
+          "High income count",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 90
+        },
+        {
+          "width": 110
+        },
+        {
+          "width": 130
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D4",
+          "functionName": "IF",
+          "expectedText": "Standard",
+          "formulaContains": [
+            "C4",
+            ">350"
+          ]
+        },
+        {
+          "cell": "D5",
+          "functionName": "IF",
+          "expectedText": "Top Seller",
+          "formulaContains": [
+            "C5",
+            ">350"
+          ]
+        },
+        {
+          "cell": "D6",
+          "functionName": "IF",
+          "expectedText": "Standard",
+          "formulaContains": [
+            "C6",
+            ">350"
+          ]
+        }
+      ],
+      "sampleAnswer": "Use =IF(C4>350,\"Top Seller\",\"Standard\") and replicate down."
+    },
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "What does COUNTIF(B2:B6,\"North\") count?",
+      "options": [
+        "Cells in B2:B6 that contain North",
+        "All numbers in B2:B6",
+        "Income values for North",
+        "Every row in the sheet"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "Use COUNTIF in C7 to count how many products are in the North region.",
+      "sheetData": [
+        [
+          "Item",
+          "Region",
+          "Income (?)",
+          "Status"
+        ],
+        [
+          "Phone Cases",
+          "North",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          "South",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          "North",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          "South",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          "North",
+          149.85,
+          ""
+        ],
+        [
+          "North count",
+          "",
+          "",
+          ""
+        ],
+        [
+          "South total",
+          "",
+          "",
+          ""
+        ],
+        [
+          "High income count",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 90
+        },
+        {
+          "width": 110
+        },
+        {
+          "width": 130
+        }
+      ],
+      "checks": [
+        {
+          "cell": "C7",
+          "functionName": "COUNTIF",
+          "expected": 3,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "B2:B6",
+            "North"
+          ]
+        }
+      ],
+      "sampleAnswer": "C7: =COUNTIF(B2:B6,\"North\")"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Use SUMIF in C8 to add the Income values for products in the South region.",
+      "sheetData": [
+        [
+          "Item",
+          "Region",
+          "Income (?)",
+          "Status"
+        ],
+        [
+          "Phone Cases",
+          "North",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          "South",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          "North",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          "South",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          "North",
+          149.85,
+          ""
+        ],
+        [
+          "North count",
+          "",
+          "",
+          ""
+        ],
+        [
+          "South total",
+          "",
+          "",
+          ""
+        ],
+        [
+          "High income count",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 90
+        },
+        {
+          "width": 110
+        },
+        {
+          "width": 130
+        }
+      ],
+      "checks": [
+        {
+          "cell": "C8",
+          "functionName": "SUMIF",
+          "expected": 843.4,
+          "tolerance": 0.5,
+          "formulaContains": [
+            "B2:B6",
+            "South",
+            "C2:C6"
+          ]
+        }
+      ],
+      "sampleAnswer": "C8: =SUMIF(B2:B6,\"South\",C2:C6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Use COUNTIF in C9 to count how many Income values are greater than 350.",
+      "sheetData": [
+        [
+          "Item",
+          "Region",
+          "Income (?)",
+          "Status"
+        ],
+        [
+          "Phone Cases",
+          "North",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          "South",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          "North",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          "South",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          "North",
+          149.85,
+          ""
+        ],
+        [
+          "North count",
+          "",
+          "",
+          ""
+        ],
+        [
+          "South total",
+          "",
+          "",
+          ""
+        ],
+        [
+          "High income count",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 90
+        },
+        {
+          "width": 110
+        },
+        {
+          "width": 130
+        }
+      ],
+      "checks": [
+        {
+          "cell": "C9",
+          "functionName": "COUNTIF",
+          "expected": 3,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "C2:C6",
+            ">350"
+          ]
+        }
+      ],
+      "sampleAnswer": "C9: =COUNTIF(C2:C6,\">350\")"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "The total is in B7. In C2, calculate Phone Cases as a percentage of the total using an absolute reference to row 7.",
+      "sheetData": [
+        [
+          "Item",
+          "Income (?)",
+          "% of Total"
+        ],
+        [
+          "Phone Cases",
+          404.55,
+          ""
+        ],
+        [
+          "Earphones",
+          479.68,
+          ""
+        ],
+        [
+          "Screen Protectors",
+          334.33,
+          ""
+        ],
+        [
+          "Chargers",
+          363.72,
+          ""
+        ],
+        [
+          "Phone Stands",
+          149.85,
+          ""
+        ],
+        [
+          "TOTAL",
+          "=SUM(B2:B6)",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 155
+        },
+        {
+          "width": 100
+        },
+        {
+          "width": 120
+        }
+      ],
+      "checks": [
+        {
+          "cell": "C2",
+          "expected": 23.35,
+          "tolerance": 0.25,
+          "formulaContains": [
+            "B2",
+            "B$7",
+            "*100"
+          ]
+        }
+      ],
+      "sampleAnswer": "C2: =B2/B$7*100"
+    }
   ]
 }

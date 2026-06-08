@@ -59,5 +59,460 @@
       "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row to finish. A wrong answer resets the streak.</p><div id='l2-endless' class='ex-box'></div>",
       "js": "(function(){var bank=[{q:'Income in D2:D10. Formula for the total?',o:['=SUM(D2:D10)','=ADD(D2:D10)','=TOTAL(D2:D10)','=COUNT(D2:D10)'],a:0},{q:'Scores in C2:C30. Formula for the mean?',o:['=AVERAGE(C2:C30)','=MEAN(C2:C30)','=SUM(C2:C30)','=AVG(C2:C30)'],a:0},{q:'Sales in B2:B8. Formula for the highest value?',o:['=MAX(B2:B8)','=HIGH(B2:B8)','=MIN(B2:B8)','=TOP(B2:B8)'],a:0},{q:'Salaries in E2:E50. Formula for the lowest?',o:['=MIN(E2:E50)','=MAX(E2:E50)','=LOW(E2:E50)','=BOTTOM(E2:E50)'],a:0},{q:'How do you count how many numbers are in A1:A20?',o:['=COUNT(A1:A20)','=SUM(A1:A20)','=AVERAGE(A1:A20)','=MAX(A1:A20)'],a:0},{q:'Values: 100,200,150,300,250. What does =MAX(C2:C6) return?',o:['300','250','150','200'],a:0},{q:'Values: 100,200,150,300,250. What does =MIN(C2:C6) return?',o:['100','150','200','250'],a:0},{q:'Income in F2:F15. Formula for the average?',o:['=AVERAGE(F2:F15)','=SUM(F2:F15)/15','=MEAN(F2:F15)','=AVG(F2:F15)'],a:0}];var solved=0,c=document.getElementById('l2-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete! Well done.':'Correct! Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite — streak reset. Try again.';setTimeout(render,1100);}};});} render();})();"
     }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which function adds all numbers in a range?",
+      "options": [
+        "SUM",
+        "AVERAGE",
+        "COUNT",
+        "MAX"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "In =SUM(D2:D6), what does D2:D6 mean?",
+      "options": [
+        "Every cell from D2 to D6 inclusive",
+        "Only D2 and D6",
+        "All of column D",
+        "D2 divided by D6"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "Use SUM in D7 to calculate the total Income for D2:D6.",
+      "sheetData": [
+        [
+          "Item",
+          "Qty",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Phone Cases",
+          45,
+          8.99,
+          404.55
+        ],
+        [
+          "Earphones",
+          32,
+          14.99,
+          479.68
+        ],
+        [
+          "Screen Protectors",
+          67,
+          4.99,
+          334.33
+        ],
+        [
+          "Chargers",
+          28,
+          12.99,
+          363.72
+        ],
+        [
+          "Phone Stands",
+          15,
+          9.99,
+          149.85
+        ],
+        [
+          "TOTAL",
+          "",
+          "",
+          ""
+        ],
+        [
+          "AVERAGE",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MAX",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MIN",
+          "",
+          "",
+          ""
+        ],
+        [
+          "COUNT",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D7",
+          "functionName": "SUM",
+          "expected": 1732.13,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "D2:D6"
+          ]
+        }
+      ],
+      "sampleAnswer": "D7: =SUM(D2:D6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "Use AVERAGE in D8 to calculate the mean Income for D2:D6.",
+      "sheetData": [
+        [
+          "Item",
+          "Qty",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Phone Cases",
+          45,
+          8.99,
+          404.55
+        ],
+        [
+          "Earphones",
+          32,
+          14.99,
+          479.68
+        ],
+        [
+          "Screen Protectors",
+          67,
+          4.99,
+          334.33
+        ],
+        [
+          "Chargers",
+          28,
+          12.99,
+          363.72
+        ],
+        [
+          "Phone Stands",
+          15,
+          9.99,
+          149.85
+        ],
+        [
+          "TOTAL",
+          "",
+          "",
+          ""
+        ],
+        [
+          "AVERAGE",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MAX",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MIN",
+          "",
+          "",
+          ""
+        ],
+        [
+          "COUNT",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D8",
+          "functionName": "AVERAGE",
+          "expected": 346.426,
+          "tolerance": 0.5,
+          "formulaContains": [
+            "D2:D6"
+          ]
+        }
+      ],
+      "sampleAnswer": "D8: =AVERAGE(D2:D6)"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which function counts how many numeric cells are in a range?",
+      "options": [
+        "COUNT",
+        "SUM",
+        "MIN",
+        "AVERAGE"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "Use MAX in D9 and MIN in D10 to find the highest and lowest Income values.",
+      "sheetData": [
+        [
+          "Item",
+          "Qty",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Phone Cases",
+          45,
+          8.99,
+          404.55
+        ],
+        [
+          "Earphones",
+          32,
+          14.99,
+          479.68
+        ],
+        [
+          "Screen Protectors",
+          67,
+          4.99,
+          334.33
+        ],
+        [
+          "Chargers",
+          28,
+          12.99,
+          363.72
+        ],
+        [
+          "Phone Stands",
+          15,
+          9.99,
+          149.85
+        ],
+        [
+          "TOTAL",
+          "",
+          "",
+          ""
+        ],
+        [
+          "AVERAGE",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MAX",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MIN",
+          "",
+          "",
+          ""
+        ],
+        [
+          "COUNT",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D9",
+          "functionName": "MAX",
+          "expected": 479.68,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "D2:D6"
+          ]
+        },
+        {
+          "cell": "D10",
+          "functionName": "MIN",
+          "expected": 149.85,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "D2:D6"
+          ]
+        }
+      ],
+      "sampleAnswer": "D9: =MAX(D2:D6)\nD10: =MIN(D2:D6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 120,
+      "q": "Use COUNT in D11 to count how many Income values are in D2:D6.",
+      "sheetData": [
+        [
+          "Item",
+          "Qty",
+          "Price (?)",
+          "Income (?)"
+        ],
+        [
+          "Phone Cases",
+          45,
+          8.99,
+          404.55
+        ],
+        [
+          "Earphones",
+          32,
+          14.99,
+          479.68
+        ],
+        [
+          "Screen Protectors",
+          67,
+          4.99,
+          334.33
+        ],
+        [
+          "Chargers",
+          28,
+          12.99,
+          363.72
+        ],
+        [
+          "Phone Stands",
+          15,
+          9.99,
+          149.85
+        ],
+        [
+          "TOTAL",
+          "",
+          "",
+          ""
+        ],
+        [
+          "AVERAGE",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MAX",
+          "",
+          "",
+          ""
+        ],
+        [
+          "MIN",
+          "",
+          "",
+          ""
+        ],
+        [
+          "COUNT",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "columns": [
+        {
+          "width": 145
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 95
+        },
+        {
+          "width": 115
+        }
+      ],
+      "checks": [
+        {
+          "cell": "D11",
+          "functionName": "COUNT",
+          "expected": 5,
+          "tolerance": 0.1,
+          "formulaContains": [
+            "D2:D6"
+          ]
+        }
+      ],
+      "sampleAnswer": "D11: =COUNT(D2:D6)"
+    },
+    {
+      "type": "mcq",
+      "duration": 55,
+      "q": "Which formula finds the lowest value in C2:C6?",
+      "options": [
+        "=MIN(C2:C6)",
+        "=LOW(C2:C6)",
+        "=MAX(C2:C6)",
+        "=COUNT(C2:C6)"
+      ],
+      "answer": 0
+    }
   ]
 }
