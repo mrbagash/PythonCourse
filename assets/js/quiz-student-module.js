@@ -434,7 +434,7 @@ function ensureQuizSpreadsheetAssets(cb) {
   addCss('assets/css/jspreadsheet.css');
   addScript('assets/js/jsuites.js', function() {
     addScript('assets/js/jspreadsheet.js', function() {
-      addScript('assets/js/jspreadsheet-formula-bar.js?v=13', cb);
+      addScript('assets/js/jspreadsheet-formula-bar.js?v=14', cb);
     });
   });
 }

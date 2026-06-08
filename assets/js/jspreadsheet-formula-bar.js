@@ -96,11 +96,164 @@
     return s;
   }
 
+  function cellToXY(cell) {
+    var m = String(cell || '').toUpperCase().match(/^([A-Z]+)([0-9]+)$/);
+    if (!m) return null;
+    var x = 0;
+    for (var i = 0; i < m[1].length; i++) x = x * 26 + (m[1].charCodeAt(i) - 64);
+    return [x - 1, parseInt(m[2], 10) - 1];
+  }
+
+  function splitFormulaArgs(text) {
+    var args = [], cur = '', depth = 0, quote = null;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      if (quote) {
+        cur += ch;
+        if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        cur += ch;
+      } else if (ch === '(') {
+        depth++;
+        cur += ch;
+      } else if (ch === ')') {
+        depth--;
+        cur += ch;
+      } else if ((ch === ',' || ch === ';') && depth === 0) {
+        args.push(cur.trim());
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur.trim()) args.push(cur.trim());
+    return args;
+  }
+
+  function stripQuotes(value) {
+    value = String(value == null ? '' : value).trim();
+    if ((value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') ||
+        (value.charAt(0) === "'" && value.charAt(value.length - 1) === "'")) {
+      return value.slice(1, -1);
+    }
+    return value;
+  }
+
+  function rangeValues(sheet, range) {
+    range = String(range || '').replace(/\$/g, '').toUpperCase();
+    var parts = range.split(':');
+    var start = cellToXY(parts[0]);
+    var end = cellToXY(parts[1] || parts[0]);
+    if (!start || !end) return [];
+    var vals = [];
+    var x1 = Math.min(start[0], end[0]), x2 = Math.max(start[0], end[0]);
+    var y1 = Math.min(start[1], end[1]), y2 = Math.max(start[1], end[1]);
+    for (var y = y1; y <= y2; y++) {
+      for (var x = x1; x <= x2; x++) {
+        var v = '';
+        try { v = sheet.getValueFromCoords(x, y, false); } catch (e) {}
+        vals.push(v == null ? '' : v);
+      }
+    }
+    return vals;
+  }
+
+  function matchesCriteria(value, criteria) {
+    criteria = stripQuotes(criteria);
+    var actualText = String(value == null ? '' : value).trim();
+    var actualNum = parseFloat(actualText);
+    var m = criteria.match(/^(>=|<=|<>|>|<|=)\s*(.+)$/);
+    if (m) {
+      var rhs = stripQuotes(m[2]);
+      var rhsNum = parseFloat(rhs);
+      if (!isNaN(actualNum) && !isNaN(rhsNum)) {
+        if (m[1] === '>') return actualNum > rhsNum;
+        if (m[1] === '<') return actualNum < rhsNum;
+        if (m[1] === '>=') return actualNum >= rhsNum;
+        if (m[1] === '<=') return actualNum <= rhsNum;
+        if (m[1] === '=') return actualNum === rhsNum;
+        if (m[1] === '<>') return actualNum !== rhsNum;
+      }
+      if (m[1] === '=') return actualText.toLowerCase() === rhs.toLowerCase();
+      if (m[1] === '<>') return actualText.toLowerCase() !== rhs.toLowerCase();
+      return false;
+    }
+    return actualText.toLowerCase() === criteria.toLowerCase();
+  }
+
+  function evalSimpleCondition(sheet, condition) {
+    var m = String(condition || '').replace(/\$/g, '').match(/^([A-Z]+[0-9]+)\s*(>=|<=|<>|>|<|=)\s*(.+)$/i);
+    if (!m) return false;
+    var xy = cellToXY(m[1]);
+    var left = '';
+    try { left = sheet.getValueFromCoords(xy[0], xy[1], true); } catch (e) {}
+    return matchesCriteria(left, m[2] + m[3]);
+  }
+
+  function evaluateSupportedFormula(sheet, raw) {
+    raw = String(raw == null ? '' : raw).trim();
+    var formula = raw.charAt(0) === '=' ? raw.slice(1).trim() : raw;
+    var m = formula.match(/^([A-Z]+)\s*\((.*)\)$/i);
+    if (!m) return null;
+    var fn = m[1].toUpperCase();
+    var args = splitFormulaArgs(m[2]);
+    if (fn === 'COUNTIF' && args.length >= 2) {
+      var count = 0;
+      rangeValues(sheet, args[0]).forEach(function(v) {
+        if (matchesCriteria(v, args[1])) count++;
+      });
+      return count;
+    }
+    if (fn === 'SUMIF' && args.length >= 3) {
+      var checkVals = rangeValues(sheet, args[0]);
+      var sumVals = rangeValues(sheet, args[2]);
+      var total = 0;
+      checkVals.forEach(function(v, i) {
+        if (matchesCriteria(v, args[1])) {
+          var n = parseFloat(sumVals[i]);
+          if (!isNaN(n)) total += n;
+        }
+      });
+      return Math.round(total * 100000000) / 100000000;
+    }
+    if (fn === 'IF' && args.length >= 3) {
+      return evalSimpleCondition(sheet, args[0]) ? stripQuotes(args[1]) : stripQuotes(args[2]);
+    }
+    return null;
+  }
+
+  function installFormulaFixes(holder, sheet) {
+    if (!holder || !sheet || sheet._jhnccFormulaFixes) return;
+    sheet._jhnccFormulaFixes = true;
+    var originalGet = sheet.getValueFromCoords.bind(sheet);
+    sheet.getValueFromCoords = function(x, y, processed) {
+      if (processed !== false) {
+        var raw = originalGet(x, y, false);
+        var fixed = evaluateSupportedFormula(sheet, raw);
+        if (fixed !== null) return fixed;
+      }
+      return originalGet(x, y, processed);
+    };
+    sheet._jhnccRefreshFormulaFixes = function() {
+      if (!holder) return;
+      holder.querySelectorAll('td[data-x][data-y]').forEach(function(td) {
+        var x = parseInt(td.getAttribute('data-x'), 10);
+        var y = parseInt(td.getAttribute('data-y'), 10);
+        var raw = originalGet(x, y, false);
+        var fixed = evaluateSupportedFormula(sheet, raw);
+        if (fixed !== null) td.textContent = fixed;
+      });
+    };
+    setTimeout(sheet._jhnccRefreshFormulaFixes, 0);
+  }
+
   window.JHNCCAddFormulaBar = function (holder, sheet) {
     if (!holder || !sheet || !holder.parentNode) return;
     if (holder.previousSibling && holder.previousSibling.classList &&
         holder.previousSibling.classList.contains('jhncc-fbar')) return; // already added
     ensureStyles();
+    installFormulaFixes(holder, sheet);
 
     var bar = document.createElement('div');
     bar.className = 'jhncc-fbar';
@@ -157,6 +310,7 @@
     };
     sheet.options.onchange = function (el, cell, x, y, value) {
       if (Number(x) === cur.x && Number(y) === cur.y) input.value = rawValue(cur.x, cur.y);
+      if (typeof sheet._jhnccRefreshFormulaFixes === 'function') setTimeout(sheet._jhnccRefreshFormulaFixes, 0);
       if (typeof prevChange === 'function') prevChange.apply(this, arguments);
     };
 
