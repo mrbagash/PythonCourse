@@ -140,6 +140,20 @@
     return value;
   }
 
+  function cleanNumber(value) {
+    if (typeof value !== 'number' || !isFinite(value)) return value;
+    var rounded = Math.round((value + Number.EPSILON) * 100000000) / 100000000;
+    return Object.is(rounded, -0) ? 0 : rounded;
+  }
+
+  function cleanDisplayValue(value) {
+    if (typeof value === 'number') return cleanNumber(value);
+    if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim())) {
+      return String(cleanNumber(Number(value)));
+    }
+    return value;
+  }
+
   function rangeValues(sheet, range) {
     range = String(range || '').replace(/\$/g, '').toUpperCase();
     var parts = range.split(':');
@@ -157,6 +171,13 @@
       }
     }
     return vals;
+  }
+
+  function rangeNumbers(sheet, range) {
+    return rangeValues(sheet, range).map(function(v) {
+      var n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    }).filter(function(v) { return v !== null; });
   }
 
   function matchesCriteria(value, criteria) {
@@ -198,6 +219,24 @@
     if (!m) return null;
     var fn = m[1].toUpperCase();
     var args = splitFormulaArgs(m[2]);
+    if (fn === 'SUM' && args.length >= 1) {
+      return cleanNumber(rangeNumbers(sheet, args[0]).reduce(function(t, n) { return t + n; }, 0));
+    }
+    if (fn === 'AVERAGE' && args.length >= 1) {
+      var avgNums = rangeNumbers(sheet, args[0]);
+      return avgNums.length ? cleanNumber(avgNums.reduce(function(t, n) { return t + n; }, 0) / avgNums.length) : 0;
+    }
+    if (fn === 'MAX' && args.length >= 1) {
+      var maxNums = rangeNumbers(sheet, args[0]);
+      return maxNums.length ? cleanNumber(Math.max.apply(Math, maxNums)) : 0;
+    }
+    if (fn === 'MIN' && args.length >= 1) {
+      var minNums = rangeNumbers(sheet, args[0]);
+      return minNums.length ? cleanNumber(Math.min.apply(Math, minNums)) : 0;
+    }
+    if (fn === 'COUNT' && args.length >= 1) {
+      return rangeNumbers(sheet, args[0]).length;
+    }
     if (fn === 'COUNTIF' && args.length >= 2) {
       var count = 0;
       rangeValues(sheet, args[0]).forEach(function(v) {
@@ -215,7 +254,7 @@
           if (!isNaN(n)) total += n;
         }
       });
-      return Math.round(total * 100000000) / 100000000;
+      return cleanNumber(total);
     }
     if (fn === 'IF' && args.length >= 3) {
       return evalSimpleCondition(sheet, args[0]) ? stripQuotes(args[1]) : stripQuotes(args[2]);
@@ -232,6 +271,7 @@
         var raw = originalGet(x, y, false);
         var fixed = evaluateSupportedFormula(sheet, raw);
         if (fixed !== null) return fixed;
+        return cleanDisplayValue(originalGet(x, y, processed));
       }
       return originalGet(x, y, processed);
     };
