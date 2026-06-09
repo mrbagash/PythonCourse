@@ -652,12 +652,15 @@
           </div>
           <div class="flex gap-2">
             <button id="btn-classroom-sync-names" class="px-3 py-1.5 rounded border border-blue-300 text-blue-700 bg-blue-50 text-sm hover:bg-blue-100">Sync names</button>
+            <button id="btn-classroom-fix-duplicates" class="px-3 py-1.5 rounded border border-amber-300 text-amber-800 bg-amber-50 text-sm hover:bg-amber-100">Fix duplicates</button>
+            <button id="btn-classroom-rollback-duplicates" class="hidden px-3 py-1.5 rounded border border-red-300 text-red-700 bg-red-50 text-sm hover:bg-red-100">Rollback duplicate fix</button>
             <button id="btn-classroom-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
             <button id="btn-classroom-load" class="jhncc-primary px-4 py-1.5 rounded text-sm font-semibold">Load from Classroom</button>
           </div>
         </div>
         <div id="classroom-name-sync-status" class="text-xs text-blue-700 mt-3"></div>
         <div id="classroom-status" class="text-xs text-gray-500 mt-3"></div>
+        <div id="classroom-duplicate-fix-summary" class="hidden mt-4 rounded border border-amber-200 bg-white p-3 text-sm text-gray-700"></div>
       </div>
       <div id="classroom-existing-classes" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <p class="text-gray-400 text-sm py-6">Loading imported classes...</p>
@@ -1249,7 +1252,7 @@
 <script src="assets/js/binary-module.js?v=security-20260605"></script>
 <script src="assets/js/app-core.js?v=security-20260605"></script>
 <script src="assets/js/auth-module.js?v=security-20260609-name-sync1"></script>
-<script src="assets/js/admin-module.js?v=security-20260609-name-sync1"></script>
+<script src="assets/js/admin-module.js?v=security-20260609-name-sync3"></script>
 <script src="assets/js/quiz-state.js?v=security-20260605"></script>
 <script src="assets/js/assessment-module.js?v=security-20260605"></script>
 <script src="assets/js/assessment-scratch-module.js?v=security-20260609-ap-score-pdf1"></script>

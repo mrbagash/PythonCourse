@@ -71,6 +71,8 @@ document.getElementById('admin-tab-access').onclick = function() { setAdminTab('
 document.getElementById('btn-classroom-sync-names').onclick = function() {
   startClassroomNameSync({ silent: false, force: true, showStatus: true });
 };
+document.getElementById('btn-classroom-fix-duplicates').onclick = fixClassroomDuplicateStudents;
+document.getElementById('btn-classroom-rollback-duplicates').onclick = rollbackClassroomDuplicateFix;
 
 document.getElementById('btn-build-code-index').onclick = async function() {
   var statusEl = document.getElementById('build-index-status');
@@ -1571,6 +1573,15 @@ function normalizeImportHeader(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '');
 }
 
+function normalizePersonNameKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function getImportColumnIndexes(headerRow) {
   var cols = {};
   (headerRow || []).forEach(function(cell, idx) {
@@ -2164,6 +2175,7 @@ document.getElementById('btn-drive-import-close').onclick = function() {
 // Classroom management: import Google Classroom rosters into one code workbook
 var CLASSROOM_CODE_SHEET_NAME = 'Classroom Student Codes';
 var classroomState = { token: null, courses: [], oldCodeSheets: [] };
+var classroomDuplicateFixRollback = null;
 
 function classroomSetNameSyncStatus(message, isError) {
   var el = document.getElementById('classroom-name-sync-status');
@@ -2409,12 +2421,12 @@ function classroomQuoteSheet(title) {
 }
 
 function classroomNameKey(firstName, lastName) {
-  return normalizeImportHeader((lastName || '') + ', ' + (firstName || ''));
+  return normalizePersonNameKey((lastName || '') + ', ' + (firstName || ''));
 }
 
 function classroomOldNameKey(value) {
   var parsed = typeof parseGoogleLookupName === 'function' ? parseGoogleLookupName(value) : null;
-  return parsed ? classroomNameKey(parsed.firstName, parsed.lastName) : normalizeImportHeader(value);
+  return parsed ? classroomNameKey(parsed.firstName, parsed.lastName) : normalizePersonNameKey(value);
 }
 
 function classroomRowRecord(row, className) {
@@ -2425,6 +2437,197 @@ function classroomRowRecord(row, className) {
     code: String(row[3] || '').trim(),
     className: className
   };
+}
+
+function classroomDuplicateNameKey(rec) {
+  var raw = ((rec && rec.firstName) || '') + ' ' + ((rec && rec.lastName) || '');
+  var tokens = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  if (tokens.length < 2) return '';
+  tokens.sort();
+  return tokens.join('|');
+}
+
+function classroomRecordDisplayName(rec) {
+  return (((rec && rec.firstName) || '') + ' ' + ((rec && rec.lastName) || '')).trim() || ((rec && rec.email) || '');
+}
+
+function classroomRecordHasHyphen(rec) {
+  return /[-\u2010-\u2015]/.test(classroomRecordDisplayName(rec));
+}
+
+function classroomChooseDuplicateKeeper(records) {
+  return records.slice().sort(function(a, b) {
+    var ah = classroomRecordHasHyphen(a) ? 1 : 0;
+    var bh = classroomRecordHasHyphen(b) ? 1 : 0;
+    if (ah !== bh) return ah - bh;
+    var ae = a.email ? 0 : 1;
+    var be = b.email ? 0 : 1;
+    if (ae !== be) return ae - be;
+    return String(a.code || '').localeCompare(String(b.code || ''));
+  })[0];
+}
+
+async function classroomWriteConsolidatedClasses(spreadsheetId, recordsByClass, statusPrefix) {
+  var classNames = Object.keys(recordsByClass).sort(function(a, b) { return a.localeCompare(b); });
+  await classroomEnsureSheets(spreadsheetId, classNames);
+  for (var i = 0; i < classNames.length; i++) {
+    var title = classNames[i];
+    var records = recordsByClass[title] || [];
+    var values = [['Email Address', 'First Name', 'Last Name', 'Code']].concat(records.map(function(rec) {
+      return [rec.email || '', rec.firstName || '', rec.lastName || '', rec.code || ''];
+    }));
+    classroomSetStatus((statusPrefix || 'Writing') + ' ' + title + '...');
+    await classroomClearValues(spreadsheetId, classroomQuoteSheet(title) + '!A:D');
+    await classroomWriteValues(spreadsheetId, classroomQuoteSheet(title) + '!A1', values);
+  }
+}
+
+async function fixClassroomDuplicateStudents() {
+  var summaryEl = document.getElementById('classroom-duplicate-fix-summary');
+  var rollbackBtn = document.getElementById('btn-classroom-rollback-duplicates');
+  summaryEl.classList.remove('hidden');
+  summaryEl.innerHTML = '<p class="text-gray-600">Scanning consolidated code spreadsheet for likely duplicate pupils...</p>';
+  classroomSetStatus('Scanning duplicates...');
+  try {
+    if (!classroomState.token || classroomState.tokenScope !== 'full') {
+      await getClassroomToken();
+    }
+    var spreadsheet = await classroomFindCodeSpreadsheetOnly();
+    if (!spreadsheet) {
+      summaryEl.innerHTML = '<p class="text-red-600">Could not find "' + escapeHtml(CLASSROOM_CODE_SHEET_NAME) + '".</p>';
+      classroomSetStatus('Duplicate fix could not find the consolidated code spreadsheet.', true);
+      return;
+    }
+    var existing = await classroomReadConsolidatedRecords(spreadsheet.id);
+    var groups = {};
+    Object.keys(existing.byClass).forEach(function(className) {
+      (existing.byClass[className] || []).forEach(function(rec) {
+        var key = classroomDuplicateNameKey(rec);
+        if (!key) return;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(rec);
+      });
+    });
+    var duplicateGroups = Object.keys(groups).map(function(key) {
+      return { key: key, records: groups[key] };
+    }).filter(function(group) {
+      var codes = {};
+      group.records.forEach(function(rec) { if (rec.code) codes[String(rec.code).toLowerCase()] = true; });
+      var hasHyphen = group.records.some(classroomRecordHasHyphen);
+      var hasNonHyphen = group.records.some(function(rec) { return !classroomRecordHasHyphen(rec); });
+      return Object.keys(codes).length > 1 && hasHyphen && hasNonHyphen;
+    });
+    if (!duplicateGroups.length) {
+      summaryEl.innerHTML = '<p class="text-gray-700">No likely hyphen-related duplicate pupils were found.</p>';
+      classroomSetStatus('No likely hyphen-related duplicate pupils were found.');
+      return;
+    }
+
+    var removals = [];
+    duplicateGroups.forEach(function(group) {
+      var keeper = classroomChooseDuplicateKeeper(group.records);
+      group.records.forEach(function(rec) {
+        if (String(rec.code || '').toLowerCase() !== String(keeper.code || '').toLowerCase()) {
+          removals.push({ keep: keeper, remove: rec, group: group });
+        }
+      });
+    });
+    var preview = removals.slice(0, 12).map(function(item) {
+      return '<li><strong>Keep:</strong> ' + escapeHtml(classroomRecordDisplayName(item.keep)) + ' - <code>' + escapeHtml(item.keep.code) + '</code> ' +
+        '<span class="text-gray-400">|</span> <strong>Remove:</strong> ' + escapeHtml(classroomRecordDisplayName(item.remove)) + ' - <code>' + escapeHtml(item.remove.code) + '</code></li>';
+    }).join('');
+    if (!confirm('Found ' + removals.length + ' duplicate code record' + (removals.length === 1 ? '' : 's') + ' to remove.\n\nThe non-hyphen name is kept where possible. Continue?')) {
+      summaryEl.innerHTML = '<p class="text-gray-700">Duplicate fix cancelled.</p><ul class="list-disc ml-5 mt-2">' + preview + '</ul>';
+      classroomSetStatus('Duplicate fix cancelled.');
+      return;
+    }
+
+    var beforeByClass = JSON.parse(JSON.stringify(existing.byClass));
+    var firebaseUpdates = {};
+    var rollbackUpdates = {};
+    var removedCodes = {};
+    removals.forEach(function(item) {
+      var rec = item.remove;
+      removedCodes[String(rec.code || '').toLowerCase()] = true;
+    });
+    Object.keys(existing.byClass).forEach(function(className) {
+      existing.byClass[className] = (existing.byClass[className] || []).filter(function(rec) {
+        return !removedCodes[String(rec.code || '').toLowerCase()];
+      });
+    });
+
+    var pathsToRead = [];
+    removals.forEach(function(item) {
+      var rec = item.remove;
+      if (!rec.code || !rec.className) return;
+      pathsToRead.push('classes/' + rec.className + '/codes/' + rec.code);
+      pathsToRead.push('codeIndex/' + rec.code.toLowerCase());
+      pathsToRead.push('studentCodes/' + rec.code);
+      firebaseUpdates['classes/' + rec.className + '/codes/' + rec.code] = null;
+      firebaseUpdates['codeIndex/' + rec.code.toLowerCase()] = null;
+      firebaseUpdates['studentCodes/' + rec.code] = null;
+    });
+    var snaps = await Promise.all(pathsToRead.map(function(path) { return state.db.ref(path).get(); }));
+    pathsToRead.forEach(function(path, idx) {
+      var snap = snaps[idx];
+      rollbackUpdates[path] = snap.exists() ? snap.val() : null;
+    });
+
+    await classroomWriteConsolidatedClasses(spreadsheet.id, existing.byClass, 'Fixing duplicate sheet');
+    await state.db.ref().update(firebaseUpdates);
+
+    classroomDuplicateFixRollback = {
+      spreadsheetId: spreadsheet.id,
+      byClass: beforeByClass,
+      firebaseUpdates: rollbackUpdates,
+      removedCount: removals.length
+    };
+    rollbackBtn.classList.remove('hidden');
+    var more = removals.length > 12 ? '<p class="text-xs text-gray-500 mt-2">Showing first 12 of ' + removals.length + ' removals.</p>' : '';
+    summaryEl.innerHTML =
+      '<p class="font-semibold text-amber-800">Removed ' + removals.length + ' likely duplicate code record' + (removals.length === 1 ? '' : 's') + '.</p>' +
+      '<p class="text-xs text-gray-500 mt-1">Rollback is available until this page is refreshed.</p>' +
+      '<ul class="list-disc ml-5 mt-2 space-y-1">' + preview + '</ul>' + more;
+    classroomSetStatus('Duplicate fix complete. Removed ' + removals.length + ' duplicate code record' + (removals.length === 1 ? '' : 's') + '.');
+    await loadClassroomManagementTab();
+    await refreshAdminTable();
+  } catch(e) {
+    summaryEl.innerHTML = '<p class="text-red-600">Duplicate fix failed: ' + escapeHtml(e.message) + '</p>';
+    classroomSetStatus('Duplicate fix failed: ' + e.message, true);
+  }
+}
+
+async function rollbackClassroomDuplicateFix() {
+  var summaryEl = document.getElementById('classroom-duplicate-fix-summary');
+  var rollbackBtn = document.getElementById('btn-classroom-rollback-duplicates');
+  if (!classroomDuplicateFixRollback) {
+    summaryEl.classList.remove('hidden');
+    summaryEl.innerHTML = '<p class="text-gray-700">There is no duplicate fix to roll back in this session.</p>';
+    return;
+  }
+  if (!confirm('Rollback the last duplicate fix? This restores the spreadsheet rows and Firebase code links that were removed.')) return;
+  try {
+    classroomSetStatus('Rolling back duplicate fix...');
+    await classroomWriteConsolidatedClasses(classroomDuplicateFixRollback.spreadsheetId, classroomDuplicateFixRollback.byClass, 'Rolling back');
+    await state.db.ref().update(classroomDuplicateFixRollback.firebaseUpdates);
+    summaryEl.classList.remove('hidden');
+    summaryEl.innerHTML = '<p class="font-semibold text-green-700">Rolled back the last duplicate fix. Restored ' + classroomDuplicateFixRollback.removedCount + ' record' + (classroomDuplicateFixRollback.removedCount === 1 ? '' : 's') + '.</p>';
+    classroomDuplicateFixRollback = null;
+    rollbackBtn.classList.add('hidden');
+    classroomSetStatus('Duplicate fix rolled back.');
+    await loadClassroomManagementTab();
+    await refreshAdminTable();
+  } catch(e) {
+    summaryEl.classList.remove('hidden');
+    summaryEl.innerHTML = '<p class="text-red-600">Rollback failed: ' + escapeHtml(e.message) + '</p>';
+    classroomSetStatus('Rollback failed: ' + e.message, true);
+  }
 }
 
 async function classroomFindOrCreateCodeSpreadsheet() {
