@@ -756,6 +756,156 @@ function scratchSnapshotWarningHtml(record) {
     ' <span class="text-yellow-700">(' + escapeHtml(size) + ' / 20 KB limit)</span></div>';
 }
 
+function apPdfSafeText(value) {
+  return String(value == null ? '' : value)
+    .replace(/[–—]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/£/g, 'GBP ')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '');
+}
+
+function wrapApPdfLine(text, maxLen) {
+  text = apPdfSafeText(text);
+  if (text.length <= maxLen) return [text];
+  var words = text.split(/\s+/);
+  var lines = [];
+  var cur = '';
+  words.forEach(function(word) {
+    if (!cur) {
+      cur = word;
+    } else if ((cur + ' ' + word).length <= maxLen) {
+      cur += ' ' + word;
+    } else {
+      lines.push(cur);
+      cur = word;
+    }
+  });
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
+
+function pdfEscapeText(text) {
+  return apPdfSafeText(text).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+}
+
+function buildApScorePdfBlob(lines) {
+  var pageWidth = 595;
+  var pageHeight = 842;
+  var margin = 46;
+  var lineHeight = 14;
+  var linesPerPage = Math.floor((pageHeight - margin * 2) / lineHeight);
+  var pages = [];
+  var current = [];
+  lines.forEach(function(line) {
+    wrapApPdfLine(line, 92).forEach(function(wrapped) {
+      if (current.length >= linesPerPage) {
+        pages.push(current);
+        current = [];
+      }
+      current.push(wrapped);
+    });
+  });
+  if (current.length || !pages.length) pages.push(current);
+
+  var objects = [];
+  function addObject(body) {
+    objects.push(body);
+    return objects.length;
+  }
+  var catalogId = addObject('<< /Type /Catalog /Pages 2 0 R >>');
+  objects.push(null); // pages object placeholder at id 2
+  var fontId = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  var pageIds = [];
+  pages.forEach(function(pageLines) {
+    var streamLines = ['BT', '/F1 11 Tf', '14 TL', margin + ' ' + (pageHeight - margin) + ' Td'];
+    pageLines.forEach(function(line, idx) {
+      if (idx > 0) streamLines.push('T*');
+      streamLines.push('(' + pdfEscapeText(line) + ') Tj');
+    });
+    streamLines.push('ET');
+    var stream = streamLines.join('\n');
+    var contentId = addObject('<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream');
+    var pageId = addObject('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 ' + fontId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>');
+    pageIds.push(pageId);
+  });
+  objects[1] = '<< /Type /Pages /Kids [' + pageIds.map(function(id) { return id + ' 0 R'; }).join(' ') + '] /Count ' + pageIds.length + ' >>';
+
+  var out = '%PDF-1.4\n';
+  var offsets = [0];
+  objects.forEach(function(body, i) {
+    offsets[i + 1] = out.length;
+    out += (i + 1) + ' 0 obj\n' + body + '\nendobj\n';
+  });
+  var xref = out.length;
+  out += 'xref\n0 ' + (objects.length + 1) + '\n';
+  out += '0000000000 65535 f \n';
+  for (var i = 1; i <= objects.length; i++) {
+    out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+  }
+  out += 'trailer\n<< /Size ' + (objects.length + 1) + ' /Root ' + catalogId + ' 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+  return new Blob([out], { type: 'application/pdf' });
+}
+
+function apPdfFilename(record) {
+  var assessmentId = apPdfSafeText(assessment.assessmentId || 'assessment').replace(/[^A-Za-z0-9_-]+/g, '-');
+  var student = apPdfSafeText((typeof studentName === 'function' && studentName(state.uid)) || state.uid || 'student').replace(/[^A-Za-z0-9_-]+/g, '-');
+  var code = apPdfSafeText(assessment.lobbyCode || 'debug').replace(/[^A-Za-z0-9_-]+/g, '-');
+  return 'AP-Score-' + assessmentId + '-' + student + '-' + code + '.pdf';
+}
+
+function downloadAssessmentScorePdf(record, opts) {
+  opts = opts || {};
+  record = record || {};
+  var spec = ASSESSMENTS[assessment.assessmentId] || {};
+  var maxScore = record.maxScore || spec.maxScore || 21;
+  var lines = [];
+  lines.push('Assessment Point Score Report');
+  lines.push('Generated: ' + new Date().toLocaleString('en-GB'));
+  lines.push('');
+  lines.push('Assessment: ' + (spec.title || spec.name || assessment.assessmentId || 'Unknown AP'));
+  lines.push('Assessment ID: ' + (assessment.assessmentId || ''));
+  lines.push('Student: ' + ((typeof studentName === 'function' && studentName(state.uid)) || state.uid || 'Unknown'));
+  lines.push('Student code: ' + (state.uid || ''));
+  lines.push('Class: ' + (assessment.className || state.className || ''));
+  lines.push('Session code: ' + (assessment.lobbyCode || ''));
+  lines.push('Mode: ' + (assessment.debugMode ? 'Debug - not saved' : 'Live assessment'));
+  lines.push('');
+  lines.push('Score: ' + (record.score || 0) + ' / ' + maxScore);
+  lines.push('');
+  lines.push('Breakdown:');
+  (record.rubric || []).forEach(function(c, idx) {
+    lines.push((idx + 1) + '. ' + (c.text || c.id || 'Criterion') + ' - ' + (c.awarded || 0) + '/' + (c.marks || 0));
+    if (c.answer != null || c.expected != null) {
+      lines.push('   Answer: ' + (c.answer == null || c.answer === '' ? '-' : c.answer));
+      lines.push('   Expected: ' + (c.expected == null || c.expected === '' ? '-' : c.expected));
+    }
+  });
+  if (record.scratchSnapshotWarning) {
+    lines.push('');
+    lines.push('Project snapshot warning: ' + record.scratchSnapshotWarning);
+  }
+  lines.push('');
+  lines.push('This local PDF was generated on the student device when the AP score screen was shown.');
+
+  try {
+    var blob = buildApScorePdfBlob(lines);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = apPdfFilename(record);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() {
+      URL.revokeObjectURL(a.href);
+      if (a.parentNode) a.parentNode.removeChild(a);
+    }, 1000);
+    return true;
+  } catch(e) {
+    if (!opts.silent) alert('Could not download the score PDF: ' + e.message);
+    return false;
+  }
+}
+
 function showAssessmentCompleted(record) {
   var spec = ASSESSMENTS[assessment.assessmentId] || {};
   var maxScore = record.maxScore || spec.maxScore || 21;
@@ -790,6 +940,17 @@ function showAssessmentCompleted(record) {
   renderAssessmentFeedback({ score: record.score || 0, maxScore: maxScore, criteria: record.rubric || [] }, true);
   var rubricBox = document.getElementById('aps-final-rubric');
   if (rubricBox && record.scratchSnapshotStatus) rubricBox.insertAdjacentHTML('afterbegin', scratchSnapshotWarningHtml(record));
+  var pdfBtn = document.getElementById('btn-ap-download-score-pdf');
+  if (pdfBtn) {
+    pdfBtn.onclick = function() { downloadAssessmentScorePdf(record); };
+    pdfBtn.classList.remove('hidden');
+  }
+  setTimeout(function() {
+    if (!assessment.debugMode && !assessment.scorePdfAutoDownloaded) {
+      assessment.scorePdfAutoDownloaded = true;
+      downloadAssessmentScorePdf(record, { silent: true });
+    }
+  }, 500);
   // Offer a direct (localStorage-only) download of the student's own project if one was saved
   var downloadSb3Btn = document.getElementById('btn-ap-download-my-sb3');
   if (downloadSb3Btn) {
