@@ -15,6 +15,7 @@ async function showAdmin() {
   }
 
   applyAdminPermissions();
+  startClassroomNameSync({ silent: true });
   var needsClasses = !state.isTeacher || canDo('viewClasses') || canDo('hostQuiz') || canDo('forceQuiz') || canDo('viewAP') || canDo('forceAP') || canDo('viewProgress') || canDo('exportProgress') || canDo('manageClasses');
   var initialTab = needsClasses ? 'classes' : (canDo('manageTeachers') ? 'teachers' : 'quiz-results');
   setAdminTab(initialTab);
@@ -93,6 +94,86 @@ document.getElementById('btn-build-code-index').onclick = async function() {
     statusEl.textContent = '✅ Index built — ' + total + ' codes indexed, ' + classesSnap.numChildren() + ' classes registered.';
   } catch(e) {
     statusEl.textContent = '❌ Error: ' + e.message;
+  }
+  btn.disabled = false;
+};
+
+document.getElementById('btn-debug-wipe-access-names').onclick = async function() {
+  var statusEl = document.getElementById('debug-access-names-status');
+  var btn = this;
+  if (!confirm('Remove legacy student names from accessLog? This keeps codes, classes and timestamps.')) return;
+  btn.disabled = true;
+  statusEl.textContent = 'Scanning access log...';
+  try {
+    var snap = await state.db.ref('accessLog').get();
+    if (!snap.exists()) {
+      statusEl.textContent = 'No access log entries found.';
+    } else {
+      var updates = {};
+      var count = 0;
+      snap.forEach(function(child) {
+        if (child.child('name').exists()) {
+          updates['accessLog/' + child.key + '/name'] = null;
+          count++;
+        }
+      });
+      if (!count) {
+        statusEl.textContent = 'No stored names found in accessLog.';
+      } else {
+        await state.db.ref().update(updates);
+        statusEl.textContent = 'Removed ' + count + ' legacy name field' + (count === 1 ? '' : 's') + ' from accessLog.';
+      }
+    }
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+};
+
+document.getElementById('btn-debug-wipe-class-code-names').onclick = async function() {
+  var statusEl = document.getElementById('debug-access-names-status');
+  var btn = this;
+  if (!confirm('Remove legacy names from classes/[class]/codes? This keeps every code and all results.')) return;
+  btn.disabled = true;
+  statusEl.textContent = 'Scanning class code lists...';
+  try {
+    var snap = await state.db.ref('classes').get();
+    if (!snap.exists()) {
+      statusEl.textContent = 'No classes found.';
+    } else {
+      var updates = {};
+      var count = 0;
+      var now = Date.now();
+      snap.forEach(function(classSnap) {
+        var codesSnap = classSnap.child('codes');
+        if (!codesSnap.exists()) return;
+        codesSnap.forEach(function(codeSnap) {
+          var val = codeSnap.val();
+          var basePath = 'classes/' + classSnap.key + '/codes/' + codeSnap.key;
+          if (typeof val === 'string') {
+            updates[basePath] = { migratedAt: now };
+            count++;
+            return;
+          }
+          if (val && typeof val === 'object') {
+            ['name', 'firstName', 'lastName', 'surname', 'email', 'emailAddress'].forEach(function(field) {
+              if (Object.prototype.hasOwnProperty.call(val, field)) {
+                updates[basePath + '/' + field] = null;
+                count++;
+              }
+            });
+          }
+        });
+      });
+      if (!count) {
+        statusEl.textContent = 'No stored names found in class code lists.';
+      } else {
+        await state.db.ref().update(updates);
+        statusEl.textContent = 'Removed ' + count + ' legacy name value' + (count === 1 ? '' : 's') + ' from class code lists.';
+      }
+    }
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
   }
   btn.disabled = false;
 };
@@ -2134,12 +2215,41 @@ async function getClassroomToken() {
         if (resp.error) reject(new Error(resp.error_description || resp.error));
         else {
           classroomState.token = resp.access_token;
+          classroomState.tokenScope = 'full';
           resolve(resp.access_token);
         }
       },
       error_callback: function(err) { reject(new Error(err.type || 'OAuth error')); }
     });
     client.requestAccessToken();
+  });
+}
+
+async function getClassroomNameSyncToken(silent) {
+  var clientId = state.config && state.config.googleClientId;
+  if (!clientId) throw new Error('googleClientId is not set in config/firebase.js.');
+  return new Promise(function(resolve, reject) {
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      reject(new Error('Google Identity Services is not loaded yet. Try again in a moment.'));
+      return;
+    }
+    var client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: [
+        'https://www.googleapis.com/auth/drive.metadata.readonly',
+        'https://www.googleapis.com/auth/spreadsheets.readonly'
+      ].join(' '),
+      callback: function(resp) {
+        if (resp.error) reject(new Error(resp.error_description || resp.error));
+        else {
+          classroomState.token = resp.access_token;
+          classroomState.tokenScope = 'names';
+          resolve(resp.access_token);
+        }
+      },
+      error_callback: function(err) { reject(new Error(err.type || 'OAuth error')); }
+    });
+    client.requestAccessToken({ prompt: silent ? '' : 'consent' });
   });
 }
 
@@ -2324,6 +2434,15 @@ async function classroomFindOrCreateCodeSpreadsheet() {
   });
 }
 
+async function classroomFindCodeSpreadsheetOnly() {
+  var folderId = state.config && state.config.driveFolderId ? String(state.config.driveFolderId).trim() : '';
+  var escapedName = CLASSROOM_CODE_SHEET_NAME.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var qParts = ["mimeType='application/vnd.google-apps.spreadsheet'", "name='" + escapedName + "'", 'trashed=false'];
+  if (folderId) qParts.unshift("'" + folderId + "' in parents");
+  var files = await classroomFetchDriveFiles(qParts.join(' and '), 'files(id,name)', 10);
+  return files[0] || null;
+}
+
 async function classroomSpreadsheetMetadata(spreadsheetId) {
   return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '?fields=sheets.properties');
 }
@@ -2409,6 +2528,7 @@ async function classroomLoadOldCodeSheets() {
 async function loadClassroomManagementTab() {
   var container = document.getElementById('classroom-existing-classes');
   if (!container) return;
+  startClassroomNameSync({ silent: true, force: true });
   classroomSetStatus('Loading imported classes...');
   try {
     var snap = await state.db.ref('classes').get();
@@ -2436,6 +2556,76 @@ async function loadClassroomManagementTab() {
     classroomSetStatus(classes.length + ' imported class' + (classes.length !== 1 ? 'es' : '') + ' found.');
   } catch(e) {
     classroomSetStatus('Could not load imported classes: ' + e.message, true);
+  }
+}
+
+var classroomNameSyncState = { running: false, lastAt: 0, retryTimer: null, failures: 0, lastError: '' };
+
+function scheduleClassroomNameSyncRetry() {
+  if (classroomNameSyncState.retryTimer) return;
+  var delay = Math.min(5 * 60 * 1000, 15000 * Math.pow(2, Math.min(classroomNameSyncState.failures, 4)));
+  classroomNameSyncState.retryTimer = setTimeout(function() {
+    classroomNameSyncState.retryTimer = null;
+    startClassroomNameSync({ silent: true, force: true });
+  }, delay);
+}
+
+function startClassroomNameSync(options) {
+  autoSyncNamesFromClassroomSheet(options || {}).then(function(result) {
+    if (result && result.imported > 0) {
+      refreshCurrentAdminDashboard().catch(function(){});
+      if (!document.getElementById('admin-access-tab').classList.contains('hidden')) loadAccessTab();
+    }
+    if (result && result.error) scheduleClassroomNameSyncRetry();
+  }).catch(function() {
+    scheduleClassroomNameSyncRetry();
+  });
+}
+
+async function autoSyncNamesFromClassroomSheet(options) {
+  options = options || {};
+  if (!state || (!state.isAdmin && !state.isTeacher)) return { imported: 0 };
+  var now = Date.now();
+  if (!options.force && classroomNameSyncState.lastAt && now - classroomNameSyncState.lastAt < 10 * 60 * 1000) {
+    return { imported: 0, skipped: true };
+  }
+  if (classroomNameSyncState.running) return { imported: 0, skipped: true };
+  classroomNameSyncState.running = true;
+  try {
+    if (!classroomState.token) await getClassroomNameSyncToken(options.silent !== false);
+    var spreadsheet = await classroomFindCodeSpreadsheetOnly();
+    if (!spreadsheet) return { imported: 0, missing: true };
+    var metadata = await classroomSpreadsheetMetadata(spreadsheet.id);
+    var imported = 0;
+    for (var i = 0; i < (metadata.sheets || []).length; i++) {
+      var title = metadata.sheets[i].properties.title;
+      var rows = await classroomReadValues(spreadsheet.id, classroomQuoteSheet(title) + '!A2:D1000');
+      rows.forEach(function(row) {
+        var first = String(row[1] || '').trim();
+        var last = String(row[2] || '').trim();
+        var code = String(row[3] || '').trim();
+        if (!code) return;
+        var name = (first + ' ' + last).trim();
+        if (!name) return;
+        state.nameMap[code] = name;
+        imported++;
+      });
+    }
+    if (imported) localStorage.setItem('pylearn_name_map', JSON.stringify(state.nameMap));
+    classroomNameSyncState.lastAt = Date.now();
+    classroomNameSyncState.failures = 0;
+    classroomNameSyncState.lastError = '';
+    if (classroomNameSyncState.retryTimer) {
+      clearTimeout(classroomNameSyncState.retryTimer);
+      classroomNameSyncState.retryTimer = null;
+    }
+    return { imported: imported };
+  } catch(e) {
+    classroomNameSyncState.failures++;
+    classroomNameSyncState.lastError = e && e.message ? e.message : String(e);
+    return { imported: 0, error: e.message };
+  } finally {
+    classroomNameSyncState.running = false;
   }
 }
 
@@ -2499,6 +2689,7 @@ async function openClassroomImportModal() {
   classroomImportSetStatus('');
   try {
     await getClassroomToken();
+    startClassroomNameSync({ silent: true, force: true });
     classroomImportSetStatus('Loading Classroom classes and old code sheets...');
     var results = await Promise.all([classroomListCourses(), classroomLoadOldCodeSheets()]);
     classroomState.courses = results[0];
@@ -3065,7 +3256,7 @@ async function loadAccessTab() {
     snap.forEach(function(child) {
       var data = child.val() || {};
       if (classFilter && data.className !== classFilter) return;
-      students.push({ code: child.key, name: data.name || child.key, className: data.className || '—', lastSeen: data.lastSeen || 0, days: data.days || {} });
+      students.push({ code: child.key, name: studentName(child.key) || child.key, className: data.className || '—', lastSeen: data.lastSeen || 0, days: data.days || {} });
     });
     students.sort(function(a, b) { return b.lastSeen - a.lastSeen; });
 

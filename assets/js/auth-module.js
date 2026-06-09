@@ -600,7 +600,7 @@ function logStudentAccess(code, name, className) {
   var d = new Date(now);
   var dateKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   var ref = state.db.ref('accessLog/' + code);
-  ref.update({ name: name, className: className || '', lastSeen: now }).catch(function() {});
+  ref.update({ name: null, className: className || '', lastSeen: now }).catch(function() {});
   ref.child('days/' + dateKey).transaction(function(current) {
     if (!current) return { count: 1, last: now };
     return { count: (current.count || 0) + 1, last: now };
