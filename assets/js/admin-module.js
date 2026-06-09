@@ -2194,6 +2194,43 @@ function classroomSafeSheetTitle(rawTitle) {
   return String(rawTitle || 'Class').replace(/[\\/?*[\]:]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90) || 'Class';
 }
 
+function classroomClassFingerprint(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function classroomResolveClassFromExisting(course, oldCodes, classesVal) {
+  var desired = classroomSafeSheetTitle(course.name || course.id);
+  var classes = classesVal || {};
+  var desiredFp = classroomClassFingerprint(desired);
+  var courseFp = classroomClassFingerprint(course.name || course.id);
+  var names = Object.keys(classes);
+  var exact = names.find(function(name) {
+    var fp = classroomClassFingerprint(name);
+    return fp && (fp === desiredFp || fp === courseFp);
+  });
+  if (exact) return exact;
+
+  var oldCodeSet = {};
+  Object.keys(oldCodes || {}).forEach(function(key) {
+    var code = oldCodes[key];
+    if (code) oldCodeSet[String(code).toLowerCase()] = true;
+  });
+  var bestName = '';
+  var bestScore = 0;
+  names.forEach(function(name) {
+    var codes = (classes[name] && classes[name].codes) || {};
+    var score = 0;
+    Object.keys(codes).forEach(function(code) {
+      if (oldCodeSet[code.toLowerCase()]) score++;
+    });
+    if (score > bestScore) {
+      bestScore = score;
+      bestName = name;
+    }
+  });
+  return bestScore > 0 ? bestName : desired;
+}
+
 function classroomQuoteSheet(title) {
   return "'" + String(title || '').replace(/'/g, "''") + "'";
 }
@@ -2409,6 +2446,8 @@ async function importSelectedClassroomClasses() {
     classroomImportSetStatus('Opening consolidated code spreadsheet...');
     var spreadsheet = await classroomFindOrCreateCodeSpreadsheet();
     var existing = await classroomReadConsolidatedRecords(spreadsheet.id);
+    var existingClassesSnap = await state.db.ref('classes').get();
+    var existingClassesVal = existingClassesSnap.exists() ? (existingClassesSnap.val() || {}) : {};
     var oldCodeMaps = {};
     var importedCourseData = [];
     var allExistingCodes = new Set(Object.keys(existing.byCodeLower || {}));
@@ -2425,7 +2464,9 @@ async function importSelectedClassroomClasses() {
       classroomImportSetStatus('Loading roster for ' + (course.name || course.id) + '...');
       var students = await classroomListStudents(course.id);
       if (oldSheetId && !oldCodeMaps[oldSheetId]) oldCodeMaps[oldSheetId] = await classroomReadOldCodeSheet(oldSheetId);
-      importedCourseData.push({ course: course, students: students, oldCodes: oldCodeMaps[oldSheetId] || {} });
+      var oldCodes = oldCodeMaps[oldSheetId] || {};
+      var resolvedClassName = classroomResolveClassFromExisting(course, oldCodes, existingClassesVal);
+      importedCourseData.push({ course: course, students: students, oldCodes: oldCodes, className: resolvedClassName });
     }
 
     var movingEmails = {};
@@ -2440,9 +2481,10 @@ async function importSelectedClassroomClasses() {
     var now = Date.now();
     var generated = 0, preserved = 0, moved = 0;
     var writeClasses = {};
+    var movedFromClasses = {};
 
     importedCourseData.forEach(function(item) {
-      var className = classroomSafeSheetTitle(item.course.name || item.course.id);
+      var className = item.className || classroomSafeSheetTitle(item.course.name || item.course.id);
       writeClasses[className] = true;
       var rows = [];
       item.students.forEach(function(student) {
@@ -2465,6 +2507,7 @@ async function importSelectedClassroomClasses() {
         if (existingRec && existingRec.className && existingRec.className !== className) {
           firebaseUpdates['classes/' + existingRec.className + '/codes/' + code] = null;
           writeClasses[existingRec.className] = true;
+          movedFromClasses[existingRec.className] = true;
         }
         firebaseUpdates['classes/' + className + '/codes/' + code] = { createdAt: now, importedAt: now };
         firebaseUpdates['codeIndex/' + code.toLowerCase()] = { className: className, storedCode: code };
@@ -2488,6 +2531,12 @@ async function importSelectedClassroomClasses() {
     }
 
     await state.db.ref().update(firebaseUpdates);
+    await Promise.all(Object.keys(movedFromClasses).map(async function(oldClassName) {
+      try {
+        var codesSnap = await state.db.ref('classes/' + oldClassName + '/codes').get();
+        if (!codesSnap.exists()) await state.db.ref('classNames/' + oldClassName).remove();
+      } catch(e) {}
+    }));
     classroomImportSetStatus('Imported ' + importedCourseData.length + ' class' + (importedCourseData.length !== 1 ? 'es' : '') + '. Preserved ' + preserved + ' code' + (preserved !== 1 ? 's' : '') + ', generated ' + generated + ', moved ' + moved + '.', false);
     await loadClassroomManagementTab();
     await refreshAdminTable();
