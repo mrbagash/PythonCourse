@@ -2473,6 +2473,49 @@ function classroomChooseDuplicateKeeper(records) {
   })[0];
 }
 
+async function classroomFindGeneratedCodeRepairs(existing, summaryEl) {
+  var oldSheets = classroomState.oldCodeSheets && classroomState.oldCodeSheets.length
+    ? classroomState.oldCodeSheets
+    : await classroomLoadOldCodeSheets();
+  classroomState.oldCodeSheets = oldSheets;
+  var oldByName = {};
+  var conflicts = 0;
+  for (var i = 0; i < oldSheets.length; i++) {
+    classroomSetStatus('Checking old code sheet ' + (i + 1) + ' of ' + oldSheets.length + '...');
+    if (summaryEl) {
+      summaryEl.innerHTML = '<p class="text-gray-600">Checking old code sheets for generated-code repairs... ' + (i + 1) + '/' + oldSheets.length + '</p>';
+    }
+    var oldMap = await classroomReadOldCodeSheet(oldSheets[i].id);
+    Object.keys(oldMap).forEach(function(key) {
+      var code = oldMap[key];
+      if (!code) return;
+      if (oldByName[key] && String(oldByName[key].code || '').toLowerCase() !== String(code).toLowerCase()) {
+        conflicts++;
+        return;
+      }
+      oldByName[key] = { code: code, sheetName: oldSheets[i].name };
+    });
+  }
+
+  var repairs = [];
+  var usedOldCodes = {};
+  Object.keys(existing.byClass).forEach(function(className) {
+    (existing.byClass[className] || []).forEach(function(rec) {
+      var key = classroomNameKey(rec.firstName, rec.lastName);
+      var old = oldByName[key];
+      if (!old || !old.code || !rec.code) return;
+      var oldLower = String(old.code).toLowerCase();
+      var currentLower = String(rec.code).toLowerCase();
+      if (oldLower === currentLower || usedOldCodes[oldLower]) return;
+      var existingOldCodeRec = existing.byCodeLower[oldLower];
+      if (existingOldCodeRec && String(existingOldCodeRec.email || '').toLowerCase() !== String(rec.email || '').toLowerCase()) return;
+      repairs.push({ rec: rec, oldCode: old.code, oldSheetName: old.sheetName });
+      usedOldCodes[oldLower] = true;
+    });
+  });
+  return { repairs: repairs, conflicts: conflicts, oldSheetCount: oldSheets.length };
+}
+
 async function classroomWriteConsolidatedClasses(spreadsheetId, recordsByClass, statusPrefix, onlyClassNames, skipEnsure) {
   var classNames = (onlyClassNames && onlyClassNames.length ? onlyClassNames : Object.keys(recordsByClass)).sort(function(a, b) { return a.localeCompare(b); });
   if (!skipEnsure) await classroomEnsureSheets(spreadsheetId, classNames);
@@ -2526,11 +2569,6 @@ async function fixClassroomDuplicateStudents() {
       var hasNonHyphen = group.records.some(function(rec) { return !classroomRecordHasHyphen(rec); });
       return Object.keys(codes).length > 1 && hasHyphen && hasNonHyphen;
     });
-    if (!duplicateGroups.length) {
-      summaryEl.innerHTML = '<p class="text-gray-700">No likely hyphen-related duplicate pupils were found.</p>';
-      classroomSetStatus('No likely hyphen-related duplicate pupils were found.');
-      return;
-    }
 
     var removals = [];
     duplicateGroups.forEach(function(group) {
@@ -2541,12 +2579,30 @@ async function fixClassroomDuplicateStudents() {
         }
       });
     });
-    var preview = removals.slice(0, 12).map(function(item) {
-      return '<li><strong>Keep:</strong> ' + escapeHtml(classroomRecordDisplayName(item.keep)) + ' - <code>' + escapeHtml(item.keep.code) + '</code> ' +
+    var repairResult = await classroomFindGeneratedCodeRepairs(existing, summaryEl);
+    var repairs = repairResult.repairs || [];
+    if (!removals.length && !repairs.length) {
+      var extra = repairResult.oldSheetCount ? ' Checked ' + repairResult.oldSheetCount + ' old code sheet' + (repairResult.oldSheetCount === 1 ? '' : 's') + '.' : '';
+      if (repairResult.conflicts) extra += ' ' + repairResult.conflicts + ' old-name conflict' + (repairResult.conflicts === 1 ? '' : 's') + ' skipped.';
+      summaryEl.innerHTML = '<p class="text-gray-700">No likely hyphen-related duplicate pupils or generated-code repairs were found.' + escapeHtml(extra) + '</p>';
+      classroomSetStatus('No likely duplicate pupils or generated-code repairs were found.');
+      return;
+    }
+    var removalPreview = removals.slice(0, 12).map(function(item) {
+      return '<li><strong>Keep row:</strong> ' + escapeHtml(classroomRecordDisplayName(item.keep)) + ' - <code>' + escapeHtml(item.keep.code) + '</code> ' +
         '<span class="text-gray-400">|</span> <strong>Remove:</strong> ' + escapeHtml(classroomRecordDisplayName(item.remove)) + ' - <code>' + escapeHtml(item.remove.code) + '</code></li>';
     }).join('');
-    if (!confirm('Found ' + removals.length + ' duplicate code record' + (removals.length === 1 ? '' : 's') + ' to remove.\n\nThe non-hyphen name is kept where possible. Continue?')) {
-      summaryEl.innerHTML = '<p class="text-gray-700">Duplicate fix cancelled.</p><ul class="list-disc ml-5 mt-2">' + preview + '</ul>';
+    var repairPreview = repairs.slice(0, 12).map(function(item) {
+      return '<li><strong>Repair code:</strong> ' + escapeHtml(classroomRecordDisplayName(item.rec)) + ' ' +
+        '<code>' + escapeHtml(item.rec.code) + '</code> -> <code>' + escapeHtml(item.oldCode) + '</code>' +
+        (item.oldSheetName ? ' <span class="text-gray-400">from ' + escapeHtml(item.oldSheetName) + '</span>' : '') + '</li>';
+    }).join('');
+    var confirmMsg = 'Found ' + removals.length + ' duplicate row removal' + (removals.length === 1 ? '' : 's') +
+      ' and ' + repairs.length + ' generated-code repair' + (repairs.length === 1 ? '' : 's') + '.\n\nContinue?';
+    if (!confirm(confirmMsg)) {
+      summaryEl.innerHTML = '<p class="text-gray-700">Duplicate/code repair cancelled.</p>' +
+        (removalPreview ? '<ul class="list-disc ml-5 mt-2">' + removalPreview + '</ul>' : '') +
+        (repairPreview ? '<ul class="list-disc ml-5 mt-2">' + repairPreview + '</ul>' : '');
       classroomSetStatus('Duplicate fix cancelled.');
       return;
     }
@@ -2579,6 +2635,34 @@ async function fixClassroomDuplicateStudents() {
       rollbackUpdates['classNames/' + rec.className] = true;
     });
 
+    repairs.forEach(function(item) {
+      var rec = item.rec;
+      var oldCode = item.oldCode;
+      var oldCodeLower = String(oldCode || '').toLowerCase();
+      var currentCode = rec.code;
+      var currentLower = String(currentCode || '').toLowerCase();
+      if (!oldCode || !currentCode || !rec.className) return;
+      var oldCodeWasRemovedRow = !!removedCodes[oldCodeLower];
+      rec.code = oldCode;
+      affectedClasses[rec.className] = true;
+      firebaseUpdates['classes/' + rec.className + '/codes/' + currentCode] = null;
+      firebaseUpdates['codeIndex/' + currentLower] = null;
+      firebaseUpdates['studentCodes/' + currentCode] = null;
+      firebaseUpdates['classes/' + rec.className + '/codes/' + oldCode] = { restoredAt: Date.now(), repairedFromGeneratedCode: currentCode };
+      firebaseUpdates['codeIndex/' + oldCodeLower] = { className: rec.className, storedCode: oldCode };
+      firebaseUpdates['studentCodes/' + oldCode] = { className: rec.className, indexedAt: Date.now() };
+      firebaseUpdates['classNames/' + rec.className] = true;
+      if (!oldCodeWasRemovedRow) {
+        rollbackUpdates['classes/' + rec.className + '/codes/' + oldCode] = null;
+        rollbackUpdates['codeIndex/' + oldCodeLower] = null;
+        rollbackUpdates['studentCodes/' + oldCode] = null;
+      }
+      rollbackUpdates['classes/' + rec.className + '/codes/' + currentCode] = { restoredAt: Date.now(), duplicateFixRollback: true };
+      rollbackUpdates['codeIndex/' + currentLower] = { className: rec.className, storedCode: currentCode };
+      rollbackUpdates['studentCodes/' + currentCode] = { className: rec.className, indexedAt: Date.now() };
+      rollbackUpdates['classNames/' + rec.className] = true;
+    });
+
     var affectedClassNames = Object.keys(affectedClasses);
     await classroomWriteConsolidatedClasses(spreadsheet.id, existing.byClass, 'Fixing duplicate sheet', affectedClassNames, true);
     await state.db.ref().update(firebaseUpdates);
@@ -2588,15 +2672,19 @@ async function fixClassroomDuplicateStudents() {
       byClass: beforeByClass,
       firebaseUpdates: rollbackUpdates,
       affectedClassNames: affectedClassNames,
-      removedCount: removals.length
+      removedCount: removals.length,
+      repairedCount: repairs.length
     };
     rollbackBtn.classList.remove('hidden');
-    var more = removals.length > 12 ? '<p class="text-xs text-gray-500 mt-2">Showing first 12 of ' + removals.length + ' removals.</p>' : '';
+    var shown = removals.length + repairs.length;
+    var more = shown > 12 ? '<p class="text-xs text-gray-500 mt-2">Showing first 12 removals and first 12 repairs.</p>' : '';
     summaryEl.innerHTML =
-      '<p class="font-semibold text-amber-800">Removed ' + removals.length + ' likely duplicate code record' + (removals.length === 1 ? '' : 's') + '.</p>' +
+      '<p class="font-semibold text-amber-800">Removed ' + removals.length + ' duplicate row' + (removals.length === 1 ? '' : 's') +
+      ' and repaired ' + repairs.length + ' generated code' + (repairs.length === 1 ? '' : 's') + '.</p>' +
       '<p class="text-xs text-gray-500 mt-1">Rollback is available until this page is refreshed.</p>' +
-      '<ul class="list-disc ml-5 mt-2 space-y-1">' + preview + '</ul>' + more;
-    classroomSetStatus('Duplicate fix complete. Removed ' + removals.length + ' duplicate code record' + (removals.length === 1 ? '' : 's') + '.');
+      (removalPreview ? '<ul class="list-disc ml-5 mt-2 space-y-1">' + removalPreview + '</ul>' : '') +
+      (repairPreview ? '<ul class="list-disc ml-5 mt-2 space-y-1">' + repairPreview + '</ul>' : '') + more;
+    classroomSetStatus('Duplicate fix complete. Removed ' + removals.length + ' duplicate row' + (removals.length === 1 ? '' : 's') + ' and repaired ' + repairs.length + ' generated code' + (repairs.length === 1 ? '' : 's') + '.');
     await loadClassroomManagementTab();
     await refreshAdminTable();
   } catch(e) {
@@ -2625,7 +2713,9 @@ async function rollbackClassroomDuplicateFix() {
     );
     await state.db.ref().update(classroomDuplicateFixRollback.firebaseUpdates);
     summaryEl.classList.remove('hidden');
-    summaryEl.innerHTML = '<p class="font-semibold text-green-700">Rolled back the last duplicate fix. Restored ' + classroomDuplicateFixRollback.removedCount + ' record' + (classroomDuplicateFixRollback.removedCount === 1 ? '' : 's') + '.</p>';
+    summaryEl.innerHTML = '<p class="font-semibold text-green-700">Rolled back the last duplicate fix. Restored ' +
+      classroomDuplicateFixRollback.removedCount + ' removed row' + (classroomDuplicateFixRollback.removedCount === 1 ? '' : 's') +
+      ' and ' + (classroomDuplicateFixRollback.repairedCount || 0) + ' repaired code' + ((classroomDuplicateFixRollback.repairedCount || 0) === 1 ? '' : 's') + '.</p>';
     classroomDuplicateFixRollback = null;
     rollbackBtn.classList.add('hidden');
     classroomSetStatus('Duplicate fix rolled back.');
@@ -2752,9 +2842,12 @@ async function classroomReadOldCodeSheet(fileId) {
   if (!fileId) return {};
   var metadata = await classroomSpreadsheetMetadata(fileId);
   var map = {};
-  for (var i = 0; i < (metadata.sheets || []).length; i++) {
-    var title = metadata.sheets[i].properties.title;
-    var rows = await classroomReadValues(fileId, classroomQuoteSheet(title) + '!A1:B1000');
+  var titles = (metadata.sheets || []).map(function(sheet) { return sheet.properties.title; });
+  var ranges = titles.map(function(title) { return classroomQuoteSheet(title) + '!A1:B1000'; });
+  var valueRanges = await classroomBatchReadValues(fileId, ranges);
+  for (var i = 0; i < titles.length; i++) {
+    var title = titles[i];
+    var rows = (valueRanges[i] && valueRanges[i].values) || [];
     rows.forEach(function(row) {
       var name = String(row[0] || '').trim();
       var code = String(row[1] || '').trim();
