@@ -2198,37 +2198,90 @@ function classroomClassFingerprint(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function classroomResolveClassFromExisting(course, oldCodes, classesVal) {
+function classroomResolveClassFromExisting(course, oldCodes, classesVal, codeIndexVal) {
   var desired = classroomSafeSheetTitle(course.name || course.id);
   var classes = classesVal || {};
-  var desiredFp = classroomClassFingerprint(desired);
-  var courseFp = classroomClassFingerprint(course.name || course.id);
   var names = Object.keys(classes);
-  var exact = names.find(function(name) {
-    var fp = classroomClassFingerprint(name);
-    return fp && (fp === desiredFp || fp === courseFp);
-  });
-  if (exact) return exact;
-
   var oldCodeSet = {};
   Object.keys(oldCodes || {}).forEach(function(key) {
     var code = oldCodes[key];
     if (code) oldCodeSet[String(code).toLowerCase()] = true;
   });
-  var bestName = '';
-  var bestScore = 0;
+
+  var scores = {};
+  names.forEach(function(name) { scores[name] = 0; });
   names.forEach(function(name) {
     var codes = (classes[name] && classes[name].codes) || {};
-    var score = 0;
     Object.keys(codes).forEach(function(code) {
-      if (oldCodeSet[code.toLowerCase()]) score++;
+      if (oldCodeSet[code.toLowerCase()]) scores[name] = (scores[name] || 0) + 1;
     });
-    if (score > bestScore) {
-      bestScore = score;
-      bestName = name;
-    }
   });
-  return bestScore > 0 ? bestName : desired;
+  Object.keys(oldCodeSet).forEach(function(lower) {
+    var idx = codeIndexVal && codeIndexVal[lower];
+    var className = idx && (idx.className || (typeof idx === 'string' ? idx : ''));
+    if (className) scores[className] = (scores[className] || 0) + 1;
+  });
+  var scored = Object.keys(scores).map(function(name) {
+    return { name: name, score: scores[name] || 0 };
+  }).sort(function(a, b) { return b.score - a.score || a.name.localeCompare(b.name); });
+  if (scored[0] && scored[0].score > 0) return scored[0].name;
+
+  var desiredFp = classroomClassFingerprint(desired);
+  var courseFp = classroomClassFingerprint(course.name || course.id);
+  var exact = names.find(function(name) {
+    var fp = classroomClassFingerprint(name);
+    return fp && (fp === desiredFp || fp === courseFp);
+  });
+  return exact || desired;
+}
+
+function classroomMatchedSourceClasses(oldCodes, codeIndexVal) {
+  var sources = {};
+  Object.keys(oldCodes || {}).forEach(function(key) {
+    var code = oldCodes[key];
+    var idx = code && codeIndexVal && codeIndexVal[String(code).toLowerCase()];
+    var className = idx && (idx.className || (typeof idx === 'string' ? idx : ''));
+    if (className) sources[className] = true;
+  });
+  return Object.keys(sources);
+}
+
+async function classroomCopyClassRecords(sourceClass, targetClass, updates) {
+  if (!sourceClass || !targetClass || sourceClass === targetClass) return;
+  try {
+    var snaps = await Promise.all([
+      state.db.ref('classes/' + sourceClass + '/quizHistory').get(),
+      state.db.ref('classes/' + sourceClass + '/apFeedback').get(),
+      state.db.ref('classes/' + targetClass + '/quizHistory').get(),
+      state.db.ref('classes/' + targetClass + '/apFeedback').get()
+    ]);
+    if (snaps[0].exists()) {
+      updates['classes/' + targetClass + '/quizHistory'] = Object.assign({}, snaps[0].val() || {}, snaps[2].val() || {});
+    }
+    if (snaps[1].exists()) {
+      updates['classes/' + targetClass + '/apFeedback'] = Object.assign({}, snaps[1].val() || {}, snaps[3].val() || {});
+    }
+  } catch(e) {}
+}
+
+async function classroomRemoveEmptyClassIndexes(classNames) {
+  await Promise.all(Object.keys(classNames || {}).map(async function(oldClassName) {
+    try {
+      var codesSnap = await state.db.ref('classes/' + oldClassName + '/codes').get();
+      if (!codesSnap.exists()) await state.db.ref('classNames/' + oldClassName).remove();
+    } catch(e) {}
+  }));
+}
+
+async function classroomDeleteClassIfEmpty(className) {
+  if (!className) return;
+  try {
+    var snap = await state.db.ref('classes/' + className + '/codes').get();
+    if (!snap.exists()) {
+      await state.db.ref('classes/' + className).remove();
+      await state.db.ref('classNames/' + className).remove();
+    }
+  } catch(e) {}
 }
 
 function classroomQuoteSheet(title) {
@@ -2370,15 +2423,48 @@ async function loadClassroomManagementTab() {
       container.innerHTML = '<p class="text-gray-400 text-sm py-6">No classes have been imported into the program yet.</p>';
     } else {
       container.innerHTML = classes.sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(cls) {
-        return '<div class="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">' +
-          '<div class="text-xl font-semibold text-gray-800 mb-3">' + escapeHtml(cls.name) + '</div>' +
+        return '<div class="relative border border-gray-200 rounded-lg bg-white p-4 shadow-sm">' +
+          '<button type="button" class="btn-classroom-delete-class absolute top-2 right-2 w-7 h-7 rounded-full border border-red-200 text-red-600 hover:bg-red-50 font-bold leading-none" data-class="' + escapeHtml(cls.name) + '" title="Delete class">x</button>' +
+          '<div class="text-xl font-semibold text-gray-800 mb-3 pr-8">' + escapeHtml(cls.name) + '</div>' +
           '<div class="text-sm text-gray-600">Students: <strong>' + cls.count + '</strong></div>' +
           '</div>';
       }).join('');
+      container.querySelectorAll('.btn-classroom-delete-class').forEach(function(btn) {
+        btn.onclick = function() { deleteClassroomManagedClass(btn.dataset.class); };
+      });
     }
     classroomSetStatus(classes.length + ' imported class' + (classes.length !== 1 ? 'es' : '') + ' found.');
   } catch(e) {
     classroomSetStatus('Could not load imported classes: ' + e.message, true);
+  }
+}
+
+async function deleteClassroomManagedClass(className) {
+  if (!className) return;
+  var confirmed = confirm(
+    'Delete class "' + className + '" from the class list?\n\n' +
+    'This will remove the class container and login-code membership for this class.\n\n' +
+    'It will NOT delete student progress, AP results, quiz sessions, or past assessment records.'
+  );
+  if (!confirmed) return;
+  classroomSetStatus('Deleting ' + className + '...');
+  try {
+    var codesSnap = await state.db.ref('classes/' + className + '/codes').get();
+    var updates = {};
+    if (codesSnap.exists()) {
+      Object.keys(codesSnap.val() || {}).forEach(function(code) {
+        updates['codeIndex/' + code.toLowerCase()] = null;
+        updates['studentCodes/' + code] = null;
+      });
+    }
+    updates['classes/' + className] = null;
+    updates['classNames/' + className] = null;
+    await state.db.ref().update(updates);
+    classroomSetStatus('Deleted ' + className + '. Student progress and AP/quiz records were left untouched.');
+    await loadClassroomManagementTab();
+    await refreshAdminTable();
+  } catch(e) {
+    classroomSetStatus('Could not delete ' + className + ': ' + e.message, true);
   }
 }
 
@@ -2447,7 +2533,9 @@ async function importSelectedClassroomClasses() {
     var spreadsheet = await classroomFindOrCreateCodeSpreadsheet();
     var existing = await classroomReadConsolidatedRecords(spreadsheet.id);
     var existingClassesSnap = await state.db.ref('classes').get();
+    var codeIndexSnap = await state.db.ref('codeIndex').get();
     var existingClassesVal = existingClassesSnap.exists() ? (existingClassesSnap.val() || {}) : {};
+    var codeIndexVal = codeIndexSnap.exists() ? (codeIndexSnap.val() || {}) : {};
     var oldCodeMaps = {};
     var importedCourseData = [];
     var allExistingCodes = new Set(Object.keys(existing.byCodeLower || {}));
@@ -2465,8 +2553,9 @@ async function importSelectedClassroomClasses() {
       var students = await classroomListStudents(course.id);
       if (oldSheetId && !oldCodeMaps[oldSheetId]) oldCodeMaps[oldSheetId] = await classroomReadOldCodeSheet(oldSheetId);
       var oldCodes = oldCodeMaps[oldSheetId] || {};
-      var resolvedClassName = classroomResolveClassFromExisting(course, oldCodes, existingClassesVal);
-      importedCourseData.push({ course: course, students: students, oldCodes: oldCodes, className: resolvedClassName });
+      var resolvedClassName = classroomResolveClassFromExisting(course, oldCodes, existingClassesVal, codeIndexVal);
+      var sourceClasses = classroomMatchedSourceClasses(oldCodes, codeIndexVal);
+      importedCourseData.push({ course: course, students: students, oldCodes: oldCodes, className: resolvedClassName, sourceClasses: sourceClasses });
     }
 
     var movingEmails = {};
@@ -2482,10 +2571,12 @@ async function importSelectedClassroomClasses() {
     var generated = 0, preserved = 0, moved = 0;
     var writeClasses = {};
     var movedFromClasses = {};
+    var duplicateClassesToDelete = {};
 
     importedCourseData.forEach(function(item) {
       var className = item.className || classroomSafeSheetTitle(item.course.name || item.course.id);
       writeClasses[className] = true;
+      if (className !== classroomSafeSheetTitle(item.course.name || item.course.id)) duplicateClassesToDelete[classroomSafeSheetTitle(item.course.name || item.course.id)] = true;
       var rows = [];
       item.students.forEach(function(student) {
         var existingRec = existing.byEmail[student.email];
@@ -2530,13 +2621,16 @@ async function importSelectedClassroomClasses() {
       await classroomWriteValues(spreadsheet.id, classroomQuoteSheet(title) + '!A1', values);
     }
 
+    for (var ci = 0; ci < importedCourseData.length; ci++) {
+      var targetClass = importedCourseData[ci].className || classroomSafeSheetTitle(importedCourseData[ci].course.name || importedCourseData[ci].course.id);
+      for (var si = 0; si < (importedCourseData[ci].sourceClasses || []).length; si++) {
+        await classroomCopyClassRecords(importedCourseData[ci].sourceClasses[si], targetClass, firebaseUpdates);
+      }
+    }
+
     await state.db.ref().update(firebaseUpdates);
-    await Promise.all(Object.keys(movedFromClasses).map(async function(oldClassName) {
-      try {
-        var codesSnap = await state.db.ref('classes/' + oldClassName + '/codes').get();
-        if (!codesSnap.exists()) await state.db.ref('classNames/' + oldClassName).remove();
-      } catch(e) {}
-    }));
+    await classroomRemoveEmptyClassIndexes(movedFromClasses);
+    await Promise.all(Object.keys(duplicateClassesToDelete).map(classroomDeleteClassIfEmpty));
     classroomImportSetStatus('Imported ' + importedCourseData.length + ' class' + (importedCourseData.length !== 1 ? 'es' : '') + '. Preserved ' + preserved + ' code' + (preserved !== 1 ? 's' : '') + ', generated ' + generated + ', moved ' + moved + '.', false);
     await loadClassroomManagementTab();
     await refreshAdminTable();
