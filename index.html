@@ -483,6 +483,7 @@
       <button id="admin-tab-quiz-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Quiz Results</button>
       <button id="admin-tab-ap-results" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">AP Results</button>
       <button id="admin-tab-force-ap" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Force AP</button>
+      <button id="admin-tab-classroom" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Classroom Management</button>
       <button id="admin-tab-access" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Access</button>
       <button id="admin-tab-debug" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Debug</button>
       <button id="admin-tab-teachers" class="admin-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-800">Teachers</button>
@@ -640,6 +641,25 @@
       <div id="force-ap-students" class="mb-4"></div>
       <h3 class="text-sm font-semibold text-gray-700 mb-2">Currently Active</h3>
       <div id="force-ap-active"></div>
+    </div>
+
+    <div id="admin-classroom-tab" class="hidden flex-1 min-h-0 overflow-y-auto p-4">
+      <div class="border border-gray-200 rounded-lg bg-gray-50 p-4 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-semibold text-gray-800">Classroom Management</h3>
+            <p class="text-sm text-gray-600">Import Google Classroom rosters into one class-code spreadsheet without overwriting existing student codes.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-classroom-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
+            <button id="btn-classroom-load" class="jhncc-primary px-4 py-1.5 rounded text-sm font-semibold">Load from Classroom</button>
+          </div>
+        </div>
+        <div id="classroom-status" class="text-xs text-gray-500 mt-3"></div>
+      </div>
+      <div id="classroom-existing-classes" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <p class="text-gray-400 text-sm py-6">Loading imported classes...</p>
+      </div>
     </div>
 
     <div id="admin-debug-tab" class="hidden flex-1 min-h-0 overflow-y-auto">
@@ -1193,11 +1213,32 @@
   </div>
 </div>
 
+<div id="modal-classroom-import" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-6xl max-h-[92vh] flex flex-col">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-lg font-semibold">Load Classes from Google Classroom</h2>
+        <p class="text-sm text-gray-500">Select classes to import, and optionally choose their old code sheet.</p>
+      </div>
+      <button id="btn-classroom-import-close" class="text-gray-400 hover:text-gray-600 text-xl">&#x2715;</button>
+    </div>
+    <div id="classroom-import-status" class="text-sm text-gray-500 mb-3"></div>
+    <div id="classroom-import-list" class="flex-1 overflow-y-auto border border-gray-200 rounded min-h-[260px]"></div>
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+      <div class="flex gap-3">
+        <button id="btn-classroom-select-all" class="text-xs text-blue-600 hover:underline hidden">Select all</button>
+        <button id="btn-classroom-select-none" class="text-xs text-gray-500 hover:underline hidden">Clear</button>
+      </div>
+      <button id="btn-classroom-import-selected" class="jhncc-primary px-4 py-1.5 rounded text-sm font-semibold hidden">Import Selected Classes</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/js/python-module.js?v=security-20260605"></script>
 <script src="assets/js/binary-module.js?v=security-20260605"></script>
 <script src="assets/js/app-core.js?v=security-20260605"></script>
 <script src="assets/js/auth-module.js?v=security-20260609-google-student2"></script>
-<script src="assets/js/admin-module.js?v=security-20260609-old-code-import1"></script>
+<script src="assets/js/admin-module.js?v=security-20260609-classroom-management1"></script>
 <script src="assets/js/quiz-state.js?v=security-20260605"></script>
 <script src="assets/js/assessment-module.js?v=security-20260605"></script>
 <script src="assets/js/assessment-scratch-module.js?v=security-20260609-ap-score-pdf1"></script>

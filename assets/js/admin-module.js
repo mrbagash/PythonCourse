@@ -26,6 +26,7 @@ function setAdminTab(tab) {
   var quizResultsTab = tab === 'quiz-results';
   var apResultsTab = tab === 'ap-results';
   var forceApTab = tab === 'force-ap';
+  var classroomTab = tab === 'classroom';
   var teachersTab = tab === 'teachers';
   var debugTab = tab === 'debug';
   var accessTab = tab === 'access';
@@ -35,12 +36,13 @@ function setAdminTab(tab) {
   document.getElementById('admin-quiz-results-tab').classList.toggle('hidden', !quizResultsTab);
   document.getElementById('admin-ap-results-tab').classList.toggle('hidden', !apResultsTab);
   document.getElementById('admin-force-ap-tab').classList.toggle('hidden', !forceApTab);
+  document.getElementById('admin-classroom-tab').classList.toggle('hidden', !classroomTab);
   document.getElementById('admin-teachers-tab').classList.toggle('hidden', !teachersTab);
   document.getElementById('admin-debug-tab').classList.toggle('hidden', !debugTab);
   document.getElementById('admin-access-tab').classList.toggle('hidden', !accessTab);
   [['admin-tab-classes',classesTab],['admin-tab-quiz-results',quizResultsTab],
    ['admin-tab-ap-results',apResultsTab],['admin-tab-force-ap',forceApTab],
-   ['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab],
+   ['admin-tab-classroom',classroomTab],['admin-tab-teachers',teachersTab],['admin-tab-debug',debugTab],
    ['admin-tab-access',accessTab]
   ].forEach(function(pair) {
     var el = document.getElementById(pair[0]);
@@ -53,6 +55,7 @@ function setAdminTab(tab) {
   if (apResultsTab) loadApResultsClassOptions();
   if (teachersTab) renderTeachersTab();
   if (forceApTab) loadForceApTab();
+  if (classroomTab) loadClassroomManagementTab();
   if (accessTab) loadAccessTab();
 }
 
@@ -60,6 +63,7 @@ document.getElementById('admin-tab-classes').onclick = function() { setAdminTab(
 document.getElementById('admin-tab-quiz-results').onclick = function() { setAdminTab('quiz-results'); };
 document.getElementById('admin-tab-ap-results').onclick = function() { setAdminTab('ap-results'); };
 document.getElementById('admin-tab-force-ap').onclick = function() { setAdminTab('force-ap'); };
+document.getElementById('admin-tab-classroom').onclick = function() { setAdminTab('classroom'); };
 document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 document.getElementById('admin-tab-access').onclick = function() { setAdminTab('access'); };
@@ -128,7 +132,7 @@ function applyAdminPermissions() {
   if (state.isAdmin) {
     // Full admin — restore everything
     ['admin-tab-classes','admin-tab-quiz-results','admin-tab-ap-results','admin-tab-force-ap',
-     'admin-tab-access','admin-tab-teachers','admin-tab-debug',
+     'admin-tab-classroom','admin-tab-access','admin-tab-teachers','admin-tab-debug',
      'admin-gen-row','admin-add-row'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
@@ -143,6 +147,7 @@ function applyAdminPermissions() {
     'admin-tab-quiz-results': canDo('viewQuizResults'),
     'admin-tab-ap-results':   canDo('viewAP'),
     'admin-tab-force-ap':     canDo('forceAP'),
+    'admin-tab-classroom':    canDo('manageClasses'),
     'admin-tab-access':       canDo('viewProgress') || canDo('viewClasses'),
     'admin-tab-teachers':     canDo('manageTeachers'),
     'admin-tab-debug':        canDo('viewDebug'),
@@ -2072,6 +2077,434 @@ document.getElementById('btn-drive-import-close').onclick = function() {
 };
 
 // ── Report ────────────────────────────────────────────────────
+// Classroom management: import Google Classroom rosters into one code workbook
+var CLASSROOM_CODE_SHEET_NAME = 'Classroom Student Codes';
+var classroomState = { token: null, courses: [], oldCodeSheets: [] };
+
+function classroomSetStatus(message, isError) {
+  var el = document.getElementById('classroom-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = 'text-xs mt-3 ' + (isError ? 'text-red-600' : 'text-gray-500');
+}
+
+function classroomImportSetStatus(message, isError) {
+  var el = document.getElementById('classroom-import-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = 'text-sm mb-3 ' + (isError ? 'text-red-600' : 'text-gray-500');
+}
+
+function classroomApiHeaders() {
+  return { Authorization: 'Bearer ' + classroomState.token };
+}
+
+async function classroomRequest(url, options) {
+  var mergedHeaders = Object.assign({}, (options && options.headers) || {}, classroomApiHeaders());
+  if (options && options.body) mergedHeaders['Content-Type'] = 'application/json';
+  var resp = await fetch(url, Object.assign({}, options || {}, { headers: mergedHeaders }));
+  var body = await resp.json().catch(function() { return {}; });
+  if (!resp.ok) {
+    var msg = body && body.error && (body.error.message || body.error.status);
+    throw new Error(msg || ('Google API error ' + resp.status));
+  }
+  return body;
+}
+
+async function getClassroomToken() {
+  var clientId = state.config && state.config.googleClientId;
+  if (!clientId) throw new Error('googleClientId is not set in config/firebase.js.');
+  return new Promise(function(resolve, reject) {
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      reject(new Error('Google Identity Services is not loaded yet. Try again in a moment.'));
+      return;
+    }
+    var client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/classroom.courses.readonly',
+        'https://www.googleapis.com/auth/classroom.rosters.readonly',
+        'https://www.googleapis.com/auth/classroom.profile.emails',
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/drive.metadata.readonly',
+        'https://www.googleapis.com/auth/spreadsheets'
+      ].join(' '),
+      callback: function(resp) {
+        if (resp.error) reject(new Error(resp.error_description || resp.error));
+        else {
+          classroomState.token = resp.access_token;
+          resolve(resp.access_token);
+        }
+      },
+      error_callback: function(err) { reject(new Error(err.type || 'OAuth error')); }
+    });
+    client.requestAccessToken();
+  });
+}
+
+function classroomDriveUrl(q, fields, pageSize) {
+  return 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) +
+    '&fields=' + encodeURIComponent(fields || 'files(id,name)') +
+    '&pageSize=' + encodeURIComponent(String(pageSize || 100)) +
+    '&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true';
+}
+
+async function classroomFetchDriveFiles(q, fields, pageSize) {
+  var data = await classroomRequest(classroomDriveUrl(q, fields, pageSize));
+  return data.files || [];
+}
+
+async function classroomListCourses() {
+  var courses = [];
+  var pageToken = '';
+  do {
+    var url = 'https://classroom.googleapis.com/v1/courses?pageSize=100&courseStates=ACTIVE';
+    if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+    var data = await classroomRequest(url);
+    courses = courses.concat(data.courses || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return courses.sort(function(a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
+}
+
+async function classroomListStudents(courseId) {
+  var students = [];
+  var pageToken = '';
+  do {
+    var url = 'https://classroom.googleapis.com/v1/courses/' + encodeURIComponent(courseId) + '/students?pageSize=100';
+    if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+    var data = await classroomRequest(url);
+    students = students.concat(data.students || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return students.map(function(s) {
+    var profile = s.profile || {};
+    var name = profile.name || {};
+    return {
+      email: String(profile.emailAddress || '').trim().toLowerCase(),
+      firstName: String(name.givenName || '').trim(),
+      lastName: String(name.familyName || '').trim(),
+      fullName: String(name.fullName || '').trim()
+    };
+  }).filter(function(s) { return s.email; });
+}
+
+function classroomSafeSheetTitle(rawTitle) {
+  return String(rawTitle || 'Class').replace(/[\\/?*[\]:]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90) || 'Class';
+}
+
+function classroomQuoteSheet(title) {
+  return "'" + String(title || '').replace(/'/g, "''") + "'";
+}
+
+function classroomNameKey(firstName, lastName) {
+  return normalizeImportHeader((lastName || '') + ', ' + (firstName || ''));
+}
+
+function classroomOldNameKey(value) {
+  var parsed = typeof parseGoogleLookupName === 'function' ? parseGoogleLookupName(value) : null;
+  return parsed ? classroomNameKey(parsed.firstName, parsed.lastName) : normalizeImportHeader(value);
+}
+
+function classroomRowRecord(row, className) {
+  return {
+    email: String(row[0] || '').trim().toLowerCase(),
+    firstName: String(row[1] || '').trim(),
+    lastName: String(row[2] || '').trim(),
+    code: String(row[3] || '').trim(),
+    className: className
+  };
+}
+
+async function classroomFindOrCreateCodeSpreadsheet() {
+  var folderId = state.config && state.config.driveFolderId ? String(state.config.driveFolderId).trim() : '';
+  var escapedName = CLASSROOM_CODE_SHEET_NAME.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var qParts = ["mimeType='application/vnd.google-apps.spreadsheet'", "name='" + escapedName + "'", 'trashed=false'];
+  if (folderId) qParts.unshift("'" + folderId + "' in parents");
+  var files = await classroomFetchDriveFiles(qParts.join(' and '), 'files(id,name)', 10);
+  if (files[0]) return files[0];
+  return classroomRequest('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,name', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: CLASSROOM_CODE_SHEET_NAME,
+      mimeType: 'application/vnd.google-apps.spreadsheet',
+      parents: folderId ? [folderId] : undefined
+    })
+  });
+}
+
+async function classroomSpreadsheetMetadata(spreadsheetId) {
+  return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '?fields=sheets.properties');
+}
+
+async function classroomReadValues(spreadsheetId, range) {
+  var data = await classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values/' + encodeURIComponent(range));
+  return data.values || [];
+}
+
+async function classroomWriteValues(spreadsheetId, range, rows) {
+  return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values/' + encodeURIComponent(range) + '?valueInputOption=RAW', {
+    method: 'PUT',
+    body: JSON.stringify({ values: rows })
+  });
+}
+
+async function classroomClearValues(spreadsheetId, range) {
+  return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values/' + encodeURIComponent(range) + ':clear', {
+    method: 'POST',
+    body: JSON.stringify({})
+  });
+}
+
+async function classroomEnsureSheets(spreadsheetId, titles) {
+  var metadata = await classroomSpreadsheetMetadata(spreadsheetId);
+  var existing = {};
+  (metadata.sheets || []).forEach(function(sheet) { existing[sheet.properties.title] = true; });
+  var requests = [];
+  titles.forEach(function(title) {
+    if (title && !existing[title]) requests.push({ addSheet: { properties: { title: title } } });
+  });
+  if (requests.length) {
+    await classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + ':batchUpdate', {
+      method: 'POST',
+      body: JSON.stringify({ requests: requests })
+    });
+  }
+}
+
+async function classroomReadConsolidatedRecords(spreadsheetId) {
+  var metadata = await classroomSpreadsheetMetadata(spreadsheetId);
+  var byEmail = {}, byCodeLower = {}, byClass = {};
+  for (var i = 0; i < (metadata.sheets || []).length; i++) {
+    var title = metadata.sheets[i].properties.title;
+    var rows = await classroomReadValues(spreadsheetId, classroomQuoteSheet(title) + '!A2:D1000');
+    rows.forEach(function(row) {
+      var rec = classroomRowRecord(row, title);
+      if (!rec.email || !rec.code) return;
+      byEmail[rec.email] = rec;
+      byCodeLower[rec.code.toLowerCase()] = rec;
+      if (!byClass[title]) byClass[title] = [];
+      byClass[title].push(rec);
+    });
+  }
+  return { byEmail: byEmail, byCodeLower: byCodeLower, byClass: byClass };
+}
+
+async function classroomReadOldCodeSheet(fileId) {
+  if (!fileId) return {};
+  var metadata = await classroomSpreadsheetMetadata(fileId);
+  var map = {};
+  for (var i = 0; i < (metadata.sheets || []).length; i++) {
+    var title = metadata.sheets[i].properties.title;
+    var rows = await classroomReadValues(fileId, classroomQuoteSheet(title) + '!A1:B1000');
+    rows.forEach(function(row) {
+      var name = String(row[0] || '').trim();
+      var code = String(row[1] || '').trim();
+      if (!name || !code || name.toLowerCase() === 'name') return;
+      map[classroomOldNameKey(name)] = code;
+    });
+  }
+  return map;
+}
+
+async function classroomLoadOldCodeSheets() {
+  var folderId = state.config && state.config.driveFolderId ? String(state.config.driveFolderId).trim() : '';
+  var q = "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false";
+  if (folderId) q = "'" + folderId + "' in parents and " + q;
+  var files = await classroomFetchDriveFiles(q, 'files(id,name)', 200);
+  return files.filter(function(f) { return f.name !== CLASSROOM_CODE_SHEET_NAME; });
+}
+
+async function loadClassroomManagementTab() {
+  var container = document.getElementById('classroom-existing-classes');
+  if (!container) return;
+  classroomSetStatus('Loading imported classes...');
+  try {
+    var snap = await state.db.ref('classes').get();
+    var classes = [];
+    if (snap.exists()) {
+      snap.forEach(function(child) {
+        var codes = child.child('codes').val() || {};
+        classes.push({ name: child.key, count: Object.keys(codes).length });
+      });
+    }
+    if (!classes.length) {
+      container.innerHTML = '<p class="text-gray-400 text-sm py-6">No classes have been imported into the program yet.</p>';
+    } else {
+      container.innerHTML = classes.sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(cls) {
+        return '<div class="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">' +
+          '<div class="text-xl font-semibold text-gray-800 mb-3">' + escapeHtml(cls.name) + '</div>' +
+          '<div class="text-sm text-gray-600">Students: <strong>' + cls.count + '</strong></div>' +
+          '</div>';
+      }).join('');
+    }
+    classroomSetStatus(classes.length + ' imported class' + (classes.length !== 1 ? 'es' : '') + ' found.');
+  } catch(e) {
+    classroomSetStatus('Could not load imported classes: ' + e.message, true);
+  }
+}
+
+function renderClassroomImportList(courses, oldSheets) {
+  var list = document.getElementById('classroom-import-list');
+  if (!courses.length) {
+    list.innerHTML = '<p class="text-gray-400 text-sm p-4">No active Google Classroom classes were found.</p>';
+    return;
+  }
+  var sheetOptions = '<option value="">No old code sheet</option>' + oldSheets.map(function(f) {
+    return '<option value="' + escapeHtml(f.id) + '">' + escapeHtml(f.name) + '</option>';
+  }).join('');
+  list.innerHTML = courses.map(function(course, idx) {
+    return '<div class="grid grid-cols-[auto_minmax(0,1fr)_minmax(220px,320px)] gap-3 items-center px-3 py-3 border-b border-gray-100 last:border-0">' +
+      '<input type="checkbox" class="classroom-course-check accent-[rgb(176,28,35)]" data-idx="' + idx + '">' +
+      '<div class="min-w-0"><div class="font-semibold text-gray-800 truncate">' + escapeHtml(course.name || course.id) + '</div>' +
+      '<div class="text-xs text-gray-500 truncate">' + escapeHtml(course.section || course.room || course.id || '') + '</div></div>' +
+      '<select class="classroom-old-sheet border border-gray-300 rounded px-2 py-1.5 text-sm" data-idx="' + idx + '">' + sheetOptions + '</select>' +
+      '</div>';
+  }).join('');
+}
+
+async function openClassroomImportModal() {
+  var modal = document.getElementById('modal-classroom-import');
+  var btnImport = document.getElementById('btn-classroom-import-selected');
+  var btnAll = document.getElementById('btn-classroom-select-all');
+  var btnNone = document.getElementById('btn-classroom-select-none');
+  var list = document.getElementById('classroom-import-list');
+  modal.classList.remove('hidden');
+  list.innerHTML = '<p class="text-gray-400 text-sm p-4">Connecting to Google Classroom...</p>';
+  [btnImport, btnAll, btnNone].forEach(function(btn) { btn.classList.add('hidden'); });
+  classroomImportSetStatus('');
+  try {
+    await getClassroomToken();
+    classroomImportSetStatus('Loading Classroom classes and old code sheets...');
+    var results = await Promise.all([classroomListCourses(), classroomLoadOldCodeSheets()]);
+    classroomState.courses = results[0];
+    classroomState.oldCodeSheets = results[1];
+    renderClassroomImportList(classroomState.courses, classroomState.oldCodeSheets);
+    [btnImport, btnAll, btnNone].forEach(function(btn) { btn.classList.remove('hidden'); });
+    btnImport.disabled = true;
+    classroomImportSetStatus(classroomState.courses.length + ' class' + (classroomState.courses.length !== 1 ? 'es' : '') + ' loaded. Select classes to import.');
+    list.onchange = function() { btnImport.disabled = !list.querySelector('.classroom-course-check:checked'); };
+    btnAll.onclick = function() {
+      list.querySelectorAll('.classroom-course-check').forEach(function(cb) { cb.checked = true; });
+      btnImport.disabled = false;
+    };
+    btnNone.onclick = function() {
+      list.querySelectorAll('.classroom-course-check').forEach(function(cb) { cb.checked = false; });
+      btnImport.disabled = true;
+    };
+  } catch(e) {
+    classroomImportSetStatus(e.message, true);
+    list.innerHTML = '';
+  }
+}
+
+async function importSelectedClassroomClasses() {
+  var list = document.getElementById('classroom-import-list');
+  var selected = Array.from(list.querySelectorAll('.classroom-course-check:checked'));
+  if (!selected.length) return;
+  var btn = document.getElementById('btn-classroom-import-selected');
+  btn.disabled = true;
+  try {
+    classroomImportSetStatus('Opening consolidated code spreadsheet...');
+    var spreadsheet = await classroomFindOrCreateCodeSpreadsheet();
+    var existing = await classroomReadConsolidatedRecords(spreadsheet.id);
+    var oldCodeMaps = {};
+    var importedCourseData = [];
+    var allExistingCodes = new Set(Object.keys(existing.byCodeLower || {}));
+    Object.keys(existing.byCodeLower || {}).forEach(function(lower) {
+      var rec = existing.byCodeLower[lower];
+      if (rec && rec.code) allExistingCodes.add(rec.code);
+    });
+
+    for (var s = 0; s < selected.length; s++) {
+      var idx = Number(selected[s].dataset.idx);
+      var course = classroomState.courses[idx];
+      var sheetSelect = list.querySelector('.classroom-old-sheet[data-idx="' + idx + '"]');
+      var oldSheetId = sheetSelect && sheetSelect.value;
+      classroomImportSetStatus('Loading roster for ' + (course.name || course.id) + '...');
+      var students = await classroomListStudents(course.id);
+      if (oldSheetId && !oldCodeMaps[oldSheetId]) oldCodeMaps[oldSheetId] = await classroomReadOldCodeSheet(oldSheetId);
+      importedCourseData.push({ course: course, students: students, oldCodes: oldCodeMaps[oldSheetId] || {} });
+    }
+
+    var movingEmails = {};
+    importedCourseData.forEach(function(item) {
+      item.students.forEach(function(student) { movingEmails[student.email] = true; });
+    });
+    Object.keys(existing.byClass).forEach(function(className) {
+      existing.byClass[className] = existing.byClass[className].filter(function(rec) { return !movingEmails[rec.email]; });
+    });
+
+    var firebaseUpdates = {};
+    var now = Date.now();
+    var generated = 0, preserved = 0, moved = 0;
+    var writeClasses = {};
+
+    importedCourseData.forEach(function(item) {
+      var className = classroomSafeSheetTitle(item.course.name || item.course.id);
+      writeClasses[className] = true;
+      var rows = [];
+      item.students.forEach(function(student) {
+        var existingRec = existing.byEmail[student.email];
+        var key = classroomNameKey(student.firstName, student.lastName);
+        var code = existingRec && existingRec.code;
+        if (code) {
+          preserved++;
+          if (existingRec.className !== className) moved++;
+        } else if (item.oldCodes[key]) {
+          code = item.oldCodes[key];
+          preserved++;
+        } else {
+          code = genUniqueCodes(1, allExistingCodes)[0];
+          generated++;
+        }
+        allExistingCodes.add(code.toLowerCase());
+        allExistingCodes.add(code);
+        rows.push({ email: student.email, firstName: student.firstName, lastName: student.lastName, code: code, className: className });
+        if (existingRec && existingRec.className && existingRec.className !== className) {
+          firebaseUpdates['classes/' + existingRec.className + '/codes/' + code] = null;
+          writeClasses[existingRec.className] = true;
+        }
+        firebaseUpdates['classes/' + className + '/codes/' + code] = { createdAt: now, importedAt: now };
+        firebaseUpdates['codeIndex/' + code.toLowerCase()] = { className: className, storedCode: code };
+        firebaseUpdates['studentCodes/' + code] = { className: className, indexedAt: now };
+        firebaseUpdates['classNames/' + className] = true;
+      });
+      existing.byClass[className] = rows;
+    });
+
+    await classroomEnsureSheets(spreadsheet.id, Object.keys(writeClasses));
+    var classNamesToWrite = Object.keys(writeClasses);
+    for (var wi = 0; wi < classNamesToWrite.length; wi++) {
+      var title = classNamesToWrite[wi];
+      var records = existing.byClass[title] || [];
+      var values = [['Email Address', 'First Name', 'Last Name', 'Code']].concat(records.map(function(rec) {
+        return [rec.email, rec.firstName, rec.lastName, rec.code];
+      }));
+      classroomImportSetStatus('Writing ' + title + '...');
+      await classroomClearValues(spreadsheet.id, classroomQuoteSheet(title) + '!A:D');
+      await classroomWriteValues(spreadsheet.id, classroomQuoteSheet(title) + '!A1', values);
+    }
+
+    await state.db.ref().update(firebaseUpdates);
+    classroomImportSetStatus('Imported ' + importedCourseData.length + ' class' + (importedCourseData.length !== 1 ? 'es' : '') + '. Preserved ' + preserved + ' code' + (preserved !== 1 ? 's' : '') + ', generated ' + generated + ', moved ' + moved + '.', false);
+    await loadClassroomManagementTab();
+    await refreshAdminTable();
+  } catch(e) {
+    classroomImportSetStatus('Import failed: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btn-classroom-load').onclick = openClassroomImportModal;
+document.getElementById('btn-classroom-refresh').onclick = loadClassroomManagementTab;
+document.getElementById('btn-classroom-import-close').onclick = function() {
+  document.getElementById('modal-classroom-import').classList.add('hidden');
+};
+document.getElementById('btn-classroom-import-selected').onclick = importSelectedClassroomClasses;
+
 function showReport() {
   document.getElementById('modal-report').classList.remove('hidden');
   var el   = document.getElementById('report-content');
