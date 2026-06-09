@@ -432,7 +432,7 @@
 
 <!-- ── LOGIN MODAL ────────────────────────────────────────── -->
 <div id="modal-login" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl p-6 w-80">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
     <h2 class="text-lg font-semibold mb-4">Login</h2>
     <label class="block text-sm text-gray-600 mb-1">First Name</label>
     <input id="input-first" type="text" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 mb-3 text-sm focus:outline-none" placeholder="e.g. Alice" />
@@ -441,6 +441,10 @@
     <label class="block text-sm text-gray-600 mb-1">Login Code</label>
     <input id="input-code"  type="text" class="jhncc-focus w-full border border-gray-300 rounded px-3 py-1.5 mb-1 text-sm focus:outline-none" placeholder="e.g. BrightCoralPenguin" />
     <p id="login-error" class="text-red-500 text-xs mb-3 hidden"></p>
+    <button id="btn-google-student-login" class="w-full py-2 rounded border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 mb-3">
+      Find my code with Google
+    </button>
+    <div id="google-student-code-picker" class="hidden border border-amber-200 bg-amber-50 rounded-lg p-3 mb-3"></div>
     <div class="flex gap-2 mt-2">
       <button id="btn-login-cancel" class="flex-1 py-1.5 rounded border border-gray-300 text-sm hover:bg-gray-50">Cancel</button>
       <button id="btn-login-submit" class="jhncc-primary flex-1 py-1.5 rounded text-sm">Login</button>
@@ -451,7 +455,7 @@
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
     <button id="btn-google-admin-login" class="w-full py-2 rounded border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-      Sign in with Google
+      Admin Google sign in
     </button>
   </div>
 </div>
@@ -516,8 +520,10 @@
             <label class="block text-xs text-gray-500 mb-1">Import names from spreadsheet</label>
             <div class="flex gap-2">
               <input type="file" id="input-import-names" accept=".xlsx,.xls,.zip" class="hidden" />
+              <input type="file" id="input-import-old-codes" accept=".xlsx,.xls,.csv,.zip" class="hidden" />
               <button id="btn-import-names" class="jhncc-secondary px-3 py-1.5 rounded border text-sm whitespace-nowrap">&#x1F4C2; From File / ZIP</button>
               <button id="btn-import-names-drive" class="px-3 py-1.5 rounded border border-blue-400 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm whitespace-nowrap">&#x1F4C1; From Google Drive</button>
+              <button id="btn-import-old-codes" class="px-3 py-1.5 rounded border border-amber-400 text-amber-800 bg-amber-50 hover:bg-amber-100 text-sm whitespace-nowrap">Import Existing Codes</button>
             </div>
           </div>
         </div>
@@ -1190,8 +1196,8 @@
 <script src="assets/js/python-module.js?v=security-20260605"></script>
 <script src="assets/js/binary-module.js?v=security-20260605"></script>
 <script src="assets/js/app-core.js?v=security-20260605"></script>
-<script src="assets/js/auth-module.js?v=security-20260608-apforce1"></script>
-<script src="assets/js/admin-module.js?v=security-20260605-drive1"></script>
+<script src="assets/js/auth-module.js?v=security-20260609-google-student2"></script>
+<script src="assets/js/admin-module.js?v=security-20260609-old-code-import1"></script>
 <script src="assets/js/quiz-state.js?v=security-20260605"></script>
 <script src="assets/js/assessment-module.js?v=security-20260605"></script>
 <script src="assets/js/assessment-scratch-module.js?v=security-20260609-ap-score-pdf1"></script>

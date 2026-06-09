@@ -1474,6 +1474,146 @@ function parseSheetData(uint8array) {
   return { imported: imported, skipped: skipped };
 }
 
+function isValidFirebaseKeyPart(value) {
+  return !!value && !/[.#$/\[\]]/.test(String(value));
+}
+
+function normalizeImportHeader(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '');
+}
+
+function getImportColumnIndexes(headerRow) {
+  var cols = {};
+  (headerRow || []).forEach(function(cell, idx) {
+    var h = normalizeImportHeader(cell);
+    if (!h) return;
+    if (h === 'class' || h === 'class name' || h === 'group' || h === 'teaching group') cols.className = idx;
+    if (h === 'code' || h === 'login code' || h === 'student code') cols.code = idx;
+    if (h === 'name' || h === 'student name' || h === 'full name') cols.name = idx;
+    if (h === 'first name' || h === 'firstname') cols.firstName = idx;
+    if (h === 'last name' || h === 'surname' || h === 'lastname') cols.lastName = idx;
+    if (h === 'email' || h === 'email address') cols.email = idx;
+  });
+  return cols;
+}
+
+function normalizeImportedClassName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+function sheetTitleAsClass(sheetName) {
+  var title = String(sheetName || '').trim();
+  if (!title || /^(codes|sheet ?1)$/i.test(title)) return '';
+  return normalizeImportedClassName(title);
+}
+
+function classNameFromImportPath(path) {
+  var file = String(path || '').split(/[\\/]/).pop() || '';
+  return normalizeImportedClassName(file.replace(/\.(xlsx|xls|csv)$/i, '').replace(/^JHNCC-Computing-/i, '').replace(/[\s_-]+codes$/i, ''));
+}
+
+function fallbackImportClassName() {
+  return normalizeImportedClassName(
+    document.getElementById('input-class-name').value ||
+    document.getElementById('input-single-class').value ||
+    ''
+  );
+}
+
+function nameFromImportRow(row, cols) {
+  var explicitName = cols.name != null ? String(row[cols.name] || '').trim() : '';
+  if (explicitName) return explicitName;
+  var first = cols.firstName != null ? String(row[cols.firstName] || '').trim() : '';
+  var last = cols.lastName != null ? String(row[cols.lastName] || '').trim() : '';
+  return (first + ' ' + last).trim();
+}
+
+function parseExistingCodeWorkbook(uint8array, defaultClassName) {
+  var wb = XLSX.read(uint8array, { type: 'array' });
+  var entries = [];
+  var skipped = 0;
+  wb.SheetNames.forEach(function(sheetName) {
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+    if (!rows.length) return;
+    var cols = getImportColumnIndexes(rows[0]);
+    var hasHeader = cols.code != null || cols.className != null || cols.name != null || cols.firstName != null || cols.email != null;
+    if (!hasHeader) cols = { name: 0, code: 1 };
+    var start = hasHeader ? 1 : 0;
+    var sheetClass = sheetTitleAsClass(sheetName);
+    for (var i = start; i < rows.length; i++) {
+      var row = rows[i] || [];
+      var code = cols.code != null ? String(row[cols.code] || '').trim() : '';
+      var className = cols.className != null ? normalizeImportedClassName(row[cols.className]) : '';
+      className = className || sheetClass || defaultClassName;
+      var name = nameFromImportRow(row, cols);
+      if (!code && !className && !name) continue;
+      if (!code || !className || code.length < 3 || !isValidFirebaseKeyPart(code) || !isValidFirebaseKeyPart(className)) {
+        skipped++;
+        continue;
+      }
+      entries.push({ className: className, code: code, name: name });
+    }
+  });
+  return { entries: entries, skipped: skipped };
+}
+
+function parseExistingCodeCsv(text, defaultClassName) {
+  var wb = XLSX.read(text, { type: 'string' });
+  var sheet = wb.Sheets[wb.SheetNames[0]];
+  var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var tmpWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(tmpWb, ws, defaultClassName || 'Sheet1');
+  var binary = XLSX.write(tmpWb, { type: 'array', bookType: 'xlsx' });
+  return parseExistingCodeWorkbook(binary, defaultClassName);
+}
+
+async function applyExistingCodeImport(entries, skipped, statusEl, source) {
+  if (!entries.length) {
+    statusEl.textContent = 'No codes imported. Include Code and Class columns, or enter a class name above before importing a Name/Code sheet. Rows skipped: ' + skipped + '.';
+    return;
+  }
+  statusEl.textContent = 'Checking existing code index...';
+  var existingSnap = await state.db.ref('codeIndex').get();
+  var existing = existingSnap.exists() ? (existingSnap.val() || {}) : {};
+  var seen = {};
+  var updates = {};
+  var now = Date.now();
+  var imported = 0;
+  var duplicates = 0;
+  entries.forEach(function(entry) {
+    var lower = entry.code.toLowerCase();
+    if (seen[lower]) {
+      duplicates++;
+      return;
+    }
+    seen[lower] = true;
+    if (existing[lower] && existing[lower].className && existing[lower].className !== entry.className) {
+      duplicates++;
+      return;
+    }
+    updates['classes/' + entry.className + '/codes/' + entry.code] = { createdAt: now, importedAt: now };
+    updates['codeIndex/' + lower] = { className: entry.className, storedCode: entry.code };
+    updates['studentCodes/' + entry.code] = { className: entry.className, indexedAt: now };
+    updates['classNames/' + entry.className] = true;
+    if (entry.name) state.nameMap[entry.code] = entry.name;
+    imported++;
+  });
+  if (!imported) {
+    statusEl.textContent = 'No new codes imported. ' + duplicates + ' duplicate/conflicting code' + (duplicates !== 1 ? 's' : '') + ' skipped.';
+    return;
+  }
+  await state.db.ref().update(updates);
+  localStorage.setItem('pylearn_name_map', JSON.stringify(state.nameMap));
+  var msg = 'Imported ' + imported + ' existing code' + (imported !== 1 ? 's' : '');
+  if (source) msg += ' from ' + source;
+  msg += '.';
+  if (duplicates) msg += ' ' + duplicates + ' duplicate/conflicting code' + (duplicates !== 1 ? 's were' : ' was') + ' skipped.';
+  if (skipped) msg += ' ' + skipped + ' invalid/incomplete row' + (skipped !== 1 ? 's were' : ' was') + ' skipped.';
+  statusEl.textContent = msg;
+  await refreshAdminTable();
+}
+
 function applyImportResult(imported, skipped, statusEl, source) {
   if (imported === 0) {
     statusEl.textContent = '⚠️ No names imported. Make sure column A = Name, column B = Code. Rows skipped: ' + skipped;
@@ -1617,6 +1757,98 @@ document.getElementById('input-import-names').onchange = function(e) {
     } else {
       importNamesFromSheet(file);
     }
+    e.target.value = '';
+  }
+};
+
+async function importExistingCodesFromZip(file) {
+  var statusEl = document.getElementById('import-status');
+  statusEl.textContent = 'Reading existing-code ZIP...';
+  statusEl.classList.remove('hidden');
+  try {
+    var zip = await JSZip.loadAsync(await file.arrayBuffer());
+    var entries = [];
+    var skipped = 0;
+    var filesDone = 0;
+    var filesFailed = 0;
+    var defaultClass = fallbackImportClassName();
+    var sheetEntries = [];
+    zip.forEach(function(path, entry) {
+      if (!entry.dir && /\.(xlsx|xls|csv)$/i.test(path) && path.indexOf('__MACOSX/') !== 0) {
+        sheetEntries.push({ path: path, entry: entry });
+      }
+    });
+    if (!sheetEntries.length) {
+      statusEl.textContent = 'No .xlsx, .xls, or .csv files found in the ZIP.';
+      return;
+    }
+    for (var i = 0; i < sheetEntries.length; i++) {
+      statusEl.textContent = 'Reading existing-code file ' + (i + 1) + ' of ' + sheetEntries.length + '...';
+      try {
+        var result;
+        var perFileDefaultClass = defaultClass || classNameFromImportPath(sheetEntries[i].path);
+        if (/\.csv$/i.test(sheetEntries[i].path)) {
+          result = parseExistingCodeCsv(await sheetEntries[i].entry.async('text'), perFileDefaultClass);
+        } else {
+          result = parseExistingCodeWorkbook(await sheetEntries[i].entry.async('uint8array'), perFileDefaultClass);
+        }
+        entries = entries.concat(result.entries);
+        skipped += result.skipped;
+        filesDone++;
+      } catch(e) {
+        filesFailed++;
+      }
+    }
+    var source = filesDone + ' file' + (filesDone !== 1 ? 's' : '');
+    if (filesFailed) source += ' (' + filesFailed + ' could not be read)';
+    await applyExistingCodeImport(entries, skipped, statusEl, source);
+  } catch(e) {
+    statusEl.textContent = 'Error reading existing-code ZIP: ' + e.message;
+  }
+}
+
+function importExistingCodesFromFile(file) {
+  var statusEl = document.getElementById('import-status');
+  statusEl.textContent = 'Reading existing codes...';
+  statusEl.classList.remove('hidden');
+  var defaultClass = fallbackImportClassName();
+  if (/\.csv$/i.test(file.name)) {
+    var textReader = new FileReader();
+    textReader.onload = function(e) {
+      try {
+        var result = parseExistingCodeCsv(e.target.result, defaultClass);
+        applyExistingCodeImport(result.entries, result.skipped, statusEl, file.name).catch(function(err) {
+          statusEl.textContent = 'Error importing existing codes: ' + err.message;
+        });
+      } catch(err) {
+        statusEl.textContent = 'Error reading existing-code CSV: ' + err.message;
+      }
+    };
+    textReader.readAsText(file);
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var result = parseExistingCodeWorkbook(new Uint8Array(e.target.result), defaultClass);
+      applyExistingCodeImport(result.entries, result.skipped, statusEl, file.name).catch(function(err) {
+        statusEl.textContent = 'Error importing existing codes: ' + err.message;
+      });
+    } catch(err) {
+      statusEl.textContent = 'Error reading existing-code file: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('btn-import-old-codes').onclick = function() {
+  document.getElementById('input-import-old-codes').click();
+};
+document.getElementById('input-import-old-codes').onchange = function(e) {
+  var file = e.target.files[0];
+  if (file) {
+    if (/\.zip$/i.test(file.name)) importExistingCodesFromZip(file);
+    else importExistingCodesFromFile(file);
     e.target.value = '';
   }
 };
