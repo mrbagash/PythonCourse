@@ -392,9 +392,15 @@ async function signInGoogleAdmin() {
   var first = document.getElementById('input-first').value.trim();
   var last  = document.getElementById('input-last').value.trim();
   var provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/drive.metadata.readonly');
+  provider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
     var result = await state.auth.signInWithPopup(provider);
+    if (result && result.credential && result.credential.accessToken && typeof classroomState !== 'undefined') {
+      classroomState.token = result.credential.accessToken;
+      classroomState.tokenScope = 'names';
+    }
     await completeGoogleAdminLogin(result.user, first, last);
     document.getElementById('modal-login').classList.add('hidden');
   } catch(e) {

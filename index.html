@@ -651,10 +651,12 @@
             <p class="text-sm text-gray-600">Import Google Classroom rosters into one class-code spreadsheet without overwriting existing student codes.</p>
           </div>
           <div class="flex gap-2">
+            <button id="btn-classroom-sync-names" class="px-3 py-1.5 rounded border border-blue-300 text-blue-700 bg-blue-50 text-sm hover:bg-blue-100">Sync names</button>
             <button id="btn-classroom-refresh" class="px-3 py-1.5 rounded border border-gray-300 text-sm hover:bg-white">Refresh</button>
             <button id="btn-classroom-load" class="jhncc-primary px-4 py-1.5 rounded text-sm font-semibold">Load from Classroom</button>
           </div>
         </div>
+        <div id="classroom-name-sync-status" class="text-xs text-blue-700 mt-3"></div>
         <div id="classroom-status" class="text-xs text-gray-500 mt-3"></div>
       </div>
       <div id="classroom-existing-classes" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -1246,8 +1248,8 @@
 <script src="assets/js/python-module.js?v=security-20260605"></script>
 <script src="assets/js/binary-module.js?v=security-20260605"></script>
 <script src="assets/js/app-core.js?v=security-20260605"></script>
-<script src="assets/js/auth-module.js?v=security-20260609-accesslog-pii1"></script>
-<script src="assets/js/admin-module.js?v=security-20260609-accesslog-pii1"></script>
+<script src="assets/js/auth-module.js?v=security-20260609-name-sync1"></script>
+<script src="assets/js/admin-module.js?v=security-20260609-name-sync1"></script>
 <script src="assets/js/quiz-state.js?v=security-20260605"></script>
 <script src="assets/js/assessment-module.js?v=security-20260605"></script>
 <script src="assets/js/assessment-scratch-module.js?v=security-20260609-ap-score-pdf1"></script>

@@ -68,6 +68,9 @@ document.getElementById('admin-tab-classroom').onclick = function() { setAdminTa
 document.getElementById('admin-tab-teachers').onclick = function() { setAdminTab('teachers'); };
 document.getElementById('admin-tab-debug').onclick = function() { setAdminTab('debug'); };
 document.getElementById('admin-tab-access').onclick = function() { setAdminTab('access'); };
+document.getElementById('btn-classroom-sync-names').onclick = function() {
+  startClassroomNameSync({ silent: false, force: true, showStatus: true });
+};
 
 document.getElementById('btn-build-code-index').onclick = async function() {
   var statusEl = document.getElementById('build-index-status');
@@ -2162,6 +2165,13 @@ document.getElementById('btn-drive-import-close').onclick = function() {
 var CLASSROOM_CODE_SHEET_NAME = 'Classroom Student Codes';
 var classroomState = { token: null, courses: [], oldCodeSheets: [] };
 
+function classroomSetNameSyncStatus(message, isError) {
+  var el = document.getElementById('classroom-name-sync-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = 'text-xs mt-3 ' + (isError ? 'text-red-600' : 'text-blue-700');
+}
+
 function classroomSetStatus(message, isError) {
   var el = document.getElementById('classroom-status');
   if (!el) return;
@@ -2571,13 +2581,31 @@ function scheduleClassroomNameSyncRetry() {
 }
 
 function startClassroomNameSync(options) {
+  options = options || {};
+  if (options.showStatus) classroomSetNameSyncStatus('Syncing names from Google Sheets...');
   autoSyncNamesFromClassroomSheet(options || {}).then(function(result) {
     if (result && result.imported > 0) {
       refreshCurrentAdminDashboard().catch(function(){});
       if (!document.getElementById('admin-access-tab').classList.contains('hidden')) loadAccessTab();
     }
-    if (result && result.error) scheduleClassroomNameSyncRetry();
+    if (result && result.error) {
+      if (options.showStatus) {
+        classroomSetNameSyncStatus('Could not sync names: ' + result.error, true);
+      } else {
+        classroomSetNameSyncStatus('Name sync needs Google Drive/Sheets permission. Click Sync names when you want to connect it.');
+      }
+      scheduleClassroomNameSyncRetry();
+    } else if (result && result.missing) {
+      classroomSetNameSyncStatus('Name sync could not find "' + CLASSROOM_CODE_SHEET_NAME + '" in the configured Drive folder.', true);
+    } else if (result && result.imported > 0) {
+      classroomSetNameSyncStatus('Synced ' + result.imported + ' local display name' + (result.imported === 1 ? '' : 's') + ' from Google Sheets.');
+    } else if (options.showStatus && result && result.skipped) {
+      classroomSetNameSyncStatus('Names were synced recently. Nothing to refresh yet.');
+    } else if (options.showStatus) {
+      classroomSetNameSyncStatus('Name sync finished. No new names were found.');
+    }
   }).catch(function() {
+    if (options.showStatus) classroomSetNameSyncStatus('Could not sync names. Try again in a moment.', true);
     scheduleClassroomNameSyncRetry();
   });
 }
@@ -2592,7 +2620,9 @@ async function autoSyncNamesFromClassroomSheet(options) {
   if (classroomNameSyncState.running) return { imported: 0, skipped: true };
   classroomNameSyncState.running = true;
   try {
-    if (!classroomState.token) await getClassroomNameSyncToken(options.silent !== false);
+    if (!classroomState.token || (classroomState.tokenScope !== 'names' && classroomState.tokenScope !== 'full')) {
+      await getClassroomNameSyncToken(options.silent !== false);
+    }
     var spreadsheet = await classroomFindCodeSpreadsheetOnly();
     if (!spreadsheet) return { imported: 0, missing: true };
     var metadata = await classroomSpreadsheetMetadata(spreadsheet.id);
