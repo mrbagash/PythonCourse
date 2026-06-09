@@ -23,7 +23,8 @@ function isGoogleAuthUser(user) {
 
 var GOOGLE_ADMIN_BOOTSTRAP_UIDS = {
   OSyDoCzzush3n94fDG6tyvzDsf93: true,
-  V3q0I1cfjjOrVSJJNZHHbdt4tsB3: true
+  V3q0I1cfjjOrVSJJNZHHbdt4tsB3: true,
+  khyouF8tPkNJlbI9OpfvEFFXY543: true
 };
 
 var GOOGLE_STUDENT_SHEET_NAME = 'Classroom Student Codes';
