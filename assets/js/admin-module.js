@@ -2473,19 +2473,22 @@ function classroomChooseDuplicateKeeper(records) {
   })[0];
 }
 
-async function classroomWriteConsolidatedClasses(spreadsheetId, recordsByClass, statusPrefix) {
-  var classNames = Object.keys(recordsByClass).sort(function(a, b) { return a.localeCompare(b); });
-  await classroomEnsureSheets(spreadsheetId, classNames);
-  for (var i = 0; i < classNames.length; i++) {
-    var title = classNames[i];
+async function classroomWriteConsolidatedClasses(spreadsheetId, recordsByClass, statusPrefix, onlyClassNames, skipEnsure) {
+  var classNames = (onlyClassNames && onlyClassNames.length ? onlyClassNames : Object.keys(recordsByClass)).sort(function(a, b) { return a.localeCompare(b); });
+  if (!skipEnsure) await classroomEnsureSheets(spreadsheetId, classNames);
+  var clearRanges = [];
+  var writeData = [];
+  classNames.forEach(function(title) {
     var records = recordsByClass[title] || [];
     var values = [['Email Address', 'First Name', 'Last Name', 'Code']].concat(records.map(function(rec) {
       return [rec.email || '', rec.firstName || '', rec.lastName || '', rec.code || ''];
     }));
-    classroomSetStatus((statusPrefix || 'Writing') + ' ' + title + '...');
-    await classroomClearValues(spreadsheetId, classroomQuoteSheet(title) + '!A:D');
-    await classroomWriteValues(spreadsheetId, classroomQuoteSheet(title) + '!A1', values);
-  }
+    clearRanges.push(classroomQuoteSheet(title) + '!A:D');
+    writeData.push({ range: classroomQuoteSheet(title) + '!A1', values: values });
+  });
+  classroomSetStatus((statusPrefix || 'Writing') + ' ' + classNames.length + ' class sheet' + (classNames.length === 1 ? '' : 's') + '...');
+  await classroomBatchClearValues(spreadsheetId, clearRanges);
+  await classroomBatchWriteValues(spreadsheetId, writeData);
 }
 
 async function fixClassroomDuplicateStudents() {
@@ -2552,9 +2555,11 @@ async function fixClassroomDuplicateStudents() {
     var firebaseUpdates = {};
     var rollbackUpdates = {};
     var removedCodes = {};
+    var affectedClasses = {};
     removals.forEach(function(item) {
       var rec = item.remove;
       removedCodes[String(rec.code || '').toLowerCase()] = true;
+      if (rec.className) affectedClasses[rec.className] = true;
     });
     Object.keys(existing.byClass).forEach(function(className) {
       existing.byClass[className] = (existing.byClass[className] || []).filter(function(rec) {
@@ -2562,30 +2567,27 @@ async function fixClassroomDuplicateStudents() {
       });
     });
 
-    var pathsToRead = [];
     removals.forEach(function(item) {
       var rec = item.remove;
       if (!rec.code || !rec.className) return;
-      pathsToRead.push('classes/' + rec.className + '/codes/' + rec.code);
-      pathsToRead.push('codeIndex/' + rec.code.toLowerCase());
-      pathsToRead.push('studentCodes/' + rec.code);
       firebaseUpdates['classes/' + rec.className + '/codes/' + rec.code] = null;
       firebaseUpdates['codeIndex/' + rec.code.toLowerCase()] = null;
       firebaseUpdates['studentCodes/' + rec.code] = null;
-    });
-    var snaps = await Promise.all(pathsToRead.map(function(path) { return state.db.ref(path).get(); }));
-    pathsToRead.forEach(function(path, idx) {
-      var snap = snaps[idx];
-      rollbackUpdates[path] = snap.exists() ? snap.val() : null;
+      rollbackUpdates['classes/' + rec.className + '/codes/' + rec.code] = { restoredAt: Date.now(), duplicateFixRollback: true };
+      rollbackUpdates['codeIndex/' + rec.code.toLowerCase()] = { className: rec.className, storedCode: rec.code };
+      rollbackUpdates['studentCodes/' + rec.code] = { className: rec.className, indexedAt: Date.now() };
+      rollbackUpdates['classNames/' + rec.className] = true;
     });
 
-    await classroomWriteConsolidatedClasses(spreadsheet.id, existing.byClass, 'Fixing duplicate sheet');
+    var affectedClassNames = Object.keys(affectedClasses);
+    await classroomWriteConsolidatedClasses(spreadsheet.id, existing.byClass, 'Fixing duplicate sheet', affectedClassNames, true);
     await state.db.ref().update(firebaseUpdates);
 
     classroomDuplicateFixRollback = {
       spreadsheetId: spreadsheet.id,
       byClass: beforeByClass,
       firebaseUpdates: rollbackUpdates,
+      affectedClassNames: affectedClassNames,
       removedCount: removals.length
     };
     rollbackBtn.classList.remove('hidden');
@@ -2614,7 +2616,13 @@ async function rollbackClassroomDuplicateFix() {
   if (!confirm('Rollback the last duplicate fix? This restores the spreadsheet rows and Firebase code links that were removed.')) return;
   try {
     classroomSetStatus('Rolling back duplicate fix...');
-    await classroomWriteConsolidatedClasses(classroomDuplicateFixRollback.spreadsheetId, classroomDuplicateFixRollback.byClass, 'Rolling back');
+    await classroomWriteConsolidatedClasses(
+      classroomDuplicateFixRollback.spreadsheetId,
+      classroomDuplicateFixRollback.byClass,
+      'Rolling back',
+      classroomDuplicateFixRollback.affectedClassNames || Object.keys(classroomDuplicateFixRollback.byClass || {}),
+      true
+    );
     await state.db.ref().update(classroomDuplicateFixRollback.firebaseUpdates);
     summaryEl.classList.remove('hidden');
     summaryEl.innerHTML = '<p class="font-semibold text-green-700">Rolled back the last duplicate fix. Restored ' + classroomDuplicateFixRollback.removedCount + ' record' + (classroomDuplicateFixRollback.removedCount === 1 ? '' : 's') + '.</p>';
@@ -2672,10 +2680,34 @@ async function classroomWriteValues(spreadsheetId, range, rows) {
   });
 }
 
+async function classroomBatchReadValues(spreadsheetId, ranges) {
+  if (!ranges.length) return [];
+  var params = new URLSearchParams();
+  (ranges || []).forEach(function(range) { params.append('ranges', range); });
+  var data = await classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values:batchGet?' + params.toString());
+  return data.valueRanges || [];
+}
+
+async function classroomBatchWriteValues(spreadsheetId, data) {
+  if (!data.length) return;
+  return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values:batchUpdate', {
+    method: 'POST',
+    body: JSON.stringify({ valueInputOption: 'RAW', data: data })
+  });
+}
+
 async function classroomClearValues(spreadsheetId, range) {
   return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values/' + encodeURIComponent(range) + ':clear', {
     method: 'POST',
     body: JSON.stringify({})
+  });
+}
+
+async function classroomBatchClearValues(spreadsheetId, ranges) {
+  if (!ranges.length) return;
+  return classroomRequest('https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values:batchClear', {
+    method: 'POST',
+    body: JSON.stringify({ ranges: ranges })
   });
 }
 
@@ -2698,9 +2730,12 @@ async function classroomEnsureSheets(spreadsheetId, titles) {
 async function classroomReadConsolidatedRecords(spreadsheetId) {
   var metadata = await classroomSpreadsheetMetadata(spreadsheetId);
   var byEmail = {}, byCodeLower = {}, byClass = {};
-  for (var i = 0; i < (metadata.sheets || []).length; i++) {
-    var title = metadata.sheets[i].properties.title;
-    var rows = await classroomReadValues(spreadsheetId, classroomQuoteSheet(title) + '!A2:D1000');
+  var titles = (metadata.sheets || []).map(function(sheet) { return sheet.properties.title; });
+  var ranges = titles.map(function(title) { return classroomQuoteSheet(title) + '!A2:D1000'; });
+  var valueRanges = await classroomBatchReadValues(spreadsheetId, ranges);
+  for (var i = 0; i < titles.length; i++) {
+    var title = titles[i];
+    var rows = (valueRanges[i] && valueRanges[i].values) || [];
     rows.forEach(function(row) {
       var rec = classroomRowRecord(row, title);
       if (!rec.email || !rec.code) return;
