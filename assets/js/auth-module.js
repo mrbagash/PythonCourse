@@ -199,20 +199,30 @@ function googleLookupRowToCandidate(row, className, cols) {
 }
 
 async function findGoogleStudentCode(spreadsheetId, email) {
+  // Step 1: fetch all sheet titles — 1 API call
   var metadata = await googleStudentApiRequest(
     'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '?fields=sheets.properties'
   );
-  var sheets = metadata.sheets || [];
+  var sheets = (metadata.sheets || []).filter(function(s) { return s.properties && s.properties.title; });
+  if (!sheets.length) return { match: null, candidates: [] };
+
+  // Step 2: batch-fetch every sheet's data in a single API call instead of one per sheet
+  var params = new URLSearchParams();
+  sheets.forEach(function(s) {
+    params.append('ranges', quoteGoogleSheetName(s.properties.title) + '!A1:D500');
+  });
+  var batchData = await googleStudentApiRequest(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) +
+    '/values:batchGet?' + params.toString()
+  );
+  var valueRanges = batchData.valueRanges || [];
+
+  // Step 3: search entirely in local memory — no more network requests
   var candidates = [];
   var seenCandidateCodes = {};
   for (var i = 0; i < sheets.length; i++) {
-    var title = sheets[i].properties && sheets[i].properties.title;
-    if (!title) continue;
-    var range = quoteGoogleSheetName(title) + '!A1:D500';
-    var values = await googleStudentApiRequest(
-      'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '/values/' + encodeURIComponent(range)
-    );
-    var rows = values.values || [];
+    var title = sheets[i].properties.title;
+    var rows = (valueRanges[i] && valueRanges[i].values) || [];
     var cols = googleLookupHeaderIndexes(rows[0] || []);
     var hasHeader = cols.email != null || cols.name != null || cols.firstName != null || cols.code != null;
     for (var r = hasHeader ? 1 : 0; r < rows.length; r++) {
@@ -220,10 +230,7 @@ async function findGoogleStudentCode(spreadsheetId, email) {
       var rowEmail = cols.email != null ? row[cols.email] : row[0];
       if (String(rowEmail || '').trim().toLowerCase() === email) {
         var direct = googleLookupRowToCandidate(row, title, hasHeader ? cols : null);
-        return {
-          match: direct,
-          candidates: candidates
-        };
+        return { match: direct, candidates: candidates };
       }
       if (!looksLikeEmail(rowEmail)) {
         var candidate = googleLookupRowToCandidate(row, title, hasHeader ? cols : null);
