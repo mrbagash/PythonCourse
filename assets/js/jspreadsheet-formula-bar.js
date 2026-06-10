@@ -50,6 +50,8 @@
       '.jhncc-tb-btn.on{background:#d4e6ff;border-color:#6aa3ff}' +
       '.jhncc-tb-b{font-weight:800}.jhncc-tb-i{font-style:italic;font-family:Georgia,serif}' +
       '.jhncc-tb-u{text-decoration:underline}' +
+      '.jhncc-numfmt{height:26px;min-width:142px;border:1px solid #bfbfbf;border-radius:3px;' +
+      'background:#fff;color:#222;font-size:13px;padding:0 6px;font-family:inherit}' +
       '.jhncc-tb-color{display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 5px;' +
       'background:#fff;border:1px solid #d0d0d0;border-radius:3px;cursor:pointer;font-size:13px}' +
       '.jhncc-tb-color input{width:20px;height:18px;border:0;padding:0;background:none;cursor:pointer}' +
@@ -80,7 +82,14 @@
       'padding:5px 8px;font-size:14px;margin:0 5px}' +
       '.jhncc-modal-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #eee}' +
       '.jhncc-modal-btn{padding:6px 18px;border-radius:5px;border:1px solid #c8c8c8;cursor:pointer;font-size:13px;background:#fff}' +
-      '.jhncc-modal-btn.ok{background:#107c41;color:#fff;border-color:#107c41}';
+      '.jhncc-modal-btn.ok{background:#107c41;color:#fff;border-color:#107c41}' +
+      '.jhncc-format-modal{width:760px;max-width:94vw}.jhncc-format-tabs{display:flex;border-bottom:1px solid #ddd;background:#fafafa}' +
+      '.jhncc-format-tab{padding:9px 18px;border-right:1px solid #e5e5e5;background:#f7f7f7;color:#222}.jhncc-format-tab.active{background:#fff;border-bottom:2px solid #fff;font-weight:600}' +
+      '.jhncc-format-body{display:grid;grid-template-columns:210px 1fr;gap:18px;min-height:360px}' +
+      '.jhncc-format-list{border:1px solid #bfc7d1;background:#fff;padding:4px 0;max-height:300px;overflow-y:auto}' +
+      '.jhncc-format-cat{padding:4px 8px;cursor:pointer;color:#111}.jhncc-format-cat:hover{background:#eef4ff}.jhncc-format-cat.active{background:#0078d4;color:#fff}' +
+      '.jhncc-format-panel{border:1px solid #ddd;background:#fff;padding:14px;color:#111}.jhncc-format-sample{border:1px solid #ddd;padding:14px 18px;margin:4px 0 16px;min-height:48px;font-size:16px}' +
+      '.jhncc-format-row{display:flex;align-items:center;gap:10px;margin:10px 0}.jhncc-format-desc{margin-top:20px;color:#333;line-height:1.35}';
     document.head.appendChild(s);
   }
 
@@ -152,6 +161,62 @@
       return String(cleanNumber(Number(value)));
     }
     return value;
+  }
+
+  function ensureNumberFormats(sheet) {
+    if (!sheet._jhnccNumberFormats) sheet._jhnccNumberFormats = {};
+    return sheet._jhnccNumberFormats;
+  }
+
+  function valueAsNumber(value) {
+    if (typeof value === 'number') return isFinite(value) ? value : null;
+    var text = String(value == null ? '' : value).trim();
+    if (!text) return null;
+    var pct = /%$/.test(text);
+    text = text.replace(/[£,$,%\s]/g, '');
+    var n = Number(text);
+    if (!isFinite(n)) return null;
+    return pct ? n / 100 : n;
+  }
+
+  function addThousands(text) {
+    var parts = String(text).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  }
+
+  function formatNumberDisplay(value, fmt) {
+    if (!fmt || fmt.type === 'general') return value;
+    var n = valueAsNumber(value);
+    if (n === null) return value;
+    var dec = Math.max(0, Math.min(8, Number(fmt.decimals == null ? (fmt.type === 'currency' ? 2 : 0) : fmt.decimals)));
+    if (fmt.type === 'currency') return '£' + addThousands(n.toFixed(dec));
+    if (fmt.type === 'percent') return (n * 100).toFixed(dec) + '%';
+    if (fmt.type === 'number') return addThousands(n.toFixed(dec));
+    return value;
+  }
+
+  function cellRawOrCalculated(sheet, x, y, originalGet) {
+    var raw = '';
+    try { raw = originalGet ? originalGet(x, y, false) : sheet.getValueFromCoords(x, y, false); } catch (e) {}
+    var fixed = evaluateSupportedFormula(sheet, raw);
+    if (fixed !== null) return fixed;
+    try { return originalGet ? originalGet(x, y, true) : sheet.getValueFromCoords(x, y, true); } catch (e2) {}
+    return raw;
+  }
+
+  function refreshNumberFormats(holder, sheet, originalGet) {
+    if (!holder || !sheet || !sheet._jhnccNumberFormats) return;
+    Object.keys(sheet._jhnccNumberFormats).forEach(function(cn) {
+      var xy = cellToXY(cn);
+      if (!xy) return;
+      var td = null;
+      try { td = sheet.getCellFromCoords(xy[0], xy[1]); } catch (e) {}
+      if (!td) td = holder.querySelector('td[data-x="' + xy[0] + '"][data-y="' + xy[1] + '"]');
+      if (!td) return;
+      var val = cellRawOrCalculated(sheet, xy[0], xy[1], originalGet);
+      td.textContent = formatNumberDisplay(val, sheet._jhnccNumberFormats[cn]);
+    });
   }
 
   function rangeValues(sheet, range) {
@@ -284,6 +349,7 @@
         var fixed = evaluateSupportedFormula(sheet, raw);
         if (fixed !== null) td.textContent = fixed;
       });
+      refreshNumberFormats(holder, sheet, originalGet);
     };
     setTimeout(sheet._jhnccRefreshFormulaFixes, 0);
   }
@@ -390,6 +456,7 @@
     var prevSel = sheet.options.onselection;
     sheet.options.onselection = function (el, x1, y1, x2, y2, origin) {
       sel = { x1: Math.min(x1, x2), y1: Math.min(y1, y2), x2: Math.max(x1, x2), y2: Math.max(y1, y2) };
+      if (typeof fmtSelect !== 'undefined' && fmtSelect) fmtSelect.value = anchorFormat().type || 'general';
       if (typeof prevSel === 'function') prevSel.apply(this, arguments);
     };
 
@@ -480,6 +547,188 @@
       inp.onchange = function () { onPick(inp.value); };
       w.appendChild(inp); bar.appendChild(w);
     }
+
+    function selectedCellNames() {
+      var cells = [];
+      for (var y = sel.y1; y <= sel.y2; y++) {
+        for (var x = sel.x1; x <= sel.x2; x++) cells.push(colName(x) + (y + 1));
+      }
+      return cells;
+    }
+
+    function anchorFormat() {
+      var fmts = ensureNumberFormats(sheet);
+      return fmts[colName(sel.x1) + (sel.y1 + 1)] || { type: 'general', decimals: 0 };
+    }
+
+    function applyNumberFormat(type, decimals) {
+      var fmts = ensureNumberFormats(sheet);
+      selectedCellNames().forEach(function(cn) {
+        if (type === 'general') delete fmts[cn];
+        else fmts[cn] = { type: type, decimals: Math.max(0, Math.min(8, Number(decimals))) };
+      });
+      if (typeof sheet._jhnccRefreshFormulaFixes === 'function') sheet._jhnccRefreshFormulaFixes();
+      else refreshNumberFormats(holder, sheet);
+    }
+
+    function changeDecimals(delta) {
+      var current = anchorFormat();
+      var type = current.type === 'general' ? 'number' : current.type;
+      var base = current.decimals == null ? (type === 'currency' ? 2 : 0) : Number(current.decimals);
+      applyNumberFormat(type, Math.max(0, Math.min(8, base + delta)));
+      fmtSelect.value = type;
+    }
+
+    function selectedSampleValue() {
+      var x = sel.x1, y = sel.y1;
+      try {
+        var raw = sheet.getValueFromCoords(x, y, false);
+        var fixed = evaluateSupportedFormula(sheet, raw);
+        if (fixed !== null) return fixed;
+        return sheet.getValueFromCoords(x, y, true);
+      } catch (e) {
+        return 6500;
+      }
+    }
+
+    function openFormatCellsModal() {
+      closeNumMenu();
+      var current = anchorFormat();
+      var category = current.type || 'general';
+      var decimals = current.decimals == null ? (category === 'currency' ? 2 : 0) : Number(current.decimals);
+      var sampleValue = selectedSampleValue();
+      if (valueAsNumber(sampleValue) === null) sampleValue = 6500;
+      var ov = document.createElement('div');
+      ov.className = 'jhncc-modal-ov';
+      ov.innerHTML =
+        '<div class="jhncc-modal jhncc-format-modal">' +
+          '<div class="jhncc-modal-h"><span>Format Cells</span><span class="jhncc-modal-x">&times;</span></div>' +
+          '<div class="jhncc-format-tabs"><span class="jhncc-format-tab active">Number</span><span class="jhncc-format-tab">Alignment</span><span class="jhncc-format-tab">Font</span><span class="jhncc-format-tab">Border</span><span class="jhncc-format-tab">Fill</span></div>' +
+          '<div class="jhncc-modal-b jhncc-format-body">' +
+            '<div><div style="margin-bottom:6px">Category:</div><div class="jhncc-format-list">' +
+              ['general','number','currency','percent'].map(function(t) {
+                var label = t === 'percent' ? 'Percentage' : t.charAt(0).toUpperCase() + t.slice(1);
+                return '<div class="jhncc-format-cat" data-type="' + t + '">' + label + '</div>';
+              }).join('') +
+            '</div></div>' +
+            '<div class="jhncc-format-panel">' +
+              '<div>Sample</div><div class="jhncc-format-sample"></div>' +
+              '<div class="jhncc-format-row"><label for="jhncc-dec">Decimal places:</label><input id="jhncc-dec" class="jhncc-dec" type="number" min="0" max="8" step="1" style="width:72px"></div>' +
+              '<div class="jhncc-format-row jhncc-symbol-row"><label for="jhncc-symbol">Symbol:</label><select id="jhncc-symbol" class="jhncc-symbol" style="min-width:130px"><option value="£">£</option></select></div>' +
+              '<div class="jhncc-format-desc"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="jhncc-modal-f"><button class="jhncc-modal-btn ok">OK</button><button class="jhncc-modal-btn cancel">Cancel</button></div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      var sample = ov.querySelector('.jhncc-format-sample');
+      var decInput = ov.querySelector('.jhncc-dec');
+      var symbolRow = ov.querySelector('.jhncc-symbol-row');
+      var desc = ov.querySelector('.jhncc-format-desc');
+
+      function setCategory(type) {
+        category = type;
+        if (category === 'currency' && (decimals == null || decimals === 0)) decimals = 2;
+        ov.querySelectorAll('.jhncc-format-cat').forEach(function(el) {
+          el.classList.toggle('active', el.getAttribute('data-type') === category);
+        });
+        decInput.disabled = category === 'general';
+        symbolRow.style.display = category === 'currency' ? 'flex' : 'none';
+        decInput.value = category === 'general' ? 0 : decimals;
+        var previewFmt = category === 'general' ? { type: 'general', decimals: 0 } : { type: category, decimals: decimals };
+        sample.textContent = String(formatNumberDisplay(sampleValue, previewFmt));
+        if (category === 'currency') desc.textContent = 'Currency formats are used for general monetary values.';
+        else if (category === 'number') desc.textContent = 'Number formats let you control how many decimal places are displayed.';
+        else if (category === 'percent') desc.textContent = 'Percentage formats display decimal values as percentages.';
+        else desc.textContent = 'General format has no specific number format.';
+      }
+      ov.querySelectorAll('.jhncc-format-cat').forEach(function(el) {
+        el.onclick = function() { setCategory(el.getAttribute('data-type')); };
+      });
+      decInput.oninput = function() {
+        decimals = Math.max(0, Math.min(8, Number(decInput.value) || 0));
+        setCategory(category);
+      };
+      function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+      ov.querySelector('.jhncc-modal-x').onclick = close;
+      ov.querySelector('.cancel').onclick = close;
+      ov.onclick = function(e) { if (e.target === ov) close(); };
+      ov.querySelector('.ok').onclick = function() {
+        applyNumberFormat(category, category === 'currency' && decimals == null ? 2 : decimals);
+        fmtSelect.value = category;
+        close();
+      };
+      setCategory(category);
+      try { decInput.focus(); decInput.select(); } catch (e2) {}
+    }
+
+    var fmtSelect = document.createElement('select');
+    fmtSelect.className = 'jhncc-numfmt';
+    fmtSelect.title = 'Number format';
+    fmtSelect.innerHTML = '<option value="general">General</option><option value="number">Number</option><option value="currency">Currency</option><option value="percent">Percentage</option>';
+    fmtSelect.onchange = function() {
+      var type = fmtSelect.value;
+      applyNumberFormat(type, type === 'currency' ? 2 : (type === 'percent' ? 0 : 0));
+    };
+    bar.appendChild(fmtSelect);
+    btn('', '&#163;', 'Currency format', function () { fmtSelect.value = 'currency'; applyNumberFormat('currency', 2); });
+    btn('', '%', 'Percentage format', function () { fmtSelect.value = 'percent'; applyNumberFormat('percent', 0); });
+    btn('', '.00 &#8592;', 'Increase decimal places', function () { changeDecimals(1); });
+    btn('', '.0 &#8594;', 'Decrease decimal places', function () { changeDecimals(-1); });
+    sep();
+
+    var numMenu = null;
+    function closeNumMenu() { if (numMenu && numMenu.parentNode) numMenu.parentNode.removeChild(numMenu); numMenu = null; }
+    function openNumberMenu(x, y) {
+      closeNumMenu();
+      numMenu = document.createElement('div');
+      numMenu.className = 'jhncc-menu';
+      [
+        ['Cut', function(){ try { document.execCommand('cut'); } catch(e) {} }],
+        ['Copy', function(){ try { document.execCommand('copy'); } catch(e) {} }],
+        ['Paste', function(){ try { document.execCommand('paste'); } catch(e) {} }],
+        ['__sep'],
+        ['Clear Contents', function(){ selectedCellNames().forEach(function(cn){ var xy = cellToXY(cn); if (xy) sheet.setValueFromCoords(xy[0], xy[1], '', true); }); }],
+        ['__sep'],
+        ['Format Cells...', openFormatCellsModal]
+      ].forEach(function(item) {
+        if (item[0] === '__sep') {
+          var sepEl = document.createElement('div');
+          sepEl.className = 'jhncc-menu-sep';
+          numMenu.appendChild(sepEl);
+          return;
+        }
+        var el = document.createElement('div');
+        el.className = 'jhncc-menu-item';
+        el.textContent = item[0];
+        el.onclick = function(ev) { ev.stopPropagation(); closeNumMenu(); item[1](); };
+        numMenu.appendChild(el);
+      });
+      numMenu.style.left = x + 'px';
+      numMenu.style.top = y + 'px';
+      document.body.appendChild(numMenu);
+      var r = numMenu.getBoundingClientRect();
+      if (r.right > window.innerWidth) numMenu.style.left = Math.max(4, window.innerWidth - r.width - 4) + 'px';
+      if (r.bottom > window.innerHeight) numMenu.style.top = Math.max(4, window.innerHeight - r.height - 4) + 'px';
+    }
+    holder.addEventListener('contextmenu', function(e) {
+      var td = e.target && e.target.closest ? e.target.closest('td[data-x][data-y]') : null;
+      if (!td || !holder.contains(td)) return;
+      e.preventDefault();
+      var x = parseInt(td.getAttribute('data-x'), 10);
+      var y = parseInt(td.getAttribute('data-y'), 10);
+      if (x < sel.x1 || x > sel.x2 || y < sel.y1 || y > sel.y2) {
+        sel = { x1: x, y1: y, x2: x, y2: y };
+        try { sheet.updateSelectionFromCoords(x, y, x, y); } catch (err) {}
+      }
+      fmtSelect.value = anchorFormat().type || 'general';
+      openNumberMenu(e.clientX, e.clientY);
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!numMenu) return;
+      if (e.target.closest && e.target.closest('.jhncc-menu')) return;
+      closeNumMenu();
+    });
 
     btn('jhncc-tb-b', 'B', 'Bold (click again to remove)', function () { toggleStyle(function (m) { var v = (m['font-weight'] || '').toLowerCase(); return v.indexOf('bold') !== -1 || parseInt(v, 10) >= 600; }, 'font-weight', 'bold', ['font-weight']); });
     btn('jhncc-tb-i', 'I', 'Italic (click again to remove)', function () { toggleStyle(function (m) { return (m['font-style'] || '').indexOf('italic') !== -1; }, 'font-style', 'italic', ['font-style']); });
@@ -596,6 +845,8 @@
       var prevChange = sheet.options.onchange;
       sheet.options.onchange = function (el, cell, x, y, value) {
         if (typeof prevChange === 'function') prevChange.apply(this, arguments);
+        if (typeof sheet._jhnccRefreshFormulaFixes === 'function') setTimeout(sheet._jhnccRefreshFormulaFixes, 0);
+        else setTimeout(function() { refreshNumberFormats(holder, sheet); }, 0);
         if (sheet._cf && sheet._cf.rules.length) setTimeout(reevaluate, 0);
       };
     }
