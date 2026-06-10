@@ -334,30 +334,40 @@ async function signInGoogleStudent() {
   setLoginError('');
   clearGoogleStudentCodePicker();
   var button = document.getElementById('btn-google-student-login');
+  var loginModal = document.getElementById('modal-login');
   try {
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'Finding your code...';
-    }
+    if (button) { button.disabled = true; button.textContent = 'Opening Google…'; }
+    // requestGoogleStudentToken opens a browser popup — keep login modal visible during this
     await requestGoogleStudentToken();
+    // Token acquired — hide login modal and block the page with a spinner
+    if (loginModal) loginModal.classList.add('hidden');
+    showLoggingInModal('Finding your code…');
     var email = await getGoogleStudentEmail();
     var spreadsheet = await findGoogleCodeSpreadsheet();
     if (!spreadsheet) throw new Error('Could not find the classroom code spreadsheet in the configured Drive folder.');
     var lookup = await findGoogleStudentCode(spreadsheet.id, email);
     var match = lookup && lookup.match;
-    if (!match) match = await chooseGoogleStudentCode((lookup && lookup.candidates) || [], email);
+    if (!match) {
+      // No automatic email match — show picker inside the login modal
+      hideLoggingInModal();
+      if (loginModal) loginModal.classList.remove('hidden');
+      match = await chooseGoogleStudentCode((lookup && lookup.candidates) || [], email);
+      // Candidate chosen — re-hide login modal and show spinner while we complete the login
+      if (loginModal) loginModal.classList.add('hidden');
+      showLoggingInModal('Logging in…');
+    }
     if (!match.code) throw new Error('Your row was found, but the code cell is empty.');
-    var first = match.firstName || document.getElementById('input-first').value.trim() || 'Student';
-    var last = match.lastName || document.getElementById('input-last').value.trim() || '';
+    var first = match.firstName || 'Student';
+    var last  = match.lastName  || '';
     await completeStudentCodeLogin(first, last, match.code, match.className);
-    document.getElementById('modal-login').classList.add('hidden');
+    hideLoggingInModal();
+    // login modal stays hidden on success
   } catch(e) {
+    hideLoggingInModal();
+    if (loginModal) loginModal.classList.remove('hidden');
     setLoginError(e && e.message ? e.message : 'Google student sign-in failed.');
   } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = 'Find my code with Google';
-    }
+    if (button) { button.disabled = false; button.textContent = 'Log In With Google'; }
   }
 }
 
@@ -390,8 +400,6 @@ async function completeGoogleAdminLogin(user, fallbackFirst, fallbackLast) {
 
 async function signInGoogleAdmin() {
   setLoginError('');
-  var first = document.getElementById('input-first').value.trim();
-  var last  = document.getElementById('input-last').value.trim();
   var provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/drive.metadata.readonly');
   provider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
@@ -402,7 +410,7 @@ async function signInGoogleAdmin() {
       classroomState.token = result.credential.accessToken;
       classroomState.tokenScope = 'names';
     }
-    await completeGoogleAdminLogin(result.user, first, last);
+    await completeGoogleAdminLogin(result.user);
     document.getElementById('modal-login').classList.add('hidden');
   } catch(e) {
     try { await state.auth.signOut(); } catch(_e) {}
@@ -416,12 +424,7 @@ function setupAuthUI() {
 
   document.getElementById('btn-login').onclick = function() {
     modalLogin.classList.remove('hidden');
-    var saved = localStorage.getItem('pylearn_name');
-    if (saved) {
-      var n = JSON.parse(saved);
-      document.getElementById('input-first').value = n.first || '';
-      document.getElementById('input-last').value  = n.last  || '';
-    }
+    document.getElementById('input-code').focus();
   };
 
   document.getElementById('btn-login-cancel').onclick = function() { modalLogin.classList.add('hidden'); };
@@ -429,15 +432,17 @@ function setupAuthUI() {
   var studentGoogleBtn = document.getElementById('btn-google-student-login');
   if (studentGoogleBtn) studentGoogleBtn.onclick = signInGoogleStudent;
 
+  // Allow pressing Enter in the code field to submit
+  document.getElementById('input-code').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('btn-login-submit').click();
+  });
+
   document.getElementById('btn-login-submit').onclick = async function() {
-    var first = document.getElementById('input-first').value.trim();
-    var last  = document.getElementById('input-last').value.trim();
     var code  = document.getElementById('input-code').value.trim();
     var errEl = document.getElementById('login-error');
     errEl.classList.add('hidden');
 
-    if (!first||!last) { errEl.textContent='Please enter your name.';       errEl.classList.remove('hidden'); return; }
-    if (!code)         { errEl.textContent='Please enter your login code.'; errEl.classList.remove('hidden'); return; }
+    if (!code) { errEl.textContent='Please enter your login code.'; errEl.classList.remove('hidden'); return; }
 
     var firebaseUid = state.auth && state.auth.currentUser && state.auth.currentUser.uid;
     // Teacher check must be completely isolated from the student path.
@@ -449,7 +454,7 @@ function setupAuthUI() {
       if (teacherSnap.exists()) {
         teacherCheckResult = 'found';
         var td = teacherSnap.val();
-        localStorage.setItem('pylearn_name', JSON.stringify({first:first,last:last}));
+        localStorage.setItem('pylearn_name', JSON.stringify({first:'',last:''}));
         localStorage.setItem('pylearn_code', code.toLowerCase());
         localStorage.setItem('pylearn_is_teacher', '1');
         localStorage.setItem('pylearn_teacher_perms', JSON.stringify(td.permissions || {}));
@@ -460,7 +465,7 @@ function setupAuthUI() {
           try { await state.db.ref('teacherSessions/' + firebaseUid).set({ code: code.toLowerCase(), loggedInAt: Date.now() }); } catch(e) {}
         }
         modalLogin.classList.add('hidden');
-        updateAuthUI(first,last,false,true);
+        updateAuthUI('','',false,true);
         return;
       } else {
         teacherCheckResult = 'not-found';
@@ -475,7 +480,7 @@ function setupAuthUI() {
     }
     try {
       // Try the fast code index first (single point-read — avoids downloading the full classes tree)
-      await completeStudentCodeLogin(first, last, code);
+      await completeStudentCodeLogin('', '', code);
       modalLogin.classList.add('hidden');
       return;
     } catch(e) {
@@ -614,13 +619,26 @@ function logStudentAccess(code, name, className) {
   }, null, false);
 }
 
+function showLoggingInModal(msg) {
+  var el = document.getElementById('logging-in-text');
+  if (el) el.textContent = msg || 'Logging in…';
+  var modal = document.getElementById('modal-logging-in');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function hideLoggingInModal() {
+  var modal = document.getElementById('modal-logging-in');
+  if (modal) modal.classList.add('hidden');
+}
+
 function updateAuthUI(first, last, isAdmin, isTeacher) {
-  var show = !!first;
+  var show = !!(state.uid);
   document.getElementById('btn-login').classList.toggle('hidden',  show);
   document.getElementById('btn-logout').classList.toggle('hidden', !show);
   document.getElementById('btn-report').classList.toggle('hidden', !show||isAdmin||isTeacher);
   document.getElementById('btn-ap-feedback').classList.toggle('hidden', !show||isAdmin||isTeacher);
   document.getElementById('btn-admin').classList.toggle('hidden',  !isAdmin&&!isTeacher);
   document.getElementById('btn-admin').textContent = isTeacher ? 'Teacher Panel' : 'Admin';
-  document.getElementById('user-label').textContent = show ? first+' '+last : '';
+  var label = show ? ((first + ' ' + last).trim() || String(state.uid || '')) : '';
+  document.getElementById('user-label').textContent = label;
 }
