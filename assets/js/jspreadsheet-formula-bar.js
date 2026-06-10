@@ -277,11 +277,36 @@
     return matchesCriteria(left, m[2] + m[3]);
   }
 
+  function evaluateArithmeticFormula(sheet, formula) {
+    var expr = String(formula == null ? '' : formula).replace(/\$/g, '').trim();
+    if (!expr || /[^A-Z0-9+\-*/().\s]/i.test(expr)) return null;
+    expr = expr.replace(/([A-Z]+[0-9]+)/gi, function(ref) {
+      var xy = cellToXY(ref);
+      if (!xy) return '0';
+      var raw = '';
+      try { raw = sheet.getValueFromCoords(xy[0], xy[1], false); } catch (e) {}
+      var fixed = evaluateSupportedFormula(sheet, raw);
+      var value = fixed !== null ? fixed : raw;
+      if (String(value).charAt(0) === '=') {
+        try { value = sheet.getValueFromCoords(xy[0], xy[1], true); } catch (e2) {}
+      }
+      var n = valueAsNumber(value);
+      return n === null ? '0' : String(n);
+    });
+    if (!/[0-9]/.test(expr) || /[^0-9+\-*/().\s]/.test(expr)) return null;
+    try {
+      var result = Function('"use strict";return (' + expr + ');')();
+      return (typeof result === 'number' && isFinite(result)) ? cleanNumber(result) : null;
+    } catch (e3) {
+      return null;
+    }
+  }
+
   function evaluateSupportedFormula(sheet, raw) {
     raw = String(raw == null ? '' : raw).trim();
     var formula = raw.charAt(0) === '=' ? raw.slice(1).trim() : raw;
     var m = formula.match(/^([A-Z]+)\s*\((.*)\)$/i);
-    if (!m) return null;
+    if (!m) return evaluateArithmeticFormula(sheet, formula);
     var fn = m[1].toUpperCase();
     var args = splitFormulaArgs(m[2]);
     if (fn === 'SUM' && args.length >= 1) {
@@ -451,12 +476,13 @@
   window.JHNCCAddFormatToolbar = function (holder, sheet) {
     if (!holder || !sheet || !holder.parentNode) return;
     ensureStyles();
+    if (sheet.options) sheet.options.contextMenu = false;
 
     var sel = { x1: 0, y1: 0, x2: 0, y2: 0 };
     var prevSel = sheet.options.onselection;
     sheet.options.onselection = function (el, x1, y1, x2, y2, origin) {
       sel = { x1: Math.min(x1, x2), y1: Math.min(y1, y2), x2: Math.max(x1, x2), y2: Math.max(y1, y2) };
-      if (typeof fmtSelect !== 'undefined' && fmtSelect) fmtSelect.value = anchorFormat().type || 'general';
+      if (typeof updateFormatDropdown === 'function') updateFormatDropdown();
       if (typeof prevSel === 'function') prevSel.apply(this, arguments);
     };
 
@@ -561,6 +587,22 @@
       return fmts[colName(sel.x1) + (sel.y1 + 1)] || { type: 'general', decimals: 0 };
     }
 
+    function selectionFormatState() {
+      var fmts = ensureNumberFormats(sheet);
+      var cells = selectedCellNames();
+      var first = cells.length ? ((fmts[cells[0]] && fmts[cells[0]].type) || 'general') : 'general';
+      for (var i = 1; i < cells.length; i++) {
+        var type = (fmts[cells[i]] && fmts[cells[i]].type) || 'general';
+        if (type !== first) return 'mixed';
+      }
+      return first;
+    }
+
+    function updateFormatDropdown() {
+      if (!fmtSelect) return;
+      fmtSelect.value = selectionFormatState();
+    }
+
     function applyNumberFormat(type, decimals) {
       var fmts = ensureNumberFormats(sheet);
       selectedCellNames().forEach(function(cn) {
@@ -569,6 +611,7 @@
       });
       if (typeof sheet._jhnccRefreshFormulaFixes === 'function') sheet._jhnccRefreshFormulaFixes();
       else refreshNumberFormats(holder, sheet);
+      if (fmtSelect) fmtSelect.value = type;
     }
 
     function changeDecimals(delta) {
@@ -665,9 +708,10 @@
     var fmtSelect = document.createElement('select');
     fmtSelect.className = 'jhncc-numfmt';
     fmtSelect.title = 'Number format';
-    fmtSelect.innerHTML = '<option value="general">General</option><option value="number">Number</option><option value="currency">Currency</option><option value="percent">Percentage</option>';
+    fmtSelect.innerHTML = '<option value="mixed" disabled>Mixed</option><option value="general">General</option><option value="number">Number</option><option value="currency">Currency</option><option value="percent">Percentage</option>';
     fmtSelect.onchange = function() {
       var type = fmtSelect.value;
+      if (type === 'mixed') return;
       applyNumberFormat(type, type === 'currency' ? 2 : (type === 'percent' ? 0 : 0));
     };
     bar.appendChild(fmtSelect);
@@ -715,15 +759,17 @@
       var td = e.target && e.target.closest ? e.target.closest('td[data-x][data-y]') : null;
       if (!td || !holder.contains(td)) return;
       e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       var x = parseInt(td.getAttribute('data-x'), 10);
       var y = parseInt(td.getAttribute('data-y'), 10);
       if (x < sel.x1 || x > sel.x2 || y < sel.y1 || y > sel.y2) {
         sel = { x1: x, y1: y, x2: x, y2: y };
         try { sheet.updateSelectionFromCoords(x, y, x, y); } catch (err) {}
       }
-      fmtSelect.value = anchorFormat().type || 'general';
+      updateFormatDropdown();
       openNumberMenu(e.clientX, e.clientY);
-    });
+    }, true);
     document.addEventListener('mousedown', function(e) {
       if (!numMenu) return;
       if (e.target.closest && e.target.closest('.jhncc-menu')) return;
