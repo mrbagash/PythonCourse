@@ -270,13 +270,7 @@
     titleSpan.className = 'jhncc-chart-float-title';
     titleSpan.textContent = 'Chart Area';
 
-    var btnDelete = document.createElement('button');
-    btnDelete.className = 'jhncc-chart-float-btn';
-    btnDelete.innerHTML = '&times;';
-    btnDelete.title = 'Delete chart';
-
     titleBar.appendChild(titleSpan);
-    titleBar.appendChild(btnDelete);
 
     // Canvas body
     var body = document.createElement('div');
@@ -382,12 +376,6 @@
     sheet.options.onchange = function (el, cell, x, y, val) {
       if (typeof prevChange === 'function') prevChange.apply(this, arguments);
       setTimeout(update, 0);
-    };
-
-    // Delete button
-    btnDelete.onclick = function () {
-      if (chartInst) { chartInst.destroy(); chartInst = null; }
-      if (floater.parentNode) floater.parentNode.removeChild(floater);
     };
 
     // ── Right-click context menu ──────────────────────────────

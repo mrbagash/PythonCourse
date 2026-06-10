@@ -40,10 +40,17 @@
       '.jhncc-sheet-panel{width:100%}' +
       /* persistent selection marker that survives the sheet losing focus */
       '.jhncc-active-cell{box-shadow:inset 0 0 0 2px #107c41 !important}' +
-      /* format toolbar */
-      '.jhncc-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:2px;width:100%;' +
-      'box-sizing:border-box;border:1px solid #cfcfcf;border-bottom:none;background:#f7f7f7;' +
-      'padding:3px 5px;font-family:Calibri,"Segoe UI",Arial,sans-serif;border-radius:4px 4px 0 0}' +
+      /* format toolbar / ribbon */
+      '.jhncc-toolbar{display:block;width:100%;box-sizing:border-box;' +
+      'border:1px solid #cfcfcf;border-bottom:none;background:#f7f7f7;' +
+      'font-family:Calibri,"Segoe UI",Arial,sans-serif;border-radius:4px 4px 0 0;overflow:hidden}' +
+      '.jhncc-ribbon-tabstrip{display:flex;align-items:stretch;background:#e0e0e0;border-bottom:1px solid #cfcfcf}' +
+      '.jhncc-ribbon-tab{padding:4px 14px;background:transparent;border:none;border-right:1px solid #d0d0d0;' +
+      'cursor:pointer;font-size:12px;color:#555;font-family:inherit;white-space:nowrap}' +
+      '.jhncc-ribbon-tab:hover{background:#d4d4d4;color:#222}' +
+      '.jhncc-ribbon-tab.active{background:#f7f7f7;color:#107c41;font-weight:700;border-bottom:2px solid #107c41}' +
+      '.jhncc-ribbon-panel{display:none;flex-wrap:wrap;align-items:center;gap:2px;padding:3px 5px}' +
+      '.jhncc-ribbon-panel.active{display:flex}' +
       '.jhncc-tb-btn{min-width:28px;height:26px;padding:0 7px;background:#fff;border:1px solid #d0d0d0;' +
       'border-radius:3px;cursor:pointer;font-size:13px;color:#222;line-height:24px}' +
       '.jhncc-tb-btn:hover{background:#eef4ff;border-color:#9cc0ff}' +
@@ -558,20 +565,49 @@
 
     var bar = document.createElement('div');
     bar.className = 'jhncc-toolbar';
+
+    // ── Ribbon tab strip ──────────────────────────────────────────
+    var ribTabstrip = document.createElement('div');
+    ribTabstrip.className = 'jhncc-ribbon-tabstrip';
+    var homeTab = document.createElement('button');
+    homeTab.type = 'button'; homeTab.className = 'jhncc-ribbon-tab active'; homeTab.textContent = 'Home';
+    var insertTab = document.createElement('button');
+    insertTab.type = 'button'; insertTab.className = 'jhncc-ribbon-tab'; insertTab.textContent = 'Insert';
+    ribTabstrip.appendChild(homeTab);
+    ribTabstrip.appendChild(insertTab);
+    bar.appendChild(ribTabstrip);
+
+    var homePanel = document.createElement('div');
+    homePanel.className = 'jhncc-ribbon-panel active';
+    bar.appendChild(homePanel);
+
+    var insertPanel = document.createElement('div');
+    insertPanel.className = 'jhncc-ribbon-panel';
+    bar.appendChild(insertPanel);
+
+    homeTab.onclick = function () {
+      homeTab.classList.add('active'); insertTab.classList.remove('active');
+      homePanel.classList.add('active'); insertPanel.classList.remove('active');
+    };
+    insertTab.onclick = function () {
+      insertTab.classList.add('active'); homeTab.classList.remove('active');
+      insertPanel.classList.add('active'); homePanel.classList.remove('active');
+    };
+
     function btn(cls, label, title, onClick) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'jhncc-tb-btn ' + (cls || '');
       b.innerHTML = label; b.title = title; b.onclick = onClick;
-      bar.appendChild(b); return b;
+      homePanel.appendChild(b); return b;
     }
-    function sep() { var s = document.createElement('span'); s.className = 'jhncc-tb-sep'; bar.appendChild(s); }
+    function sep() { var s = document.createElement('span'); s.className = 'jhncc-tb-sep'; homePanel.appendChild(s); }
     function colorPicker(labelText, title, initial, onPick) {
       var w = document.createElement('label');
       w.className = 'jhncc-tb-color'; w.title = title;
       w.appendChild(document.createTextNode(labelText));
       var inp = document.createElement('input'); inp.type = 'color'; inp.value = initial;
       inp.onchange = function () { onPick(inp.value); };
-      w.appendChild(inp); bar.appendChild(w);
+      w.appendChild(inp); homePanel.appendChild(w);
     }
 
     function selectedCellNames() {
@@ -714,7 +750,7 @@
       if (type === 'mixed') return;
       applyNumberFormat(type, type === 'currency' ? 2 : (type === 'percent' ? 0 : 0));
     };
-    bar.appendChild(fmtSelect);
+    homePanel.appendChild(fmtSelect);
     btn('', '&#163;', 'Currency format', function () { fmtSelect.value = 'currency'; applyNumberFormat('currency', 2); });
     btn('', '%', 'Percentage format', function () { fmtSelect.value = 'percent'; applyNumberFormat('percent', 0); });
     btn('', '.00 &#8592;', 'Increase decimal places', function () { changeDecimals(1); });
@@ -988,6 +1024,109 @@
       if (mainMenu) { closeMenus(); return; }
       var r = cfBtn.getBoundingClientRect(); openMain(r.left, r.bottom + 2);
     });
+
+    // ── Insert panel content ──────────────────────────────────────
+    (function () {
+      // Large icon button for the Insert tab
+      function insIconBtn(icon, text, title, onClick) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.style.cssText = 'display:inline-flex;flex-direction:column;align-items:center;gap:2px;' +
+          'min-width:52px;height:52px;padding:4px 8px;background:#fff;border:1px solid #d0d0d0;' +
+          'border-radius:3px;cursor:pointer;font-size:11px;color:#222;line-height:1.2;' +
+          'font-family:Calibri,"Segoe UI",Arial,sans-serif;box-sizing:border-box';
+        b.title = title;
+        var ico = document.createElement('span');
+        ico.style.cssText = 'font-size:22px;line-height:1';
+        ico.textContent = icon;
+        var lbl = document.createElement('span');
+        lbl.textContent = text;
+        b.appendChild(ico);
+        b.appendChild(lbl);
+        b.onmouseenter = function () { b.style.background = '#eef4ff'; b.style.borderColor = '#9cc0ff'; };
+        b.onmouseleave = function () { b.style.background = '#fff'; b.style.borderColor = '#d0d0d0'; };
+        b.onclick = onClick;
+        insertPanel.appendChild(b);
+        return b;
+      }
+
+      insIconBtn('📊', 'Chart', 'Insert a chart from the selected data', function () {
+        openInsertChartDialog();
+      });
+
+      function openInsertChartDialog() {
+        if (typeof window.JHNCCAddChart !== 'function') {
+          alert('Chart module not loaded. Please include jspreadsheet-chart.js.');
+          return;
+        }
+        var CTYPES = [
+          { id: 'column',   label: 'Column' },
+          { id: 'bar',      label: 'Bar (horizontal)' },
+          { id: 'line',     label: 'Line' },
+          { id: 'pie',      label: 'Pie' },
+          { id: 'doughnut', label: 'Doughnut' }
+        ];
+        var radios = CTYPES.map(function (t, i) {
+          return '<label style="display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer">' +
+            '<input type="radio" name="jhncc-ict" value="' + t.id + '"' + (i === 0 ? ' checked' : '') + '> ' +
+            t.label + '</label>';
+        }).join('');
+        var hasMultiCol = sel.x2 > sel.x1;
+        var selText = (hasMultiCol || sel.y2 > sel.y1)
+          ? (colName(sel.x1) + (sel.y1 + 1) + ':' + colName(sel.x2) + (sel.y2 + 1))
+          : 'Entire sheet';
+        var body =
+          '<div style="display:flex;gap:20px;align-items:flex-start">' +
+            '<div>' +
+              '<div style="font-size:12px;font-weight:700;text-transform:uppercase;' +
+                'letter-spacing:.04em;color:#444;margin-bottom:6px">Chart Type</div>' +
+              '<div style="border:1px solid #d0d0d0;border-radius:4px;min-width:200px">' + radios + '</div>' +
+            '</div>' +
+            '<div style="font-size:13px;color:#555;max-width:220px">' +
+              '<div style="font-size:12px;font-weight:700;text-transform:uppercase;' +
+                'letter-spacing:.04em;color:#444;margin-bottom:6px">Data</div>' +
+              '<div>Selection: <strong>' + selText + '</strong></div>' +
+              '<div style="font-size:11px;color:#888;margin-top:8px;line-height:1.5">' +
+                'The first column in the selection will be used as category labels. ' +
+                'Remaining columns will be data series.<br><br>' +
+                'Use right-click &rarr; <em>Select Data</em> to reconfigure after inserting.' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        var ov = document.createElement('div');
+        ov.className = 'jhncc-modal-ov';
+        ov.innerHTML =
+          '<div class="jhncc-modal">' +
+            '<div class="jhncc-modal-h"><span>Insert Chart</span>' +
+              '<span class="jhncc-modal-x">&times;</span></div>' +
+            '<div class="jhncc-modal-b">' + body + '</div>' +
+            '<div class="jhncc-modal-f">' +
+              '<button class="jhncc-modal-btn cancel">Cancel</button>' +
+              '<button class="jhncc-modal-btn ok">Insert</button>' +
+            '</div>' +
+          '</div>';
+        document.body.appendChild(ov);
+
+        function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+        ov.querySelector('.jhncc-modal-x').onclick = close;
+        ov.querySelector('.cancel').onclick = close;
+        ov.onclick = function (e) { if (e.target === ov) close(); };
+        ov.querySelector('.ok').onclick = function () {
+          var typeEl = ov.querySelector('input[name="jhncc-ict"]:checked');
+          var type = typeEl ? typeEl.value : 'column';
+          var lblCol = sel.x1;
+          var srs = null;
+          if (sel.x2 > sel.x1) {
+            srs = [];
+            for (var c = sel.x1 + 1; c <= sel.x2; c++) srs.push(c);
+          }
+          close();
+          homeTab.onclick(); // switch back to Home tab
+          window.JHNCCAddChart(holder, sheet, { type: type, labelCol: lblCol, series: srs });
+        };
+      }
+    })();
 
     // Place the toolbar at the very top of this sheet's stack (above the formula bar).
     var top = holder;
