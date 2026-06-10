@@ -50,6 +50,7 @@ function requestGoogleStudentToken() {
       reject(new Error('Google sign-in has not finished loading. Please try again in a moment.'));
       return;
     }
+    var requiredScopes = getGoogleStudentScopes().split(' ').filter(Boolean);
     googleStudentTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: getGoogleStudentScopes(),
@@ -57,6 +58,19 @@ function requestGoogleStudentToken() {
       callback: function(response) {
         if (!response || response.error) {
           reject(new Error((response && response.error_description) || 'Google sign-in was cancelled or failed.'));
+          return;
+        }
+        // Verify every required scope was actually granted — Google can return a
+        // token even if the user declined individual permissions (granular consent).
+        var grantedScopes = String(response.scope || '').split(' ').filter(Boolean);
+        var missing = requiredScopes.filter(function(s) {
+          return !grantedScopes.some(function(g) { return g === s; });
+        });
+        if (missing.length) {
+          reject(new Error(
+            'Google Drive and Sheets access are required to find your login code. ' +
+            'Please try again and make sure to allow all permissions when prompted.'
+          ));
           return;
         }
         googleStudentAccessToken = response.access_token;
