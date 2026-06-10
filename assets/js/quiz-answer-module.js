@@ -81,6 +81,11 @@ function spreadsheetCellSnapshot(sheet, cell) {
   };
 }
 
+function spreadsheetCellFormat(sheet, cell) {
+  var fmts = sheet && sheet._jhnccNumberFormats ? sheet._jhnccNumberFormats : {};
+  return (fmts[cell] && fmts[cell].type) || 'general';
+}
+
 function validateQuizSpreadsheet(q) {
   if (!quiz.currentSpreadsheet || !quiz.currentSpreadsheet.sheet) {
     return { correct: false, message: 'Spreadsheet not ready.', summary: '' };
@@ -120,6 +125,13 @@ function validateQuizSpreadsheet(q) {
       if (isNaN(numeric) || Math.abs(numeric - Number(check.expected)) > tolerance) {
         ok = false;
         messages.push(check.cell + ' gives ' + display + ' but should calculate to ' + check.expected + '.');
+      }
+    }
+    if (ok && check.expectedFormat) {
+      var gotFormat = spreadsheetCellFormat(sheet, check.cell);
+      if (gotFormat !== String(check.expectedFormat).toLowerCase()) {
+        ok = false;
+        messages.push(check.cell + ' should be formatted as ' + check.expectedFormat + '.');
       }
     }
     if (ok && check.expectedText != null) {
