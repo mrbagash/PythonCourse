@@ -229,6 +229,18 @@
               "title": "L3: Conditional Functions",
               "file": "lessons/btec-dit-spreadsheets-lesson-3.json",
               "order": 3
+            },
+            {
+              "id": "btec-dit-spreadsheets-lesson-4",
+              "title": "L4: Data Preparation & Formatting",
+              "file": "lessons/btec-dit-spreadsheets-lesson-4.json",
+              "order": 4
+            },
+            {
+              "id": "btec-dit-spreadsheets-lesson-5",
+              "title": "L5: Dashboards & Charts",
+              "file": "lessons/btec-dit-spreadsheets-lesson-5.json",
+              "order": 5
             }
           ]
         }

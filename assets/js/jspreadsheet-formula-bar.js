@@ -817,6 +817,13 @@
     wrapper.appendChild(tabbar);
     selectIndex(0);
 
+    // jspreadsheet calculated its pixel widths against the original container before
+    // the DOM was restructured. Dispatch a resize event so it recalculates layout in
+    // the new wrapper. Must be async so the browser has laid out the new structure first.
+    setTimeout(function() {
+      try { window.dispatchEvent(new Event('resize')); } catch(e) {}
+    }, 0);
+
     addBtn.onclick = function () {
       var panel = document.createElement('div');
       panel.className = 'jhncc-sheet-panel';

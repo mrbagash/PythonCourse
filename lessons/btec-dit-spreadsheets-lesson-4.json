@@ -1,0 +1,127 @@
+{
+  "id": "btec-dit-spreadsheets-lesson-4",
+  "title": "L4: Data Preparation & Formatting",
+  "description": "Prepare spreadsheet data for BTEC DIT Component 2 by sorting safely, using clear formatting, applying validation choices and highlighting important records.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now: Previous Skills",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do now</h2><p class='text-gray-700 mb-3'>These questions check the formula and function skills you need before preparing a dataset.</p><div id='l4-dn'></div>",
+      "js": "createMCQSet('l4-dn',[{q:'A spreadsheet needs to add all Income values from D2 to D10. Which formula is best?',options:['=SUM(D2:D10)','=D2+D10','=COUNT(D2:D10)','=TOTAL(D2:D10)'],answer:0,right:'Correct. SUM is used to total a range.'},{q:'Which function would count how many Region cells say Online?',options:['COUNTIF','COUNT','SUMIF','IF'],answer:0,right:'Correct. COUNTIF counts cells that match a condition.'},{q:'Which formula adds Income values in C2:C20 only where the Sales Method in B2:B20 is Shop?',options:['=SUMIF(B2:B20,\"Shop\",C2:C20)','=COUNTIF(B2:B20,\"Shop\")','=SUM(C2:C20,\"Shop\")','=IF(B2:B20=\"Shop\",C2:C20)'],answer:0,right:'Correct. SUMIF checks one range and adds the matching values from another.'},{q:'Why might B$7 be used in a copied percentage formula?',options:['To keep row 7 fixed when the formula is copied down','To format the cell as money','To make the formula hidden','To count row 7 only'],answer:0,right:'Correct. The dollar sign locks the row reference.'},{q:'In =IF(C2>350,\"Top Seller\",\"Standard\"), what appears if C2 is 200?',options:['Standard','Top Seller','FALSE','200'],answer:0,right:'Correct. 200 is not above 350, so the false result is shown.'}]);"
+    },
+    {
+      "id": "why-prepare-data",
+      "title": "Why Prepare Data?",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Why prepare data?</h2><p class='text-gray-700 mb-3'>BTEC Component 2 tasks often ask you to complete analysis and dashboard worksheets. Before the dashboard is useful, the data must be easy to read, consistent and safe to use.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Preparation skill</th><th>Why it matters</th></tr></thead><tbody><tr><td>Sort the full rows</td><td>Keeps each record together while changing the order.</td></tr><tr><td>Currency and percentage formatting</td><td>Makes values clear and professional.</td></tr><tr><td>Validation lists</td><td>Reduces typing mistakes by limiting choices.</td></tr><tr><td>Conditional formatting</td><td>Makes important records stand out.</td></tr></tbody></table></div><div id='l4-purpose'></div>",
+      "js": "createMCQSet('l4-purpose',[{q:'A student sorts only the Cost column and not the rest of the row. What is the problem?',options:['The costs no longer match the correct items','The file becomes too large','All formulas are deleted','The worksheet cannot be saved'],answer:0,right:'Correct. Sorting one column by itself breaks data integrity.'},{q:'Why format money to currency with 2 decimal places?',options:['So values such as 12.5 display clearly as money','So all formulas disappear','So the sheet sorts automatically','So text becomes uppercase'],answer:0,right:'Correct. Currency formatting improves clarity without changing the value.'},{q:'Why use a drop-down list for a field such as Sales Method?',options:['It prevents inconsistent typing such as Shop, shop and Shops','It calculates the total automatically','It creates a chart','It locks the whole worksheet'],answer:0,right:'Correct. Validation makes entries consistent.'}]);"
+    },
+    {
+      "id": "safe-sorting",
+      "title": "Sort Safely",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Sort safely</h2><p class='text-gray-700 mb-3'>When an exam asks you to sort data, you must sort the <strong>whole row</strong>, not just one column. This keeps the item, type, cost and sales method together.</p><p class='text-gray-700 mb-3'>Sort instructions can also have two levels. For example: sort by <strong>Item type A to Z</strong>, and within each type sort by <strong>Cost low to high</strong>.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Record</th><th>Item type</th><th>Cost</th></tr></thead><tbody><tr><td>A</td><td>Binder</td><td>20.50</td></tr><tr><td>B</td><td>Diary</td><td>10.00</td></tr><tr><td>C</td><td>Binder</td><td>8.50</td></tr><tr><td>D</td><td>Diary</td><td>6.00</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>If you sort by Item type, then Cost, the correct order is Binder 8.50, Binder 20.50, Diary 6.00, Diary 10.00.</p><div id='l4-sort'></div>",
+      "js": "createMCQSet('l4-sort',[{q:'Which record should appear first after sorting by Item type A-Z, then Cost low-high?',options:['C - Binder - 8.50','A - Binder - 20.50','D - Diary - 6.00','B - Diary - 10.00'],answer:0,right:'Correct. Binder comes before Diary, and 8.50 is the lowest Binder cost.'},{q:'Which record should appear last?',options:['B - Diary - 10.00','D - Diary - 6.00','A - Binder - 20.50','C - Binder - 8.50'],answer:0,right:'Correct. Diaries come after Binders, and 10.00 is the higher Diary cost.'},{q:'What must be selected before sorting a dataset?',options:['The full table/range of records','Only the column being sorted','Only the title row','Only blank cells'],answer:0,right:'Correct. Select the full data range so rows stay intact.'}]);"
+    },
+    {
+      "id": "formatting-values",
+      "title": "Formatting Values",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Formatting values</h2><p class='text-gray-700 mb-3'>Formatting changes how a value <strong>looks</strong>, not what it is. In BTEC spreadsheets, common formatting requests include currency with 2 decimal places and percentages.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Raw value</th><th>Good format</th><th>Why</th></tr></thead><tbody><tr><td>1732.129999</td><td>&pound;1,732.13</td><td>Money should be currency with 2dp.</td></tr><tr><td>0.42</td><td>42%</td><td>Percentages should look like percentages.</td></tr><tr><td>12.5</td><td>&pound;12.50</td><td>The zero matters for money.</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>Now practise calculating values that should later be formatted clearly. Use formulas, not typed answers.</p><div id='l4-format-sheet' class='mb-3 overflow-x-auto'></div><button id='l4-format-check' class='ex-btn'>Check</button><div id='l4-format-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=15',function(){var data=[[\"Label\",\"Value\"],[\"Total income\",1732.13],[\"Shop income\",888.73],[\"% shop sales\",\"\"]];var sheet=jspreadsheet(document.getElementById('l4-format-sheet'),{data:data,columns:[{width:150},{width:120}],minDimensions:[2,4],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l4-format-sheet'),sheet);JHNCCAddFormatToolbar(document.getElementById('l4-format-sheet'),sheet);JHNCCAddSheetTabs(document.getElementById('l4-format-sheet'),sheet);document.getElementById('l4-format-check').onclick=function(){var fb=document.getElementById('l4-format-fb');var raw=String(sheet.getValueFromCoords(1,3,false)||'');var val=parseFloat(sheet.getValueFromCoords(1,3,true));if(raw.charAt(0)!=='='){fb.className='ex-feedback hint';fb.textContent='Use a formula in B4. Divide Shop income by Total income and multiply by 100.';return;}if(raw.toUpperCase().indexOf('B3')===-1||raw.toUpperCase().indexOf('B2')===-1){fb.className='ex-feedback hint';fb.textContent='Your formula should use the cells B3 and B2, not typed numbers.';return;}if(Math.abs(val-51.31)>0.3){fb.className='ex-feedback err';fb.textContent='Not quite. Shop income divided by total income times 100 is about 51.31.';return;}fb.className='ex-feedback ok';fb.textContent='Correct. This would be formatted as about 51.31% on a finished analysis sheet.';__markStepComplete();};});});});})();"
+    },
+    {
+      "id": "validation-and-highlighting",
+      "title": "Validation & Highlighting",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Validation and highlighting</h2><p class='text-gray-700 mb-3'>Some BTEC tasks ask you to make a data field more reliable or to make a value stand out. Two common tools are <strong>data validation</strong> and <strong>conditional formatting</strong>.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Tool</th><th>Use it when...</th><th>Example</th></tr></thead><tbody><tr><td>Data validation list</td><td>The user should choose from allowed options.</td><td>Sales Method: Shop or Online</td></tr><tr><td>Conditional formatting</td><td>Cells should stand out when they match a rule.</td><td>Highlight all rows where Sales Method is Shop</td></tr></tbody></table></div><div id='l4-valid'></div>",
+      "js": "createMCQSet('l4-valid',[{q:'A field must only allow Shop or Online. Which tool is most suitable?',options:['Data validation list','SUMIF','Sort descending','Currency formatting'],answer:0,right:'Correct. A validation list limits entries to allowed choices.'},{q:'A task says to make Shop sales stand out. Which tool is most suitable?',options:['Conditional formatting','COUNT','AVERAGE','Freeze panes'],answer:0,right:'Correct. Conditional formatting highlights cells that meet a rule.'},{q:'Which condition would highlight income values of 500 or more?',options:['Greater than or equal to 500','Contains 500 letters','Less than 500','Equal to blank'],answer:0,right:'Correct. The rule should match values at least 500.'},{q:'Why should validation choices be consistent with the existing data?',options:['So formulas such as COUNTIF and SUMIF match the text correctly','So the file opens faster','So all charts become pie charts','So rows are deleted automatically'],answer:0,right:'Correct. Inconsistent text breaks condition-based analysis.'}]);"
+    },
+    {
+      "id": "full-practice",
+      "title": "Full Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Full practice: prepare analysis values</h2><p class='text-gray-700 mb-3'>Complete the shaded analysis cells. This mirrors the kind of preparation needed before values are formatted and used on a dashboard.</p><div class='ex-box mb-3'><table class='bb-table'><thead><tr><th>Cell</th><th>Task</th></tr></thead><tbody><tr><td>E7</td><td>Total income for all sales</td></tr><tr><td>E8</td><td>Total income for Shop sales only</td></tr><tr><td>E9</td><td>Percentage of income from Shop sales</td></tr><tr><td>E10</td><td>Number of Online sales</td></tr></tbody></table></div><div id='l4-full-sheet' class='mb-3 overflow-x-auto'></div><button id='l4-full-check' class='ex-btn'>Check all</button><div id='l4-full-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=15',function(){var data=[[\"Item\",\"Type\",\"Method\",\"Income\",\"Analysis\"],[\"A5 Diary\",\"Diary\",\"Shop\",300,\"\"],[\"Beach Binder\",\"Binder\",\"Online\",820,\"\"],[\"Budget Pen\",\"Pen\",\"Shop\",120,\"\"],[\"Desk Pad\",\"Pad\",\"Online\",450,\"\"],[\"Executive Pen\",\"Pen\",\"Shop\",240,\"\"],[\"\",\"\",\"\",\"Total income\",\"\"] ,[\"\",\"\",\"\",\"Shop income\",\"\"] ,[\"\",\"\",\"\",\"% Shop income\",\"\"] ,[\"\",\"\",\"\",\"Online count\",\"\"]];var sheet=jspreadsheet(document.getElementById('l4-full-sheet'),{data:data,columns:[{width:130},{width:90},{width:90},{width:110},{width:120}],minDimensions:[5,10],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l4-full-sheet'),sheet);JHNCCAddFormatToolbar(document.getElementById('l4-full-sheet'),sheet);JHNCCAddSheetTabs(document.getElementById('l4-full-sheet'),sheet);document.getElementById('l4-full-check').onclick=function(){var fb=document.getElementById('l4-full-fb');var checks=[{r:6,fn:'SUM',exp:1930,need:['D2:D6']},{r:7,fn:'SUMIF',exp:660,need:['C2:C6','Shop','D2:D6']},{r:8,fn:null,exp:34.2,need:['E8','E7']},{r:9,fn:'COUNTIF',exp:2,need:['C2:C6','Online']}];var errors=[];checks.forEach(function(c){var raw=String(sheet.getValueFromCoords(4,c.r,false)||'');var norm=raw.toUpperCase().replace(/\\s+/g,'');var val=parseFloat(sheet.getValueFromCoords(4,c.r,true));if(raw.charAt(0)!=='=')errors.push('E'+(c.r+1)+' needs a formula');else if(c.fn&&norm.indexOf(c.fn+'(')===-1)errors.push('E'+(c.r+1)+' should use '+c.fn);else if(c.need.some(function(x){return norm.indexOf(String(x).toUpperCase().replace(/\\s+/g,''))===-1;}))errors.push('E'+(c.r+1)+' is missing an expected range or criteria');else if(Math.abs(val-c.exp)>0.6)errors.push('E'+(c.r+1)+' gives '+val+' but should be about '+c.exp);});if(errors.length){fb.className='ex-feedback err';fb.textContent='Issues: '+errors.join(' | ');return;}fb.className='ex-feedback ok';fb.textContent='Correct. These analysis values are ready to format and present clearly.';__markStepComplete();};});});});})();"
+    },
+    {
+      "id": "exam",
+      "title": "Check What You Have Learned",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Check what you have learned</h2><p class='text-gray-700 mb-4'>These questions check the preparation skills used in BTEC spreadsheet tasks.</p><div id='l4-exam'></div>",
+      "js": "createMCQSet('l4-exam',[{q:'What does data integrity mean when sorting?',options:['Each row still keeps the correct values together','The sheet has lots of colours','The data is copied into Word','The chart has a title'],answer:0,right:'Correct. Sorting must not separate values from their original record.'},{q:'Which sort instruction uses two levels?',options:['Sort Item type A-Z, then Cost low-high','Make all headings bold','Format all income as currency','Count all Shop sales'],answer:0,right:'Correct. That instruction uses a primary and secondary sort.'},{q:'Which tool limits a cell to choices such as Shop or Online?',options:['Data validation','Conditional formatting','AVERAGE','Chart title'],answer:0,right:'Correct.'},{q:'Which tool highlights records that match a rule?',options:['Conditional formatting','Data validation','COUNT','Sort'],answer:0,right:'Correct.'},{q:'A value of 0.375 should be displayed as...',options:['37.5%','GBP 0.38','3750','0.375 rows'],answer:0,right:'Correct. As a percentage, 0.375 is 37.5%.'},{q:'Why format money to 2 decimal places?',options:['It makes monetary values clear and consistent','It changes all formulas to text','It sorts rows automatically','It removes duplicate records'],answer:0,right:'Correct.'}]);"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to complete this practice.</p><div id='l4-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'Which tool would make Shop entries stand out automatically?',o:['Conditional formatting','Data validation','MIN','Freeze panes'],a:0},{q:'Which tool would restrict entries to Online or Shop?',o:['Data validation list','SUMIF','Sort descending','Currency'],a:0},{q:'What must stay together when sorting?',o:['The whole row/record','Only the selected column','Only blank cells','Only formulas'],a:0},{q:'Which is a good display for money?',o:['GBP 12.50','12.5 percent','1250','12.50000000'],a:0},{q:'Which is a good display for 0.25 as a percentage?',o:['25%','0.25p','GBP 0.25','2500%'],a:0},{q:'A task says sort Item type A-Z. Binder and Diary: which comes first?',o:['Binder','Diary','The highest cost','The newest row'],a:0},{q:'Why are consistent choices important for COUNTIF?',o:['COUNTIF matches exact criteria text','COUNTIF ignores all text','COUNTIF creates charts','COUNTIF only works on dates'],a:0}];var solved=0,c=document.getElementById('l4-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite - streak reset.';setTimeout(render,1000);}};});}render();})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "When sorting a dataset, why must the whole table be selected?",
+      "options": ["To keep each row's values together", "To delete duplicates automatically", "To make formulas hidden", "To create a chart"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which tool is best for limiting Sales Method to Shop or Online?",
+      "options": ["Data validation list", "Conditional formatting", "MAX", "Sort descending"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which tool would highlight all Shop records?",
+      "options": ["Conditional formatting", "COUNTIF", "Data validation", "AVERAGE"],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "In E7, calculate the total income for all sales using the Income values in D2:D6.",
+      "sheetData": [["Item","Type","Method","Income","Analysis"],["A5 Diary","Diary","Shop",300,""],["Beach Binder","Binder","Online",820,""],["Budget Pen","Pen","Shop",120,""],["Desk Pad","Pad","Online",450,""],["Executive Pen","Pen","Shop",240,""],["","","","Total income",""],["","","","Shop income",""],["","","","% Shop income",""],["","","","Online count",""]],
+      "columns": [{"width":130},{"width":90},{"width":90},{"width":110},{"width":120}],
+      "checks": [{"cell":"E7","functionName":"SUM","expected":1930,"tolerance":0.1,"formulaContains":["D2:D6"]}],
+      "sampleAnswer": "E7: =SUM(D2:D6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "In E8, calculate the total income for Shop sales only.",
+      "sheetData": [["Item","Type","Method","Income","Analysis"],["A5 Diary","Diary","Shop",300,""],["Beach Binder","Binder","Online",820,""],["Budget Pen","Pen","Shop",120,""],["Desk Pad","Pad","Online",450,""],["Executive Pen","Pen","Shop",240,""],["","","","Total income",""],["","","","Shop income",""],["","","","% Shop income",""],["","","","Online count",""]],
+      "columns": [{"width":130},{"width":90},{"width":90},{"width":110},{"width":120}],
+      "checks": [{"cell":"E8","functionName":"SUMIF","expected":660,"tolerance":0.1,"formulaContains":["C2:C6","Shop","D2:D6"]}],
+      "sampleAnswer": "E8: =SUMIF(C2:C6,\"Shop\",D2:D6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "In E10, count how many records have Online as the sales method.",
+      "sheetData": [["Item","Type","Method","Income","Analysis"],["A5 Diary","Diary","Shop",300,""],["Beach Binder","Binder","Online",820,""],["Budget Pen","Pen","Shop",120,""],["Desk Pad","Pad","Online",450,""],["Executive Pen","Pen","Shop",240,""],["","","","Total income",""],["","","","Shop income",""],["","","","% Shop income",""],["","","","Online count",""]],
+      "columns": [{"width":130},{"width":90},{"width":90},{"width":110},{"width":120}],
+      "checks": [{"cell":"E10","functionName":"COUNTIF","expected":2,"tolerance":0.1,"formulaContains":["C2:C6","Online"]}],
+      "sampleAnswer": "E10: =COUNTIF(C2:C6,\"Online\")"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which display is most appropriate for a monetary value of 12.5?",
+      "options": ["GBP 12.50", "12.5%", "1250", "12.500000"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A percentage formula gives 51.31. How should this normally be presented?",
+      "options": ["As 51.31%", "As GBP 51.31", "As 0.5131 rows", "As text only"],
+      "answer": 0
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "id": "btec-dit-spreadsheets-lesson-5",
+  "title": "L5: Dashboards & Charts",
+  "description": "Build dashboard evidence for BTEC DIT Component 2 by choosing suitable charts, preparing chart source tables and presenting information clearly.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now: Data Preparation",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do now</h2><p class='text-gray-700 mb-3'>Dashboard work depends on accurate analysis and well-prepared data. Check those skills first.</p><div id='l5-dn'></div>",
+      "js": "createMCQSet('l5-dn',[{q:'Which function counts how many rows have Region as North?',options:['COUNTIF','SUMIF','MAX','AVERAGE'],answer:0,right:'Correct. COUNTIF counts matching entries.'},{q:'Which function adds Income only for Online sales?',options:['SUMIF','COUNTIF','MIN','IF'],answer:0,right:'Correct. SUMIF adds values where a condition is met.'},{q:'Why should a chart be based on a small summary table rather than a messy raw dataset?',options:['It makes the chart easier to understand and less likely to include the wrong data','It makes the file impossible to edit','It removes all formulas','It hides the worksheet'],answer:0,right:'Correct. Summary tables make chart data clear.'},{q:'Which feature makes values such as Shop sales stand out in a dataset?',options:['Conditional formatting','COUNT','Data labels','Pie chart'],answer:0,right:'Correct. Conditional formatting highlights values using rules.'},{q:'Which display is clearest for a share of total sales?',options:['Percentage','Random text','Unformatted decimal only','A hidden row'],answer:0,right:'Correct. Shares of a total are usually presented as percentages.'}]);"
+    },
+    {
+      "id": "dashboard-purpose",
+      "title": "What Makes a Good Dashboard?",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>What makes a good dashboard?</h2><p class='text-gray-700 mb-3'>In BTEC Component 2, the dashboard is not just decoration. It should help the organisation understand important patterns from the data.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Good dashboard</th><th>Weak dashboard</th></tr></thead><tbody><tr><td>Shows key totals, counts and comparisons.</td><td>Shows random data without a purpose.</td></tr><tr><td>Uses suitable charts for the question.</td><td>Uses chart types that make values hard to compare.</td></tr><tr><td>Has clear titles, labels and units.</td><td>Leaves the viewer guessing what the chart means.</td></tr><tr><td>Is readable and consistent.</td><td>Uses cluttered colours and tiny text.</td></tr></tbody></table></div><div id='l5-purpose'></div>",
+      "js": "createMCQSet('l5-purpose',[{q:'What is the main purpose of a dashboard?',options:['To present important information clearly for decision making','To store every raw row on one screen','To replace formulas','To make the file larger'],answer:0,right:'Correct. A dashboard should communicate useful information.'},{q:'A chart title says Sales. Why is that weak?',options:['It is too vague and does not say what sales are being shown','It has too many formulas','It is too colourful','It uses text'],answer:0,right:'Correct. Titles should be specific.'},{q:'Which dashboard element helps viewers understand exact values?',options:['Data labels or a clear value axis','Hidden gridlines only','Random colours','Blank rows'],answer:0,right:'Correct. Labels and axes make values easier to interpret.'}]);"
+    },
+    {
+      "id": "choose-chart",
+      "title": "Choose the Right Chart",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Choose the right chart</h2><p class='text-gray-700 mb-3'>The chart type should match the question being answered. In BTEC dashboards, you often compare categories, show a proportion, or show change over time.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Question</th><th>Suitable chart</th><th>Why</th></tr></thead><tbody><tr><td>Which region has the most sales?</td><td>Bar/column chart</td><td>Compares categories clearly.</td></tr><tr><td>What percentage of sales are Online?</td><td>Pie/doughnut chart or percentage card</td><td>Shows share of a whole.</td></tr><tr><td>How did satisfaction change over four weeks?</td><td>Line chart</td><td>Shows change over time.</td></tr></tbody></table></div><div id='l5-chart-choice'></div>",
+      "js": "createMCQSet('l5-chart-choice',[{q:'You need to compare total income for Shop and Online. Which chart is most suitable?',options:['Bar or column chart','Line chart only','Scatter chart','No chart'],answer:0,right:'Correct. Bar/column charts compare categories well.'},{q:'You need to show how satisfaction ratings changed from Week 1 to Week 4. Which chart is most suitable?',options:['Line chart','Pie chart','Single text box','Sort button'],answer:0,right:'Correct. A line chart shows change over time.'},{q:'You need to show Online as a share of all sales. Which is suitable?',options:['Pie/doughnut chart or percentage card','A random image','A text-only formula cell','A sorted raw table only'],answer:0,right:'Correct. A share of the whole should be shown as a percentage or part-whole chart.'},{q:'Which chart feature should almost always be included?',options:['Clear title and labels','Hidden title','Unlabelled axis','Random colours'],answer:0,right:'Correct. Viewers need to know what they are looking at.'}]);"
+    },
+    {
+      "id": "source-table-counts",
+      "title": "Build Chart Source Tables",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build chart source tables</h2><p class='text-gray-700 mb-3'>Charts are easiest to make from a small source table. Use formulas to count or total each category, then build the chart from that table.</p><p class='text-gray-700 mb-3'>Complete the source table in columns E and F. It will later become a chart comparing sales methods.</p><div id='l5-source-sheet' class='mb-3 overflow-x-auto'></div><button id='l5-source-check' class='ex-btn'>Check source table</button><div id='l5-source-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=15',function(){var data=[[\"Sale ID\",\"Method\",\"Income\",\"\",\"Method\",\"Number of sales\"],[\"S001\",\"Shop\",300,\"\",\"Shop\",\"\"] ,[\"S002\",\"Online\",820,\"\",\"Online\",\"\"] ,[\"S003\",\"Shop\",120,\"\",\"\",\"\"] ,[\"S004\",\"Online\",450,\"\",\"\",\"\"] ,[\"S005\",\"Shop\",240,\"\",\"\",\"\"]];var sheet=jspreadsheet(document.getElementById('l5-source-sheet'),{data:data,columns:[{width:90},{width:90},{width:90},{width:40},{width:100},{width:130}],minDimensions:[6,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l5-source-sheet'),sheet);JHNCCAddFormatToolbar(document.getElementById('l5-source-sheet'),sheet);JHNCCAddSheetTabs(document.getElementById('l5-source-sheet'),sheet);document.getElementById('l5-source-check').onclick=function(){var fb=document.getElementById('l5-source-fb');var rShop=String(sheet.getValueFromCoords(5,1,false)||'');var rOn=String(sheet.getValueFromCoords(5,2,false)||'');var vShop=parseFloat(sheet.getValueFromCoords(5,1,true));var vOn=parseFloat(sheet.getValueFromCoords(5,2,true));var ok=rShop.charAt(0)==='='&&rOn.charAt(0)==='='&&rShop.toUpperCase().indexOf('COUNTIF')!==-1&&rOn.toUpperCase().indexOf('COUNTIF')!==-1&&Math.abs(vShop-3)<0.1&&Math.abs(vOn-2)<0.1;if(ok){fb.className='ex-feedback ok';fb.textContent='Correct. This two-row table can be used to create a clear sales-method chart.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='Use COUNTIF on the Method range B2:B6. Shop should count 3 and Online should count 2.';}};});});});})();"
+    },
+    {
+      "id": "source-table-totals",
+      "title": "Totals for Dashboard Charts",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Totals for dashboard charts</h2><p class='text-gray-700 mb-3'>Some charts need totals, not counts. For example, comparing <strong>income</strong> from Shop and Online sales needs SUMIF, because it adds income values for each method.</p><p class='text-gray-700 mb-3'>Complete the income source table in columns E and F.</p><div id='l5-total-sheet' class='mb-3 overflow-x-auto'></div><button id='l5-total-check' class='ex-btn'>Check totals</button><div id='l5-total-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=15',function(){var data=[[\"Sale ID\",\"Method\",\"Income\",\"\",\"Method\",\"Income total\"],[\"S001\",\"Shop\",300,\"\",\"Shop\",\"\"] ,[\"S002\",\"Online\",820,\"\",\"Online\",\"\"] ,[\"S003\",\"Shop\",120,\"\",\"\",\"\"] ,[\"S004\",\"Online\",450,\"\",\"\",\"\"] ,[\"S005\",\"Shop\",240,\"\",\"\",\"\"]];var sheet=jspreadsheet(document.getElementById('l5-total-sheet'),{data:data,columns:[{width:90},{width:90},{width:90},{width:40},{width:100},{width:130}],minDimensions:[6,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l5-total-sheet'),sheet);JHNCCAddFormatToolbar(document.getElementById('l5-total-sheet'),sheet);JHNCCAddSheetTabs(document.getElementById('l5-total-sheet'),sheet);document.getElementById('l5-total-check').onclick=function(){var fb=document.getElementById('l5-total-fb');var rShop=String(sheet.getValueFromCoords(5,1,false)||'');var rOn=String(sheet.getValueFromCoords(5,2,false)||'');var vShop=parseFloat(sheet.getValueFromCoords(5,1,true));var vOn=parseFloat(sheet.getValueFromCoords(5,2,true));var ok=rShop.charAt(0)==='='&&rOn.charAt(0)==='='&&rShop.toUpperCase().indexOf('SUMIF')!==-1&&rOn.toUpperCase().indexOf('SUMIF')!==-1&&Math.abs(vShop-660)<0.1&&Math.abs(vOn-1270)<0.1;if(ok){fb.className='ex-feedback ok';fb.textContent='Correct. Shop income is 660 and Online income is 1270. This can become a comparison chart.';__markStepComplete();}else{fb.className='ex-feedback err';fb.textContent='Use SUMIF. Check B2:B6 for the method, then add matching income values from C2:C6.';}};});});});})();"
+    },
+    {
+      "id": "dashboard-layout",
+      "title": "Readable Layout",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Readable dashboard layout</h2><p class='text-gray-700 mb-3'>A dashboard should be easy to read quickly. BTEC tasks reward clear presentation choices that suit the audience.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Do</th><th>Avoid</th></tr></thead><tbody><tr><td>Use a clear title for the whole dashboard.</td><td>Leaving charts untitled.</td></tr><tr><td>Use consistent colours and readable font sizes.</td><td>Using many colours with no meaning.</td></tr><tr><td>Place related information near each other.</td><td>Scattering chart labels randomly.</td></tr><tr><td>Show units such as GBP or %.</td><td>Making viewers guess the units.</td></tr></tbody></table></div><div id='l5-layout'></div>",
+      "js": "createMCQSet('l5-layout',[{q:'Which dashboard title is clearest?',options:['Sales Method Income Dashboard','Chart','Data','Sheet 1'],answer:0,right:'Correct. It tells the viewer what the dashboard is about.'},{q:'Which label is clearest for a chart axis?',options:['Income (GBP)','Numbers','Data','Column C'],answer:0,right:'Correct. It includes the meaning and unit.'},{q:'Why keep colours consistent?',options:['So the dashboard is easier to read and compare','So formulas calculate faster','So rows sort automatically','So validation lists disappear'],answer:0,right:'Correct. Consistent design helps the viewer.'},{q:'Which is a poor dashboard choice?',options:['Tiny unlabelled charts with no title','A clear chart title','Readable data labels','A summary table beside its chart'],answer:0,right:'Correct. Tiny unlabelled charts are hard to understand.'}]);"
+    },
+    {
+      "id": "full-practice",
+      "title": "Full Dashboard Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Full practice: dashboard source data</h2><p class='text-gray-700 mb-3'>Complete this source table. It gives a dashboard enough evidence to show counts, income totals and percentages for each sales method.</p><div id='l5-full-sheet' class='mb-3 overflow-x-auto'></div><button id='l5-full-check' class='ex-btn'>Check dashboard source</button><div id='l5-full-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=15',function(){var data=[[\"Sale ID\",\"Method\",\"Income\",\"\",\"Method\",\"Count\",\"Income total\",\"% of income\"],[\"S001\",\"Shop\",300,\"\",\"Shop\",\"\",\"\",\"\"] ,[\"S002\",\"Online\",820,\"\",\"Online\",\"\",\"\",\"\"] ,[\"S003\",\"Shop\",120,\"\",\"Total\",\"\",\"=SUM(C2:C6)\",\"\"] ,[\"S004\",\"Online\",450,\"\",\"\",\"\"] ,[\"S005\",\"Shop\",240,\"\",\"\",\"\"]];var sheet=jspreadsheet(document.getElementById('l5-full-sheet'),{data:data,columns:[{width:90},{width:90},{width:90},{width:40},{width:90},{width:90},{width:120},{width:120}],minDimensions:[8,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(document.getElementById('l5-full-sheet'),sheet);JHNCCAddFormatToolbar(document.getElementById('l5-full-sheet'),sheet);JHNCCAddSheetTabs(document.getElementById('l5-full-sheet'),sheet);document.getElementById('l5-full-check').onclick=function(){var fb=document.getElementById('l5-full-fb');var checks=[{cell:[5,1],fn:'COUNTIF',exp:3},{cell:[5,2],fn:'COUNTIF',exp:2},{cell:[6,1],fn:'SUMIF',exp:660},{cell:[6,2],fn:'SUMIF',exp:1270},{cell:[7,1],fn:null,exp:34.2},{cell:[7,2],fn:null,exp:65.8}];var errors=[];checks.forEach(function(c){var raw=String(sheet.getValueFromCoords(c.cell[0],c.cell[1],false)||'');var val=parseFloat(sheet.getValueFromCoords(c.cell[0],c.cell[1],true));if(raw.charAt(0)!=='=')errors.push('A source cell needs a formula');else if(c.fn&&raw.toUpperCase().indexOf(c.fn+'(')===-1)errors.push('Use '+c.fn+' in the correct source cell');else if(Math.abs(val-c.exp)>0.6)errors.push('One source value is incorrect');});if(errors.length){fb.className='ex-feedback err';fb.textContent=errors[0]+' - check COUNTIF, SUMIF and percentage formulas.';return;}fb.className='ex-feedback ok';fb.textContent='Correct. This source table can support dashboard charts for count, income and percentage split.';__markStepComplete();};});});});})();"
+    },
+    {
+      "id": "exam",
+      "title": "Check What You Have Learned",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Check what you have learned</h2><p class='text-gray-700 mb-4'>These questions check dashboard and chart choices.</p><div id='l5-exam'></div>",
+      "js": "createMCQSet('l5-exam',[{q:'Which chart is usually best for comparing income across categories?',options:['Bar or column chart','Line chart only','Random picture','No chart'],answer:0,right:'Correct.'},{q:'Which chart is usually best for change over time?',options:['Line chart','Pie chart','Data validation list','Single raw row'],answer:0,right:'Correct.'},{q:'What should a chart source table contain?',options:['Only the labels and calculated values needed for that chart','Every raw row and every blank column','Only colours','Only headings'],answer:0,right:'Correct.'},{q:'Why add data labels or a clear axis?',options:['So viewers can understand the values','So formulas stop calculating','So the chart becomes hidden','So validation lists work'],answer:0,right:'Correct.'},{q:'Which is the clearest chart title?',options:['Income by Sales Method','Chart 1','Data','Thing'],answer:0,right:'Correct.'},{q:'What should dashboard percentages normally include?',options:['A percent symbol and clear label','No label','Only a decimal hidden in the sheet','A random colour only'],answer:0,right:'Correct.'}]);"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to complete this practice.</p><div id='l5-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'Best chart for comparing categories?',o:['Bar/column chart','Line chart','No chart','Raw table only'],a:0},{q:'Best chart for change over time?',o:['Line chart','Pie chart','Data validation','COUNTIF'],a:0},{q:'What should a dashboard chart have?',o:['Clear title and labels','No title','Hidden values','Random colours'],a:0},{q:'What function can count categories for a chart source table?',o:['COUNTIF','MIN','AVERAGE','IF only'],a:0},{q:'What function can total income by category?',o:['SUMIF','COUNTIF','MAX','Data validation'],a:0},{q:'A source table should be...',o:['Small and focused','As messy as possible','Hidden forever','Only blank cells'],a:0},{q:'A percentage of total is useful because it shows...',o:['Share of the whole','The highest value only','A spelling mistake','A row number'],a:0}];var solved=0,c=document.getElementById('l5-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite - streak reset.';setTimeout(render,1000);}};});}render();})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which chart is most suitable for comparing income from Shop and Online sales?",
+      "options": ["Bar or column chart", "Line chart", "Random image", "No chart"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which chart is most suitable for showing satisfaction ratings over four weeks?",
+      "options": ["Line chart", "Pie chart", "Single text box", "Sort button"],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "In F2 and F3, count how many sales were Shop and Online. These values could be used for a dashboard chart.",
+      "sheetData": [["Sale ID","Method","Income","","Method","Number of sales"],["S001","Shop",300,"","Shop",""],["S002","Online",820,"","Online",""],["S003","Shop",120,"","",""],["S004","Online",450,"","",""],["S005","Shop",240,"","",""]],
+      "columns": [{"width":90},{"width":90},{"width":90},{"width":40},{"width":100},{"width":130}],
+      "checks": [{"cell":"F2","functionName":"COUNTIF","expected":3,"tolerance":0.1,"formulaContains":["B2:B6","Shop"]},{"cell":"F3","functionName":"COUNTIF","expected":2,"tolerance":0.1,"formulaContains":["B2:B6","Online"]}],
+      "sampleAnswer": "F2: =COUNTIF(B2:B6,\"Shop\")\nF3: =COUNTIF(B2:B6,\"Online\")"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "In F2 and F3, calculate the total income for Shop and Online. These values could be used for an income comparison chart.",
+      "sheetData": [["Sale ID","Method","Income","","Method","Income total"],["S001","Shop",300,"","Shop",""],["S002","Online",820,"","Online",""],["S003","Shop",120,"","",""],["S004","Online",450,"","",""],["S005","Shop",240,"","",""]],
+      "columns": [{"width":90},{"width":90},{"width":90},{"width":40},{"width":100},{"width":130}],
+      "checks": [{"cell":"F2","functionName":"SUMIF","expected":660,"tolerance":0.1,"formulaContains":["B2:B6","Shop","C2:C6"]},{"cell":"F3","functionName":"SUMIF","expected":1270,"tolerance":0.1,"formulaContains":["B2:B6","Online","C2:C6"]}],
+      "sampleAnswer": "F2: =SUMIF(B2:B6,\"Shop\",C2:C6)\nF3: =SUMIF(B2:B6,\"Online\",C2:C6)"
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "The total income is in G4. In H2 and H3, calculate each method's percentage of total income.",
+      "sheetData": [["Sale ID","Method","Income","","Method","Income total","Total income","% of income"],["S001","Shop",300,"","Shop",660,"=SUM(C2:C6)",""],["S002","Online",820,"","Online",1270,"",""],["S003","Shop",120,"","Total","","=SUM(F2:F3)",""],["S004","Online",450,"","","","",""],["S005","Shop",240,"","","","",""]],
+      "columns": [{"width":90},{"width":90},{"width":90},{"width":40},{"width":100},{"width":110},{"width":110},{"width":110}],
+      "checks": [{"cell":"H2","expected":34.2,"tolerance":0.6,"formulaContains":["F2","G4","*100"]},{"cell":"H3","expected":65.8,"tolerance":0.6,"formulaContains":["F3","G4","*100"]}],
+      "sampleAnswer": "H2: =F2/G$4*100\nH3: =F3/G$4*100"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "What should a chart source table contain?",
+      "options": ["Only the labels and calculated values needed for that chart", "Every raw row and blank column", "Only the title", "Only colours"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which dashboard title is clearest?",
+      "options": ["Income by Sales Method", "Chart", "Data", "Sheet"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Why add labels or a value axis to a chart?",
+      "options": ["So the viewer can understand the values being shown", "So formulas are deleted", "So the chart cannot be edited", "So the worksheet sorts itself"],
+      "answer": 0
+    }
+  ]
+}
