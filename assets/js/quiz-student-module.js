@@ -434,7 +434,9 @@ function ensureQuizSpreadsheetAssets(cb) {
   addCss('assets/css/jspreadsheet.css');
   addScript('assets/js/jsuites.js', function() {
     addScript('assets/js/jspreadsheet.js', function() {
-      addScript('assets/js/jspreadsheet-formula-bar.js?v=20', cb);
+      addScript('assets/js/jspreadsheet-formula-bar.js?v=20', function() {
+        addScript('assets/js/jspreadsheet-chart.js?v=1', cb);
+      });
     });
   });
 }
@@ -476,6 +478,11 @@ function renderQuizSpreadsheetTask(qIdx, q) {
     });
     if (typeof JHNCCAddFormulaBar === 'function') JHNCCAddFormulaBar(holder, sheet);
     if (typeof JHNCCAddFormatToolbar === 'function') JHNCCAddFormatToolbar(holder, sheet);
+    if (typeof JHNCCAddSheetTabs === 'function') JHNCCAddSheetTabs(holder, sheet);
+    // If the question defines a chart config, render a live chart below the sheet
+    if (q.chart && typeof JHNCCAddChart === 'function') {
+      JHNCCAddChart(holder, sheet, q.chart);
+    }
     var firstCheck = Array.isArray(q.checks) && q.checks.length ? quizSpreadsheetCellToCoords(q.checks[0].cell) : null;
     if (firstCheck && typeof sheet.updateSelectionFromCoords === 'function') {
       setTimeout(function() {

@@ -1,0 +1,169 @@
+{
+  "id": "btec-dit-spreadsheets-lesson-6",
+  "title": "L6: Building Dashboard Charts",
+  "description": "Create, customise and interpret interactive charts from spreadsheet data for BTEC DIT Component 2.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now: Charts and Dashboards",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do now</h2><p class='text-gray-700 mb-3'>These questions check the dashboard and chart knowledge you need before creating your own charts.</p><div id='l6-dn'></div>",
+      "js": "createMCQSet('l6-dn',[{q:'Which chart type is best for comparing income across two sales methods?',options:['Column or bar chart','Line chart','Scatter chart','No chart needed'],answer:0,right:'Correct. Column and bar charts compare categories clearly.'},{q:'Which chart type is best for showing each method as a share of the total?',options:['Pie or doughnut chart','Line chart','Column chart only','Table only'],answer:0,right:'Correct. Pie and doughnut charts show parts of a whole.'},{q:'Which chart type is best for showing how satisfaction ratings changed from Week 1 to Week 4?',options:['Line chart','Pie chart','Doughnut chart','Data validation list'],answer:0,right:'Correct. Line charts show change over time.'},{q:'Why should a dashboard chart be built from a small summary table rather than the full raw dataset?',options:['It makes the chart clearer and easier to read','It hides all the data','It deletes duplicate rows','It sorts the data automatically'],answer:0,right:'Correct. Summary tables keep charts focused and readable.'},{q:'What should almost every dashboard chart include?',options:['A clear title and labelled axes','A hidden formula','Unlabelled colours only','Blank rows below it'],answer:0,right:'Correct. Viewers need titles and labels to understand what they are looking at.'}]);"
+    },
+    {
+      "id": "live-charts",
+      "title": "Charts Update Live",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Charts update live</h2><p class='text-gray-700 mb-3'>A chart is linked directly to its source table. When a value in the table changes, the chart updates straight away with no extra steps.</p><p class='text-gray-700 mb-3'>The source table below shows income by sales method. A column chart has been generated from it automatically. Right-click the chart to see the available options, then change it to a <strong>Pie</strong> or <strong>Doughnut</strong> chart. A share-of-the-total chart suits this data better than a column chart.</p><p class='text-gray-500 text-sm mb-3'>Right-click the chart area, choose Change Chart Type, then select Pie or Doughnut.</p><div id='l6-live-sheet' class='mb-3 overflow-x-auto'></div><button id='l6-live-check' class='ex-btn'>Check</button><div id='l6-live-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=20',function(){ljs('assets/js/jspreadsheet-chart.js?v=1',function(){var data=[['Method','Income (£)'],['Shop',660],['Online',1270]];var el=document.getElementById('l6-live-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:130},{width:130}],minDimensions:[2,3],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);var ctrl=JHNCCAddChart(el,sheet,{type:'column',labelCol:0,series:[1]});document.getElementById('l6-live-check').onclick=function(){var fb=document.getElementById('l6-live-fb');var cfg=ctrl.getConfig();if(cfg.type==='pie'||cfg.type==='doughnut'){fb.className='ex-feedback ok';fb.textContent='Correct. A pie or doughnut chart shows each method as a share of total income.';__markStepComplete();}else{fb.className='ex-feedback hint';fb.textContent='Right-click the chart, choose Change Chart Type, then select Pie or Doughnut, then click Check.';}};});});});});})();"
+    },
+    {
+      "id": "select-data",
+      "title": "Select Your Data",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Select your data</h2><p class='text-gray-700 mb-3'>When a source table has more than one numeric column, you can choose which columns the chart should display. Right-click the chart and choose <strong>Select Data</strong> to open the data source dialog.</p><p class='text-gray-700 mb-2'>The source table has two numeric columns: Number of sales and Income. The chart currently shows both. For a focused income comparison, you only need Income.</p><p class='text-gray-700 mb-2'>Right-click the chart and choose Select Data. In the dialog:</p><ul class='text-gray-700 text-sm mb-3' style='list-style:disc;padding-left:1.4rem;line-height:2'><li>Untick <strong>Number of sales</strong> in the Legend Entries panel.</li><li>Leave <strong>Income</strong> ticked.</li><li>Click OK.</li></ul><div id='l6-sel-sheet' class='mb-3 overflow-x-auto'></div><button id='l6-sel-check' class='ex-btn'>Check</button><div id='l6-sel-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=20',function(){ljs('assets/js/jspreadsheet-chart.js?v=1',function(){var data=[['Method','Number of sales','Income (£)'],['Shop',3,660],['Online',2,1270]];var el=document.getElementById('l6-sel-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:120},{width:140},{width:120}],minDimensions:[3,3],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);var ctrl=JHNCCAddChart(el,sheet,{type:'bar',labelCol:0,series:[1,2]});document.getElementById('l6-sel-check').onclick=function(){var fb=document.getElementById('l6-sel-fb');var cfg=ctrl.getConfig();var s=cfg.series||[];var hasIncome=s.indexOf(2)!==-1;var hasCount=s.indexOf(1)!==-1;if(hasIncome&&!hasCount){fb.className='ex-feedback ok';fb.textContent='Correct. The chart now shows Income by method only. Removing Number of sales keeps the chart focused.';__markStepComplete();}else if(!hasIncome){fb.className='ex-feedback hint';fb.textContent='Make sure Income (column C) is ticked in the Select Data dialog.';}else{fb.className='ex-feedback hint';fb.textContent='Number of sales is still selected. Right-click the chart, choose Select Data, and untick it.';}};});});});});})();"
+    },
+    {
+      "id": "add-to-chart",
+      "title": "Adding a New Category",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Adding a new category</h2><p class='text-gray-700 mb-3'>When you add a new row to a source table, the chart includes it automatically. This is why keeping data in a structured table is important for dashboard work.</p><p class='text-gray-700 mb-2'>The source table currently shows Shop and Online income. A third sales method has just launched. Add it to row 4:</p><ul class='text-gray-700 text-sm mb-3' style='list-style:disc;padding-left:1.4rem;line-height:2'><li>Type <strong>Postal</strong> in cell A4.</li><li>Type <strong>380</strong> in cell B4.</li></ul><p class='text-gray-500 text-sm mb-3'>Watch the chart as you type. It should update to show three categories as soon as A4 has a value.</p><div id='l6-add-sheet' class='mb-3 overflow-x-auto'></div><button id='l6-add-check' class='ex-btn'>Check</button><div id='l6-add-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=20',function(){ljs('assets/js/jspreadsheet-chart.js?v=1',function(){var data=[['Method','Income (£)'],['Shop',660],['Online',1270],['','']];var el=document.getElementById('l6-add-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:130},{width:130}],minDimensions:[2,4],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);JHNCCAddChart(el,sheet,{type:'column',labelCol:0,series:[1]});document.getElementById('l6-add-check').onclick=function(){var fb=document.getElementById('l6-add-fb');var lblA4=String(sheet.getValueFromCoords(0,3,true)||'').trim();var valB4=parseFloat(sheet.getValueFromCoords(1,3,true));if(!lblA4){fb.className='ex-feedback hint';fb.textContent='Type the category name in cell A4 first.';return;}if(isNaN(valB4)||valB4<=0){fb.className='ex-feedback hint';fb.textContent='Add the income value 380 in cell B4.';return;}if(Math.abs(valB4-380)>0.5){fb.className='ex-feedback err';fb.textContent='Income for the third method should be 380.';return;}fb.className='ex-feedback ok';fb.textContent='Correct. The chart updated to three bars as soon as you added a label in column A.';__markStepComplete();};});});});});})();"
+    },
+    {
+      "id": "full-practice",
+      "title": "Full Practice: Build and Chart",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Full practice: build and chart</h2><p class='text-gray-700 mb-3'>The raw sales records are in columns D and E. Complete the summary table in columns A and B using SUMIF, then set the chart to an appropriate type for comparing income between methods.</p><div class='ex-box mb-3'><table class='bb-table'><thead><tr><th>Cell</th><th>Task</th></tr></thead><tbody><tr><td>B2</td><td>Total income where column D says Shop (use D2:D6 and E2:E6)</td></tr><tr><td>B3</td><td>Total income where column D says Online (use D2:D6 and E2:E6)</td></tr></tbody></table></div><p class='text-gray-500 text-sm mb-3'>Once the formulas are in, right-click the chart and change it to Column or Bar type.</p><div id='l6-full-sheet' class='mb-3 overflow-x-auto'></div><button id='l6-full-check' class='ex-btn'>Check</button><div id='l6-full-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=20',function(){ljs('assets/js/jspreadsheet-chart.js?v=1',function(){var data=[['Method','Income (£)','','Sale Method','Income (£)'],['Shop','','','Shop',300],['Online','','','Online',820],['','','','Shop',120],['','','','Online',450],['','','','Shop',240]];var el=document.getElementById('l6-full-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:100},{width:110},{width:28},{width:120},{width:110}],minDimensions:[5,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);var ctrl=JHNCCAddChart(el,sheet,{type:'pie',labelCol:0,series:[1]});document.getElementById('l6-full-check').onclick=function(){var fb=document.getElementById('l6-full-fb');var rawB2=String(sheet.getValueFromCoords(1,1,false)||'');var rawB3=String(sheet.getValueFromCoords(1,2,false)||'');var valB2=parseFloat(sheet.getValueFromCoords(1,1,true));var valB3=parseFloat(sheet.getValueFromCoords(1,2,true));var cfg=ctrl.getConfig();var errors=[];if(rawB2.charAt(0)!=='=')errors.push('B2 needs a SUMIF formula');else if(rawB2.toUpperCase().indexOf('SUMIF')===-1)errors.push('Use SUMIF in B2');else if(Math.abs(valB2-660)>0.5)errors.push('B2 should total 660');if(rawB3.charAt(0)!=='=')errors.push('B3 needs a SUMIF formula');else if(rawB3.toUpperCase().indexOf('SUMIF')===-1)errors.push('Use SUMIF in B3');else if(Math.abs(valB3-1270)>0.5)errors.push('B3 should total 1270');if(cfg.type!=='column'&&cfg.type!=='bar')errors.push('Right-click the chart and change to Column or Bar type for category comparison');if(errors.length){fb.className='ex-feedback err';fb.textContent=errors.join(' | ');return;}fb.className='ex-feedback ok';fb.textContent='Correct. Shop=660, Online=1270, and a column or bar chart is the right choice for comparing categories.';__markStepComplete();};});});});});})();"
+    },
+    {
+      "id": "exam",
+      "title": "Check What You Have Learned",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Check what you have learned</h2><p class='text-gray-700 mb-4'>These questions cover chart creation and customisation for BTEC dashboards.</p><div id='l6-exam'></div>",
+      "js": "createMCQSet('l6-exam',[{q:'You right-click a chart and choose Select Data. What can you change?',options:['Which columns are series and which column provides the labels','The font of the whole worksheet','The SUMIF range only','The number of rows in the table'],answer:0,right:'Correct. Select Data lets you choose series columns and the label column.'},{q:'A chart updates automatically when the source table changes. Why is this useful?',options:['You do not need to recreate the chart every time a value changes','It deletes old data','It prevents errors in formulas','It locks the worksheet'],answer:0,right:'Correct. Live charts save time and keep the dashboard up to date.'},{q:'Income by sales method (Shop vs Online) is being charted. Which chart type is most suitable for comparison?',options:['Column or bar chart','Line chart only','Scatter chart','No chart'],answer:0,right:'Correct. Column and bar charts compare categories side by side.'},{q:'Income by sales method as a share of the total is being charted. Which chart type is most suitable?',options:['Pie or doughnut chart','Line chart','Column chart only','Raw table only'],answer:0,right:'Correct. Pie and doughnut charts show proportional shares.'},{q:'A source table has three columns: Method, Count and Income. You only want to chart Income. What should you do?',options:['Right-click the chart, choose Select Data, and untick Count','Delete the Count column permanently','Change all Count values to zero','Use a different worksheet'],answer:0,right:'Correct. Select Data lets you choose which series to display without changing the source data.'},{q:'After adding a new row to the source table, what happens to the linked chart?',options:['It updates automatically to include the new row','It must be deleted and rebuilt','It freezes until you save the file','Nothing changes'],answer:0,right:'Correct. The chart stays in sync with the source table at all times.'}]);"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to finish.</p><div id='l6-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'Which chart type compares values across categories?',o:['Column or bar chart','Line chart','Pie chart','Scatter chart'],a:0},{q:'Which chart type shows parts of a whole?',o:['Pie or doughnut chart','Line chart','Column chart only','Bar chart only'],a:0},{q:'Which chart type shows change over time?',o:['Line chart','Pie chart','Doughnut chart','Data validation'],a:0},{q:'You want to show income for Shop and Online only. The source table also has a Total row. What should you check?',o:['That the Total row label is empty so it is excluded from the chart','That all rows are selected','That COUNTIF is in column C','That the chart title is hidden'],a:0},{q:'What does right-click on a chart give you access to?',o:['Change Chart Type and Select Data','Only delete','Only format toolbar','Only SUMIF'],a:0},{q:'A chart shows both Count and Income. You want Income only. What do you do?',o:['Right-click, Select Data, untick Count','Delete the Count column','Change Count values to zero','Add a new sheet'],a:0},{q:'You add Postal as a third row in the source table. What happens to the chart?',o:['It updates automatically','Nothing until you rebuild it','The chart is deleted','The formulas break'],a:0},{q:'Which is the correct reason to build a chart from a summary table rather than raw data?',o:['The chart is clearer and shows only the key comparisons','Raw data always causes errors','Summary tables are smaller files','Charts cannot read raw data'],a:0}];var solved=0,c=document.getElementById('l6-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite. Streak reset.';setTimeout(render,1000);}};});}render();})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which chart type is most suitable for comparing income from Shop and Online sales?",
+      "options": ["Column or bar chart", "Line chart", "Pie chart only", "No chart"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which chart type shows each method as a share of total income?",
+      "options": ["Pie or doughnut chart", "Line chart", "Column chart", "Scatter chart"],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 180,
+      "q": "Complete the summary table using SUMIF. B2 = total income where column D says Shop. B3 = total income where column D says Online. Use D2:D6 and E2:E6. Watch the chart update as you type.",
+      "chart": { "type": "bar", "labelCol": 0, "series": [1] },
+      "sheetData": [
+        ["Method", "Income (£)", "", "Sale Method", "Income (£)"],
+        ["Shop",   "",           "", "Shop",        300],
+        ["Online", "",           "", "Online",       820],
+        ["",       "",           "", "Shop",         120],
+        ["",       "",           "", "Online",       450],
+        ["",       "",           "", "Shop",         240]
+      ],
+      "columns": [
+        {"width": 100}, {"width": 110}, {"width": 28}, {"width": 120}, {"width": 110}
+      ],
+      "checks": [
+        {
+          "cell": "B2",
+          "functionName": "SUMIF",
+          "expected": 660,
+          "tolerance": 0.1,
+          "formulaContains": ["D2:D6", "Shop", "E2:E6"]
+        },
+        {
+          "cell": "B3",
+          "functionName": "SUMIF",
+          "expected": 1270,
+          "tolerance": 0.1,
+          "formulaContains": ["D2:D6", "Online", "E2:E6"]
+        }
+      ],
+      "sampleAnswer": "B2: =SUMIF(D2:D6,\"Shop\",E2:E6)\nB3: =SUMIF(D2:D6,\"Online\",E2:E6)"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "You add a new row to the source table. What happens to the chart?",
+      "options": ["It updates automatically", "You must rebuild it", "It is deleted", "Nothing changes"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A source table has Method, Count and Income columns. You only want to chart Income. What should you do?",
+      "options": ["Right-click the chart, choose Select Data, and untick Count", "Delete the Count column", "Change Count to zero", "Use a different sheet"],
+      "answer": 0
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 150,
+      "q": "The summary table is already complete. In C2, calculate Shop income as a percentage of total income. The total is in B4. Format C2 as Percentage.",
+      "chart": { "type": "pie", "labelCol": 0, "series": [2] },
+      "sheetData": [
+        ["Method", "Income (£)", "% of Total"],
+        ["Shop",   660,          ""],
+        ["Online", 1270,         ""],
+        ["Total",  "=SUM(B2:B3)", ""]
+      ],
+      "columns": [
+        {"width": 110}, {"width": 110}, {"width": 120}
+      ],
+      "checks": [
+        {
+          "cell": "C2",
+          "expected": 0.342,
+          "tolerance": 0.006,
+          "formulaContains": ["B2", "B4", "/"],
+          "expectedFormat": "percent"
+        }
+      ],
+      "sampleAnswer": "C2: =B2/B$4, formatted as Percentage"
+    },
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "Why build a dashboard chart from a summary table rather than the full raw dataset?",
+      "options": [
+        "The chart is focused and easier to read",
+        "Raw data always causes formula errors",
+        "Charts cannot display raw data",
+        "Summary tables are a different file type"
+      ],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which option appears when you right-click a chart?",
+      "options": [
+        "Change Chart Type and Select Data",
+        "Only delete the chart",
+        "Only the format toolbar",
+        "Only freeze panes"
+      ],
+      "answer": 0
+    }
+  ]
+}

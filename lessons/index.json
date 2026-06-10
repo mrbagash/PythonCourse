@@ -241,6 +241,12 @@
               "title": "L5: Dashboards & Charts",
               "file": "lessons/btec-dit-spreadsheets-lesson-5.json",
               "order": 5
+            },
+            {
+              "id": "btec-dit-spreadsheets-lesson-6",
+              "title": "L6: Building Dashboard Charts",
+              "file": "lessons/btec-dit-spreadsheets-lesson-6.json",
+              "order": 6
             }
           ]
         }
