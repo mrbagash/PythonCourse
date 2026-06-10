@@ -212,39 +212,43 @@ function googleLookupRowToCandidate(row, className, cols) {
   };
 }
 
-async function findGoogleStudentCode(spreadsheetId, email) {
-  // Step 1: fetch all sheet titles — 1 API call
-  var metadata = await googleStudentApiRequest(
-    'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) + '?fields=sheets.properties'
-  );
-  var sheets = (metadata.sheets || []).filter(function(s) { return s.properties && s.properties.title; });
-  if (!sheets.length) return { match: null, candidates: [] };
-
-  // Step 2: batch-fetch every sheet's data in a single API call instead of one per sheet
-  var params = new URLSearchParams();
-  sheets.forEach(function(s) {
-    params.append('ranges', quoteGoogleSheetName(s.properties.title) + '!A1:D500');
-  });
-  var batchData = await googleStudentApiRequest(
+// Fetches all sheet data for the student code spreadsheet in a single API call.
+// Uses includeGridData so metadata + values come back together (no sequential requests).
+async function fetchAllStudentSheetData(spreadsheetId) {
+  var fields = 'sheets(properties/title,data/rowData/values/formattedValue)';
+  var data = await googleStudentApiRequest(
     'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(spreadsheetId) +
-    '/values:batchGet?' + params.toString()
+    '?includeGridData=true&fields=' + encodeURIComponent(fields)
   );
-  var valueRanges = batchData.valueRanges || [];
+  return (data.sheets || [])
+    .filter(function(s) { return s.properties && s.properties.title; })
+    .map(function(s) {
+      var rowData = (s.data && s.data[0] && s.data[0].rowData) || [];
+      return {
+        title: s.properties.title,
+        rows: rowData.map(function(rd) {
+          return (rd.values || []).map(function(cell) {
+            return cell.formattedValue != null ? String(cell.formattedValue) : '';
+          });
+        })
+      };
+    });
+}
 
-  // Step 3: search entirely in local memory — no more network requests
+// Searches pre-fetched sheet data locally — no network calls.
+function searchStudentSheetData(sheetData, email) {
   var candidates = [];
   var seenCandidateCodes = {};
-  for (var i = 0; i < sheets.length; i++) {
-    var title = sheets[i].properties.title;
-    var rows = (valueRanges[i] && valueRanges[i].values) || [];
+  for (var i = 0; i < sheetData.length; i++) {
+    var title = sheetData[i].title;
+    var rows  = sheetData[i].rows;
     var cols = googleLookupHeaderIndexes(rows[0] || []);
     var hasHeader = cols.email != null || cols.name != null || cols.firstName != null || cols.code != null;
     for (var r = hasHeader ? 1 : 0; r < rows.length; r++) {
       var row = rows[r] || [];
       var rowEmail = cols.email != null ? row[cols.email] : row[0];
       if (String(rowEmail || '').trim().toLowerCase() === email) {
-        var direct = googleLookupRowToCandidate(row, title, hasHeader ? cols : null);
-        return { match: direct, candidates: candidates };
+        return { match: googleLookupRowToCandidate(row, title, hasHeader ? cols : null), candidates: candidates };
       }
       if (!looksLikeEmail(rowEmail)) {
         var candidate = googleLookupRowToCandidate(row, title, hasHeader ? cols : null);
@@ -351,6 +355,29 @@ function chooseGoogleStudentCode(candidates, email) {
   });
 }
 
+// Returns a Promise that resolves to parsed sheet data for the given spreadsheet ID.
+// Caches the spreadsheet ID in sessionStorage so that on repeat logins the Drive
+// lookup is skipped entirely — the email fetch and data fetch can then run in parallel.
+function buildSheetDataPromise() {
+  var cachedId = sessionStorage.getItem('pylearn_student_sheet_id');
+  if (cachedId) {
+    return fetchAllStudentSheetData(cachedId).catch(function() {
+      // Cached ID is stale (sheet renamed / moved) — clear it and look up fresh
+      sessionStorage.removeItem('pylearn_student_sheet_id');
+      return findGoogleCodeSpreadsheet().then(function(s) {
+        if (!s) throw new Error('Could not find the classroom code spreadsheet in the configured Drive folder.');
+        sessionStorage.setItem('pylearn_student_sheet_id', s.id);
+        return fetchAllStudentSheetData(s.id);
+      });
+    });
+  }
+  return findGoogleCodeSpreadsheet().then(function(s) {
+    if (!s) throw new Error('Could not find the classroom code spreadsheet in the configured Drive folder.');
+    sessionStorage.setItem('pylearn_student_sheet_id', s.id);
+    return fetchAllStudentSheetData(s.id);
+  });
+}
+
 async function signInGoogleStudent() {
   setLoginError('');
   clearGoogleStudentCodePicker();
@@ -358,22 +385,30 @@ async function signInGoogleStudent() {
   var loginModal = document.getElementById('modal-login');
   try {
     if (button) { button.disabled = true; button.textContent = 'Opening Google…'; }
-    // requestGoogleStudentToken opens a browser popup — keep login modal visible during this
+    // OAuth popup — keep login modal visible while the user interacts with it
     await requestGoogleStudentToken();
-    // Token acquired — hide login modal and block the page with a spinner
+
+    // Token acquired — hide login modal, show blocking spinner
     if (loginModal) loginModal.classList.add('hidden');
     showLoggingInModal('Finding your code…');
-    var email = await getGoogleStudentEmail();
-    var spreadsheet = await findGoogleCodeSpreadsheet();
-    if (!spreadsheet) throw new Error('Could not find the classroom code spreadsheet in the configured Drive folder.');
-    var lookup = await findGoogleStudentCode(spreadsheet.id, email);
-    var match = lookup && lookup.match;
+
+    // Email and sheet data are independent — fetch both in parallel.
+    // On a cached session the Drive lookup is skipped so both requests fire simultaneously.
+    var results = await Promise.all([
+      getGoogleStudentEmail(),
+      buildSheetDataPromise()
+    ]);
+    var email     = results[0];
+    var sheetData = results[1];
+
+    var lookup = searchStudentSheetData(sheetData, email);
+    var match  = lookup && lookup.match;
     if (!match) {
-      // No automatic email match — show picker inside the login modal
+      // No automatic email match — show picker in the login modal
       hideLoggingInModal();
       if (loginModal) loginModal.classList.remove('hidden');
       match = await chooseGoogleStudentCode((lookup && lookup.candidates) || [], email);
-      // Candidate chosen — re-hide login modal and show spinner while we complete the login
+      // Candidate chosen — re-hide modal and show spinner while completing login
       if (loginModal) loginModal.classList.add('hidden');
       showLoggingInModal('Logging in…');
     }
@@ -382,7 +417,6 @@ async function signInGoogleStudent() {
     var last  = match.lastName  || '';
     await completeStudentCodeLogin(first, last, match.code, match.className);
     hideLoggingInModal();
-    // login modal stays hidden on success
   } catch(e) {
     hideLoggingInModal();
     if (loginModal) loginModal.classList.remove('hidden');
