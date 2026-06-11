@@ -59,6 +59,7 @@
   var S = {
     vm:               null,
     running:          false,
+    gen:              0,    // incremented on every stop; threads check this to self-terminate
     pressedKeys:      {},
     mouse:            { x: 0, y: 0 },
     spriteCode:       {},   // spriteName → [{ id, name, code }]
@@ -207,11 +208,15 @@
 
     Sk.builtins['__ps_wait'] = new Sk.builtin.func(function (secsArg) {
       var ms = Math.max(0, (Sk.ffi.remapToJs(secsArg) || 0) * 1000);
+      var myGen = S.gen;  // snapshot generation at the moment this wait begins
       var susp = new Sk.misceval.Suspension();
       susp.data = {
         type: 'Sk.promise',
         promise: new Promise(function (resolve) {
-          setTimeout(function () { resolve(S.running ? null : '__ps_stop__'); }, ms || FRAME_MS);
+          setTimeout(function () {
+            // Stop if running was cancelled OR a new run started (gen changed)
+            resolve((S.running && S.gen === myGen) ? null : '__ps_stop__');
+          }, ms || FRAME_MS);
         })
       };
       susp.resume = function (val) {
@@ -462,7 +467,9 @@
 
   function startAll() {
     if (!S.vm) return;
-    if (S.running) stopAll(); // clean up any previous run
+    // Always stop first — this increments S.gen, poisoning any sleeping old threads.
+    // They will see gen !== myGen on their next wake and throw __pyscratch_stopped__.
+    stopAll();
     S.running = true;
     clearConsole();
 
@@ -479,6 +486,7 @@
 
   function stopAll() {
     S.running = false;
+    S.gen++;              // invalidates ALL sleeping threads from previous runs
     if (S.vm) {
       try { S.vm.stopAll(); } catch (e) {}
     }
@@ -872,20 +880,30 @@
       try { vm.runtime.on('TARGETS_UPDATE', function () { sync(); }); } catch(e) {}
       window.addEventListener('resize', adjustOverlay);
 
-      // TurboWarp's green flag → start Python.
-      // vm.runtime emits PROJECT_START when the green flag is clicked.
-      // setTimeout(0) ensures TurboWarp finishes its own reset before Python starts.
+      // Hook TurboWarp's green flag → start Python.
       try {
         vm.runtime.on('PROJECT_START', function () {
           setTimeout(startAll, 0);
         });
+      } catch(e) {
+        console.warn('[PyScratch] Could not attach PROJECT_START:', e);
+      }
 
-        // TurboWarp's stop button → also stop Python threads.
+      // Hook TurboWarp's stop button → stop Python.
+      // Patch vm.stopAll directly — more reliable than PROJECT_STOP_ALL event
+      // since TurboWarp's fork doesn't always emit it consistently.
+      try {
+        var _origStop = vm.stopAll.bind(vm);
+        vm.stopAll = function () {
+          stopAll();            // stop Python threads
+          return _origStop();  // let TurboWarp stop its own threads
+        };
+        // Also listen for the runtime event as a fallback
         vm.runtime.on('PROJECT_STOP_ALL', function () {
           if (S.running) stopAll();
         });
       } catch(e) {
-        console.warn('[PyScratch] Could not attach runtime events:', e);
+        console.warn('[PyScratch] Could not hook stopAll:', e);
       }
 
       console.log('[PyScratch] Ready. vm=', vm, 'runtime=', vm.runtime);
