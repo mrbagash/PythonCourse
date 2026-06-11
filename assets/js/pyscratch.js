@@ -24,20 +24,24 @@
 
   var API_LIST = [
     // Movement
-    { n: 'move_steps',    s: 'move_steps(steps)',       c: 'mov'  },
-    { n: 'turn',          s: 'turn(degrees)',            c: 'mov'  },
-    { n: 'go_to',         s: 'go_to(x, y)',              c: 'mov'  },
-    { n: 'glide_to',      s: 'glide_to(x, y, secs)',     c: 'mov'  },
-    { n: 'point_towards', s: 'point_towards(target)',    c: 'mov'  },
-    { n: 'change_x',      s: 'change_x(dx)',             c: 'mov'  },
-    { n: 'change_y',      s: 'change_y(dy)',             c: 'mov'  },
-    { n: 'set_x',         s: 'set_x(x)',                 c: 'mov'  },
-    { n: 'set_y',         s: 'set_y(y)',                 c: 'mov'  },
-    { n: 'get_x',         s: 'get_x()',                  c: 'mov'  },
-    { n: 'get_y',         s: 'get_y()',                  c: 'mov'  },
-    { n: 'get_direction', s: 'get_direction()',          c: 'mov'  },
-    { n: 'on_edge',       s: 'on_edge()',                c: 'mov'  },
-    { n: 'bounce',        s: 'bounce()',                 c: 'mov'  },
+    { n: 'move_steps',          s: 'move_steps(steps)',                    c: 'mov'  },
+    { n: 'turn_right',          s: 'turn_right(degrees)',                  c: 'mov'  },
+    { n: 'turn_left',           s: 'turn_left(degrees)',                   c: 'mov'  },
+    { n: 'go_to',               s: 'go_to(target_or_x, y=None)',           c: 'mov'  },
+    { n: 'go_to_xy',            s: 'go_to_xy(x, y)',                       c: 'mov'  },
+    { n: 'glide_to',            s: 'glide_to(target_or_x, y_or_secs, secs=None)', c: 'mov'  },
+    { n: 'glide_to_xy',         s: 'glide_to_xy(secs, x, y)',              c: 'mov'  },
+    { n: 'point_in_direction',  s: 'point_in_direction(degrees)',          c: 'mov'  },
+    { n: 'point_towards',       s: 'point_towards(target)',                c: 'mov'  },
+    { n: 'change_x',            s: 'change_x(dx)',                         c: 'mov'  },
+    { n: 'change_y',            s: 'change_y(dy)',                         c: 'mov'  },
+    { n: 'set_x',               s: 'set_x(x)',                             c: 'mov'  },
+    { n: 'set_y',               s: 'set_y(y)',                             c: 'mov'  },
+    { n: 'if_on_edge_bounce',   s: 'if_on_edge_bounce()',                  c: 'mov'  },
+    { n: 'set_rotation_style',  s: 'set_rotation_style(style)',            c: 'mov'  },
+    { n: 'x_position',          s: 'x_position()',                         c: 'mov'  },
+    { n: 'y_position',          s: 'y_position()',                         c: 'mov'  },
+    { n: 'direction',           s: 'direction()',                          c: 'mov'  },
     // Looks
     { n: 'say',           s: 'say(message, secs=2)',     c: 'look' },
     { n: 'think',         s: 'think(message, secs=2)',   c: 'look' },
@@ -64,7 +68,8 @@
     mouse:            { x: 0, y: 0 },
     spriteCode:       {},   // spriteName → [{ id, name, code }]
     activeSprite:     null,
-    activeThreadIdx:  0
+    activeThreadIdx:  0,
+    themeSignature:   ''
   };
 
   // ── DOM helpers ───────────────────────────────────────────────
@@ -135,26 +140,43 @@
   // ── Python prologue generator ─────────────────────────────────
   // Uses Sk.builtins for __ps_call, __ps_wait, __ps_stop (set by setupBridge).
   // Fixed-arg _psc helper avoids *args unpacking which varies across Skulpt versions.
-  function makePrologue(spriteName) {
+  //
+  // myGen is embedded as a Python literal (__ps_tgen__) so each thread carries
+  // its own generation token inside its own module globals — immune to the shared
+  // Sk.builtins being overwritten by later threads.  The static builtins receive
+  // __ps_tgen__ as an argument and compare it against S.gen to detect staleness.
+  function makePrologue(spriteName, myGen) {
     var n = JSON.stringify(spriteName);
+    var g = String(myGen);           // embed as a Python integer literal
     return [
       '__ps_sprite__ = ' + n,
-      'def _psc(f,a0=None,a1=None,a2=None): return __ps_call(f,__ps_sprite__,a0,a1,a2)',
+      '__ps_tgen__   = ' + g,        // this thread's immutable generation token
+      'def _psc(f,a0=None,a1=None,a2=None): return __ps_call(f,__ps_sprite__,__ps_tgen__,a0,a1,a2)',
       // Movement
       'def move_steps(s): return _psc("move_steps",s)',
-      'def turn(d): return _psc("turn",d)',
+      'def turn_right(d): return _psc("turn_right",d)',
+      'def turn_left(d): return _psc("turn_left",d)',
+      'def turn(d): return turn_right(d)',
       'def go_to(x,y=None): return _psc("go_to",x,y)',
-      'def glide_to(x,y,s=1): return _psc("glide_to",x,y,s)',
+      'def go_to_xy(x,y): return _psc("go_to_xy",x,y)',
+      'def glide_to(target_or_x,y_or_secs=None,secs=None): return _psc("glide_to",target_or_x,y_or_secs,secs)',
+      'def glide_to_xy(s,x,y): return _psc("glide_to_xy",s,x,y)',
+      'def point_in_direction(d): return _psc("point_in_direction",d)',
       'def point_towards(t,b=None): return _psc("point_towards",t,b)',
       'def change_x(v): return _psc("change_x",v)',
       'def change_y(v): return _psc("change_y",v)',
       'def set_x(v): return _psc("set_x",v)',
       'def set_y(v): return _psc("set_y",v)',
-      'def get_x(): return _psc("get_x")',
-      'def get_y(): return _psc("get_y")',
-      'def get_direction(): return _psc("get_direction")',
+      'def if_on_edge_bounce(): return _psc("if_on_edge_bounce")',
+      'def set_rotation_style(style): return _psc("set_rotation_style",style)',
+      'def x_position(): return _psc("x_position")',
+      'def y_position(): return _psc("y_position")',
+      'def direction(): return _psc("direction")',
+      'def get_x(): return x_position()',
+      'def get_y(): return y_position()',
+      'def get_direction(): return direction()',
       'def on_edge(): return _psc("on_edge")',
-      'def bounce(): return _psc("bounce")',
+      'def bounce(): return if_on_edge_bounce()',
       // Looks
       'def say(m,s=2): return _psc("say",m,s)',
       'def think(m,s=2): return _psc("think",m,s)',
@@ -171,21 +193,28 @@
       'def mouse_x(): return _psc("mouse_x")',
       'def mouse_y(): return _psc("mouse_y")',
       // Control — backed by __ps_wait / __ps_stop in Sk.builtins
-      'def wait(s=0): __ps_wait(s)',
+      'def wait(s=0): __ps_wait(s,__ps_tgen__)',
       'def stop(): __ps_stop()',
     ].join('\n') + '\n';
   }
 
   // ── Skulpt bridge ─────────────────────────────────────────────
-  // Adds __ps_call, __ps_wait, __ps_stop to Sk.builtins so they are
-  // accessible as Python built-in names without any import.
+  // Adds __ps_call, __ps_wait, __ps_stop to Sk.builtins.
   //
-  // threadGen: the S.gen value captured when this thread was created.
-  // Every API call and every wait checks S.gen === threadGen — if they differ
-  // the run was restarted and this thread must die immediately.
-  function setupBridge(threadGen) {
+  // Called ONCE after Skulpt loads (not once per thread).
+  // The generation token is NOT captured in a closure here — it is passed as
+  // a Python argument (__ps_tgen__) from each thread's own prologue, so the
+  // shared builtins always receive the calling thread's immutable token.
+  //
+  //   __ps_call(fn, sprite, tgen, a0, a1, a2)  ← tgen comes from __ps_tgen__
+  //   __ps_wait(secs, tgen)                     ← same
+  //
+  // Overwriting Sk.builtins for a new run therefore has NO effect on sleeping
+  // old threads: they carry their own gen token in their module globals.
+  function setupBridge() {
     function jsArg(a) {
-      if (!a || a instanceof Sk.builtin.none) return null;
+      if (a === undefined || a === null) return null;
+      if (a instanceof Sk.builtin.none) return null;
       try { return Sk.ffi.remapToJs(a); } catch (e) { return null; }
     }
     function skVal(r) {
@@ -202,10 +231,11 @@
       return Sk.builtin.none.none$;
     }
 
-    // Every sprite API call is a thread-termination point: check both running
-    // flag and generation so stale threads die immediately, not just at wait().
-    Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fn, sp, a0, a1, a2) {
-      if (!S.running || S.gen !== threadGen) throw new Error('__pyscratch_stopped__');
+    // __ps_call(fn, sprite, tgen, a0, a1, a2)
+    // tgen: the calling thread's own generation integer, passed from __ps_tgen__
+    Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fn, sp, tgen, a0, a1, a2) {
+      var g = Sk.ffi.remapToJs(tgen);
+      if (!S.running || S.gen !== g) throw new Error('__pyscratch_stopped__');
       return skVal(callAPI(
         Sk.ffi.remapToJs(fn),
         Sk.ffi.remapToJs(sp),
@@ -213,9 +243,11 @@
       ));
     });
 
-    Sk.builtins['__ps_wait'] = new Sk.builtin.func(function (secsArg) {
+    // __ps_wait(secs, tgen)
+    Sk.builtins['__ps_wait'] = new Sk.builtin.func(function (secsArg, tgenArg) {
+      var g = Sk.ffi.remapToJs(tgenArg);
       // Fast path: already stale before even waiting
-      if (!S.running || S.gen !== threadGen) throw new Error('__pyscratch_stopped__');
+      if (!S.running || S.gen !== g) throw new Error('__pyscratch_stopped__');
       var ms = Math.max(0, (Sk.ffi.remapToJs(secsArg) || 0) * 1000);
       var susp = new Sk.misceval.Suspension();
       susp.data = {
@@ -223,7 +255,7 @@
         promise: new Promise(function (resolve) {
           setTimeout(function () {
             // Stop if running was cancelled OR a new run started (gen changed)
-            resolve((S.running && S.gen === threadGen) ? null : '__ps_stop__');
+            resolve((S.running && S.gen === g) ? null : '__ps_stop__');
           }, ms || FRAME_MS);
         })
       };
@@ -245,6 +277,31 @@
   // ── Scratch API implementation ────────────────────────────────
   function d2r(deg) { return ((90 - deg) * Math.PI) / 180; }
 
+  function randomStagePosition() {
+    return {
+      x: (Math.random() - 0.5) * 480,
+      y: (Math.random() - 0.5) * 360
+    };
+  }
+
+  function resolvePosition(value, fallbackY) {
+    if (value === 'random' || value === 'random position') return randomStagePosition();
+    if (value === 'mouse_pointer' || value === 'mouse pointer' || value === 'mouse-pointer') {
+      return { x: S.mouse.x, y: S.mouse.y };
+    }
+    if (typeof value === 'number') return { x: value, y: fallbackY || 0 };
+    var target = getTargetByName(value);
+    if (target) return { x: target.x, y: target.y };
+    return { x: 0, y: 0 };
+  }
+
+  function normalizeRotationStyle(style) {
+    var s = String(style || '').toLowerCase().replace(/[_-]+/g, ' ').trim();
+    if (s === 'left right' || s === 'leftright') return 'left-right';
+    if (s === 'do not rotate' || s === "don't rotate" || s === 'dont rotate' || s === 'none') return "don't rotate";
+    return 'all around';
+  }
+
   function callAPI(fn, spriteName, args) {
     var target = getTargetByName(spriteName);
     var a = args[0], b = args[1], c = args[2];
@@ -259,21 +316,30 @@
         break;
       }
       case 'turn':
+      case 'turn_right':
         target.setDirection(target.direction + a);
         break;
-      case 'go_to':
-        if (a === 'random') {
-          target.setXY((Math.random() - 0.5) * 480, (Math.random() - 0.5) * 360);
-        } else {
-          target.setXY(a || 0, b || 0);
-        }
+      case 'turn_left':
+        target.setDirection(target.direction - a);
         break;
+      case 'go_to':
+      case 'go_to_xy': {
+        var pos = resolvePosition(a, b);
+        target.setXY(pos.x, pos.y);
+        break;
+      }
       case 'glide_to':
-        return glide(target, a, b, c);
+      case 'glide_to_xy':
+        return glide(target, a, b, c, fn === 'glide_to_xy');
+      case 'point_in_direction':
+        target.setDirection(a);
+        break;
       case 'point_towards':
         if (typeof a === 'number' && b === undefined) {
           target.setDirection(a);
-        } else if (a === 'mouse_pointer' || a === 'mouse pointer') {
+        } else if (a === 'random' || a === 'random direction') {
+          target.setDirection((Math.random() * 360) - 180);
+        } else if (a === 'mouse_pointer' || a === 'mouse pointer' || a === 'mouse-pointer') {
           var dx = S.mouse.x - target.x;
           var dy = S.mouse.y - target.y;
           target.setDirection(90 - Math.atan2(dy, dx) * 180 / Math.PI);
@@ -288,13 +354,17 @@
       case 'change_y': target.setXY(target.x, target.y + a); break;
       case 'set_x':    target.setXY(a, target.y); break;
       case 'set_y':    target.setXY(target.x, a); break;
+      case 'x_position':
       case 'get_x':    return target.x;
+      case 'y_position':
       case 'get_y':    return target.y;
+      case 'direction':
       case 'get_direction': return target.direction;
       case 'on_edge': {
         var hw = 240, hh = 180;
         return target.x <= -hw || target.x >= hw || target.y <= -hh || target.y >= hh;
       }
+      case 'if_on_edge_bounce':
       case 'bounce': {
         var dir = target.direction;
         var hw2 = 240, hh2 = 180;
@@ -303,6 +373,14 @@
         if ((target.x <= -hw2 && vx < 0) || (target.x >= hw2 && vx > 0)) dir = -dir;
         if ((target.y >= hh2  && vy > 0) || (target.y <= -hh2 && vy < 0)) dir = 180 - dir;
         target.setDirection(dir);
+        break;
+      }
+      case 'set_rotation_style': {
+        var style = normalizeRotationStyle(a);
+        if (typeof target.setRotationStyle === 'function') target.setRotationStyle(style);
+        else target.rotationStyle = style;
+        try { target.setDirection(target.direction); } catch(e) {}
+        try { target.runtime.emit('TARGET_INFO_CHANGED', target); } catch(e) {}
         break;
       }
 
@@ -365,13 +443,20 @@
     return null;
   }
 
-  function glide(target, x, y, dur) {
-    var tx = x, ty = y, secs = dur;
-    if (x === 'random') {
-      tx = (Math.random() - 0.5) * 480;
-      ty = (Math.random() - 0.5) * 360;
+  function glide(target, x, y, dur, secsFirst) {
+    var pos, tx, ty, secs;
+    if (secsFirst) {
+      secs = x;
+      pos = resolvePosition(y, dur);
+    } else if (typeof x === 'number') {
+      secs = dur;
+      pos = resolvePosition(x, y);
+    } else {
       secs = y;
+      pos = resolvePosition(x, null);
     }
+    tx = pos.x;
+    ty = pos.y;
     secs = (secs == null ? 1 : secs);
     var sx = target.x, sy = target.y;
     var start = Date.now();
@@ -434,11 +519,11 @@
 
   // ── Thread runner ─────────────────────────────────────────────
   // threadGen: the generation counter value at the moment this thread was
-  // launched. Passed into setupBridge so every API call and wait() can
-  // self-terminate if a newer run has started.
+  // launched. Embedded as __ps_tgen__ in the Python prologue so every
+  // __ps_call and __ps_wait invocation carries it to the static builtins.
   function runThread(spriteName, thread, threadGen) {
     var myGen = (threadGen !== undefined) ? threadGen : S.gen;
-    var prologue = makePrologue(spriteName);
+    var prologue = makePrologue(spriteName, myGen); // embed gen token in Python module globals
     // Auto-call game_start if defined.
     // IMPORTANT: only catch NameError for game_start itself, NOT for errors
     // that occur inside game_start() — those should surface as real errors.
@@ -466,8 +551,7 @@
       // Safety net: yield every 1000 ops for infinite loops that aren't `while True:`
       yieldLimit: 1000
     });
-    // Register _ps module and window bridge globals — pass this thread's gen
-    setupBridge(myGen);
+    // Bridge builtins are set up once globally (in boot) — nothing to do here.
 
     return Sk.misceval.asyncToPromise(function () {
       return Sk.importMainWithBody('<ps:' + spriteName + ':' + thread.name + '>', false, fullCode, true);
@@ -512,79 +596,227 @@
     updateRunState(false);
   }
 
+  // ── Theme sync ────────────────────────────────────────────────
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function hexToRgb(hex) {
+    var value = String(hex || '').trim();
+    if (value.charAt(0) === '#') value = value.slice(1);
+    if (value.length === 3) value = value.replace(/(.)/g, '$1$1');
+    if (!/^[0-9a-f]{6}$/i.test(value)) return { r: 255, g: 76, b: 76 };
+    return {
+      r: parseInt(value.slice(0, 2), 16),
+      g: parseInt(value.slice(2, 4), 16),
+      b: parseInt(value.slice(4, 6), 16)
+    };
+  }
+
+  function rgbToHex(rgb) {
+    function part(n) {
+      return clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0');
+    }
+    return '#' + part(rgb.r) + part(rgb.g) + part(rgb.b);
+  }
+
+  function mixHex(a, b, amountA) {
+    var ca = hexToRgb(a);
+    var cb = hexToRgb(b);
+    var w = clamp(amountA, 0, 1);
+    return rgbToHex({
+      r: ca.r * w + cb.r * (1 - w),
+      g: ca.g * w + cb.g * (1 - w),
+      b: ca.b * w + cb.b * (1 - w)
+    });
+  }
+
+  function twAccentColour(accent) {
+    if (/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(String(accent || ''))) return accent;
+    if (accent === 'purple') return '#855cd6';
+    if (accent === 'blue') return '#4c97ff';
+    return '#ff4c4c';
+  }
+
+  function cssVar(name, fallback) {
+    try {
+      var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return value || fallback;
+    } catch(e) {
+      return fallback;
+    }
+  }
+
+  function readTurboWarpTheme() {
+    var setting = null;
+    var parsed = null;
+    try { setting = localStorage.getItem('tw:theme'); } catch(e) {}
+
+    if (setting === 'light' || setting === 'dark') {
+      return { gui: setting, accent: '#ff4c4c', signature: setting };
+    }
+
+    if (setting) {
+      try { parsed = JSON.parse(setting); } catch(e) {}
+    }
+
+    var gui = parsed && (parsed.gui === 'light' || parsed.gui === 'dark') ? parsed.gui : null;
+    if (!gui) {
+      gui = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    return {
+      gui: gui,
+      accent: twAccentColour(parsed && parsed.accent),
+      signature: setting || gui
+    };
+  }
+
+  function turboWarpThemeSignature(theme) {
+    return [
+      theme.signature,
+      cssVar('--ui-primary', ''),
+      cssVar('--ui-secondary', ''),
+      cssVar('--ui-tertiary', ''),
+      cssVar('--looks-secondary', ''),
+      cssVar('--looks-transparent', ''),
+      cssVar('--text-primary', '')
+    ].join('|');
+  }
+
+  function applyPyScratchTheme() {
+    var theme = readTurboWarpTheme();
+    var dark = theme.gui !== 'light';
+    var root = document.documentElement;
+    var accent = cssVar('--looks-secondary', theme.accent);
+    var accentSoft = cssVar('--looks-transparent', dark ? mixHex(theme.accent, '#1e1e1e', 0.36) : mixHex(theme.accent, '#ffffff', 0.18));
+    var vars = dark ? {
+      '--ps-accent': accent,
+      '--ps-accent-soft': accentSoft,
+      '--ps-accent-hover': cssVar('--looks-secondary-dark', accent),
+      '--ps-panel': cssVar('--ui-secondary', '#1e1e1e'),
+      '--ps-panel-2': cssVar('--ui-primary', '#111111'),
+      '--ps-panel-3': cssVar('--ui-tertiary', '#2e2e2e'),
+      '--ps-panel-hover': cssVar('--ui-tertiary', '#2e2e2e'),
+      '--ps-border': cssVar('--ui-black-transparent', '#ffffff26'),
+      '--ps-border-strong': cssVar('--ui-black-transparent', '#ffffff26'),
+      '--ps-text': cssVar('--text-primary', '#eeeeee'),
+      '--ps-text-strong': '#ffffff',
+      '--ps-muted': '#b8b8b8',
+      '--ps-muted-2': '#a6a6a6',
+      '--ps-console': cssVar('--ui-primary', '#111111'),
+      '--ps-success': '#a6e3a1',
+      '--ps-error': '#f38ba8',
+      '--ps-shadow': cssVar('--shadow', 'rgba(0,0,0,.4)'),
+      '--ps-modal-scrim': cssVar('--ui-modal-overlay', '#333333aa'),
+      '--ps-code-bg': cssVar('--input-background', '#1e1e1e'),
+      '--ps-selection': accentSoft
+    } : {
+      '--ps-accent': accent,
+      '--ps-accent-soft': accentSoft,
+      '--ps-accent-hover': cssVar('--looks-secondary-dark', accent),
+      '--ps-panel': cssVar('--ui-white', '#ffffff'),
+      '--ps-panel-2': cssVar('--ui-primary', '#f9f9f9'),
+      '--ps-panel-3': cssVar('--ui-secondary', '#f0f0f0'),
+      '--ps-panel-hover': cssVar('--ui-tertiary', '#e8e8e8'),
+      '--ps-border': cssVar('--ui-black-transparent', 'rgba(0,0,0,.15)'),
+      '--ps-border-strong': cssVar('--ui-black-transparent', 'rgba(0,0,0,.2)'),
+      '--ps-text': cssVar('--text-primary', '#575e75'),
+      '--ps-text-strong': '#222222',
+      '--ps-muted': 'rgba(87,94,117,.78)',
+      '--ps-muted-2': 'rgba(87,94,117,.7)',
+      '--ps-console': cssVar('--ui-primary', '#f9f9f9'),
+      '--ps-success': '#047857',
+      '--ps-error': '#b91c1c',
+      '--ps-shadow': cssVar('--shadow', 'rgba(15,23,42,.16)'),
+      '--ps-modal-scrim': cssVar('--ui-modal-overlay', 'rgba(15,23,42,.35)'),
+      '--ps-code-bg': cssVar('--input-background', '#ffffff'),
+      '--ps-selection': accentSoft
+    };
+
+    Object.keys(vars).forEach(function (name) {
+      root.style.setProperty(name, vars[name]);
+    });
+    root.setAttribute('data-pyscratch-theme', theme.gui);
+    S.themeSignature = turboWarpThemeSignature(theme);
+  }
+
+  function watchPyScratchTheme() {
+    if (watchPyScratchTheme.started) return;
+    watchPyScratchTheme.started = true;
+    window.addEventListener('storage', function (e) {
+      if (!e || e.key === 'tw:theme') applyPyScratchTheme();
+    });
+    setInterval(function () {
+      var theme = readTurboWarpTheme();
+      if (turboWarpThemeSignature(theme) !== S.themeSignature) applyPyScratchTheme();
+    }, 750);
+  }
+
   // ── Build UI ──────────────────────────────────────────────────
   function buildUI() {
     // Inject styles
     var style = document.createElement('style');
     style.textContent = [
       // Overlay container
-      '#ps-overlay{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;pointer-events:none;font-family:"Roboto","Segoe UI",Arial,sans-serif;font-size:14px}',
+      '#ps-overlay{position:fixed;left:0;right:0;top:92px;bottom:0;z-index:45;display:flex;flex-direction:column;pointer-events:none;font-family:"Roboto","Segoe UI",Arial,sans-serif;font-size:14px}',
+      '#ps-overlay.ps-suppressed{display:none}',
 
-      // Top bar
-      '#ps-bar{height:44px;background:#4f46e5;color:#fff;display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;pointer-events:auto;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:10001}',
-      '#ps-bar .ps-logo{font-weight:700;font-size:15px;letter-spacing:-.3px;margin-right:4px}',
-      '#ps-bar .ps-sep{width:1px;height:22px;background:rgba(255,255,255,.25);margin:0 4px}',
-      '#ps-bar button{background:none;border:none;color:#fff;cursor:pointer;padding:4px 9px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:5px;font-family:inherit;line-height:1}',
-      '#ps-bar button:hover{background:rgba(255,255,255,.18)}',
-      '#ps-status{margin-left:auto;font-size:12px;opacity:.75}',
+      '#ps-help-btn{position:absolute;top:7px;right:10px;z-index:3;background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:12px;font-family:inherit;line-height:1.2;box-shadow:0 2px 8px var(--ps-shadow,rgba(0,0,0,.24))}',
+      '#ps-help-btn:hover{background:var(--ps-accent-soft,#303052);color:var(--ps-text-strong,#fff);border-color:var(--ps-accent,#6366f1)}',
+      '#ps-status{position:absolute;top:10px;right:64px;z-index:3;font-size:11px;color:var(--ps-success,#a6e3a1);opacity:.85;pointer-events:none}',
 
       // Body split — width of ps-left is set dynamically by adjustOverlay()
       '#ps-body{flex:1;display:flex;overflow:hidden;pointer-events:none}',
-      '#ps-left{width:50%;display:flex;flex-direction:column;background:#1e1e2e;pointer-events:auto;border-right:2px solid #312d4b;box-shadow:4px 0 20px rgba(0,0,0,.4);flex-shrink:0}',
+      '#ps-left{width:50%;display:flex;flex-direction:column;background:var(--ps-panel,#1e1e2e);pointer-events:auto;border-right:2px solid var(--ps-border,#312d4b);box-shadow:4px 0 20px var(--ps-shadow,rgba(0,0,0,.4));flex-shrink:0;position:relative}',
       '#ps-right{flex:1;pointer-events:none;background:transparent}', // Pass-through to TurboWarp stage
-
-      // Sprite tab bar
-      '#ps-sprite-bar{height:38px;background:#252537;border-bottom:1px solid #312d4b;display:flex;align-items:center;overflow-x:auto;padding:0 8px;gap:4px;flex-shrink:0}',
-      '.ps-stab{padding:3px 12px;border-radius:14px;background:#333350;color:#9999bb;border:1px solid transparent;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit}',
-      '.ps-stab.active{background:#4f46e5;color:#fff;border-color:#6366f1}',
-      '.ps-stab:hover:not(.active){background:#3e3e58;color:#c0c0dd}',
 
       // Code area
       '#ps-code-area{flex:1;display:flex;overflow:hidden}',
 
       // Thread sidebar
-      '#ps-threads{width:152px;background:#18182a;border-right:1px solid #312d4b;display:flex;flex-direction:column;flex-shrink:0}',
-      '#ps-thread-head{padding:5px 8px;background:#1f1f33;font-size:10px;font-weight:700;color:#7777aa;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #312d4b}',
-      '#ps-thread-head button{background:none;border:none;color:#6666aa;cursor:pointer;font-size:16px;line-height:1;padding:0 2px}',
-      '#ps-thread-head button:hover{color:#aaaaee}',
+      '#ps-threads{width:152px;background:var(--ps-panel-2,#18182a);border-right:1px solid var(--ps-border,#312d4b);display:flex;flex-direction:column;flex-shrink:0}',
+      '#ps-thread-head{padding:5px 8px;background:var(--ps-panel-3,#1f1f33);font-size:10px;font-weight:700;color:var(--ps-muted-2,#7777aa);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ps-border,#312d4b)}',
+      '#ps-thread-head button{background:none;border:none;color:var(--ps-muted,#6666aa);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}',
+      '#ps-thread-head button:hover{color:var(--ps-accent,#aaaaee)}',
       '#ps-thread-list{flex:1;overflow-y:auto;padding:5px}',
-      '.ps-titem{padding:5px 8px;border-radius:6px;background:#252538;color:#b0b0cc;border:1px solid transparent;cursor:pointer;font-size:12px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}',
-      '.ps-titem.active{background:#36365a;border-color:#5a5a8a;color:#fff}',
-      '.ps-titem:hover:not(.active){background:#2d2d48}',
+      '.ps-titem{padding:5px 8px;border-radius:6px;background:var(--ps-panel-3,#252538);color:var(--ps-muted,#b0b0cc);border:1px solid transparent;cursor:pointer;font-size:12px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}',
+      '.ps-titem.active{background:var(--ps-accent-soft,#36365a);border-color:var(--ps-accent,#5a5a8a);color:var(--ps-text-strong,#fff)}',
+      '.ps-titem:hover:not(.active){background:var(--ps-panel-hover,#2d2d48)}',
       '.ps-tactions{display:none;gap:2px}',
       '.ps-titem:hover .ps-tactions{display:flex}',
-      '.ps-tactions button{background:none;border:none;cursor:pointer;color:#777;font-size:11px;padding:1px 4px;border-radius:3px}',
-      '.ps-tactions button:hover{color:#fff;background:#444}',
+      '.ps-tactions button{background:none;border:none;cursor:pointer;color:var(--ps-muted,#777);font-size:11px;padding:1px 4px;border-radius:3px}',
+      '.ps-tactions button:hover{color:var(--ps-text-strong,#fff);background:var(--ps-accent-soft,#444)}',
 
       // Editor + console
       '#ps-editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}',
-      '#ps-editor{flex:1;background:#1e1e2e;color:#cdd6f4;border:none;outline:none;resize:none;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.65;padding:12px;tab-size:4;overflow-y:auto;min-height:0}',
-      '#ps-editor::selection{background:#3b3b5a}',
-      '#ps-console{height:72px;background:#13131f;color:#a6e3a1;font-family:"Roboto Mono","Consolas",monospace;font-size:11px;padding:5px 10px;overflow-y:auto;border-top:1px solid #312d4b;flex-shrink:0;line-height:1.5}',
-      '.ps-con-err{color:#f38ba8}',
+      '#ps-editor{flex:1;background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border:none;outline:none;resize:none;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.65;padding:12px;tab-size:4;overflow-y:auto;min-height:0}',
+      '#ps-editor::selection{background:var(--ps-selection,#3b3b5a)}',
+      '#ps-console{height:72px;background:var(--ps-console,#13131f);color:var(--ps-success,#a6e3a1);font-family:"Roboto Mono","Consolas",monospace;font-size:11px;padding:5px 10px;overflow-y:auto;border-top:1px solid var(--ps-border,#312d4b);flex-shrink:0;line-height:1.5}',
+      '.ps-con-err{color:var(--ps-error,#f38ba8)}',
 
       // Hide TurboWarp blocks and related elements when PyScratch is active
       '.blocklyDiv,.blocklyToolboxDiv,.blocklyFlyout,.blocklyWidgetDiv{display:none !important}',
 
       // Help modal
-      '#ps-help{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:20000;display:flex;align-items:center;justify-content:center}',
+      '#ps-help{position:fixed;inset:0;background:var(--ps-modal-scrim,rgba(0,0,0,.65));z-index:20000;display:flex;align-items:center;justify-content:center}',
       '#ps-help.hidden{display:none}',
-      '.ps-mbox{background:#1e1e2e;color:#cdd6f4;border-radius:10px;width:680px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column;border:1px solid #3f3f5a;font-family:"Roboto","Segoe UI",Arial,sans-serif}',
-      '.ps-mhead{padding:12px 16px;border-bottom:1px solid #3f3f5a;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px}',
-      '.ps-mhead button{background:none;border:none;color:#888;font-size:22px;cursor:pointer}',
-      '.ps-mhead button:hover{color:#ccc}',
+      '.ps-mbox{background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border-radius:10px;width:680px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column;border:1px solid var(--ps-border-strong,#3f3f5a);font-family:"Roboto","Segoe UI",Arial,sans-serif}',
+      '.ps-mhead{padding:12px 16px;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px}',
+      '.ps-mhead button{background:none;border:none;color:var(--ps-muted,#888);font-size:22px;cursor:pointer}',
+      '.ps-mhead button:hover{color:var(--ps-text-strong,#ccc)}',
       '.ps-mbody{flex:1;overflow-y:auto;padding:14px 18px}',
-      '.ps-hsec{margin-bottom:16px;border-radius:8px;overflow:hidden;border:1px solid #3f3f5a}',
+      '.ps-hsec{margin-bottom:16px;border-radius:8px;overflow:hidden;border:1px solid var(--ps-border-strong,#3f3f5a)}',
       '.ps-hcat{padding:7px 12px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}',
       '.ps-hcat.mov{background:#1a3458;color:#7dd3fc}',
       '.ps-hcat.look{background:#331b52;color:#d8b4fe}',
       '.ps-hcat.ctrl{background:#332514;color:#fcd34d}',
       '.ps-hcat.sens{background:#143232;color:#67e8f9}',
-      '.ps-hitems{padding:10px 14px;background:#252538}',
+      '.ps-hitems{padding:10px 14px;background:var(--ps-panel-3,#252538)}',
       '.ps-hitem{margin-bottom:10px}',
       '.ps-hitem:last-child{margin-bottom:0}',
-      '.ps-hitem code{background:#312d4b;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:#cba6f7}',
-      '.ps-hitem p{margin:4px 0 0;font-size:12px;color:#9090b0;line-height:1.4}'
+      '.ps-hitem code{background:var(--ps-code-bg,#312d4b);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--ps-accent,#cba6f7)}',
+      '.ps-hitem p{margin:4px 0 0;font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.4}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -592,15 +824,10 @@
     var o = document.createElement('div');
     o.id = 'ps-overlay';
     o.innerHTML = [
-      '<div id="ps-bar">',
-        '<span class="ps-logo">🐍 PyScratch</span>',
-        '<span class="ps-sep"></span>',
-        '<button id="ps-help-btn">❓ Help</button>',
-        '<span id="ps-status"></span>',
-      '</div>',
       '<div id="ps-body">',
         '<div id="ps-left">',
-          '<div id="ps-sprite-bar"></div>',
+          '<button id="ps-help-btn" title="PyScratch help">Help</button>',
+          '<span id="ps-status"></span>',
           '<div id="ps-code-area">',
             '<div id="ps-threads">',
               '<div id="ps-thread-head">',
@@ -630,7 +857,6 @@
     // Assign references
     ui.editor       = document.getElementById('ps-editor');
     ui.threadList   = document.getElementById('ps-thread-list');
-    ui.spriteBar    = document.getElementById('ps-sprite-bar');
     ui.console      = document.getElementById('ps-console');
     ui.status       = document.getElementById('ps-status');
 
@@ -685,15 +911,17 @@
     var sections = [
       { cat:'mov', title:'Movement', items:[
         { code:'move_steps(steps)', desc:'Move the sprite forward in its current direction.' },
-        { code:'turn(degrees)', desc:'Rotate clockwise by the given degrees.' },
-        { code:'go_to(x, y)', desc:'Teleport to coordinates. go_to("random") goes to a random position.' },
-        { code:'glide_to(x, y, secs)', desc:'Smoothly glide to (x, y) over secs seconds.' },
-        { code:'point_towards(target)', desc:'Point at a sprite name, "mouse_pointer", or pass (x, y) coordinates.' },
+        { code:'turn_right(degrees) / turn_left(degrees)', desc:'Rotate clockwise or anticlockwise by the given degrees. turn(degrees) still works as a shortcut for turn_right.' },
+        { code:'go_to(target) / go_to_xy(x, y)', desc:'Teleport to "random", "mouse_pointer", another sprite name, or exact coordinates.' },
+        { code:'glide_to(target, secs) / glide_to_xy(secs, x, y)', desc:'Smoothly glide to a target or to exact coordinates over secs seconds.' },
+        { code:'point_in_direction(degrees)', desc:'Face a Scratch direction such as 90 for right, -90 for left, 0 for up, or 180 for down.' },
+        { code:'point_towards(target)', desc:'Point at "random", "mouse_pointer", another sprite name, or pass x and y coordinates.' },
         { code:'change_x(dx) / change_y(dy)', desc:'Move relative to current position.' },
         { code:'set_x(x) / set_y(y)', desc:'Set absolute position.' },
-        { code:'get_x() / get_y() / get_direction()', desc:'Read current position or direction.' },
+        { code:'x_position() / y_position() / direction()', desc:'Read current position or direction. get_x(), get_y(), and get_direction() still work.' },
         { code:'on_edge()', desc:'Returns True when touching the stage boundary.' },
-        { code:'bounce()', desc:'Reflect direction when on_edge() is True.' },
+        { code:'if_on_edge_bounce()', desc:'Reflect direction when touching the stage boundary. bounce() still works as a shortcut.' },
+        { code:'set_rotation_style(style)', desc:'Use "all around", "left-right", or "don\\\'t rotate".' },
       ]},
       { cat:'look', title:'Looks', items:[
         { code:'say(message, secs=2)', desc:'Show a speech bubble for secs seconds.' },
@@ -733,26 +961,44 @@
   }
 
   // ── Sprite / thread UI ────────────────────────────────────────
-  function renderSpriteBar() {
-    if (!ui.spriteBar) return;
+  function nativeSelectedSpriteName() {
+    try {
+      var target = null;
+      if (S.vm && S.vm.editingTarget) target = S.vm.editingTarget;
+      if (!target && S.vm && S.vm.runtime && typeof S.vm.runtime.getEditingTarget === 'function') {
+        target = S.vm.runtime.getEditingTarget();
+      }
+      if (!target && S.vm && S.vm.runtime && S.vm.runtime._editingTarget) {
+        if (typeof S.vm.runtime._editingTarget === 'string') {
+          target = S.vm.runtime.targets.find(function(t) { return t.id === S.vm.runtime._editingTarget; });
+        } else {
+          target = S.vm.runtime._editingTarget;
+        }
+      }
+      if (target && !target.isStage && target.sprite) return target.sprite.name;
+    } catch(e) {}
+    try {
+      var selected = document.querySelector('[class*="sprite-selector-item_is-selected"],[class*="sprite-selector-item_isSelected"]');
+      if (selected) {
+        var firstLine = (selected.textContent || '').trim().split(/\n/)[0].trim();
+        if (firstLine) return firstLine;
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  function syncSelectedSprite(force) {
     var sprites = getSprites();
-    if (sprites.length && !S.activeSprite) S.activeSprite = sprites[0].sprite.name;
-    ui.spriteBar.innerHTML = '';
-    sprites.forEach(function (t) {
-      var name = t.sprite.name;
-      var btn = document.createElement('button');
-      btn.className = 'ps-stab' + (name === S.activeSprite ? ' active' : '');
-      btn.textContent = name;
-      btn.onclick = function () {
-        saveCurrentCode();
-        S.activeSprite = name;
-        S.activeThreadIdx = 0;
-        renderSpriteBar();
-        renderThreadList();
-        loadCodeToEditor();
-      };
-      ui.spriteBar.appendChild(btn);
-    });
+    if (!sprites.length) return;
+    var selectedName = nativeSelectedSpriteName() || (S.activeSprite && getTargetByName(S.activeSprite) ? S.activeSprite : sprites[0].sprite.name);
+    if (!selectedName) return;
+    if (force || selectedName !== S.activeSprite) {
+      saveCurrentCode();
+      S.activeSprite = selectedName;
+      S.activeThreadIdx = 0;
+      renderThreadList();
+      loadCodeToEditor();
+    }
   }
 
   function renderThreadList() {
@@ -862,20 +1108,94 @@
   // rendered size. We measure the canvas left edge and snap the panel to it.
   function adjustOverlay() {
     var canvas = document.querySelector('canvas');
+    var overlay = document.getElementById('ps-overlay');
     var leftEl  = document.getElementById('ps-left');
-    if (!canvas || !leftEl) return;
+    if (!canvas || !leftEl || !overlay) return;
     var rect = canvas.getBoundingClientRect();
+    if (rect.top > 40 && rect.top < window.innerHeight - 80) {
+      overlay.style.left = '0px';
+      overlay.style.right = '0px';
+      overlay.style.top = Math.round(rect.top) + 'px';
+      overlay.style.bottom = '0px';
+    }
     // Only update if the canvas is plausibly on the right side of the screen
     if (rect.left > 60 && rect.left < window.innerWidth - 60) {
       leftEl.style.width = rect.left + 'px';
     }
   }
 
+  function isCodeTabActive() {
+    var tabs = document.querySelectorAll('[role="tab"], button, li');
+    for (var i = 0; i < tabs.length; i++) {
+      var el = tabs[i];
+      if ((el.textContent || '').trim() !== 'Code') continue;
+      var cls = typeof el.className === 'string' ? el.className : '';
+      if (el.getAttribute('aria-selected') === 'true') return true;
+      if (cls.indexOf('selected') !== -1 || cls.indexOf('--selected') !== -1) return true;
+    }
+    return false;
+  }
+
+  function isVisibleOverlayElement(el) {
+    if (!el || el.id === 'ps-overlay' || el.closest('#ps-overlay') || el.closest('#ps-help')) return false;
+    var cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+    var rect = el.getBoundingClientRect();
+    return rect.width > 36 && rect.height > 18 &&
+      rect.bottom > 0 && rect.right > 0 &&
+      rect.top < window.innerHeight && rect.left < window.innerWidth;
+  }
+
+  function hasTurboWarpBlockingOverlayOpen() {
+    var nodes = document.body ? document.body.querySelectorAll('body *') : [];
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!isVisibleOverlayElement(el)) continue;
+      var cls = typeof el.className === 'string' ? el.className : '';
+      var role = el.getAttribute && el.getAttribute('role');
+      var modal = el.getAttribute && el.getAttribute('aria-modal');
+      var looksLikeTwOverlay =
+        cls.indexOf('modal_') !== -1 ||
+        cls.indexOf('library_') !== -1 ||
+        cls.indexOf('ReactModal') !== -1 ||
+        role === 'dialog' ||
+        modal === 'true';
+      if (!looksLikeTwOverlay) continue;
+      var rect = el.getBoundingClientRect();
+      if (role === 'dialog' || modal === 'true') return true;
+      if (rect.width > window.innerWidth * 0.45 && rect.height > window.innerHeight * 0.35) return true;
+    }
+    return false;
+  }
+
+  function updateOverlaySuppression() {
+    var overlay = document.getElementById('ps-overlay');
+    if (!overlay) return;
+    overlay.classList.toggle('ps-suppressed', !isCodeTabActive() || hasTurboWarpBlockingOverlayOpen());
+  }
+
+  function watchTurboWarpModals() {
+    if (!window.MutationObserver || !document.body) return;
+    var pending = false;
+    function schedule() {
+      if (pending) return;
+      pending = true;
+      setTimeout(function () {
+        pending = false;
+        updateOverlaySuppression();
+        adjustOverlay();
+      }, 50);
+    }
+    var observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'aria-modal', 'role'] });
+    schedule();
+  }
+
   // ── Sync ──────────────────────────────────────────────────────
   function sync() {
-    renderSpriteBar();
+    syncSelectedSprite(!S.activeSprite);
     renderThreadList();
-    loadCodeToEditor();
+    updateOverlaySuppression();
     adjustOverlay();
   }
 
@@ -889,6 +1209,13 @@
 
     loadSkulpt(function () {
       buildUI();
+      applyPyScratchTheme();
+      watchPyScratchTheme();
+
+      // Register Skulpt bridge builtins once — these are static functions
+      // that receive the thread's gen token as an argument, so they never
+      // need to be re-registered per thread.
+      setupBridge();
 
       // Initial sync after TurboWarp finishes loading its project
       setTimeout(sync, 600);
@@ -897,7 +1224,11 @@
 
       // Re-sync (including overlay width) whenever sprites change or window resizes
       try { vm.runtime.on('TARGETS_UPDATE', function () { sync(); }); } catch(e) {}
+      try { vm.runtime.on('EDITING_TARGET_CHANGED', function () { syncSelectedSprite(false); }); } catch(e) {}
+      try { vm.runtime.on('TARGET_SELECTED', function () { syncSelectedSprite(false); }); } catch(e) {}
+      setInterval(function () { syncSelectedSprite(false); }, 500);
       window.addEventListener('resize', adjustOverlay);
+      watchTurboWarpModals();
 
       // Hook TurboWarp's green flag → start Python.
       try {
