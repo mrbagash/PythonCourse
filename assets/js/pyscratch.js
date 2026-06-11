@@ -179,7 +179,11 @@
   // ── Skulpt bridge ─────────────────────────────────────────────
   // Adds __ps_call, __ps_wait, __ps_stop to Sk.builtins so they are
   // accessible as Python built-in names without any import.
-  function setupBridge() {
+  //
+  // threadGen: the S.gen value captured when this thread was created.
+  // Every API call and every wait checks S.gen === threadGen — if they differ
+  // the run was restarted and this thread must die immediately.
+  function setupBridge(threadGen) {
     function jsArg(a) {
       if (!a || a instanceof Sk.builtin.none) return null;
       try { return Sk.ffi.remapToJs(a); } catch (e) { return null; }
@@ -198,7 +202,10 @@
       return Sk.builtin.none.none$;
     }
 
+    // Every sprite API call is a thread-termination point: check both running
+    // flag and generation so stale threads die immediately, not just at wait().
     Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fn, sp, a0, a1, a2) {
+      if (!S.running || S.gen !== threadGen) throw new Error('__pyscratch_stopped__');
       return skVal(callAPI(
         Sk.ffi.remapToJs(fn),
         Sk.ffi.remapToJs(sp),
@@ -207,15 +214,16 @@
     });
 
     Sk.builtins['__ps_wait'] = new Sk.builtin.func(function (secsArg) {
+      // Fast path: already stale before even waiting
+      if (!S.running || S.gen !== threadGen) throw new Error('__pyscratch_stopped__');
       var ms = Math.max(0, (Sk.ffi.remapToJs(secsArg) || 0) * 1000);
-      var myGen = S.gen;  // snapshot generation at the moment this wait begins
       var susp = new Sk.misceval.Suspension();
       susp.data = {
         type: 'Sk.promise',
         promise: new Promise(function (resolve) {
           setTimeout(function () {
             // Stop if running was cancelled OR a new run started (gen changed)
-            resolve((S.running && S.gen === myGen) ? null : '__ps_stop__');
+            resolve((S.running && S.gen === threadGen) ? null : '__ps_stop__');
           }, ms || FRAME_MS);
         })
       };
@@ -425,7 +433,11 @@
   }
 
   // ── Thread runner ─────────────────────────────────────────────
-  function runThread(spriteName, thread) {
+  // threadGen: the generation counter value at the moment this thread was
+  // launched. Passed into setupBridge so every API call and wait() can
+  // self-terminate if a newer run has started.
+  function runThread(spriteName, thread, threadGen) {
+    var myGen = (threadGen !== undefined) ? threadGen : S.gen;
     var prologue = makePrologue(spriteName);
     // Auto-call game_start if defined.
     // IMPORTANT: only catch NameError for game_start itself, NOT for errors
@@ -454,8 +466,8 @@
       // Safety net: yield every 1000 ops for infinite loops that aren't `while True:`
       yieldLimit: 1000
     });
-    // Register _ps module and window bridge globals
-    setupBridge();
+    // Register _ps module and window bridge globals — pass this thread's gen
+    setupBridge(myGen);
 
     return Sk.misceval.asyncToPromise(function () {
       return Sk.importMainWithBody('<ps:' + spriteName + ':' + thread.name + '>', false, fullCode, true);
@@ -475,11 +487,16 @@
     S.running = true;
     clearConsole();
 
+    // Capture the generation AFTER stopAll() incremented it so every new thread
+    // gets the same gen value. Old threads have a smaller gen and die at the very
+    // next __ps_call or wait().
+    var currentGen = S.gen;
+
     var sprites = getSprites();
     sprites.forEach(function (t) {
       var name = t.sprite.name;
       loadThreads(name).forEach(function (thread) {
-        runThread(name, thread);
+        runThread(name, thread, currentGen);
       });
     });
 
@@ -892,21 +909,35 @@
       }
 
       // Hook TurboWarp's stop button → stop Python.
-      // Patch vm.stopAll directly — more reliable than PROJECT_STOP_ALL event
-      // since TurboWarp's fork doesn't always emit it consistently.
+      // Patch BOTH vm.stopAll and vm.runtime.stopAll because TurboWarp may call
+      // either path depending on context. The `if (S.running)` guard in each hook
+      // prevents double-incrementing S.gen when both paths fire in the same tick.
       try {
         var _origStop = vm.stopAll.bind(vm);
         vm.stopAll = function () {
-          stopAll();            // stop Python threads
-          return _origStop();  // let TurboWarp stop its own threads
+          if (S.running) stopAll();  // stop Python threads (guard vs double-stop)
+          return _origStop();        // let TurboWarp stop its own threads
         };
-        // Also listen for the runtime event as a fallback
+      } catch(e) {
+        console.warn('[PyScratch] Could not patch vm.stopAll:', e);
+      }
+
+      try {
+        var _origRtStop = vm.runtime.stopAll.bind(vm.runtime);
+        vm.runtime.stopAll = function () {
+          if (S.running) stopAll();  // catch direct runtime.stopAll() calls
+          return _origRtStop();
+        };
+      } catch(e) {
+        console.warn('[PyScratch] Could not patch vm.runtime.stopAll:', e);
+      }
+
+      // Also listen for the runtime event as a belt-and-braces fallback
+      try {
         vm.runtime.on('PROJECT_STOP_ALL', function () {
           if (S.running) stopAll();
         });
-      } catch(e) {
-        console.warn('[PyScratch] Could not hook stopAll:', e);
-      }
+      } catch(e) {}
 
       console.log('[PyScratch] Ready. vm=', vm, 'runtime=', vm.runtime);
     });
