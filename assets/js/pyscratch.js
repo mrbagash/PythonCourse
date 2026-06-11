@@ -127,30 +127,59 @@
   }
 
   // ── Python prologue generator ─────────────────────────────────
-  // Sprite name is PASSED AS AN ARGUMENT into __ps_call so concurrent
-  // threads can't mis-read each other's sprite context.
+  // Uses a fixed-argument helper _psc(f,a0,a1,a2) instead of *args unpacking
+  // so it works reliably across all Skulpt versions. Sprite name is passed as
+  // an argument into __ps_call — not read from globals — so concurrent threads
+  // never mis-read each other's sprite context.
   function makePrologue(spriteName) {
-    var lines = ['__ps_sprite__ = ' + JSON.stringify(spriteName)];
-    API_LIST.forEach(function (fn) {
-      lines.push('def ' + fn.n + '(*args):');
-      lines.push('    return __ps_call("' + fn.n + '", __ps_sprite__, *args)');
-    });
-    lines.push('def wait(secs=0):');
-    lines.push('    __ps_wait(secs)');
-    lines.push('def stop():');
-    lines.push('    __ps_stop()');
-    return lines.join('\n') + '\n';
+    var n = JSON.stringify(spriteName);
+    return [
+      '__ps_sprite__ = ' + n,
+      'def _psc(f,a0=None,a1=None,a2=None): return __ps_call(f,__ps_sprite__,a0,a1,a2)',
+      // Movement
+      'def move_steps(s): return _psc("move_steps",s)',
+      'def turn(d): return _psc("turn",d)',
+      'def go_to(x,y=None): return _psc("go_to",x,y)',
+      'def glide_to(x,y,s=1): return _psc("glide_to",x,y,s)',
+      'def point_towards(t,b=None): return _psc("point_towards",t,b)',
+      'def change_x(v): return _psc("change_x",v)',
+      'def change_y(v): return _psc("change_y",v)',
+      'def set_x(v): return _psc("set_x",v)',
+      'def set_y(v): return _psc("set_y",v)',
+      'def get_x(): return _psc("get_x")',
+      'def get_y(): return _psc("get_y")',
+      'def get_direction(): return _psc("get_direction")',
+      'def on_edge(): return _psc("on_edge")',
+      'def bounce(): return _psc("bounce")',
+      // Looks
+      'def say(m,s=2): return _psc("say",m,s)',
+      'def think(m,s=2): return _psc("think",m,s)',
+      'def set_costume(c): return _psc("set_costume",c)',
+      'def next_costume(): return _psc("next_costume")',
+      'def set_size(s): return _psc("set_size",s)',
+      'def change_size(s): return _psc("change_size",s)',
+      'def show(): return _psc("show")',
+      'def hide(): return _psc("hide")',
+      // Sensing
+      'def touching(t): return _psc("touching",t)',
+      'def distance_to(t): return _psc("distance_to",t)',
+      'def key_pressed(k): return _psc("key_pressed",k)',
+      'def mouse_x(): return _psc("mouse_x")',
+      'def mouse_y(): return _psc("mouse_y")',
+      // Control — call their own built-ins directly (no _psc needed)
+      'def wait(s=0): __ps_wait(s)',
+      'def stop(): __ps_stop()',
+    ].join('\n') + '\n';
   }
 
   // ── Skulpt bridge ─────────────────────────────────────────────
   function setupBridge() {
-    // __ps_call: dispatch all non-async and async API calls
-    Sk.builtins['__ps_call'] = new Sk.builtin.func(function () {
-      var args = Array.prototype.slice.call(arguments);
-      var funcName  = Sk.ffi.remapToJs(args[0]);
-      var spriteName = Sk.ffi.remapToJs(args[1]);
-      var jsArgs = args.slice(2).map(function (a) {
-        if (a instanceof Sk.builtin.none) return null;
+    // __ps_call(fn, sprite, a0, a1, a2) — fixed 5 args, no *args unpacking
+    Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fnArg, spArg, a0Arg, a1Arg, a2Arg) {
+      var funcName   = Sk.ffi.remapToJs(fnArg);
+      var spriteName = Sk.ffi.remapToJs(spArg);
+      var jsArgs = [a0Arg, a1Arg, a2Arg].map(function (a) {
+        if (!a || a instanceof Sk.builtin.none) return null;
         try { return Sk.ffi.remapToJs(a); } catch (e) { return null; }
       });
 
@@ -391,8 +420,19 @@
   // ── Thread runner ─────────────────────────────────────────────
   function runThread(spriteName, thread) {
     var prologue = makePrologue(spriteName);
-    // Auto-call game_start if defined
-    var postlude = '\ntry:\n    game_start()\nexcept NameError:\n    pass\n';
+    // Auto-call game_start if defined.
+    // IMPORTANT: only catch NameError for game_start itself, NOT for errors
+    // that occur inside game_start() — those should surface as real errors.
+    var postlude = [
+      '',
+      'try:',
+      '    _ps_fn = game_start',
+      'except NameError:',
+      '    _ps_fn = None',
+      'if _ps_fn is not None:',
+      '    _ps_fn()',
+      ''
+    ].join('\n');
     // Inject frame yields into while True: loops before running
     var userCode = injectFrameYields(thread.code);
     var fullCode = prologue + userCode + postlude;
@@ -405,9 +445,10 @@
       },
       execLimit: undefined,
       // Safety net: yield every 1000 ops for infinite loops that aren't `while True:`
-      // (e.g. accidental recursion). Does not add visible delay — resolves immediately.
       yieldLimit: 1000
     });
+    // Register bridge builtins AFTER Sk.configure (in case configure touches builtins)
+    setupBridge();
 
     return Sk.misceval.asyncToPromise(function () {
       return Sk.importMainWithBody('<ps:' + spriteName + ':' + thread.name + '>', false, fullCode, true);
@@ -425,9 +466,8 @@
     S.running = true;
     clearConsole();
 
-    S.vm.greenFlag();
-
-    setupBridge();
+    // Reset Scratch sprites to their starting positions / clear say bubbles
+    try { S.vm.greenFlag(); } catch (e) {}
 
     var sprites = getSprites();
     sprites.forEach(function (t) {
@@ -466,9 +506,9 @@
       '#ps-stop-btn{font-size:20px;color:#f87171 !important}',
       '#ps-status{margin-left:auto;font-size:12px;opacity:.75}',
 
-      // Body split
+      // Body split — width of ps-left is set dynamically by adjustOverlay()
       '#ps-body{flex:1;display:flex;overflow:hidden;pointer-events:none}',
-      '#ps-left{width:50%;display:flex;flex-direction:column;background:#1e1e2e;pointer-events:auto;border-right:2px solid #312d4b;box-shadow:4px 0 20px rgba(0,0,0,.4)}',
+      '#ps-left{width:50%;display:flex;flex-direction:column;background:#1e1e2e;pointer-events:auto;border-right:2px solid #312d4b;box-shadow:4px 0 20px rgba(0,0,0,.4);flex-shrink:0}',
       '#ps-right{flex:1;pointer-events:none;background:transparent}', // Pass-through to TurboWarp stage
 
       // Sprite tab bar
@@ -802,11 +842,26 @@
     if (ui.status) ui.status.textContent = running ? '● Running' : '';
   }
 
+  // ── Overlay width: align left panel to the TurboWarp stage edge ─
+  // TurboWarp's code area is NOT exactly 50% — it depends on the stage's
+  // rendered size. We measure the canvas left edge and snap the panel to it.
+  function adjustOverlay() {
+    var canvas = document.querySelector('canvas');
+    var leftEl  = document.getElementById('ps-left');
+    if (!canvas || !leftEl) return;
+    var rect = canvas.getBoundingClientRect();
+    // Only update if the canvas is plausibly on the right side of the screen
+    if (rect.left > 60 && rect.left < window.innerWidth - 60) {
+      leftEl.style.width = rect.left + 'px';
+    }
+  }
+
   // ── Sync ──────────────────────────────────────────────────────
   function sync() {
     renderSpriteBar();
     renderThreadList();
     loadCodeToEditor();
+    adjustOverlay();
   }
 
   // ── Boot ──────────────────────────────────────────────────────
@@ -815,13 +870,15 @@
 
     loadSkulpt(function () {
       buildUI();
-      setupBridge();
 
       // Initial sync after TurboWarp finishes loading its project
       setTimeout(sync, 600);
+      // Second pass in case TurboWarp takes longer on slow connections
+      setTimeout(sync, 1500);
 
-      // Re-sync whenever sprites change
+      // Re-sync (including overlay width) whenever sprites change or window resizes
       vm.runtime.on('TARGETS_UPDATE', function () { sync(); });
+      window.addEventListener('resize', adjustOverlay);
 
       // Intercept TurboWarp's own green flag so it doesn't fight Python
       // (TurboWarp has no blocks in PyScratch lessons, so this mainly prevents
