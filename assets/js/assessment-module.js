@@ -503,22 +503,27 @@ async function finaliseIncompleteAssessmentResponses() {
     var freshSnap = await assessment.sessionRef.child('answers/0/' + code).get();
     var rec = freshSnap.exists() ? (freshSnap.val() || {}) : items[i].rec;
     if (rec.completed) continue;
-    var result;
+    var result = null;
+    result = betterAssessmentResult(result, resultFromStoredRubric(rec, 'rubric', 'score', 'maxScore', spec));
+    result = betterAssessmentResult(result, resultFromStoredRubric(rec, 'draftRubric', 'draftScore', 'draftMaxScore', spec));
     if (spec.questions && spec.questions.length) {
-      result = await assessQuestionAssessmentAsync(spec, rec.answers || {});
-    } else if (rec.rubric && rec.rubric.length) {
-      result = {
-        score: rec.score || rec.draftScore || rec.rubric.reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0),
-        maxScore: rec.maxScore || rec.draftMaxScore || (spec.maxScore || 21),
-        criteria: rec.rubric
-      };
-    } else if (rec.draftRubric && rec.draftRubric.length) {
-      result = {
-        score: rec.draftScore || rec.draftRubric.reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0),
-        maxScore: rec.draftMaxScore || (spec.maxScore || 21),
-        criteria: rec.draftRubric
-      };
-    } else {
+      var computed = await assessQuestionAssessmentAsync(spec, rec.answers || {});
+      result = betterAssessmentResult(result, computed);
+    }
+    if (!result) {
+      if (rec.validationInProgress || rec.finalSubmitInProgress) {
+        await assessment.sessionRef.child('answers/0/' + code).update({
+          autoSubmitDeferred: true,
+          autoSubmitDeferredAt: Date.now(),
+          autoSubmitDeferredReason: 'Student validation was still running when the host ended the AP.'
+        });
+        continue;
+      }
+      if (!hasAssessmentEvidence(rec)) {
+        result = { score: 0, maxScore: spec.maxScore || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
+      }
+    }
+    if (!result) {
       result = { score: 0, maxScore: spec.maxScore || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
     }
     var completedAt = Date.now();
@@ -930,7 +935,8 @@ async function saveQuestionAssessmentDraft(spec, opts) {
       savedAt: Date.now(),
       lastSeenAt: Date.now(),
       draftScore: result.score,
-      draftMaxScore: result.maxScore
+      draftMaxScore: result.maxScore,
+      draftRubric: stripRubricForStorage(result.criteria)
     });
     document.getElementById('aps-save-status').textContent = 'Saved ' + new Date().toLocaleTimeString('en-GB');
   } catch(e) {
@@ -943,6 +949,54 @@ function stripRubricForStorage(criteria) {
     var item = { id: c.id, text: c.text, marks: c.marks, awarded: c.awarded };
     if (c.family != null) item.family = c.family;
     return item;
+  });
+}
+
+function rubricScore(criteria) {
+  return (criteria || []).reduce(function(t, c) { return t + (Number(c.awarded) || 0); }, 0);
+}
+
+function rubricMaxScore(criteria) {
+  return (criteria || []).reduce(function(t, c) { return t + (Number(c.marks) || 0); }, 0);
+}
+
+function resultFromStoredRubric(rec, rubricKey, scoreKey, maxKey, spec) {
+  var rubric = rec && rec[rubricKey];
+  if (!rubric || !rubric.length) return null;
+  var rubricTotal = rubricScore(rubric);
+  var score = typeof rec[scoreKey] === 'number' ? Math.max(rec[scoreKey], rubricTotal) : rubricTotal;
+  var maxScore = typeof rec[maxKey] === 'number' ? rec[maxKey] : (rubricMaxScore(rubric) || (spec.maxScore || 21));
+  return { score: score, maxScore: maxScore, criteria: rubric };
+}
+
+function betterAssessmentResult(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  if ((b.score || 0) > (a.score || 0)) return b;
+  if ((b.score || 0) === (a.score || 0) && (b.criteria || []).length > (a.criteria || []).length) return b;
+  return a;
+}
+
+function hasAssessmentEvidence(rec) {
+  if (!rec) return false;
+  if (rec.completedAt || typeof rec.score === 'number' || typeof rec.draftScore === 'number') return true;
+  if (rec.rubric && rec.rubric.length) return true;
+  if (rec.draftRubric && rec.draftRubric.length) return true;
+  if (rec.answers && Object.keys(rec.answers).length) return true;
+  return false;
+}
+
+async function saveAssessmentDraftResult(result) {
+  if (!result) return;
+  saveLocalApBackup(result);
+  if (assessment.debugMode || !assessment.responseRef || assessment.completed) return;
+  var now = Date.now();
+  await assessment.responseRef.update({
+    savedAt: now,
+    lastSeenAt: now,
+    draftScore: result.score,
+    draftMaxScore: result.maxScore,
+    draftRubric: stripRubricForStorage(result.criteria)
   });
 }
 
@@ -1094,6 +1148,9 @@ async function autoSubmitAssessmentForEarlyEnd() {
   var spec = ASSESSMENTS[assessment.assessmentId];
   if (!spec) return;
   try {
+    if (!assessment.debugMode && assessment.responseRef) {
+      assessment.responseRef.update({ finalSubmitInProgress: true, lastSeenAt: Date.now() }).catch(function() {});
+    }
     if (spec.questions && spec.questions.length) {
       saveCurrentQuestionAnswer(spec, { silent: true });
       var result = await assessQuestionAssessmentAsync(spec, assessment.questionAnswers || {});
@@ -1110,6 +1167,8 @@ async function autoSubmitAssessmentForEarlyEnd() {
           score: result.score,
           maxScore: result.maxScore,
           rubric: strippedRubric,
+          finalSubmitInProgress: false,
+          validationInProgress: false,
           savedAt: completedAt,
           lastSeenAt: completedAt
         });
@@ -1143,7 +1202,9 @@ async function autoSubmitAssessmentForEarlyEnd() {
                 completedAt: completedAt,
                 score: result.score,
                 maxScore: result.maxScore,
-                rubric: strippedRubric
+                rubric: strippedRubric,
+                finalSubmitInProgress: false,
+                validationInProgress: false
               });
             }
             await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
@@ -1162,13 +1223,19 @@ async function autoSubmitAssessmentForEarlyEnd() {
       });
     }
   } catch(e) {
-    // Validation failed — teacher's finaliseIncompleteAssessmentResponses will handle this student
+    // Validation failed; teacher finalisation will handle this student if possible.
+    if (!assessment.debugMode && assessment.responseRef) {
+      assessment.responseRef.update({ finalSubmitInProgress: false, lastSeenAt: Date.now() }).catch(function() {});
+    }
   }
 }
 
 async function submitQuestionAssessmentFinal() {
   var spec = ASSESSMENTS[assessment.assessmentId];
   saveCurrentQuestionAnswer(spec, { silent: true });
+  if (!assessment.debugMode && assessment.responseRef) {
+    assessment.responseRef.update({ finalSubmitInProgress: true, lastSeenAt: Date.now() }).catch(function() {});
+  }
   var result = await assessQuestionAssessmentAsync(spec, assessment.questionAnswers || {});
   saveLocalApBackup(result);
   assessment.completed = true;
@@ -1188,6 +1255,8 @@ async function submitQuestionAssessmentFinal() {
         score: result.score,
         maxScore: result.maxScore,
         rubric: strippedRubric,
+        finalSubmitInProgress: false,
+        validationInProgress: false,
         savedAt: completedAt,
         lastSeenAt: completedAt
       });
@@ -1201,6 +1270,9 @@ async function submitQuestionAssessmentFinal() {
       className: assessment.className || state.className || null
     });
   } catch(e) {
+    if (!assessment.debugMode && assessment.responseRef) {
+      assessment.responseRef.update({ finalSubmitInProgress: false, lastSeenAt: Date.now() }).catch(function() {});
+    }
     // Don't leave the student stuck — show them the completion screen even if
     // the network write failed, and let them know so the teacher can re-mark if needed.
     console.error('AP submit write failed:', e);
@@ -1288,6 +1360,42 @@ document.getElementById('btn-ap-check').onclick = async function() {
     var result = await validateAssessmentProject(function(label, index, total) {
       updateAssessmentValidationStatus(label, index, total);
     });
+    await saveAssessmentDraftResult(result);
+    if (!assessment.debugMode && assessment.sessionRef && assessment.responseRef && !assessment.completed) {
+      try {
+        var stateSnap = await assessment.sessionRef.child('state').get();
+        var sessionState = stateSnap.val();
+        if (sessionState === 'ending' || sessionState === 'finished') {
+          var completedAt = Date.now();
+          var strippedRubric = stripRubricForStorage(result.criteria);
+          await assessment.responseRef.update({
+            completed: true,
+            autoSubmitted: true,
+            completedAt: completedAt,
+            score: result.score,
+            maxScore: result.maxScore,
+            rubric: strippedRubric,
+            finalSubmitInProgress: false,
+            validationInProgress: false,
+            savedAt: completedAt,
+            lastSeenAt: completedAt
+          });
+          await saveAssessmentProgressRecord(state.uid, assessment.assessmentId, assessment.lobbyCode, {
+            completedAt: completedAt,
+            autoSubmitted: true,
+            score: result.score,
+            maxScore: result.maxScore,
+            rubric: strippedRubric,
+            className: assessment.className || state.className || null
+          });
+          assessment.completed = true;
+          showAssessmentCompleted({ score: result.score, maxScore: result.maxScore, rubric: result.criteria });
+          return;
+        }
+      } catch(e) {
+        console.warn('AP checked result could not be auto-submitted after host end:', e.message);
+      }
+    }
     renderAssessmentFeedback(result, false);
   });
 };
@@ -1335,6 +1443,8 @@ document.getElementById('btn-ap-finish').onclick = async function() {
             score: result.score,
             maxScore: result.maxScore,
             rubric: strippedRubric,
+            finalSubmitInProgress: false,
+            validationInProgress: false,
             savedAt: completedAt,
             lastSeenAt: completedAt
           });
@@ -1385,9 +1495,23 @@ document.getElementById('btn-ap-finish').onclick = async function() {
 
 async function runAssessmentValidation(initialStatus, task) {
   setAssessmentValidationLocked(true, initialStatus, 0, 1);
+  if (!assessment.debugMode && assessment.responseRef && !assessment.completed) {
+    assessment.responseRef.update({
+      validationInProgress: true,
+      validationStartedAt: Date.now(),
+      lastSeenAt: Date.now()
+    }).catch(function() {});
+  }
   try {
     return await task();
   } finally {
+    if (!assessment.debugMode && assessment.responseRef) {
+      assessment.responseRef.update({
+        validationInProgress: false,
+        validationFinishedAt: Date.now(),
+        lastSeenAt: Date.now()
+      }).catch(function() {});
+    }
     setAssessmentValidationLocked(false);
   }
 }

@@ -116,14 +116,18 @@
 
   // ── VM helpers ────────────────────────────────────────────────
   function getSprites() {
-    if (!S.vm) return [];
-    return S.vm.runtime.targets.filter(function (t) { return !t.isStage && t.sprite; });
+    try {
+      if (!S.vm || !S.vm.runtime || !S.vm.runtime.targets) return [];
+      return S.vm.runtime.targets.filter(function (t) { return !t.isStage && t.sprite; });
+    } catch (e) { return []; }
   }
 
   function getTargetByName(name) {
-    if (!S.vm) return null;
-    if (name === '__stage__') return S.vm.runtime.targets.find(function (t) { return t.isStage; });
-    return S.vm.runtime.targets.find(function (t) { return t.sprite && t.sprite.name === name; });
+    try {
+      if (!S.vm || !S.vm.runtime || !S.vm.runtime.targets) return null;
+      if (name === '__stage__') return S.vm.runtime.targets.find(function (t) { return t.isStage; });
+      return S.vm.runtime.targets.find(function (t) { return t.sprite && t.sprite.name === name; });
+    } catch (e) { return null; }
   }
 
   // ── Python prologue generator ─────────────────────────────────
@@ -462,12 +466,9 @@
 
   function startAll() {
     if (!S.vm) return;
-    stopAll();
+    if (S.running) stopAll(); // clean up any previous run
     S.running = true;
     clearConsole();
-
-    // Reset Scratch sprites to their starting positions / clear say bubbles
-    try { S.vm.greenFlag(); } catch (e) {}
 
     var sprites = getSprites();
     sprites.forEach(function (t) {
@@ -502,8 +503,6 @@
       '#ps-bar .ps-sep{width:1px;height:22px;background:rgba(255,255,255,.25);margin:0 4px}',
       '#ps-bar button{background:none;border:none;color:#fff;cursor:pointer;padding:4px 9px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:5px;font-family:inherit;line-height:1}',
       '#ps-bar button:hover{background:rgba(255,255,255,.18)}',
-      '#ps-flag-btn{font-size:20px;color:#4ade80 !important}',
-      '#ps-stop-btn{font-size:20px;color:#f87171 !important}',
       '#ps-status{margin-left:auto;font-size:12px;opacity:.75}',
 
       // Body split — width of ps-left is set dynamically by adjustOverlay()
@@ -573,9 +572,6 @@
       '<div id="ps-bar">',
         '<span class="ps-logo">🐍 PyScratch</span>',
         '<span class="ps-sep"></span>',
-        '<button id="ps-flag-btn" title="Run (Green Flag)">▶</button>',
-        '<button id="ps-stop-btn" title="Stop all">⏹</button>',
-        '<span class="ps-sep"></span>',
         '<button id="ps-help-btn">❓ Help</button>',
         '<span id="ps-status"></span>',
       '</div>',
@@ -616,8 +612,6 @@
     ui.status       = document.getElementById('ps-status');
 
     // Button events
-    document.getElementById('ps-flag-btn').onclick = startAll;
-    document.getElementById('ps-stop-btn').onclick = stopAll;
     document.getElementById('ps-add-thread').onclick = addThread;
     document.getElementById('ps-help-btn').onclick = function () { hm.classList.remove('hidden'); };
     hm.querySelector('.ps-mhead button').onclick = function () { hm.classList.add('hidden'); };
@@ -837,8 +831,6 @@
     if (ui.console) ui.console.innerHTML = '';
   }
   function updateRunState(running) {
-    var flagBtn = document.getElementById('ps-flag-btn');
-    if (flagBtn) flagBtn.style.opacity = running ? '0.55' : '1';
     if (ui.status) ui.status.textContent = running ? '● Running' : '';
   }
 
@@ -880,15 +872,16 @@
       vm.runtime.on('TARGETS_UPDATE', function () { sync(); });
       window.addEventListener('resize', adjustOverlay);
 
-      // Intercept TurboWarp's own green flag so it doesn't fight Python
-      // (TurboWarp has no blocks in PyScratch lessons, so this mainly prevents
-      //  the VM from resetting positions without also starting Python threads)
-      vm.on('PROJECT_START', function () {
-        // If green flag was triggered from TurboWarp UI (not our button),
-        // kick off Python execution too.
-        if (!S.running) {
-          setTimeout(startAll, 0);
-        }
+      // TurboWarp's green flag → start Python.
+      // vm.runtime emits PROJECT_START when the green flag is clicked.
+      // We use setTimeout(0) so TurboWarp finishes its own reset first.
+      vm.runtime.on('PROJECT_START', function () {
+        setTimeout(startAll, 0);
+      });
+
+      // TurboWarp's stop button → stop Python threads.
+      vm.runtime.on('PROJECT_STOP_ALL', function () {
+        if (S.running) stopAll();
       });
 
       console.log('[PyScratch] Ready. VM:', vm.constructor ? vm.constructor.name : 'loaded');
