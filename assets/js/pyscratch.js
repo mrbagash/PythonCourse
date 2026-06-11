@@ -21,6 +21,7 @@
   var FRAME_MS = 1000 / 60;
   var SKULPT_BASE = '../assets/js/';
 
+
   var API_LIST = [
     // Movement
     { n: 'move_steps',    s: 'move_steps(steps)',       c: 'mov'  },
@@ -131,10 +132,8 @@
   }
 
   // ── Python prologue generator ─────────────────────────────────
-  // Uses a fixed-argument helper _psc(f,a0,a1,a2) instead of *args unpacking
-  // so it works reliably across all Skulpt versions. Sprite name is passed as
-  // an argument into __ps_call — not read from globals — so concurrent threads
-  // never mis-read each other's sprite context.
+  // Uses Sk.builtins for __ps_call, __ps_wait, __ps_stop (set by setupBridge).
+  // Fixed-arg _psc helper avoids *args unpacking which varies across Skulpt versions.
   function makePrologue(spriteName) {
     var n = JSON.stringify(spriteName);
     return [
@@ -170,61 +169,58 @@
       'def key_pressed(k): return _psc("key_pressed",k)',
       'def mouse_x(): return _psc("mouse_x")',
       'def mouse_y(): return _psc("mouse_y")',
-      // Control — call their own built-ins directly (no _psc needed)
+      // Control — backed by __ps_wait / __ps_stop in Sk.builtins
       'def wait(s=0): __ps_wait(s)',
       'def stop(): __ps_stop()',
     ].join('\n') + '\n';
   }
 
   // ── Skulpt bridge ─────────────────────────────────────────────
+  // Adds __ps_call, __ps_wait, __ps_stop to Sk.builtins so they are
+  // accessible as Python built-in names without any import.
   function setupBridge() {
-    // __ps_call(fn, sprite, a0, a1, a2) — fixed 5 args, no *args unpacking
-    Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fnArg, spArg, a0Arg, a1Arg, a2Arg) {
-      var funcName   = Sk.ffi.remapToJs(fnArg);
-      var spriteName = Sk.ffi.remapToJs(spArg);
-      var jsArgs = [a0Arg, a1Arg, a2Arg].map(function (a) {
-        if (!a || a instanceof Sk.builtin.none) return null;
-        try { return Sk.ffi.remapToJs(a); } catch (e) { return null; }
-      });
-
-      var result = callAPI(funcName, spriteName, jsArgs);
-
-      // Async result (Promise) → Skulpt suspension
-      if (result && typeof result.then === 'function') {
+    function jsArg(a) {
+      if (!a || a instanceof Sk.builtin.none) return null;
+      try { return Sk.ffi.remapToJs(a); } catch (e) { return null; }
+    }
+    function skVal(r) {
+      if (r === null || r === undefined) return Sk.builtin.none.none$;
+      if (r && typeof r.then === 'function') {
         var susp = new Sk.misceval.Suspension();
-        susp.data = {
-          type: 'Sk.promise',
-          promise: result.then(function () { return undefined; })
-        };
+        susp.data = { type: 'Sk.promise', promise: r.then(function () { return undefined; }) };
         susp.resume = function () { return Sk.builtin.none.none$; };
         return susp;
       }
-
-      if (result === null || result === undefined) return Sk.builtin.none.none$;
-      if (typeof result === 'boolean') return result ? Sk.builtin.bool.true$ : Sk.builtin.bool.false$;
-      if (typeof result === 'number')  return new Sk.builtin.float_(result);
-      if (typeof result === 'string')  return new Sk.builtin.str(result);
+      if (typeof r === 'boolean') return r ? Sk.builtin.bool.true$ : Sk.builtin.bool.false$;
+      if (typeof r === 'number')  return new Sk.builtin.float_(r);
+      if (typeof r === 'string')  return new Sk.builtin.str(r);
       return Sk.builtin.none.none$;
+    }
+
+    Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fn, sp, a0, a1, a2) {
+      return skVal(callAPI(
+        Sk.ffi.remapToJs(fn),
+        Sk.ffi.remapToJs(sp),
+        [jsArg(a0), jsArg(a1), jsArg(a2)]
+      ));
     });
 
-    // __ps_wait: yield for secs seconds (0 = one frame)
     Sk.builtins['__ps_wait'] = new Sk.builtin.func(function (secsArg) {
-      var ms = Math.max(0, (Sk.ffi.remapToJs(secsArg) || 0) * 1000) || FRAME_MS;
+      var ms = Math.max(0, (Sk.ffi.remapToJs(secsArg) || 0) * 1000);
       var susp = new Sk.misceval.Suspension();
       susp.data = {
         type: 'Sk.promise',
         promise: new Promise(function (resolve) {
-          setTimeout(function () { resolve(S.running ? null : '__stop__'); }, ms);
+          setTimeout(function () { resolve(S.running ? null : '__ps_stop__'); }, ms || FRAME_MS);
         })
       };
       susp.resume = function (val) {
-        if (val === '__stop__') throw new Error('__pyscratch_stopped__');
+        if (val === '__ps_stop__') throw new Error('__pyscratch_stopped__');
         return Sk.builtin.none.none$;
       };
       return susp;
     });
 
-    // __ps_stop
     Sk.builtins['__ps_stop'] = new Sk.builtin.func(function () {
       stopAll();
       return Sk.builtin.none.none$;
@@ -451,7 +447,7 @@
       // Safety net: yield every 1000 ops for infinite loops that aren't `while True:`
       yieldLimit: 1000
     });
-    // Register bridge builtins AFTER Sk.configure (in case configure touches builtins)
+    // Register _ps module and window bridge globals
     setupBridge();
 
     return Sk.misceval.asyncToPromise(function () {
@@ -857,8 +853,12 @@
   }
 
   // ── Boot ──────────────────────────────────────────────────────
-  waitFor(function () { return window.vm && window.vm.runtime; }).then(function (vm) {
-    S.vm = vm;
+  // IMPORTANT: return window.vm (the VirtualMachine), not window.vm.runtime.
+  // `window.vm && window.vm.runtime` returns the Runtime due to && semantics.
+  waitFor(function () {
+    return (window.vm && window.vm.runtime) ? window.vm : null;
+  }).then(function (vm) {
+    S.vm = vm; // S.vm = VirtualMachine; S.vm.runtime = Runtime ✓
 
     loadSkulpt(function () {
       buildUI();
@@ -869,22 +869,26 @@
       setTimeout(sync, 1500);
 
       // Re-sync (including overlay width) whenever sprites change or window resizes
-      vm.runtime.on('TARGETS_UPDATE', function () { sync(); });
+      try { vm.runtime.on('TARGETS_UPDATE', function () { sync(); }); } catch(e) {}
       window.addEventListener('resize', adjustOverlay);
 
       // TurboWarp's green flag → start Python.
       // vm.runtime emits PROJECT_START when the green flag is clicked.
-      // We use setTimeout(0) so TurboWarp finishes its own reset first.
-      vm.runtime.on('PROJECT_START', function () {
-        setTimeout(startAll, 0);
-      });
+      // setTimeout(0) ensures TurboWarp finishes its own reset before Python starts.
+      try {
+        vm.runtime.on('PROJECT_START', function () {
+          setTimeout(startAll, 0);
+        });
 
-      // TurboWarp's stop button → stop Python threads.
-      vm.runtime.on('PROJECT_STOP_ALL', function () {
-        if (S.running) stopAll();
-      });
+        // TurboWarp's stop button → also stop Python threads.
+        vm.runtime.on('PROJECT_STOP_ALL', function () {
+          if (S.running) stopAll();
+        });
+      } catch(e) {
+        console.warn('[PyScratch] Could not attach runtime events:', e);
+      }
 
-      console.log('[PyScratch] Ready. VM:', vm.constructor ? vm.constructor.name : 'loaded');
+      console.log('[PyScratch] Ready. vm=', vm, 'runtime=', vm.runtime);
     });
   });
 
