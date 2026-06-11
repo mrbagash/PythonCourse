@@ -227,7 +227,9 @@
     });
 
     Sk.builtins['__ps_stop'] = new Sk.builtin.func(function () {
-      stopAll();
+      // Go through vm.stopAll (the patched version) so TurboWarp sprites also stop.
+      if (S.vm) { try { S.vm.stopAll(); } catch(e) { stopAll(); } }
+      else stopAll();
       return Sk.builtin.none.none$;
     });
   }
@@ -484,12 +486,12 @@
     updateRunState(true);
   }
 
+  // Stops Python threads only. Does NOT call vm.stopAll — the patched vm.stopAll
+  // is the single place that calls both stopAll() + the original TurboWarp stop.
+  // Calling vm.stopAll from here would cause infinite recursion.
   function stopAll() {
     S.running = false;
-    S.gen++;              // invalidates ALL sleeping threads from previous runs
-    if (S.vm) {
-      try { S.vm.stopAll(); } catch (e) {}
-    }
+    S.gen++;   // sleeping threads see gen mismatch → throw __pyscratch_stopped__
     updateRunState(false);
   }
 
