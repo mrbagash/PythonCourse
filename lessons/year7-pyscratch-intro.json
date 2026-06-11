@@ -1,0 +1,15 @@
+{
+  "id": "year7-pyscratch-intro",
+  "title": "L1: PyScratch",
+  "description": "Control Scratch sprites using real Python — write code to move, turn, bounce and sense.",
+  "steps": [
+    {
+      "id": "editor",
+      "title": "PyScratch Editor",
+      "autoComplete": true,
+      "css": ".ps-wrap{margin:0.75rem 0;border:1px solid #e2e8f0;border-radius:0.5rem;overflow:hidden}.ps-wrap.ps-fullscreen{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;border-radius:0!important;border:none!important;background:#111827}.ps-frame{display:block;border:none;transform-origin:top left}.ps-bar{display:flex;align-items:center;justify-content:flex-end;padding:0.4rem 0.6rem;background:#f8fafc;border-top:1px solid #e2e8f0}.ps-fs-btn{background:none;border:1px solid #cbd5e1;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#64748b;line-height:1}",
+      "content": "<h2 class='text-xl font-bold mb-2 text-gray-800'>🐍 PyScratch Editor</h2><p class='text-gray-700 mb-1'>Write Python to control Scratch sprites. The default script already works — press <strong>▶</strong> to see it run, then experiment.</p><p class='text-gray-600 text-sm mb-3'>Use the <strong>Insert</strong> tab in the top-left to add a sprite to your code, or click <strong>❓ Help</strong> to see all available commands.</p><div class='ps-wrap'><iframe id='ps-frame' class='ps-frame' src='./scratch/editor.html?pyscratch=1' allow='microphone; camera'></iframe><div class='ps-bar'><button id='ps-fs-btn' class='ps-fs-btn' title='Full screen'>&#x26F6;</button></div></div>",
+      "js": "(function(){var NW=1100,NH=650;function sf(){var f=document.getElementById('ps-frame');if(!f)return;var w=f.parentElement,bar=w.querySelector('.ps-bar'),bH=bar?bar.offsetHeight:36,fs=w.classList.contains('ps-fullscreen'),aW=fs?window.innerWidth:w.clientWidth,sc=fs?Math.min(aW/NW,(window.innerHeight-bH)/NH):aW/NW;f.style.width=NW+'px';f.style.height=NH+'px';f.style.transform='scale('+sc+')';f.style.marginBottom=Math.round(NH*(sc-1))+'px';f.style.marginLeft=fs?Math.max(0,Math.round((aW-NW*sc)/2))+'px':'0';}function tfs(){var f=document.getElementById('ps-frame'),w=f.parentElement,b=document.getElementById('ps-fs-btn'),fs=w.classList.toggle('ps-fullscreen');b.textContent=fs?'✕':'⛶';if(fs){window._psSY=window.scrollY;document.body.style.overflow='hidden';}else{document.body.style.overflow='';window.scrollTo(0,window._psSY||0);}sf();}sf();if(window._psR)window.removeEventListener('resize',window._psR);window._psR=sf;window.addEventListener('resize',sf);if(window._psK)document.removeEventListener('keydown',window._psK);window._psK=function(e){if(e.key==='Escape'){var f=document.getElementById('ps-frame');if(f&&f.parentElement.classList.contains('ps-fullscreen'))tfs();}};document.addEventListener('keydown',window._psK);document.getElementById('ps-fs-btn').onclick=tfs;})()"
+    }
+  ]
+}

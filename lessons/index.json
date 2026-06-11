@@ -45,6 +45,18 @@
               "order": 6
             }
           ]
+        },
+        {
+          "id": "pyscratch",
+          "label": "PyScratch",
+          "lessons": [
+            {
+              "id": "year7-pyscratch-intro",
+              "title": "L1: PyScratch",
+              "file": "lessons/year7-pyscratch-intro.json",
+              "order": 1
+            }
+          ]
         }
       ]
     },
