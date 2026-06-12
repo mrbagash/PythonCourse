@@ -1,0 +1,93 @@
+{
+  "id": "year7-pyscratch-movement",
+  "title": "L2: Costumes & Movement",
+  "description": "Build a walking, animating character using two threads — movement stays smooth while animation runs on its own timer.",
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "What are we building?",
+      "autoComplete": true,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Costumes &amp; Movement 🎮</h2><p class='mb-4 text-gray-700'>In this lesson you will build a character that <strong>moves</strong> with the arrow keys and <strong>animates</strong> through its costumes — both happening at the same time.</p><p class='mb-3 text-gray-700'>The key idea is <strong>threads</strong>. In PyScratch, each thread is an independent block of code that runs in parallel. A <code class='bg-gray-100 px-1 rounded font-mono'>wait()</code> in the animation thread never slows down movement because the two threads do not share a timer.</p><div class='grid grid-cols-2 gap-3 mb-4'><div class='bg-gray-900 rounded-lg p-3 border-l-4 border-blue-500'><div class='text-blue-400 text-xs font-bold uppercase tracking-wide mb-2'>Thread 1 — movement</div><pre class='text-green-400 font-mono text-xs'>def game_start():\n    set_rotation_style(\"left-right\")\n    while True:\n        if key_pressed(\"right\"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed(\"left\"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()</pre></div><div class='bg-gray-900 rounded-lg p-3 border-l-4 border-purple-500'><div class='text-purple-400 text-xs font-bold uppercase tracking-wide mb-2'>Thread 2 — animation</div><pre class='text-green-400 font-mono text-xs'>def game_start():\n    while True:\n        next_costume()\n        wait(0.1)</pre></div></div><div class='bg-yellow-50 border border-yellow-300 rounded-lg p-3'><p class='text-yellow-900 text-sm'>⚠️ Make sure your sprite has <strong>at least two costumes</strong> before running the code. Click the <strong>Costumes</strong> tab in TurboWarp to check.</p></div>",
+      "css": "",
+      "js": ""
+    },
+    {
+      "id": "why-threads",
+      "title": "Why Use Two Threads?",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Why use two threads? 🤔</h2><p class='mb-4 text-gray-700'>Click through the example below to see the problem with putting movement and animation in a single loop, and exactly why separate threads fix it.</p><div id='ps-m-why'></div>",
+      "css": "",
+      "js": "BinaryLesson.createStepper({containerId:'ps-m-why',steps:[{title:'The problem: one loop does everything',html:'<p class=\"text-gray-300 mb-3\">When movement and animation share the same <code class=\"bg-gray-700 px-1 rounded text-yellow-300\">while True:</code> loop, a single <code class=\"bg-gray-700 px-1 rounded text-yellow-300\">wait()</code> slows the <em>entire</em> loop — including how fast the game checks for key presses.</p><div class=\"bg-gray-900 rounded-lg p-4 mb-1 border-l-4 border-red-500\"><div class=\"text-red-400 text-xs font-bold uppercase tracking-wide mb-2\">❌ One thread — sluggish controls</div><pre class=\"text-green-400 font-mono text-sm\">def game_start():\\n    while True:\\n        if key_pressed(\"right\"):\\n            change_x(5)\\n        if key_pressed(\"left\"):\\n            change_x(-5)\\n        next_costume()\\n        wait(0.1)  ← limits the whole loop to 10/sec</pre></div>',note:'The wait(0.1) means the entire loop — movement checks included — only runs 10 times per second. The sprite can take up to 0.1 seconds to react to a key press. That is noticeably laggy.'},{title:'The fix: give each job its own thread',html:'<p class=\"text-gray-300 mb-3\">Each PyScratch thread runs independently. Splitting movement and animation into separate threads means each one runs on its own schedule — a slow animation thread cannot block a fast movement thread.</p><div class=\"grid grid-cols-2 gap-3 mb-1\"><div class=\"bg-gray-900 rounded-lg p-3 border-l-4 border-blue-500\"><div class=\"text-blue-400 text-xs font-bold uppercase mb-2\">✅ Thread 1 — movement</div><pre class=\"text-green-400 font-mono text-xs\">def game_start():\\n    while True:\\n        if key_pressed(\"right\"):\\n            change_x(5)\\n        if key_pressed(\"left\"):\\n            change_x(-5)\\n        if_on_edge_bounce()</pre></div><div class=\"bg-gray-900 rounded-lg p-3 border-l-4 border-purple-500\"><div class=\"text-purple-400 text-xs font-bold uppercase mb-2\">✅ Thread 2 — animation</div><pre class=\"text-green-400 font-mono text-xs\">def game_start():\\n    while True:\\n        next_costume()\\n        wait(0.1)</pre></div></div>',note:'Thread 1 checks keys up to 60 times per second — instant response. Thread 2 cycles costumes 10 times per second — smooth animation. Neither affects the other.'},{title:'The rule: wait() only pauses its own thread',html:'<div class=\"bg-gray-900 rounded-lg p-4 mb-1\"><ul class=\"text-gray-300 space-y-3\"><li>✅ <strong class=\"text-white\">Movement thread</strong> — runs at full frame rate. Keys respond in under 17ms.</li><li>✅ <strong class=\"text-white\">Animation thread</strong> — cycles costumes 10 times per second with <code class=\"bg-gray-700 px-1 rounded text-yellow-300\">wait(0.1)</code>.</li><li>✅ <code class=\"bg-gray-700 px-1 rounded text-yellow-300\">wait()</code> only pauses the thread it is called from — the other thread keeps running.</li><li>🔑 <strong class=\"text-white\">Rule:</strong> use <code class=\"bg-gray-700 px-1 rounded text-yellow-300\">wait()</code> in a thread only when you want <em>that specific thread</em> to slow down.</li></ul></div>',note:'This is the biggest advantage of threads: each one has its own timing. A slow animation never makes controls feel unresponsive.'}]});"
+    },
+    {
+      "id": "build-it",
+      "title": "Build Your Game",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Build it yourself! 🛠️</h2><p class='mb-2 text-gray-700'>Follow the guided steps below. The <strong>arrow keys</strong> on your keyboard move between steps — or use the buttons.</p><p class='mb-3 text-gray-700 text-sm'>💡 Make sure your sprite has at least two costumes first — switch to the <strong>Costumes</strong> tab in TurboWarp to check.</p><div id='ps-m-build'></div>",
+      "css": "",
+      "js": "PyScratchLesson.createStepper({containerId:'ps-m-build',height:540,steps:[{title:'Step 1 — The Threads panel',text:'The <strong>Threads</strong> panel on the left side of PyScratch lists all your code blocks. Right now there is one default thread. You are going to rename it and add a second one.',interactive:false,highlight:'threads',highlightLabel:'Threads panel'},{title:'Step 2 — Set up your two threads',text:'<strong>Rename</strong> the existing thread to <code>movement</code> by clicking the pencil ✏️ icon next to it. Then click the <strong>+</strong> button to add a second thread and name it <code>animation</code>. You should see both listed in the panel.',interactive:true,highlight:'threads',highlightLabel:'Rename & click + here'},{title:'Step 3 — The movement code (read first)',text:'Click your <strong>movement</strong> thread to select it. Here is the code you will type in the next step:<br><br><code>def game_start():</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;set_rotation_style(\"left-right\")</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;while True:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if key_pressed(\"right\"):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;change_x(5)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;point_in_direction(90)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if key_pressed(\"left\"):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;change_x(-5)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;point_in_direction(-90)</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if_on_edge_bounce()</code><br><br>No <code>wait()</code> here — this thread runs as fast as the screen refreshes.',interactive:false,highlight:'editor',highlightLabel:'You will type here'},{title:'Step 4 — Type the movement code',text:'Select your <strong>movement</strong> thread and type the code from the previous step.<br><br>💡 Tips: press <strong>Tab</strong> to indent, press <strong>Enter</strong> after a colon and PyScratch will auto-indent. Take your time — indentation matters in Python.',interactive:true,highlight:'threads'},{title:'Step 5 — The animation code (read first)',text:'Now look at the <strong>animation</strong> thread. Here is its code:<br><br><code>def game_start():</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;while True:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next_costume()</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wait(0.1)</code><br><br>The <code>wait(0.1)</code> makes costumes cycle 10 times per second. It <strong>only</strong> pauses this thread — movement is completely unaffected.',interactive:false,highlight:'threads',highlightLabel:'Click animation thread'},{title:'Step 6 — Type the animation code',text:'Click your <strong>animation</strong> thread to select it, then type the animation code from the previous step.<br><br>Keep the <code>wait(0.1)</code> — without it the costume would flicker too fast to see.',interactive:true,highlight:'editor'},{title:'Step 7 — Run your game!',text:'Both threads are written. Click the <strong>green flag</strong> to start your game.<br><br>Use the <strong>left and right arrow keys</strong> to move the sprite. Watch how it animates smoothly as it moves — that is two threads running in parallel. 🎉',interactive:true,highlight:'green-flag',highlightLabel:'Click to run!'},{title:'Challenge 1 — Add up and down movement',text:'Add vertical movement to your <strong>movement</strong> thread. Inside the <code>while True:</code> loop, after the left/right checks, add:<br><br><code>if key_pressed(\"up\"):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;change_y(5)</code><br><code>if key_pressed(\"down\"):</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;change_y(-5)</code><br><br>You do not need to change the animation thread at all.',interactive:true,highlight:'threads'},{title:'Challenge 2 — Adjust the animation speed',text:'Switch to your <strong>animation</strong> thread and experiment with the <code>wait()</code> value:<br><br>🐇 <code>wait(0.05)</code> — faster animation (20fps)<br>🐢 <code>wait(0.25)</code> — slower animation (4fps)<br><br>Which speed looks best with your sprite? When you are happy, click <strong>Finish ✓</strong>.',interactive:true,highlight:'editor'}]});"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "q": "Why does putting animation and movement in the same loop cause problems?",
+      "options": [
+        "The wait() slows the whole loop — including key checks — to 10 times per second",
+        "PyScratch can only define one game_start() function per sprite",
+        "The while True loop uses too much memory when there is a wait() inside",
+        "next_costume() and change_x() cannot be called in the same function"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "If the animation thread calls wait(0.1), what happens to the movement thread?",
+      "options": [
+        "The movement thread carries on running — wait() only pauses the thread it is called in",
+        "The movement thread also waits 0.1 seconds before the next key check",
+        "The movement thread stops permanently until the animation finishes",
+        "Both threads restart from the beginning of game_start()"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What does wait(0.1) in the animation thread control?",
+      "options": [
+        "How often the costume changes — 10 times per second",
+        "How fast the sprite moves across the stage",
+        "How long the green flag takes to start the game",
+        "The maximum frame rate of the entire game"
+      ],
+      "answer": 0,
+      "duration": 45
+    },
+    {
+      "type": "mcq",
+      "q": "What does set_rotation_style(\"left-right\") do in the movement thread?",
+      "options": [
+        "Makes the sprite flip horizontally when moving left or right, instead of rotating",
+        "Locks the sprite so it can only move left and right",
+        "Rotates the sprite 90 degrees when a key is pressed",
+        "Stops the sprite bouncing off the top and bottom edges"
+      ],
+      "answer": 0,
+      "duration": 40
+    },
+    {
+      "type": "mcq",
+      "q": "Which of these is the correct code for the animation thread?",
+      "options": [
+        "def game_start():\\n    while True:\\n        next_costume()\\n        wait(0.1)",
+        "def game_start():\\n    next_costume()\\n    wait(0.1)",
+        "while True:\\n    next_costume()\\n    wait(0.1)",
+        "def animation():\\n    while True:\\n        next_costume()"
+      ],
+      "answer": 0,
+      "duration": 50
+    }
+  ]
+}

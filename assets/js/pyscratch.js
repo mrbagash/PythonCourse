@@ -21,6 +21,14 @@
   var FRAME_MS = 1000 / 60;
   var SKULPT_BASE = '../assets/js/';
 
+  // Demo mode — activated by ?pyscratch_demo (the guard above already matches it).
+  // The lesson embeds  <iframe src="scratch/editor.html?pyscratch_demo=1&project_url=...">
+  // and the iframe auto-runs the code stored in the .psb3, loops every N seconds,
+  // shows a read-only highlighted code panel, and blocks stage interaction.
+  var DEMO_MODE      = /[?&]pyscratch_demo/.test(location.search);
+  var DEMO_LOOP_SECS = parseInt(((location.search.match(/[?&]demo_loop=(\d+)/) || [])[1]) || '8', 10) || 8;
+  var DEMO_SPRITE    = decodeURIComponent(((location.search.match(/[?&]demo_sprite=([^&]*)/) || [])[1]) || '');
+
 
   var API_LIST = [
     // Movement
@@ -2393,6 +2401,310 @@
     adjustOverlay();
   }
 
+  // ── Demo mode ─────────────────────────────────────────────────
+
+  // Very lightweight Python syntax highlighter.
+  // Processes line-by-line so comments can't span into adjacent tokens.
+  function highlightPython(code) {
+    var KW = ['def','return','if','elif','else','while','for','in','and','or','not',
+              'True','False','None','global','import','from','class','lambda','pass',
+              'break','continue','is','with','as','try','except','finally','raise'];
+    var kwRe = new RegExp('\\b(' + KW.join('|') + ')\\b', 'g');
+
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // Split a code segment (no comment) on string literals (capturing group → alternating pieces)
+    var strRe = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/;
+
+    function processCodeSegment(seg) {
+      var pieces = seg.split(strRe); // [non-str, str, non-str, str, ...]
+      return pieces.map(function(p, i) {
+        if (i % 2 === 1) return '<span class="py-s">' + esc(p) + '</span>';
+        return esc(p)
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="py-n">$1</span>')
+          .replace(/\b([A-Za-z_]\w*)\s*(?=\()/g, '<span class="py-f">$1</span>')
+          .replace(kwRe, '<span class="py-k">$1</span>');
+      }).join('');
+    }
+
+    return code.split('\n').map(function(line) {
+      // Locate first un-quoted '#'
+      var inStr = false, sc = null, ci = -1;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (inStr) { if (ch === sc && line[i-1] !== '\\') inStr = false; }
+        else if (ch === '"' || ch === "'") { inStr = true; sc = ch; }
+        else if (ch === '#') { ci = i; break; }
+      }
+      var codePart    = ci >= 0 ? line.slice(0, ci) : line;
+      var commentPart = ci >= 0 ? line.slice(ci)    : '';
+      return processCodeSegment(codePart) +
+        (commentPart ? '<span class="py-c">' + esc(commentPart) + '</span>' : '');
+    }).join('\n');
+  }
+
+  // Snapshot every non-stage target's visual state so we can restore it on loop reset.
+  function captureSpritesState() {
+    var snap = {};
+    var targets = (S.vm && S.vm.runtime && S.vm.runtime.targets) || [];
+    targets.forEach(function(t) {
+      if (t.isStage || t.isClone) return;
+      snap[t.id] = {
+        x: t.x, y: t.y,
+        direction: t.direction,
+        currentCostume: t.currentCostume,
+        size: t.size,
+        visible: t.visible
+      };
+    });
+    return snap;
+  }
+
+  function restoreSpritesState(snap) {
+    if (!S.vm || !S.vm.runtime) return;
+    // Dispose any clones spawned during the run
+    S.vm.runtime.targets.filter(function(t) { return t.isClone; }).forEach(function(t) {
+      try { S.vm.runtime.disposeTarget(t); } catch(e) {}
+    });
+    // Restore original sprite states
+    S.vm.runtime.targets.forEach(function(t) {
+      if (t.isStage || !snap[t.id]) return;
+      var s = snap[t.id];
+      try { t.setXY(s.x, s.y); }          catch(e) { t.x = s.x; t.y = s.y; }
+      try { t.setDirection(s.direction); }  catch(e) { t.direction = s.direction; }
+      try { t.setCostume(s.currentCostume); } catch(e) {}
+      try { t.setSize(s.size); }            catch(e) { t.size = s.size; }
+      try { t.setVisible(s.visible); }      catch(e) { t.visible = s.visible; }
+      // Clear any say/think speech bubble
+      try { S.vm.runtime.emit('SAY', t, 'say', ''); }   catch(e) {}
+      try { S.vm.runtime.emit('SAY', t, 'think', ''); } catch(e) {}
+    });
+  }
+
+  function adjustDemoOverlay() {
+    var canvas  = document.querySelector('canvas');
+    var overlay = document.getElementById('ps-demo');
+    var leftEl  = document.getElementById('ps-demo-left');
+    if (!canvas || !overlay || !leftEl) return;
+    var rect = canvas.getBoundingClientRect();
+    if (rect.top > 40 && rect.top < window.innerHeight - 80) {
+      overlay.style.top    = Math.round(rect.top) + 'px';
+      overlay.style.bottom = '0px';
+    }
+    if (rect.left > 60 && rect.left < window.innerWidth - 60) {
+      leftEl.style.width = rect.left + 'px';
+    }
+  }
+
+  function buildDemoUI() {
+    var style = document.createElement('style');
+    style.textContent = [
+      // Hide TurboWarp editing chrome; keep stage visible
+      '.ps-demo-active .blocklyDiv,.ps-demo-active .blocklyToolboxDiv,.ps-demo-active .blocklyFlyout{display:none!important}',
+      // Demo overlay — mirrors #ps-overlay geometry but is built differently
+      '#ps-demo{position:fixed;left:0;right:0;top:92px;bottom:0;z-index:45;display:flex;pointer-events:none}',
+      // Left code panel
+      '#ps-demo-left{display:flex;flex-direction:column;background:#0d1117;pointer-events:auto;border-right:2px solid #21262d;box-shadow:4px 0 24px rgba(0,0,0,.5);flex-shrink:0;width:50%;overflow:hidden}',
+      '#ps-demo-header{padding:7px 14px;background:#161b22;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}',
+      '#ps-demo-sprite{font-size:12px;font-weight:700;color:#c9d1d9;font-family:"Roboto","Segoe UI",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.ps-demo-badge{font-size:10px;background:#1f6feb;color:#fff;padding:2px 8px;border-radius:99px;font-family:"Roboto","Segoe UI",sans-serif;flex-shrink:0;letter-spacing:.04em}',
+      '#ps-demo-code{flex:1;overflow:auto;padding:14px 16px;min-height:0}',
+      '#ps-demo-pre{margin:0;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.75;color:#e6edf3;white-space:pre;tab-size:4}',
+      // Syntax highlight colours (GitHub dark palette)
+      '.py-k{color:#ff7b72}',     // keywords
+      '.py-s{color:#a5d6ff}',     // strings
+      '.py-n{color:#79c0ff}',     // numbers
+      '.py-f{color:#d2a8ff}',     // function calls
+      '.py-c{color:#8b949e}',     // comments
+      // Footer: looping progress bar
+      '#ps-demo-footer{padding:7px 14px 8px;background:#161b22;border-top:1px solid #21262d;flex-shrink:0}',
+      '#ps-demo-bar-wrap{height:3px;background:#21262d;border-radius:2px;overflow:hidden}',
+      '#ps-demo-bar{height:100%;width:0%;background:#238636;border-radius:2px}',
+      '#ps-demo-footer-label{font-size:10px;color:#8b949e;font-family:"Roboto","Segoe UI",sans-serif;margin-bottom:4px;letter-spacing:.03em}',
+      // Transparent blocker over the stage — prevents mouse interaction
+      '#ps-demo-blocker{flex:1;pointer-events:auto;cursor:default;background:transparent;user-select:none}'
+    ].join('\n');
+    document.head.appendChild(style);
+
+    var overlay = document.createElement('div');
+    overlay.id = 'ps-demo';
+    overlay.innerHTML =
+      '<div id="ps-demo-left">' +
+        '<div id="ps-demo-header">' +
+          '<span id="ps-demo-sprite">Loading…</span>' +
+          '<span class="ps-demo-badge">▶ Demo</span>' +
+        '</div>' +
+        '<div id="ps-demo-code"><pre id="ps-demo-pre"></pre></div>' +
+        '<div id="ps-demo-footer">' +
+          '<div id="ps-demo-footer-label">Loops every ' + DEMO_LOOP_SECS + 's</div>' +
+          '<div id="ps-demo-bar-wrap"><div id="ps-demo-bar"></div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="ps-demo-blocker"></div>';
+    document.body.appendChild(overlay);
+  }
+
+  function startDemoLoop() {
+    var sprites = getSprites();
+    if (!sprites.length) {
+      // Retry shortly if sprites haven't loaded yet
+      setTimeout(startDemoLoop, 400);
+      return;
+    }
+
+    // Determine which sprite to display
+    var spriteName = DEMO_SPRITE ||
+      (sprites[0].sprite && sprites[0].sprite.name) || '';
+    if (!spriteName) { setTimeout(startDemoLoop, 400); return; }
+
+    // Update header
+    var headerEl = document.getElementById('ps-demo-sprite');
+    if (headerEl) headerEl.textContent = spriteName;
+
+    // Render highlighted code
+    var threads = loadThreads(spriteName);
+    var fullCode = threads.map(function(t) { return t.code; }).join('\n\n');
+    var preEl = document.getElementById('ps-demo-pre');
+    if (preEl) preEl.innerHTML = highlightPython(fullCode);
+
+    // Fit left panel to stage edge
+    adjustDemoOverlay();
+    window.addEventListener('resize', adjustDemoOverlay);
+
+    // Snapshot initial sprite state for reset
+    var snap = captureSpritesState();
+
+    var barEl    = document.getElementById('ps-demo-bar');
+    var loopMs   = DEMO_LOOP_SECS * 1000;
+    var rafId    = null;
+    var loopTid  = null;
+
+    function animate(startTime) {
+      function tick() {
+        var pct = Math.min(100, ((Date.now() - startTime) / loopMs) * 100);
+        if (barEl) barEl.style.width = pct + '%';
+        if (pct < 100) rafId = requestAnimationFrame(tick);
+      }
+      if (barEl) barEl.style.width = '0%';
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function runCycle() {
+      // Cancel any in-flight animation/timeout from previous cycle
+      if (rafId)   { cancelAnimationFrame(rafId);  rafId   = null; }
+      if (loopTid) { clearTimeout(loopTid);         loopTid = null; }
+
+      // Restore scene, then run
+      restoreSpritesState(snap);
+      startAll();
+      animate(Date.now());
+
+      loopTid = setTimeout(function() {
+        stopAll();
+        // Brief pause so students can see the end state before reset
+        setTimeout(runCycle, 600);
+      }, loopMs);
+    }
+
+    runCycle();
+  }
+
+  // ── Highlight overlay ─────────────────────────────────────────
+  // Draws a pulsing amber box around a named or CSS-selected element.
+  //
+  // postMessage API (sent from the parent lesson page):
+  //   { type: 'PS_HIGHLIGHT', target: 'green-flag', label: 'Click here!' }
+  //   { type: 'PS_HIGHLIGHT', selector: '#my-element' }   // raw CSS selector
+  //   { type: 'PS_HIGHLIGHT_CLEAR' }                       // remove highlight
+  //
+  // URL param (persistent on page load):
+  //   ?ps_highlight=green-flag&ps_highlight_label=Click+here%21
+  //
+  // Named presets resolve to robust multi-selector strings that survive
+  // TurboWarp's hashed class names:
+  var HIGHLIGHT_PRESETS = {
+    'green-flag':   '[class*="green-flag_"],[class*="greenFlag"],[aria-label*="Green Flag"],[title*="Green Flag"]',
+    'stop':         '[class*="stop-all_"],[class*="stopAll"],[aria-label*="Stop All"],[title*="Stop"]',
+    'stage':        'canvas',
+    'sprite-panel': '[class*="sprite-selector_scroll"],[class*="spriteSelector"]',
+    'costumes-tab': '[class*="tab_tab"]:nth-child(2),[id*="react-tabs-2"]',
+    'sounds-tab':   '[class*="tab_tab"]:nth-child(3),[id*="react-tabs-4"]',
+    'editor':       '#ps-editor',
+    'threads':      '#ps-threads',
+    'help':         '#ps-help-btn',
+    'tutorials':    '#ps-tut-btn',
+    'console':      '#ps-console',
+  };
+
+  var _hlBox       = null;  // the highlight overlay div
+  var _hlRafId     = null;  // rAF handle for position tracking
+  var _hlTargetEl  = null;  // currently highlighted element
+
+  function _ensureHighlightBox() {
+    if (_hlBox) return;
+    var s = document.createElement('style');
+    s.textContent = [
+      '@keyframes ps-hl-pulse{' +
+        '0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.85),0 0 0 3px #fbbf24}' +
+        '55%{box-shadow:0 0 0 8px rgba(251,191,36,0),0 0 0 3px rgba(251,191,36,.7)}' +
+      '}',
+      '#ps-hl{position:fixed;pointer-events:none;z-index:99999;border:3px solid #fbbf24;' +
+        'border-radius:7px;animation:ps-hl-pulse 1.1s ease-in-out infinite;' +
+        'display:none;box-sizing:border-box;transition:left .12s,top .12s,width .12s,height .12s}',
+      '#ps-hl-label{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);' +
+        'background:#fbbf24;color:#1a1200;font-size:11px;font-weight:700;' +
+        'font-family:"Roboto","Segoe UI",sans-serif;padding:3px 10px;border-radius:99px;' +
+        'white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.35)}',
+    ].join('\n');
+    document.head.appendChild(s);
+    _hlBox = document.createElement('div');
+    _hlBox.id = 'ps-hl';
+    _hlBox.innerHTML = '<span id="ps-hl-label"></span>';
+    document.body.appendChild(_hlBox);
+  }
+
+  function _positionHighlight() {
+    if (!_hlBox || !_hlTargetEl) return;
+    var r = _hlTargetEl.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    var P = 5;
+    _hlBox.style.left   = (r.left   - P) + 'px';
+    _hlBox.style.top    = (r.top    - P) + 'px';
+    _hlBox.style.width  = (r.width  + P * 2) + 'px';
+    _hlBox.style.height = (r.height + P * 2) + 'px';
+  }
+
+  function showHighlight(targetOrSelector, label) {
+    _ensureHighlightBox();
+    clearHighlight();
+
+    // Resolve: named preset → multi-selector string, or use as raw CSS selector
+    var sel = HIGHLIGHT_PRESETS[targetOrSelector] || targetOrSelector;
+    var el = null;
+    try { el = sel ? document.querySelector(sel) : null; } catch(e) {}
+    if (!el) return;
+
+    _hlTargetEl = el;
+
+    var labelEl = document.getElementById('ps-hl-label');
+    if (labelEl) {
+      labelEl.textContent  = label || '';
+      labelEl.style.display = label ? '' : 'none';
+    }
+
+    _positionHighlight();
+    _hlBox.style.display = '';
+
+    // Track position every frame so the box stays aligned after layout changes
+    (function track() { _positionHighlight(); _hlRafId = requestAnimationFrame(track); })();
+  }
+
+  function clearHighlight() {
+    if (_hlRafId) { cancelAnimationFrame(_hlRafId); _hlRafId = null; }
+    if (_hlBox)   { _hlBox.style.display = 'none'; }
+    _hlTargetEl = null;
+  }
+
   // ── Boot ──────────────────────────────────────────────────────
   // IMPORTANT: return window.vm (the VirtualMachine), not window.vm.runtime.
   // `window.vm && window.vm.runtime` returns the Runtime due to && semantics.
@@ -2402,7 +2714,12 @@
     S.vm = vm; // S.vm = VirtualMachine; S.vm.runtime = Runtime ✓
 
     loadSkulpt(function () {
-      buildUI();
+      if (DEMO_MODE) {
+        buildDemoUI();
+        document.body.classList.add('ps-demo-active');
+      } else {
+        buildUI();
+      }
       applyPyScratchTheme();
       watchPyScratchTheme();
 
@@ -2411,26 +2728,54 @@
       // need to be re-registered per thread.
       setupBridge();
 
-      // Initial sync after TurboWarp finishes loading its project
-      setTimeout(sync, 600);
-      // Second pass in case TurboWarp takes longer on slow connections
-      setTimeout(sync, 1500);
+      // ── Highlight postMessage API ────────────────────────────────
+      // Parent lesson page sends: { type:'PS_HIGHLIGHT', target:'green-flag', label:'...' }
+      // or:                       { type:'PS_HIGHLIGHT_CLEAR' }
+      window.addEventListener('message', function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'PS_HIGHLIGHT') {
+          var t = e.data.target || e.data.selector || '';
+          if (t) showHighlight(t, e.data.label || '');
+          else   clearHighlight();
+        }
+        if (e.data.type === 'PS_HIGHLIGHT_CLEAR') clearHighlight();
+        if (e.data.type === 'PS_RUN')  { if (!S.running) startAll(); }
+        if (e.data.type === 'PS_STOP') { if (S.running)  stopAll();  }
+      });
+      // URL param: ?ps_highlight=green-flag&ps_highlight_label=Click+this!
+      (function() {
+        var hl  = decodeURIComponent(((location.search.match(/[?&]ps_highlight=([^&]*)/)       || [])[1]) || '');
+        var lbl = decodeURIComponent(((location.search.match(/[?&]ps_highlight_label=([^&]*)/) || [])[1]) || '');
+        if (hl) setTimeout(function() { showHighlight(hl, lbl); }, 2200);
+      })();
 
-      // Re-sync (including overlay width) whenever sprites change or window resizes
-      try { vm.runtime.on('TARGETS_UPDATE', function () { sync(); }); } catch(e) {}
-      try { vm.runtime.on('EDITING_TARGET_CHANGED', function () { syncSelectedSprite(false); }); } catch(e) {}
-      try { vm.runtime.on('TARGET_SELECTED', function () { syncSelectedSprite(false); }); } catch(e) {}
-      setInterval(function () { syncSelectedSprite(false); }, 500);
-      window.addEventListener('resize', adjustOverlay);
-      watchTurboWarpModals();
+      if (DEMO_MODE) {
+        // Demo mode: wait for project + sprites to fully load, then start loop
+        setTimeout(function() { adjustDemoOverlay(); startDemoLoop(); }, 1800);
+        try { vm.runtime.on('TARGETS_UPDATE', adjustDemoOverlay); } catch(e) {}
+      } else {
+        // Normal editor mode: sync UI and wire up editing events
+        // Initial sync after TurboWarp finishes loading its project
+        setTimeout(sync, 600);
+        // Second pass in case TurboWarp takes longer on slow connections
+        setTimeout(sync, 1500);
 
-      // Hook TurboWarp's green flag → start Python.
-      try {
-        vm.runtime.on('PROJECT_START', function () {
-          setTimeout(startAll, 0);
-        });
-      } catch(e) {
-        console.warn('[PyScratch] Could not attach PROJECT_START:', e);
+        // Re-sync (including overlay width) whenever sprites change or window resizes
+        try { vm.runtime.on('TARGETS_UPDATE', function () { sync(); }); } catch(e) {}
+        try { vm.runtime.on('EDITING_TARGET_CHANGED', function () { syncSelectedSprite(false); }); } catch(e) {}
+        try { vm.runtime.on('TARGET_SELECTED', function () { syncSelectedSprite(false); }); } catch(e) {}
+        setInterval(function () { syncSelectedSprite(false); }, 500);
+        window.addEventListener('resize', adjustOverlay);
+        watchTurboWarpModals();
+
+        // Hook TurboWarp's green flag → start Python.
+        try {
+          vm.runtime.on('PROJECT_START', function () {
+            setTimeout(startAll, 0);
+          });
+        } catch(e) {
+          console.warn('[PyScratch] Could not attach PROJECT_START:', e);
+        }
       }
 
       // Hook TurboWarp's stop button → stop Python.
@@ -2465,31 +2810,34 @@
       } catch(e) {}
 
       // ── .psb3 interception ──────────────────────────────────────
-      // Wrap vm.saveProjectSb3 so every TurboWarp save path (File menu,
-      // Ctrl+S, toolbar button) embeds pyscratch.json in the output blob.
-      try {
-        var _origSaveSb3 = vm.saveProjectSb3.bind(vm);
-        vm.saveProjectSb3 = function () {
-          saveCurrentCode();                         // flush editor textarea first
-          return _origSaveSb3().then(injectPyScratchData);
-        };
-      } catch(e) {
-        console.warn('[PyScratch] Could not patch saveProjectSb3:', e);
-      }
+      // In demo mode saving is disabled — the iframe is read-only.
+      if (!DEMO_MODE) {
+        // Wrap vm.saveProjectSb3 so every TurboWarp save path (File menu,
+        // Ctrl+S, toolbar button) embeds pyscratch.json in the output blob.
+        try {
+          var _origSaveSb3 = vm.saveProjectSb3.bind(vm);
+          vm.saveProjectSb3 = function () {
+            saveCurrentCode();                         // flush editor textarea first
+            return _origSaveSb3().then(injectPyScratchData);
+          };
+        } catch(e) {
+          console.warn('[PyScratch] Could not patch saveProjectSb3:', e);
+        }
 
-      // Rename the downloaded file from .sb3 → .psb3 by intercepting the
-      // anchor.click() call that TurboWarp uses to trigger the download.
-      // The check (blob: URL + .sb3 download attribute) is specific enough to
-      // avoid affecting any other anchor clicks on the page.
-      (function () {
-        var _origAnchorClick = HTMLAnchorElement.prototype.click;
-        HTMLAnchorElement.prototype.click = function () {
-          if (this.download && /\.sb3$/i.test(this.download) && /^blob:/i.test(this.href)) {
-            this.download = this.download.replace(/\.sb3$/i, '.psb3');
-          }
-          return _origAnchorClick.call(this);
-        };
-      })();
+        // Rename the downloaded file from .sb3 → .psb3 by intercepting the
+        // anchor.click() call that TurboWarp uses to trigger the download.
+        // The check (blob: URL + .sb3 download attribute) is specific enough to
+        // avoid affecting any other anchor clicks on the page.
+        (function () {
+          var _origAnchorClick = HTMLAnchorElement.prototype.click;
+          HTMLAnchorElement.prototype.click = function () {
+            if (this.download && /\.sb3$/i.test(this.download) && /^blob:/i.test(this.href)) {
+              this.download = this.download.replace(/\.sb3$/i, '.psb3');
+            }
+            return _origAnchorClick.call(this);
+          };
+        })();
+      }
 
       // Wrap vm.loadProject so any file loaded through TurboWarp's UI
       // (File menu, drag-and-drop) has its pyscratch.json extracted first.
