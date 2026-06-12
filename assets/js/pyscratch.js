@@ -2161,7 +2161,7 @@
   }
 
   function renderThreadList() {
-    if (!ui.threadList || !S.activeSprite) return;
+    if (!ui.threadList || !S.activeSprite) { emitState(); return; }
     var threads = loadThreads(S.activeSprite);
     ui.threadList.innerHTML = '';
     threads.forEach(function (thread, idx) {
@@ -2209,6 +2209,7 @@
 
       ui.threadList.appendChild(div);
     });
+    emitState(); // notify parent lesson page of current thread names / code
   }
 
   function addThread() {
@@ -2636,6 +2637,46 @@
     'console':      '#ps-console',
   };
 
+  // Named targets for PS_HIDE / PS_SHOW postMessages.
+  // These hide TurboWarp chrome elements that are distracting in lesson context.
+  // Selectors are best-effort against TurboWarp's hashed class names.
+  var UI_HIDE_TARGETS = {
+    // Bottom panel: sprite list + backdrop selector
+    'sprite-panel':   '[class*="sprite-selector_"],[class*="spriteSelector_"]',
+    'backdrop-panel': '[class*="stage-selector_"],[class*="stageSelector_"]',
+    // Stage header resize / fullscreen buttons
+    'stage-controls': '[class*="stage-header_stageSizeRow"],[class*="stageHeader_stageSizeRow"],[class*="stage-header_controls"]',
+    // Left tab bar (Code / Costumes / Sounds)
+    'tab-bar':        '[class*="tab-selector_"],[class*="tabSelector_"],[role="tablist"]',
+    // "Add sprite" action button
+    'add-sprite':     '[class*="action-menu_"],[class*="actionMenu_"]',
+  };
+
+  var _uiHideStyle = null;
+  var _hiddenUiSet = {};
+
+  function _syncUiHideStyle() {
+    if (!_uiHideStyle) {
+      _uiHideStyle = document.createElement('style');
+      _uiHideStyle.id = 'ps-ui-hide';
+      document.head.appendChild(_uiHideStyle);
+    }
+    var rules = Object.keys(_hiddenUiSet)
+      .filter(function(k) { return _hiddenUiSet[k]; })
+      .map(function(k) { return UI_HIDE_TARGETS[k] || k; });
+    _uiHideStyle.textContent = rules.length ? rules.join(',') + '{display:none!important}' : '';
+  }
+
+  function hideUiElements(names) {
+    (names || []).forEach(function(n) { _hiddenUiSet[n] = true; });
+    _syncUiHideStyle();
+  }
+  function showUiElements(names) {
+    (names || []).forEach(function(n) { delete _hiddenUiSet[n]; });
+    _syncUiHideStyle();
+  }
+  function clearUiHides() { _hiddenUiSet = {}; _syncUiHideStyle(); }
+
   var _hlBox       = null;  // the highlight overlay div
   var _hlRafId     = null;  // rAF handle for position tracking
   var _hlTargetEl  = null;  // currently highlighted element
@@ -2705,6 +2746,22 @@
     _hlTargetEl = null;
   }
 
+  // ── State emission ─────────────────────────────────────────────
+  // Posts current thread state to the parent frame (the lesson page).
+  // Called whenever threads change so pyscratch-lesson.js can validate.
+  function emitState() {
+    try {
+      if (!window.parent || window.parent === window) return;
+      var state = { type: 'PS_STATE', threads: {} };
+      Object.keys(S.spriteCode).forEach(function(spriteName) {
+        state.threads[spriteName] = (S.spriteCode[spriteName] || []).map(function(t) {
+          return { name: t.name || '', code: t.code || '' };
+        });
+      });
+      window.parent.postMessage(state, '*');
+    } catch(e) {}
+  }
+
   // ── Boot ──────────────────────────────────────────────────────
   // IMPORTANT: return window.vm (the VirtualMachine), not window.vm.runtime.
   // `window.vm && window.vm.runtime` returns the Runtime due to && semantics.
@@ -2739,8 +2796,12 @@
           else   clearHighlight();
         }
         if (e.data.type === 'PS_HIGHLIGHT_CLEAR') clearHighlight();
-        if (e.data.type === 'PS_RUN')  { if (!S.running) startAll(); }
-        if (e.data.type === 'PS_STOP') { if (S.running)  stopAll();  }
+        if (e.data.type === 'PS_RUN')       { if (!S.running) startAll(); }
+        if (e.data.type === 'PS_STOP')      { if (S.running)  stopAll();  }
+        if (e.data.type === 'PS_HIDE')      { hideUiElements(e.data.elements || []); }
+        if (e.data.type === 'PS_SHOW')      { showUiElements(e.data.elements || []); }
+        if (e.data.type === 'PS_CLEAR_UI')  { clearUiHides(); }
+        if (e.data.type === 'PS_GET_STATE') { emitState(); }
       });
       // URL param: ?ps_highlight=green-flag&ps_highlight_label=Click+this!
       (function() {
