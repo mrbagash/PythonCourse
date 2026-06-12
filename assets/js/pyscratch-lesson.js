@@ -267,7 +267,7 @@ window.PyScratchLesson = (function () {
     }
 
     // ── iframe load ───────────────────────────────────────────────────────────
-    var baseSrc = '../scratch/editor.html?pyscratch=1' +
+    var baseSrc = './scratch/editor.html?pyscratch=1' +
       (opts.projectUrl ? '&project_url=' + encodeURIComponent(opts.projectUrl) : '');
 
     frameEl.addEventListener('load', function() {
