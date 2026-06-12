@@ -100,11 +100,33 @@
     { n: 'change_volume',         s: 'change_volume(amount)',           c: 'snd'  },
     { n: 'volume',                s: 'volume()',                        c: 'snd'  },
     // Sensing
-    { n: 'touching',      s: 'touching(target)',         c: 'sens' },
-    { n: 'distance_to',   s: 'distance_to(target)',      c: 'sens' },
-    { n: 'key_pressed',   s: 'key_pressed(key)',         c: 'sens' },
-    { n: 'mouse_x',       s: 'mouse_x()',                c: 'sens' },
-    { n: 'mouse_y',       s: 'mouse_y()',                c: 'sens' },
+    { n: 'touching',        s: 'touching(target)',                   c: 'sens' },
+    { n: 'distance_to',     s: 'distance_to(target)',                c: 'sens' },
+    { n: 'key_pressed',     s: 'key_pressed(key)',                   c: 'sens' },
+    { n: 'mouse_x',         s: 'mouse_x()',                          c: 'sens' },
+    { n: 'mouse_y',         s: 'mouse_y()',                          c: 'sens' },
+    { n: 'mouse_down',      s: 'mouse_down()',                       c: 'sens' },
+    { n: 'ask',             s: 'ask(question)',                      c: 'sens' },
+    { n: 'answer',          s: 'answer()',                           c: 'sens' },
+    { n: 'timer',           s: 'timer()',                            c: 'sens' },
+    { n: 'reset_timer',     s: 'reset_timer()',                      c: 'sens' },
+    { n: 'current',         s: 'current("year"|"month"|"date"|"hour"|"minute"|"second")', c: 'sens' },
+    { n: 'days_since_2000', s: 'days_since_2000()',                  c: 'sens' },
+    // Operators — things Python doesn't cover without imports
+    { n: 'pick_random',  s: 'pick_random(from, to)',  c: 'ops' },
+    { n: 'sqrt',         s: 'sqrt(n)',                c: 'ops' },
+    { n: 'floor',        s: 'floor(n)',               c: 'ops' },
+    { n: 'ceiling',      s: 'ceiling(n)',             c: 'ops' },
+    { n: 'sin',          s: 'sin(degrees)',           c: 'ops' },
+    { n: 'cos',          s: 'cos(degrees)',           c: 'ops' },
+    { n: 'tan',          s: 'tan(degrees)',           c: 'ops' },
+    { n: 'asin',         s: 'asin(n)',                c: 'ops' },
+    { n: 'acos',         s: 'acos(n)',                c: 'ops' },
+    { n: 'atan',         s: 'atan(n)',                c: 'ops' },
+    { n: 'ln',           s: 'ln(n)',                  c: 'ops' },
+    { n: 'log',          s: 'log(n)',                 c: 'ops' },
+    { n: 'e_to',         s: 'e_to(n)',                c: 'ops' },
+    { n: 'ten_to',       s: 'ten_to(n)',              c: 'ops' },
   ];
 
   // ── Runtime state ─────────────────────────────────────────────
@@ -113,7 +135,9 @@
     running:          false,
     gen:              0,    // incremented on every stop; threads check this to self-terminate
     pressedKeys:      {},
-    mouse:            { x: 0, y: 0 },
+    mouse:            { x: 0, y: 0, down: false },
+    timerStart:       0,   // ms timestamp, reset on green flag and reset_timer()
+    lastAnswer:       '',  // last answer from ask()
     spriteCode:       {},   // spriteName → [{ id, name, code }]
     handlers:         {},   // spriteName → { event → { fn: SkFn, tgen: Number } }
     activeSprite:     null,
@@ -292,6 +316,28 @@
       'def key_pressed(k): return _psc("key_pressed",k)',
       'def mouse_x(): return _psc("mouse_x")',
       'def mouse_y(): return _psc("mouse_y")',
+      'def mouse_down(): return _psc("mouse_down")',
+      'def ask(q=""): return _psc("ask",q)',
+      'def answer(): return _psc("answer")',
+      'def timer(): return _psc("timer")',
+      'def reset_timer(): return _psc("reset_timer")',
+      'def current(unit): return _psc("current",unit)',
+      'def days_since_2000(): return _psc("days_since_2000")',
+      // Operators — Scratch-style equivalents (trig uses degrees, like Scratch)
+      'def pick_random(a,b): return _psc("pick_random",a,b)',
+      'def sqrt(n): return _psc("sqrt",n)',
+      'def floor(n): return _psc("floor",n)',
+      'def ceiling(n): return _psc("ceiling",n)',
+      'def sin(n): return _psc("sin",n)',
+      'def cos(n): return _psc("cos",n)',
+      'def tan(n): return _psc("tan",n)',
+      'def asin(n): return _psc("asin",n)',
+      'def acos(n): return _psc("acos",n)',
+      'def atan(n): return _psc("atan",n)',
+      'def ln(n): return _psc("ln",n)',
+      'def log(n): return _psc("log",n)',
+      'def e_to(n): return _psc("e_to",n)',
+      'def ten_to(n): return _psc("ten_to",n)',
       // Control — backed by __ps_wait / __ps_stop in Sk.builtins
       'def wait(s=0): __ps_wait(s,__ps_tgen__)',
       'def stop(): __ps_stop()',
@@ -467,15 +513,28 @@
     return s;
   }
 
-  // Backdrop-only functions do not need a sprite target — add them to the allow-list.
-  var STAGE_FNS = { set_backdrop:1, next_backdrop:1, previous_backdrop:1,
-                    backdrop_name:1, backdrop_number:1 };
+  // Functions that work without a sprite target.
+  var NOTARGET_FNS = {
+    // Stage / backdrop
+    set_backdrop:1, next_backdrop:1, previous_backdrop:1,
+    backdrop_name:1, backdrop_number:1,
+    // Sensing — global state
+    mouse_down:1, ask:1, answer:1,
+    timer:1, reset_timer:1,
+    current:1, days_since_2000:1,
+    // Operators
+    pick_random:1, sqrt:1, floor:1, ceiling:1,
+    sin:1, cos:1, tan:1, asin:1, acos:1, atan:1,
+    ln:1, log:1, e_to:1, ten_to:1,
+  };
+  // Keep the old name as an alias so existing code that references STAGE_FNS still works.
+  var STAGE_FNS = NOTARGET_FNS;
 
   function callAPI(fn, spriteName, args) {
     var target = getTargetByName(spriteName);
     var a = args[0], b = args[1], c = args[2];
 
-    if (!target && !STAGE_FNS[fn] && fn !== 'stop' && fn !== 'key_pressed' && fn !== 'mouse_x' && fn !== 'mouse_y') return null;
+    if (!target && !NOTARGET_FNS[fn] && fn !== 'stop' && fn !== 'key_pressed' && fn !== 'mouse_x' && fn !== 'mouse_y') return null;
 
     switch (fn) {
       // ── Movement ───────────────────────────────────────────────
@@ -807,6 +866,63 @@
         return !!S.pressedKeys[String(a).toLowerCase()];
       case 'mouse_x': return S.mouse.x;
       case 'mouse_y': return S.mouse.y;
+      case 'mouse_down': return S.mouse.down;
+
+      // ── Sensing: timer ─────────────────────────────────────────
+      case 'timer':       return (Date.now() - S.timerStart) / 1000;
+      case 'reset_timer': S.timerStart = Date.now(); return null;
+
+      // ── Sensing: ask / answer ──────────────────────────────────
+      case 'ask': {
+        var askQ = (a == null) ? '' : String(a);
+        var askPromise = new Promise(function (resolve) {
+          showAskDialog(askQ, resolve);
+        }).then(function (ans) {
+          S.lastAnswer = String(ans == null ? '' : ans);
+        });
+        return askPromise;
+      }
+      case 'answer': return S.lastAnswer;
+
+      // ── Sensing: date / time ───────────────────────────────────
+      case 'current': {
+        var d = new Date();
+        var unit = String(a || '').toLowerCase().trim();
+        if (unit === 'year')                         return d.getFullYear();
+        if (unit === 'month')                        return d.getMonth() + 1;
+        if (unit === 'date' || unit === 'day')       return d.getDate();
+        if (unit === 'day of week' || unit === 'dayofweek') return d.getDay() + 1; // 1=Sunday
+        if (unit === 'hour')                         return d.getHours();
+        if (unit === 'minute')                       return d.getMinutes();
+        if (unit === 'second')                       return d.getSeconds();
+        return 0;
+      }
+      case 'days_since_2000':
+        return (Date.now() - Date.UTC(2000, 0, 1)) / 86400000;
+
+      // ── Operators ──────────────────────────────────────────────
+      case 'pick_random': {
+        var lo = Number(a), hi = Number(b);
+        // Mirror Scratch: return integer when both bounds are integers
+        if (lo === Math.floor(lo) && hi === Math.floor(hi)) {
+          return lo + Math.floor(Math.random() * (hi - lo + 1));
+        }
+        return lo + Math.random() * (hi - lo);
+      }
+      case 'sqrt':    return Math.sqrt(Number(a));
+      case 'floor':   return Math.floor(Number(a));
+      case 'ceiling': return Math.ceil(Number(a));
+      // Trig — degrees in, degrees out (matching Scratch's operator block)
+      case 'sin':     return Math.sin(Number(a) * Math.PI / 180);
+      case 'cos':     return Math.cos(Number(a) * Math.PI / 180);
+      case 'tan':     return Math.tan(Number(a) * Math.PI / 180);
+      case 'asin':    return Math.asin(Number(a))  * 180 / Math.PI;
+      case 'acos':    return Math.acos(Number(a))  * 180 / Math.PI;
+      case 'atan':    return Math.atan(Number(a))  * 180 / Math.PI;
+      case 'ln':      return Math.log(Number(a));
+      case 'log':     return Math.log10 ? Math.log10(Number(a)) : Math.log(Number(a)) / Math.LN10;
+      case 'e_to':    return Math.exp(Number(a));
+      case 'ten_to':  return Math.pow(10, Number(a));
 
       default:
         console.warn('PyScratch: unknown API:', fn);
@@ -994,7 +1110,8 @@
     // Always stop first — this increments S.gen, poisoning any sleeping old threads.
     // They will see gen !== myGen on their next wake and throw __pyscratch_stopped__.
     stopAll();
-    S.running = true;
+    S.running    = true;
+    S.timerStart = Date.now();   // timer() counts from green-flag press
     clearConsole();
 
     // Capture the generation AFTER stopAll() incremented it so every new thread
@@ -1255,6 +1372,34 @@
     }, 750);
   }
 
+  // ── Ask dialog ───────────────────────────────────────────────
+  // Shows a small input box over the stage (bottom-right) and resolves when
+  // the student presses Enter or clicks the tick button.
+  function showAskDialog(question, resolve) {
+    var wrap  = document.getElementById('ps-ask-wrap');
+    if (!wrap) { resolve(''); return; }
+    var qEl   = wrap.querySelector('.ps-ask-q');
+    var input = wrap.querySelector('.ps-ask-input');
+    var btn   = wrap.querySelector('.ps-ask-submit');
+
+    qEl.textContent = question || '';
+    input.value = '';
+    wrap.classList.add('active');
+
+    function submit() {
+      wrap.classList.remove('active');
+      resolve(input.value);
+      input.removeEventListener('keydown', onKey);
+      btn.removeEventListener('click', submit);
+    }
+    function onKey(e) {
+      if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); submit(); }
+    }
+    input.addEventListener('keydown', onKey);
+    btn.addEventListener('click', submit);
+    setTimeout(function () { try { input.focus(); } catch(e) {} }, 30);
+  }
+
   // ── Build UI ──────────────────────────────────────────────────
   function buildUI() {
     // Inject styles
@@ -1300,6 +1445,18 @@
       // Hide TurboWarp blocks and related elements when PyScratch is active
       '.blocklyDiv,.blocklyToolboxDiv,.blocklyFlyout,.blocklyWidgetDiv{display:none !important}',
 
+      // Ask dialog — appears over the stage area
+      '#ps-ask-wrap{position:fixed;bottom:14px;right:14px;width:300px;z-index:10010;pointer-events:none}',
+      '#ps-ask-wrap.active{pointer-events:auto}',
+      '.ps-ask-box{display:none;background:var(--ps-panel,#fff);border:2px solid var(--ps-accent,#4c97ff);border-radius:8px;padding:8px 10px;box-shadow:0 4px 20px var(--ps-shadow,rgba(0,0,0,.35))}',
+      '#ps-ask-wrap.active .ps-ask-box{display:block}',
+      '.ps-ask-q{font-size:12px;color:var(--ps-text,#333);margin-bottom:6px;min-height:1em}',
+      '.ps-ask-row{display:flex;gap:5px}',
+      '.ps-ask-input{flex:1;padding:4px 8px;border:1.5px solid var(--ps-border,#cbd5e1);border-radius:5px;font-size:13px;font-family:inherit;background:var(--ps-code-bg,#fff);color:var(--ps-text,#333);outline:none}',
+      '.ps-ask-input:focus{border-color:var(--ps-accent,#4c97ff)}',
+      '.ps-ask-submit{background:var(--ps-accent,#4c97ff);border:none;color:#fff;border-radius:5px;cursor:pointer;padding:0 11px;font-size:15px;line-height:1}',
+      '.ps-ask-submit:hover{opacity:.85}',
+
       // Help modal
       '#ps-help{position:fixed;inset:0;background:var(--ps-modal-scrim,rgba(0,0,0,.65));z-index:20000;display:flex;align-items:center;justify-content:center}',
       '#ps-help.hidden{display:none}',
@@ -1314,6 +1471,7 @@
       '.ps-hcat.look{background:#331b52;color:#d8b4fe}',
       '.ps-hcat.snd{background:#3b1645;color:#e9b3f4}',
       '.ps-hcat.evt{background:#3a2800;color:#fcd34d}',
+      '.ps-hcat.ops{background:#14321e;color:#86efac}',
       '.ps-hcat.ctrl{background:#332514;color:#fcd34d}',
       '.ps-hcat.sens{background:#143232;color:#67e8f9}',
       '.ps-hitems{padding:10px 14px;background:var(--ps-panel-3,#252538)}',
@@ -1416,6 +1574,20 @@
       S.mouse.y = -(((e.clientY - r.top)  / r.height) * 360 - 180);
     });
 
+    // Ask dialog element
+    var askWrap = document.createElement('div');
+    askWrap.id = 'ps-ask-wrap';
+    askWrap.innerHTML = '<div class="ps-ask-box"><div class="ps-ask-q"></div>' +
+      '<div class="ps-ask-row">' +
+        '<input class="ps-ask-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">' +
+        '<button class="ps-ask-submit">&#10003;</button>' +
+      '</div></div>';
+    document.body.appendChild(askWrap);
+
+    // Mouse button tracking (for mouse_down())
+    window.addEventListener('mousedown', function (e) { if (e.button === 0) S.mouse.down = true; });
+    window.addEventListener('mouseup',   function (e) { if (e.button === 0) S.mouse.down = false; });
+
     // Sprite click — fire when_clicked handlers using the renderer's pick()
     window.addEventListener('mousedown', function (e) {
       if (!S.running) return;
@@ -1508,6 +1680,24 @@
         { code:'distance_to("SpriteName")', desc:'Pixel distance to another sprite or "mouse_pointer".' },
         { code:'key_pressed("space")', desc:'True while a key is held. Keys: space, up, down, left, right, a–z, 0–9.' },
         { code:'mouse_x() / mouse_y()', desc:'Mouse position in Scratch coordinates (0,0 = centre).' },
+        { code:'mouse_down()', desc:'True while the left mouse button is held.' },
+        { code:'ask(question)', desc:'Show a text-input dialog over the stage. Waits for the student to type and press Enter.' },
+        { code:'answer()', desc:'Return the last text submitted by ask().' },
+        { code:'timer()', desc:'Seconds elapsed since the green flag was pressed (or reset_timer() was called).' },
+        { code:'reset_timer()', desc:'Reset the timer back to zero.' },
+        { code:'current("year")', desc:'Return the current year, month, date, day of week, hour, minute, or second.' },
+        { code:'days_since_2000()', desc:'Floating-point number of days elapsed since 1 January 2000.' },
+      ]},
+      { cat:'ops', title:'Operators', items:[
+        { code:'pick_random(1, 10)', desc:'Random integer between the two values (inclusive). Returns a float if either value is a float.' },
+        { code:'floor(n) / ceiling(n)', desc:'Round down or up to the nearest integer.' },
+        { code:'sqrt(n)', desc:'Square root.' },
+        { code:'sin(degrees) / cos(degrees) / tan(degrees)', desc:'Trigonometry using degrees, matching Scratch\'s operator block. Note: Python\'s math.sin uses radians.' },
+        { code:'asin(n) / acos(n) / atan(n)', desc:'Inverse trig — return a result in degrees.' },
+        { code:'ln(n)', desc:'Natural logarithm (base e).' },
+        { code:'log(n)', desc:'Base-10 logarithm.' },
+        { code:'e_to(n)', desc:'Raise e to the power n  (e^n).' },
+        { code:'ten_to(n)', desc:'Raise 10 to the power n  (10^n).' },
       ]},
     ];
 
