@@ -42,15 +42,63 @@
     { n: 'x_position',          s: 'x_position()',                         c: 'mov'  },
     { n: 'y_position',          s: 'y_position()',                         c: 'mov'  },
     { n: 'direction',           s: 'direction()',                          c: 'mov'  },
-    // Looks
-    { n: 'say',           s: 'say(message, secs=2)',     c: 'look' },
-    { n: 'think',         s: 'think(message, secs=2)',   c: 'look' },
-    { n: 'set_costume',   s: 'set_costume(name)',        c: 'look' },
-    { n: 'next_costume',  s: 'next_costume()',           c: 'look' },
-    { n: 'set_size',      s: 'set_size(percent)',        c: 'look' },
-    { n: 'change_size',   s: 'change_size(amount)',      c: 'look' },
-    { n: 'show',          s: 'show()',                   c: 'look' },
-    { n: 'hide',          s: 'hide()',                   c: 'look' },
+    // Looks — speech/thought
+    { n: 'say',            s: 'say(message)',                    c: 'look' },
+    { n: 'say_for',        s: 'say_for(message, secs)',          c: 'look' },
+    { n: 'think',          s: 'think(message)',                  c: 'look' },
+    { n: 'think_for',      s: 'think_for(message, secs)',        c: 'look' },
+    // Looks — costume
+    { n: 'set_costume',    s: 'set_costume(name)',               c: 'look' },
+    { n: 'next_costume',   s: 'next_costume()',                  c: 'look' },
+    { n: 'previous_costume', s: 'previous_costume()',            c: 'look' },
+    { n: 'costume_number', s: 'costume_number()',                c: 'look' },
+    { n: 'costume_name',   s: 'costume_name()',                  c: 'look' },
+    // Looks — backdrop
+    { n: 'set_backdrop',   s: 'set_backdrop(name)',              c: 'look' },
+    { n: 'next_backdrop',  s: 'next_backdrop()',                 c: 'look' },
+    { n: 'previous_backdrop', s: 'previous_backdrop()',          c: 'look' },
+    { n: 'backdrop_name',  s: 'backdrop_name()',                 c: 'look' },
+    { n: 'backdrop_number', s: 'backdrop_number()',              c: 'look' },
+    // Looks — size / visibility
+    { n: 'set_size',       s: 'set_size(percent)',               c: 'look' },
+    { n: 'change_size',    s: 'change_size(amount)',             c: 'look' },
+    { n: 'size',           s: 'size()',                          c: 'look' },
+    { n: 'show',           s: 'show()',                          c: 'look' },
+    { n: 'hide',           s: 'hide()',                          c: 'look' },
+    // Looks — graphic effects
+    { n: 'set_effect',     s: 'set_effect(effect, value)',       c: 'look' },
+    { n: 'change_effect',  s: 'change_effect(effect, amount)',   c: 'look' },
+    { n: 'clear_effects',  s: 'clear_effects()',                 c: 'look' },
+    // Looks — layers
+    { n: 'go_to_front',    s: 'go_to_front()',                   c: 'look' },
+    { n: 'go_to_back',     s: 'go_to_back()',                    c: 'look' },
+    { n: 'go_forward',     s: 'go_forward(layers=1)',            c: 'look' },
+    { n: 'go_backward',    s: 'go_backward(layers=1)',           c: 'look' },
+    // Control
+    { n: 'wait_until',       s: 'wait_until(lambda: condition)',  c: 'ctrl' },
+    { n: 'create_clone',     s: 'create_clone()',                 c: 'ctrl' },
+    { n: 'create_clone_of',  s: 'create_clone_of(sprite)',        c: 'ctrl' },
+    { n: 'delete_clone',     s: 'delete_clone()',                 c: 'ctrl' },
+    { n: 'is_clone',         s: 'is_clone()',                     c: 'ctrl' },
+    // Events — hat blocks (define these functions; PyScratch calls them automatically)
+    { n: 'game_start',              s: 'def game_start():',                   c: 'evt'  },
+    { n: 'when_clicked',            s: 'def when_clicked():',                 c: 'evt'  },
+    { n: 'when_key_pressed',        s: 'def when_key_pressed(key):',          c: 'evt'  },
+    { n: 'when_backdrop_switches_to', s: 'def when_backdrop_switches_to(backdrop):', c: 'evt' },
+    { n: 'when_message_received',   s: 'def when_message_received(message):', c: 'evt'  },
+    // Events — broadcasts
+    { n: 'broadcast',               s: 'broadcast(message)',                  c: 'evt'  },
+    { n: 'broadcast_and_wait',      s: 'broadcast_and_wait(message)',         c: 'evt'  },
+    // Sound
+    { n: 'play_sound',            s: 'play_sound(name)',                c: 'snd'  },
+    { n: 'play_sound_until_done', s: 'play_sound_until_done(name)',     c: 'snd'  },
+    { n: 'stop_all_sounds',       s: 'stop_all_sounds()',               c: 'snd'  },
+    { n: 'set_sound_effect',      s: 'set_sound_effect(effect, value)', c: 'snd'  },
+    { n: 'change_sound_effect',   s: 'change_sound_effect(effect, amount)', c: 'snd' },
+    { n: 'clear_sound_effects',   s: 'clear_sound_effects()',           c: 'snd'  },
+    { n: 'set_volume',            s: 'set_volume(percent)',             c: 'snd'  },
+    { n: 'change_volume',         s: 'change_volume(amount)',           c: 'snd'  },
+    { n: 'volume',                s: 'volume()',                        c: 'snd'  },
     // Sensing
     { n: 'touching',      s: 'touching(target)',         c: 'sens' },
     { n: 'distance_to',   s: 'distance_to(target)',      c: 'sens' },
@@ -67,6 +115,7 @@
     pressedKeys:      {},
     mouse:            { x: 0, y: 0 },
     spriteCode:       {},   // spriteName → [{ id, name, code }]
+    handlers:         {},   // spriteName → { event → { fn: SkFn, tgen: Number } }
     activeSprite:     null,
     activeThreadIdx:  0,
     themeSignature:   ''
@@ -125,7 +174,9 @@
   function getSprites() {
     try {
       if (!S.vm || !S.vm.runtime || !S.vm.runtime.targets) return [];
-      return S.vm.runtime.targets.filter(function (t) { return !t.isStage && t.sprite; });
+      // Exclude the stage and clones — only original (non-clone) sprites.
+      // Clones get their own Python threads via runCloneThreads(), not via startAll().
+      return S.vm.runtime.targets.filter(function (t) { return !t.isStage && t.sprite && !t.isClone; });
     } catch (e) { return []; }
   }
 
@@ -133,7 +184,10 @@
     try {
       if (!S.vm || !S.vm.runtime || !S.vm.runtime.targets) return null;
       if (name === '__stage__') return S.vm.runtime.targets.find(function (t) { return t.isStage; });
-      return S.vm.runtime.targets.find(function (t) { return t.sprite && t.sprite.name === name; });
+      // Check sprite name first (normal sprites), then fall back to target ID (clones).
+      return S.vm.runtime.targets.find(function (t) {
+        return (t.sprite && t.sprite.name === name) || t.id === name;
+      }) || null;
     } catch (e) { return null; }
   }
 
@@ -177,15 +231,61 @@
       'def get_direction(): return direction()',
       'def on_edge(): return _psc("on_edge")',
       'def bounce(): return if_on_edge_bounce()',
-      // Looks
-      'def say(m,s=2): return _psc("say",m,s)',
-      'def think(m,s=2): return _psc("think",m,s)',
+      // Looks — speech/thought
+      // say(message) is non-blocking (shows bubble, continues immediately).
+      // say_for(message, secs) blocks for secs seconds, like Scratch's timed bubble.
+      'def say(m,s=None): return _psc("say",m,s)',
+      'def say_for(m,s): return _psc("say_for",m,s)',
+      'def think(m,s=None): return _psc("think",m,s)',
+      'def think_for(m,s): return _psc("think_for",m,s)',
+      // Looks — costume
       'def set_costume(c): return _psc("set_costume",c)',
       'def next_costume(): return _psc("next_costume")',
+      'def previous_costume(): return _psc("previous_costume")',
+      'def costume_number(): return _psc("costume_number")',
+      'def costume_name(): return _psc("costume_name")',
+      // Looks — backdrop (operates on the stage, not the sprite)
+      'def set_backdrop(b): return _psc("set_backdrop",b)',
+      'def next_backdrop(): return _psc("next_backdrop")',
+      'def previous_backdrop(): return _psc("previous_backdrop")',
+      'def backdrop_name(): return _psc("backdrop_name")',
+      'def backdrop_number(): return _psc("backdrop_number")',
+      // Looks — size / visibility
       'def set_size(s): return _psc("set_size",s)',
       'def change_size(s): return _psc("change_size",s)',
+      'def size(): return _psc("size")',
       'def show(): return _psc("show")',
       'def hide(): return _psc("hide")',
+      // Looks — graphic effects
+      'def set_effect(e,v): return _psc("set_effect",e,v)',
+      'def change_effect(e,v): return _psc("change_effect",e,v)',
+      'def clear_effects(): return _psc("clear_effects")',
+      // Looks — layers
+      'def go_to_front(): return _psc("go_to_front")',
+      'def go_to_back(): return _psc("go_to_back")',
+      'def go_forward(n=1): return _psc("go_forward",n)',
+      'def go_backward(n=1): return _psc("go_backward",n)',
+      // Control
+      // wait_until is pure Python — no __ps_call needed
+      'def wait_until(cond):',
+      '    while not cond(): wait(0)',
+      'def create_clone(): return _psc("create_clone")',
+      'def create_clone_of(name): return _psc("create_clone_of",name)',
+      'def delete_clone(): return _psc("delete_clone")',
+      'def is_clone(): return _psc("is_clone")',
+      // Events — broadcasts (hat-block functions are defined by the student, not here)
+      'def broadcast(m): return _psc("broadcast",m)',
+      'def broadcast_and_wait(m): return _psc("broadcast_and_wait",m)',
+      // Sound
+      'def play_sound(n): return _psc("play_sound",n)',
+      'def play_sound_until_done(n): return _psc("play_sound_until_done",n)',
+      'def stop_all_sounds(): return _psc("stop_all_sounds")',
+      'def set_sound_effect(e,v): return _psc("set_sound_effect",e,v)',
+      'def change_sound_effect(e,v): return _psc("change_sound_effect",e,v)',
+      'def clear_sound_effects(): return _psc("clear_sound_effects")',
+      'def set_volume(v): return _psc("set_volume",v)',
+      'def change_volume(v): return _psc("change_volume",v)',
+      'def volume(): return _psc("volume")',
       // Sensing
       'def touching(t): return _psc("touching",t)',
       'def distance_to(t): return _psc("distance_to",t)',
@@ -272,6 +372,18 @@
       else stopAll();
       return Sk.builtin.none.none$;
     });
+
+    // __ps_register__(event, fn, sprite, tgen)
+    // Called from the postlude to register a hat-block handler function.
+    Sk.builtins['__ps_register__'] = new Sk.builtin.func(function (evtArg, fnArg, spriteArg, tgenArg) {
+      var evt    = Sk.ffi.remapToJs(evtArg);
+      var sprite = Sk.ffi.remapToJs(spriteArg);
+      var tgen   = Sk.ffi.remapToJs(tgenArg);
+      if (!fnArg || fnArg instanceof Sk.builtin.none) return Sk.builtin.none.none$;
+      if (!S.handlers[sprite]) S.handlers[sprite] = {};
+      S.handlers[sprite][evt] = { fn: fnArg, tgen: tgen };
+      return Sk.builtin.none.none$;
+    });
   }
 
   // ── Scratch API implementation ────────────────────────────────
@@ -302,11 +414,68 @@
     return 'all around';
   }
 
+  // Normalise Scratch graphic-effect names to lowercase; handle "colour" variant.
+  function normalizeEffect(eff) {
+    var s = String(eff || '').toLowerCase().trim();
+    if (s === 'colour') return 'color';
+    return s;
+  }
+
+  // Return the stage target (used by backdrop functions regardless of active sprite).
+  function getStage() {
+    try {
+      if (!S.vm || !S.vm.runtime || !S.vm.runtime.targets) return null;
+      return S.vm.runtime.targets.find(function (t) { return t.isStage; }) || null;
+    } catch(e) { return null; }
+  }
+
+  // Switch a target (sprite or stage) to costume by name, number (1-based), or
+  // the special strings "next", "previous", "random".
+  function setCostumeByValue(t, val) {
+    if (!t || !t.sprite) return;
+    var costumes = t.sprite.costumes;
+    if (val === 'next')     { t.setCostume((t.currentCostume + 1) % costumes.length); return; }
+    if (val === 'previous') { t.setCostume((t.currentCostume - 1 + costumes.length) % costumes.length); return; }
+    if (val === 'random')   { t.setCostume(Math.floor(Math.random() * costumes.length)); return; }
+    var idx = costumes.findIndex(function (co) { return co.name === String(val); });
+    if (idx === -1) {
+      var n = parseInt(val, 10);
+      if (!isNaN(n)) idx = n - 1;   // Scratch costume numbers are 1-based
+    }
+    if (idx >= 0 && idx < costumes.length) t.setCostume(idx);
+  }
+
+  // Resolve a sound from a target by name, or 1-based number.
+  function findSound(target, val) {
+    if (!target || !target.sprite || !target.sprite.sounds) return null;
+    var sounds = target.sprite.sounds;
+    if (!sounds.length) return null;
+    if (val === null || val === undefined) return sounds[0];
+    var s = sounds.find(function (snd) { return snd.name === String(val); });
+    if (!s) {
+      var n = parseInt(val, 10);
+      if (!isNaN(n)) s = sounds[n - 1];  // 1-based
+    }
+    return s || null;
+  }
+
+  // Normalise sound-effect names (distinct from graphic effects).
+  // Scratch effects: "pitch", "pan left right"
+  function normalizeSoundEffect(eff) {
+    var s = String(eff || '').toLowerCase().trim();
+    if (s === 'pan' || s === 'panleftright' || s === 'pan left/right') return 'pan left right';
+    return s;
+  }
+
+  // Backdrop-only functions do not need a sprite target — add them to the allow-list.
+  var STAGE_FNS = { set_backdrop:1, next_backdrop:1, previous_backdrop:1,
+                    backdrop_name:1, backdrop_number:1 };
+
   function callAPI(fn, spriteName, args) {
     var target = getTargetByName(spriteName);
     var a = args[0], b = args[1], c = args[2];
 
-    if (!target && fn !== 'stop' && fn !== 'key_pressed' && fn !== 'mouse_x' && fn !== 'mouse_y') return null;
+    if (!target && !STAGE_FNS[fn] && fn !== 'stop' && fn !== 'key_pressed' && fn !== 'mouse_x' && fn !== 'mouse_y') return null;
 
     switch (fn) {
       // ── Movement ───────────────────────────────────────────────
@@ -384,25 +553,227 @@
         break;
       }
 
-      // ── Looks ──────────────────────────────────────────────────
-      case 'say':
-        return bubbleAsync(target, a == null ? '' : String(a), 'say', b != null ? b : 2);
-      case 'think':
-        return bubbleAsync(target, a == null ? '' : String(a), 'think', b != null ? b : 2);
-      case 'set_costume': {
-        var costumes = target.sprite.costumes;
-        var idx = costumes.findIndex(function (co) { return co.name === String(a); });
-        if (idx === -1) idx = parseInt(a, 10);
-        if (idx >= 0 && idx < costumes.length) target.setCostume(idx);
-        break;
+      // ── Looks: speech / thought ───────────────────────────────────
+      // say(message)       → non-blocking: shows bubble and returns immediately
+      // say_for(msg, secs) → blocking: shows bubble, yields for secs seconds
+      case 'say': {
+        var msg = a == null ? '' : String(a);
+        if (b === null || b === undefined) {
+          // Non-blocking — just fire-and-forget the SAY event
+          try { target.runtime.emit('SAY', target, 'say', msg); } catch(e) {}
+          return null;
+        }
+        return bubbleAsync(target, msg, 'say', b);
       }
+      case 'say_for':
+        return bubbleAsync(target, a == null ? '' : String(a), 'say', b != null ? b : 2);
+      case 'think': {
+        var tmsg = a == null ? '' : String(a);
+        if (b === null || b === undefined) {
+          try { target.runtime.emit('SAY', target, 'think', tmsg); } catch(e) {}
+          return null;
+        }
+        return bubbleAsync(target, tmsg, 'think', b);
+      }
+      case 'think_for':
+        return bubbleAsync(target, a == null ? '' : String(a), 'think', b != null ? b : 2);
+
+      // ── Looks: costume ─────────────────────────────────────────────
+      case 'set_costume':
+        setCostumeByValue(target, a);
+        break;
       case 'next_costume':
         target.setCostume((target.currentCostume + 1) % target.sprite.costumes.length);
         break;
+      case 'previous_costume':
+        target.setCostume((target.currentCostume - 1 + target.sprite.costumes.length) % target.sprite.costumes.length);
+        break;
+      case 'costume_number': return target.currentCostume + 1;  // 1-based, like Scratch
+      case 'costume_name': {
+        var co = target.sprite.costumes[target.currentCostume];
+        return co ? co.name : '';
+      }
+
+      // ── Looks: backdrop ────────────────────────────────────────────
+      case 'set_backdrop': {
+        var stage = getStage();
+        if (stage) {
+          setCostumeByValue(stage, a);
+          // Fire when_backdrop_switches_to handlers on all sprites
+          var bName = stage.sprite.costumes[stage.currentCostume];
+          if (bName) fireEventHandlers(null, 'backdrop', bName.name);
+        }
+        break;
+      }
+      case 'next_backdrop': {
+        var stage = getStage();
+        if (stage) stage.setCostume((stage.currentCostume + 1) % stage.sprite.costumes.length);
+        break;
+      }
+      case 'previous_backdrop': {
+        var stage = getStage();
+        if (stage) stage.setCostume((stage.currentCostume - 1 + stage.sprite.costumes.length) % stage.sprite.costumes.length);
+        break;
+      }
+      case 'backdrop_name': {
+        var stage = getStage();
+        if (!stage) return '';
+        var bco = stage.sprite.costumes[stage.currentCostume];
+        return bco ? bco.name : '';
+      }
+      case 'backdrop_number': {
+        var stage = getStage();
+        return stage ? stage.currentCostume + 1 : 1;
+      }
+
+      // ── Looks: size / visibility ───────────────────────────────────
       case 'set_size':    target.setSize(a); break;
       case 'change_size': target.setSize(target.size + a); break;
+      case 'size':        return target.size;
       case 'show':        target.setVisible(true); break;
       case 'hide':        target.setVisible(false); break;
+
+      // ── Looks: graphic effects ─────────────────────────────────────
+      // effect names: color, fisheye, whirl, pixelate, mosaic, brightness, ghost
+      case 'set_effect': {
+        var eff = normalizeEffect(a);
+        try { target.setEffect(eff, b || 0); } catch(e) {
+          try { if (target.effects) target.effects[eff] = b || 0; } catch(e2) {}
+        }
+        break;
+      }
+      case 'change_effect': {
+        var eff = normalizeEffect(a);
+        try { target.changeEffect(eff, b || 0); } catch(e) {
+          // Fallback: read current value and call setEffect
+          try {
+            var cur = (target.effects && target.effects[eff]) || 0;
+            target.setEffect(eff, cur + (b || 0));
+          } catch(e2) {}
+        }
+        break;
+      }
+      case 'clear_effects':
+        try { target.clearEffects(); } catch(e) {}
+        break;
+
+      // ── Looks: layers ──────────────────────────────────────────────
+      case 'go_to_front':
+        try { target.goToFront(); } catch(e) {}
+        break;
+      case 'go_to_back':
+        try { target.goToBack(); } catch(e) {}
+        break;
+      case 'go_forward':
+        try { target.goForwardLayers(a != null ? a : 1); } catch(e) {}
+        break;
+      case 'go_backward':
+        try { target.goBackwardLayers(a != null ? a : 1); } catch(e) {}
+        break;
+
+      // ── Sound ──────────────────────────────────────────────────
+      case 'play_sound': {
+        var snd = findSound(target, a);
+        if (snd) { try { target.sprite.soundBank.playSound(target, snd.soundId); } catch(e) {} }
+        return null;  // non-blocking
+      }
+      case 'play_sound_until_done': {
+        var snd = findSound(target, a);
+        if (snd) {
+          try {
+            var p = target.sprite.soundBank.playSound(target, snd.soundId);
+            if (p && typeof p.then === 'function') return p; // suspend until done
+          } catch(e) {}
+        }
+        return null;
+      }
+      case 'stop_all_sounds':
+        try { target.sprite.soundBank.stopAllSounds(); } catch(e) {
+          try { S.vm.runtime.audioEngine.stopAll(); } catch(e2) {}
+        }
+        break;
+      case 'set_sound_effect':
+        try { if (target.audioPlayer) target.audioPlayer.setEffect(normalizeSoundEffect(a), b || 0); } catch(e) {}
+        break;
+      case 'change_sound_effect':
+        try { if (target.audioPlayer) target.audioPlayer.changeEffect(normalizeSoundEffect(a), b || 0); } catch(e) {}
+        break;
+      case 'clear_sound_effects':
+        try { if (target.audioPlayer) target.audioPlayer.clearEffects(); } catch(e) {}
+        break;
+      case 'set_volume':
+        try { target.setVolume(Math.max(0, Math.min(100, a || 0))); } catch(e) {
+          try { target.volume = Math.max(0, Math.min(100, a || 0)); } catch(e2) {}
+        }
+        break;
+      case 'change_volume':
+        try {
+          var newVol = Math.max(0, Math.min(100, (target.volume || 100) + (a || 0)));
+          target.setVolume(newVol);
+        } catch(e) {}
+        break;
+      case 'volume': return (target.volume !== undefined ? target.volume : 100);
+
+      // ── Control: clones ────────────────────────────────────────
+      case 'create_clone':
+      case 'create_clone_of': {
+        // Resolve which sprite to clone: current sprite or a named one
+        var cloneSourceName = (fn === 'create_clone' || a === null || a === undefined || a === 'myself')
+          ? spriteName
+          : String(a);
+        // For clones, resolve original sprite name (cloneSourceName may be a target ID)
+        var cloneSource = getTargetByName(cloneSourceName);
+        if (!cloneSource) break;
+        // Use the sprite's display name so we load the right code
+        var originalName = (cloneSource.sprite && cloneSource.sprite.name) || cloneSourceName;
+        try {
+          // makeClone() creates the Target; add it to the runtime
+          var newClone = cloneSource.makeClone();
+          if (!newClone) break;
+          if (typeof S.vm.runtime.addTarget === 'function') {
+            S.vm.runtime.addTarget(newClone);
+          } else if (typeof S.vm.runtime.requestAddTarget === 'function') {
+            S.vm.runtime.requestAddTarget(newClone);
+          }
+          // Start Python clone thread (when_I_start_as_a_clone)
+          runCloneThreads(newClone, originalName, S.gen);
+          // Also fire any Scratch hat blocks on the clone
+          try { S.vm.runtime.startHats('control_start_as_clone', null, newClone); } catch(e) {}
+        } catch(e) {
+          console.warn('[PyScratch] create_clone failed:', e);
+        }
+        break;
+      }
+      case 'delete_clone':
+        if (target && target.isClone) {
+          try {
+            if (typeof S.vm.runtime.stopForTarget === 'function') {
+              S.vm.runtime.stopForTarget(target);
+            }
+            if (typeof S.vm.runtime.disposeTarget === 'function') {
+              S.vm.runtime.disposeTarget(target);
+            } else if (typeof S.vm.runtime.removeTarget === 'function') {
+              S.vm.runtime.removeTarget(target);
+            }
+          } catch(e) {}
+          // Stop this Python thread immediately — clone is gone
+          throw new Error('__pyscratch_stopped__');
+        }
+        break;
+      case 'is_clone':
+        return !!(target && target.isClone);
+
+      // ── Events ─────────────────────────────────────────────────
+      case 'broadcast':
+        // Non-blocking: fire all when_message_received handlers and continue.
+        fireEventHandlers(null, 'message', String(a));
+        return null;
+      case 'broadcast_and_wait': {
+        // Blocking: fire all handlers and suspend until every one finishes.
+        var bwPromises = fireEventHandlers(null, 'message', String(a));
+        if (!bwPromises.length) return null;
+        return Promise.all(bwPromises);
+      }
 
       // ── Control ────────────────────────────────────────────────
       case 'stop': stopAll(); break;
@@ -479,6 +850,41 @@
       });
   }
 
+  // ── Event system ─────────────────────────────────────────────
+  // Call a registered Python hat-block handler, launching it as its own
+  // async thread (just like runThread does).  Returns the Promise, or null
+  // if the handler is stale / not registered.
+  function callHandlerFn(h, arg) {
+    if (!h || !S.running || S.gen !== h.tgen) return null;
+    var fn = h.fn;
+    var argList = (arg !== null && arg !== undefined)
+      ? [new Sk.builtin.str(String(arg))]
+      : [];
+    return Sk.misceval.asyncToPromise(function () {
+      return fn.tp$call(argList, []);
+    }).catch(function (err) {
+      if (!err) return;
+      var msg = (err.args && err.args.v && err.args.v[0] && err.args.v[0].v) || err.toString();
+      if (msg.indexOf('__pyscratch_stopped__') !== -1) return;
+      logError('[event] ' + msg);
+    });
+  }
+
+  // Fire a named event for every sprite that has registered a handler for it.
+  // Pass null for spriteName to broadcast to ALL sprites.
+  // Returns an array of Promises (one per handler that was started).
+  function fireEventHandlers(spriteName, event, arg) {
+    if (!S.running) return [];
+    var keys = spriteName ? [spriteName] : Object.keys(S.handlers);
+    var promises = [];
+    keys.forEach(function (sp) {
+      var h = S.handlers[sp] && S.handlers[sp][event];
+      var p = callHandlerFn(h, arg);
+      if (p) promises.push(p);
+    });
+    return promises;
+  }
+
   // ── Auto-yield injection ──────────────────────────────────────
   // Injects wait(0) as the first line of every `while True:` body.
   // This gives exactly one-iteration-per-frame behaviour — like Scratch's
@@ -518,26 +924,36 @@
   }
 
   // ── Thread runner ─────────────────────────────────────────────
-  // threadGen: the generation counter value at the moment this thread was
-  // launched. Embedded as __ps_tgen__ in the Python prologue so every
-  // __ps_call and __ps_wait invocation carries it to the static builtins.
-  function runThread(spriteName, thread, threadGen) {
+  // spriteName: sprite name OR target ID (for clone threads)
+  // threadGen:  generation token embedded in Python as __ps_tgen__
+  // isClone:    true → call when_I_start_as_a_clone() instead of game_start()
+  function runThread(spriteName, thread, threadGen, isClone) {
     var myGen = (threadGen !== undefined) ? threadGen : S.gen;
-    var prologue = makePrologue(spriteName, myGen); // embed gen token in Python module globals
-    // Auto-call game_start if defined.
-    // IMPORTANT: only catch NameError for game_start itself, NOT for errors
-    // that occur inside game_start() — those should surface as real errors.
+    var prologue = makePrologue(spriteName, myGen);
+
+    // Entry-point name depends on whether this is a clone thread
+    var entryName = isClone ? 'when_I_start_as_a_clone' : 'game_start';
     var postlude = [
       '',
+      '# Register event handlers — silently skip any that are not defined',
+      'try: __ps_register__("clicked",  when_clicked,              __ps_sprite__, __ps_tgen__)',
+      'except NameError: pass',
+      'try: __ps_register__("key",      when_key_pressed,          __ps_sprite__, __ps_tgen__)',
+      'except NameError: pass',
+      'try: __ps_register__("message",  when_message_received,     __ps_sprite__, __ps_tgen__)',
+      'except NameError: pass',
+      'try: __ps_register__("backdrop", when_backdrop_switches_to, __ps_sprite__, __ps_tgen__)',
+      'except NameError: pass',
+      '# Entry point',
       'try:',
-      '    _ps_fn = game_start',
+      '    _ps_entry = ' + entryName,
       'except NameError:',
-      '    _ps_fn = None',
-      'if _ps_fn is not None:',
-      '    _ps_fn()',
+      '    _ps_entry = None',
+      'if _ps_entry is not None:',
+      '    _ps_entry()',
       ''
     ].join('\n');
-    // Inject frame yields into while True: loops before running
+
     var userCode = injectFrameYields(thread.code);
     var fullCode = prologue + userCode + postlude;
 
@@ -548,18 +964,28 @@
         throw new Error("File not found: '" + x + "'");
       },
       execLimit: undefined,
-      // Safety net: yield every 1000 ops for infinite loops that aren't `while True:`
       yieldLimit: 1000
     });
-    // Bridge builtins are set up once globally (in boot) — nothing to do here.
 
+    var label = '<ps:' + spriteName + ':' + thread.name + (isClone ? ':clone' : '') + '>';
     return Sk.misceval.asyncToPromise(function () {
-      return Sk.importMainWithBody('<ps:' + spriteName + ':' + thread.name + '>', false, fullCode, true);
+      return Sk.importMainWithBody(label, false, fullCode, true);
     }).catch(function (err) {
       if (!err) return;
       var msg = (err.args && err.args.v && err.args.v[0] && err.args.v[0].v) || err.toString();
       if (msg.indexOf('__pyscratch_stopped__') !== -1) return;
       logError(spriteName + ' / ' + thread.name + ': ' + msg);
+    });
+  }
+
+  // Launch all Python threads for a newly created clone.
+  // Uses the original sprite's stored code but:
+  //   • __ps_sprite__ = clone's target ID (so API calls move THIS clone)
+  //   • entry point = when_I_start_as_a_clone() instead of game_start()
+  function runCloneThreads(cloneTarget, originalSpriteName, threadGen) {
+    var cloneId = cloneTarget.id;
+    loadThreads(originalSpriteName).forEach(function (thread) {
+      runThread(cloneId, thread, threadGen, true /* isClone */);
     });
   }
 
@@ -594,6 +1020,82 @@
     S.running = false;
     S.gen++;   // sleeping threads see gen mismatch → throw __pyscratch_stopped__
     updateRunState(false);
+  }
+
+  // ── .psb3 save / load ────────────────────────────────────────
+  // .psb3 = standard .sb3 ZIP + pyscratch.json bundled inside.
+  // TurboWarp's own save/load UI is used unchanged; we intercept at VM level
+  // so every path (File menu, Ctrl+S, drag-and-drop) goes through our patches.
+
+  // Returns a Promise<JSZip>, loading the library from CDN on first call.
+  function ensureJSZip() {
+    return new Promise(function (resolve, reject) {
+      if (window.JSZip) { resolve(window.JSZip); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+      s.onload  = function () { resolve(window.JSZip); };
+      s.onerror = function () { reject(new Error('Could not load JSZip')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  // Coerce any binary input (Blob, Uint8Array, ArrayBuffer) to an ArrayBuffer.
+  function toArrayBuffer(input) {
+    if (input instanceof ArrayBuffer) return Promise.resolve(input);
+    if (input instanceof Uint8Array)  return Promise.resolve(input.buffer.slice(input.byteOffset, input.byteOffset + input.byteLength));
+    // Blob
+    if (typeof input.arrayBuffer === 'function') return input.arrayBuffer();
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload  = function (e) { resolve(e.target.result); };
+      fr.onerror = reject;
+      fr.readAsArrayBuffer(input);
+    });
+  }
+
+  // Add pyscratch.json to an sb3 Blob/Buffer and return a new Blob.
+  function injectPyScratchData(sb3) {
+    return ensureJSZip().then(function (JSZip) {
+      return toArrayBuffer(sb3).then(function (buf) {
+        return JSZip.loadAsync(buf);
+      }).then(function (zip) {
+        zip.file('pyscratch.json', JSON.stringify({ v: 1, sprites: S.spriteCode }, null, 2));
+        return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      });
+    });
+  }
+
+  // Try to read pyscratch.json from a binary input.
+  // Returns { buffer: ArrayBuffer, pyCode: object|null }.
+  // If the input is not a ZIP or has no pyscratch.json, pyCode is null and
+  // buffer is the original data unchanged (for normal .sb3 files).
+  function extractPyScratchData(input) {
+    var isBinary = (input instanceof ArrayBuffer) || (input instanceof Uint8Array) ||
+                   (typeof Blob !== 'undefined' && input instanceof Blob);
+    if (!isBinary) return Promise.resolve({ buffer: input, pyCode: null });
+
+    return ensureJSZip().then(function (JSZip) {
+      return toArrayBuffer(input).then(function (buf) {
+        return JSZip.loadAsync(buf.slice(0) /* clone so original is preserved */).then(function (zip) {
+          var psFile = zip.file('pyscratch.json');
+          if (!psFile) return { buffer: buf, pyCode: null };
+          return psFile.async('string').then(function (raw) {
+            var pyCode = null;
+            try { var p = JSON.parse(raw); pyCode = p.sprites || p; } catch(e) {}
+            zip.remove('pyscratch.json');
+            return zip.generateAsync({ type: 'arraybuffer' }).then(function (clean) {
+              return { buffer: clean, pyCode: pyCode };
+            });
+          });
+        }).catch(function () {
+          // Not a valid ZIP — treat as plain .sb3
+          return toArrayBuffer(input).then(function (buf2) { return { buffer: buf2, pyCode: null }; });
+        });
+      });
+    }).catch(function () {
+      // JSZip unavailable — pass input through unchanged
+      return { buffer: input, pyCode: null };
+    });
   }
 
   // ── Theme sync ────────────────────────────────────────────────
@@ -810,6 +1312,8 @@
       '.ps-hcat{padding:7px 12px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}',
       '.ps-hcat.mov{background:#1a3458;color:#7dd3fc}',
       '.ps-hcat.look{background:#331b52;color:#d8b4fe}',
+      '.ps-hcat.snd{background:#3b1645;color:#e9b3f4}',
+      '.ps-hcat.evt{background:#3a2800;color:#fcd34d}',
       '.ps-hcat.ctrl{background:#332514;color:#fcd34d}',
       '.ps-hcat.sens{background:#143232;color:#67e8f9}',
       '.ps-hitems{padding:10px 14px;background:var(--ps-panel-3,#252538)}',
@@ -893,8 +1397,15 @@
       var map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right', Enter:'enter' };
       return map[k] || k.toLowerCase();
     };
-    window.addEventListener('keydown', function (e) { S.pressedKeys[normKey(e.key)] = true; });
-    window.addEventListener('keyup',   function (e) { S.pressedKeys[normKey(e.key)] = false; });
+    // Key tracking — also fire when_key_pressed handlers on rising edge
+    window.addEventListener('keydown', function (e) {
+      var key = normKey(e.key);
+      if (!S.pressedKeys[key]) {
+        S.pressedKeys[key] = true;
+        if (S.running) fireEventHandlers(null, 'key', key);
+      }
+    });
+    window.addEventListener('keyup', function (e) { S.pressedKeys[normKey(e.key)] = false; });
 
     // Mouse tracking (map to Scratch coords: centre=0,0; Y-up)
     window.addEventListener('mousemove', function (e) {
@@ -903,6 +1414,26 @@
       var r = canvas.getBoundingClientRect();
       S.mouse.x =  ((e.clientX - r.left) / r.width)  * 480 - 240;
       S.mouse.y = -(((e.clientY - r.top)  / r.height) * 360 - 180);
+    });
+
+    // Sprite click — fire when_clicked handlers using the renderer's pick()
+    window.addEventListener('mousedown', function (e) {
+      if (!S.running) return;
+      var canvas = document.querySelector('canvas');
+      if (!canvas) return;
+      var r = canvas.getBoundingClientRect();
+      var offsetX = e.clientX - r.left;
+      var offsetY = e.clientY - r.top;
+      if (offsetX < 0 || offsetY < 0 || offsetX > r.width || offsetY > r.height) return;
+      try {
+        var drawableID = S.vm.runtime.renderer.pick(offsetX, offsetY);
+        if (drawableID !== null && drawableID !== undefined) {
+          var tgt = S.vm.runtime.targets.find(function (t) {
+            return !t.isStage && t.drawableID === drawableID;
+          });
+          if (tgt && tgt.sprite) fireEventHandlers(tgt.sprite.name, 'clicked', null);
+        }
+      } catch(e) {}
     });
   }
 
@@ -924,18 +1455,52 @@
         { code:'set_rotation_style(style)', desc:'Use "all around", "left-right", or "don\\\'t rotate".' },
       ]},
       { cat:'look', title:'Looks', items:[
-        { code:'say(message, secs=2)', desc:'Show a speech bubble for secs seconds.' },
-        { code:'think(message, secs=2)', desc:'Show a thought bubble.' },
-        { code:'set_costume(name)', desc:'Switch costume by name.' },
-        { code:'next_costume()', desc:'Advance to the next costume.' },
-        { code:'set_size(percent)', desc:'Set sprite size (100 = default).' },
+        { code:'say(message)', desc:'Show a speech bubble without pausing. say_for(message, secs) shows it for a set time and waits.' },
+        { code:'think(message)', desc:'Show a thought bubble without pausing. think_for(message, secs) shows it for a set time and waits.' },
+        { code:'set_costume(name)', desc:'Switch costume by name, number (1-based), "next", "previous", or "random".' },
+        { code:'next_costume() / previous_costume()', desc:'Step through costumes one at a time.' },
+        { code:'costume_number() / costume_name()', desc:'Return the current costume number (1-based) or name.' },
+        { code:'set_backdrop(name)', desc:'Switch the stage backdrop by name, number, "next", "previous", or "random".' },
+        { code:'next_backdrop() / previous_backdrop()', desc:'Step through backdrops.' },
+        { code:'backdrop_number() / backdrop_name()', desc:'Return the current backdrop number (1-based) or name.' },
+        { code:'set_size(percent) / change_size(amount)', desc:'Set or adjust sprite size. 100 is default.' },
+        { code:'size()', desc:'Return the current size as a percentage.' },
         { code:'show() / hide()', desc:'Show or hide the sprite.' },
+        { code:'set_effect(effect, value)', desc:'Set a graphic effect. Effects: "color", "fisheye", "whirl", "pixelate", "mosaic", "brightness", "ghost".' },
+        { code:'change_effect(effect, amount)', desc:'Change a graphic effect by the given amount.' },
+        { code:'clear_effects()', desc:'Remove all graphic effects from this sprite.' },
+        { code:'go_to_front() / go_to_back()', desc:'Move this sprite to the front or back layer.' },
+        { code:'go_forward(n) / go_backward(n)', desc:'Move this sprite forward or backward by n layers (default 1).' },
+      ]},
+      { cat:'evt', title:'Events', items:[
+        { code:'def game_start():', desc:'Runs when the green flag is clicked. This is the main entry point for your code.' },
+        { code:'def when_clicked():', desc:'Runs each time this sprite is clicked. Define this function to react to clicks.' },
+        { code:'def when_key_pressed(key):', desc:'Called on every key-down. Check which key with: if key == "space": ...' },
+        { code:'def when_backdrop_switches_to(backdrop):', desc:'Called after set_backdrop() changes the backdrop. Receives the new backdrop name.' },
+        { code:'def when_message_received(message):', desc:'Called when broadcast() or broadcast_and_wait() sends a matching message.' },
+        { code:'broadcast(message)', desc:'Send a message to all when_message_received handlers immediately. Does not pause.' },
+        { code:'broadcast_and_wait(message)', desc:'Send a message and pause this thread until every handler finishes running.' },
+      ]},
+      { cat:'snd', title:'Sound', items:[
+        { code:'play_sound(name)', desc:'Start playing a sound by name or number without waiting.' },
+        { code:'play_sound_until_done(name)', desc:'Play a sound and pause this thread until it finishes.' },
+        { code:'stop_all_sounds()', desc:'Stop all currently playing sounds.' },
+        { code:'set_sound_effect("pitch", value)', desc:'Set a sound effect. Effects: "pitch" (semitones) and "pan left right" (−100 to 100).' },
+        { code:'change_sound_effect("pitch", amount)', desc:'Change a sound effect by the given amount.' },
+        { code:'clear_sound_effects()', desc:'Remove all sound effects from this sprite.' },
+        { code:'set_volume(percent)', desc:'Set the volume (0–100). Default is 100.' },
+        { code:'change_volume(amount)', desc:'Change the volume by the given amount.' },
+        { code:'volume()', desc:'Return the current volume as a percentage.' },
       ]},
       { cat:'ctrl', title:'Control', items:[
-        { code:'def game_start():', desc:'Entry point — runs when the green flag is clicked.' },
-        { code:'wait(secs)', desc:'Pause this thread for secs seconds. wait(0.5) pauses half a second.' },
-        { code:'while True:', desc:'Standard game loop — automatically runs once per frame (like Scratch\'s forever block). No wait(0) needed.' },
-        { code:'stop()', desc:'Stop all threads immediately.' },
+        { code:'wait(secs)', desc:'Pause this thread for secs seconds. wait(0) yields for one frame.' },
+        { code:'wait_until(lambda: condition)', desc:'Yield every frame until the condition is True. Example: wait_until(lambda: touching("Ball"))' },
+        { code:'stop()', desc:'Stop all threads and clones immediately.' },
+        { code:'create_clone()', desc:'Create a clone of this sprite. The clone runs when_I_start_as_a_clone().' },
+        { code:'create_clone_of(sprite)', desc:'Create a clone of another sprite by name.' },
+        { code:'delete_clone()', desc:'Delete this clone and stop its thread immediately. Only works inside a clone.' },
+        { code:'is_clone()', desc:'Returns True if the current sprite is a clone.' },
+        { code:'def when_I_start_as_a_clone():', desc:'Runs automatically for each new clone. Use while True: for a continuous loop, delete_clone() to remove it.' },
       ]},
       { cat:'sens', title:'Sensing', items:[
         { code:'touching("SpriteName")', desc:'True if this sprite is touching another sprite.' },
@@ -1191,8 +1756,51 @@
     schedule();
   }
 
+  // ── Duplicate-sprite detection ────────────────────────────────
+  // When TurboWarp duplicates a sprite the copy shares the same costume
+  // asset IDs as the original.  We use that to find the code source.
+  function findCodeSource(target) {
+    if (!target.sprite || !target.sprite.costumes || !target.sprite.costumes.length) return null;
+    var firstId = target.sprite.costumes[0].assetId;
+    if (!firstId) return null;
+    var sprites = getSprites();
+    for (var i = 0; i < sprites.length; i++) {
+      var t = sprites[i];
+      if (t.sprite.name === target.sprite.name) continue; // skip self
+      if (!S.spriteCode[t.sprite.name]) continue;         // skip sprites with no code yet
+      var costumes = t.sprite.costumes;
+      for (var j = 0; j < costumes.length; j++) {
+        if (costumes[j].assetId === firstId) return t.sprite.name;
+      }
+    }
+    return null;
+  }
+
+  // Called during sync to detect sprites that were just duplicated via
+  // TurboWarp's UI and auto-copy the source sprite's Python code to them.
+  function inheritCodeFromDuplicates() {
+    var sprites = getSprites();
+    sprites.forEach(function (t) {
+      var name = t.sprite.name;
+      // Skip if we already have code for this sprite (in memory or localStorage)
+      if (S.spriteCode[name]) return;
+      try { if (localStorage.getItem(storeKey(name))) return; } catch(e) {}
+      // No code yet — look for a sprite with matching costume assets
+      var sourceName = findCodeSource(t);
+      if (!sourceName) return;
+      // Deep-copy the source threads and assign fresh IDs to avoid collisions
+      var copy = JSON.parse(JSON.stringify(S.spriteCode[sourceName]));
+      copy.forEach(function (thread) {
+        thread.id = 't_' + Date.now() + '_' + (Math.random() * 1e9 | 0);
+      });
+      S.spriteCode[name] = copy;
+      saveThreads(name);
+    });
+  }
+
   // ── Sync ──────────────────────────────────────────────────────
   function sync() {
+    inheritCodeFromDuplicates();
     syncSelectedSprite(!S.activeSprite);
     renderThreadList();
     updateOverlaySuppression();
@@ -1269,6 +1877,48 @@
           if (S.running) stopAll();
         });
       } catch(e) {}
+
+      // ── .psb3 interception ──────────────────────────────────────
+      // Wrap vm.saveProjectSb3 so every TurboWarp save path (File menu,
+      // Ctrl+S, toolbar button) embeds pyscratch.json in the output blob.
+      try {
+        var _origSaveSb3 = vm.saveProjectSb3.bind(vm);
+        vm.saveProjectSb3 = function () {
+          saveCurrentCode();                         // flush editor textarea first
+          return _origSaveSb3().then(injectPyScratchData);
+        };
+      } catch(e) {
+        console.warn('[PyScratch] Could not patch saveProjectSb3:', e);
+      }
+
+      // Rename the downloaded file from .sb3 → .psb3 by intercepting the
+      // anchor.click() call that TurboWarp uses to trigger the download.
+      // The check (blob: URL + .sb3 download attribute) is specific enough to
+      // avoid affecting any other anchor clicks on the page.
+      (function () {
+        var _origAnchorClick = HTMLAnchorElement.prototype.click;
+        HTMLAnchorElement.prototype.click = function () {
+          if (this.download && /\.sb3$/i.test(this.download) && /^blob:/i.test(this.href)) {
+            this.download = this.download.replace(/\.sb3$/i, '.psb3');
+          }
+          return _origAnchorClick.call(this);
+        };
+      })();
+
+      // Wrap vm.loadProject so any file loaded through TurboWarp's UI
+      // (File menu, drag-and-drop) has its pyscratch.json extracted first.
+      // Python code is applied BEFORE the project fires TARGETS_UPDATE → sync().
+      try {
+        var _origLoadProject = vm.loadProject.bind(vm);
+        vm.loadProject = function (input) {
+          return extractPyScratchData(input).then(function (result) {
+            if (result.pyCode) S.spriteCode = result.pyCode;
+            return _origLoadProject(result.buffer);
+          });
+        };
+      } catch(e) {
+        console.warn('[PyScratch] Could not patch loadProject:', e);
+      }
 
       console.log('[PyScratch] Ready. vm=', vm, 'runtime=', vm.runtime);
     });
