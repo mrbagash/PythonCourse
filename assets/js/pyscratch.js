@@ -140,28 +140,27 @@
         {
           title: 'Start with a game loop',
           text: 'All PyScratch programs begin with a <code>game_start()</code> function. ' +
-                'Inside it, use <code>while True:</code> to keep the game running forever. ' +
-                '<code>wait(0)</code> at the end of each loop lets the stage redraw — without it the browser will freeze.',
-          code: 'def game_start():\n    while True:\n        wait(0)'
+                'Inside it, use <code>while True:</code> to keep the game running forever — PyScratch handles the frame timing for you automatically.',
+          code: 'def game_start():\n    while True:\n        pass'
         },
         {
           title: 'Move left and right',
           text: '<code>key_pressed()</code> returns <code>True</code> while a key is held. ' +
                 '<code>change_x()</code> moves the sprite horizontally — a positive number moves right, a negative number moves left.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)'
         },
         {
           title: 'Add up and down',
           text: 'Add two more checks for the up and down arrow keys. ' +
                 '<code>change_y()</code> moves the sprite vertically — positive goes up, negative goes down. ' +
                 'Using <code>if</code> (not <code>elif</code>) lets the player hold two keys at once to move diagonally.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)'
         },
         {
           title: 'Bounce off the edges',
           text: '<code>if_on_edge_bounce()</code> automatically flips the sprite\'s direction when it hits a stage boundary. ' +
                 'Call it once per frame — after the movement code — and the sprite will never escape.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        if_on_edge_bounce()\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        if_on_edge_bounce()'
         },
         {
           title: '✅ Try it out!',
@@ -181,7 +180,7 @@
           title: 'Python variables',
           text: 'In PyScratch you store data in Python variables — no Scratch variable blocks needed. ' +
                 'Create a <code>score</code> variable at module level (outside any function) so multiple event handlers can share it.',
-          code: 'score = 0\n\ndef game_start():\n    while True:\n        wait(0)'
+          code: 'score = 0\n\ndef game_start():\n    while True:\n        pass'
         },
         {
           title: 'Display the score',
@@ -193,13 +192,13 @@
           title: 'Increase on key press',
           text: '<code>when_key_pressed(key)</code> fires once per key-down — so the score only increments the moment you press, ' +
                 'not every frame the key is held. The <code>global</code> keyword tells Python you mean the shared variable, not a local copy.',
-          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1'
+          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1'
         },
         {
           title: 'Reset with R',
           text: 'Add a reset so pupils can start over without stopping the game. ' +
                 'Resetting inside <code>game_start()</code> also clears the score when the green flag is clicked.',
-          code: 'score = 0\n\ndef game_start():\n    global score\n    score = 0          # reset on green flag\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1\n    if key == "r":\n        score = 0'
+          code: 'score = 0\n\ndef game_start():\n    global score\n    score = 0          # reset on green flag\n    while True:\n        say("Score: " + str(score))\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1\n    if key == "r":\n        score = 0'
         },
         {
           title: '✅ Try it out!',
@@ -260,24 +259,24 @@
           title: 'Snap to the mouse',
           text: 'The simplest version: <code>go_to("mouse_pointer")</code> teleports the sprite directly to the cursor every frame. ' +
                 'It is instant but looks jerky.',
-          code: 'def game_start():\n    while True:\n        go_to("mouse_pointer")\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        go_to("mouse_pointer")'
         },
         {
           title: 'Smooth following',
           text: 'Instead of snapping, move a fraction of the way to the cursor each frame. ' +
                 'Multiplying by <code>0.1</code> moves 10% of the remaining distance — the sprite decelerates as it approaches.',
-          code: 'def game_start():\n    while True:\n        tx = mouse_x()\n        ty = mouse_y()\n        set_x(x_position() + (tx - x_position()) * 0.1)\n        set_y(y_position() + (ty - y_position()) * 0.1)\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        tx = mouse_x()\n        ty = mouse_y()\n        set_x(x_position() + (tx - x_position()) * 0.1)\n        set_y(y_position() + (ty - y_position()) * 0.1)'
         },
         {
           title: 'Face the direction of travel',
           text: '<code>point_towards("mouse_pointer")</code> rotates the sprite to always face the cursor, so it looks like it is actively chasing.',
-          code: 'def game_start():\n    while True:\n        point_towards("mouse_pointer")\n        set_x(x_position() + (mouse_x() - x_position()) * 0.1)\n        set_y(y_position() + (mouse_y() - y_position()) * 0.1)\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        point_towards("mouse_pointer")\n        set_x(x_position() + (mouse_x() - x_position()) * 0.1)\n        set_y(y_position() + (mouse_y() - y_position()) * 0.1)'
         },
         {
           title: 'Only follow when clicked',
           text: 'Use <code>mouse_down()</code> to make the sprite follow only while the mouse button is held. ' +
                 'When released, the sprite drifts to a stop.',
-          code: 'def game_start():\n    while True:\n        if mouse_down():\n            point_towards("mouse_pointer")\n            set_x(x_position() + (mouse_x() - x_position()) * 0.15)\n            set_y(y_position() + (mouse_y() - y_position()) * 0.15)\n        wait(0)'
+          code: 'def game_start():\n    while True:\n        if mouse_down():\n            point_towards("mouse_pointer")\n            set_x(x_position() + (mouse_x() - x_position()) * 0.15)\n            set_y(y_position() + (mouse_y() - y_position()) * 0.15)'
         },
         {
           title: '✅ Try it out!',
@@ -312,13 +311,13 @@
           title: 'Each clone falls from the top',
           text: 'When a clone starts it shows itself, jumps to a random x position at the top of the stage, ' +
                 'and then falls downward in its own loop — completely independent of every other clone.',
-          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        wait(0)'
+          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)'
         },
         {
           title: 'Delete clones that fall off screen',
           text: 'Without cleanup, clones pile up invisibly below the stage and slow the browser down. ' +
                 'Check <code>y_position()</code> and call <code>delete_clone()</code> when the clone disappears.',
-          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.4)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        if y_position() < -180:\n            delete_clone()\n        wait(0)'
+          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.4)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        if y_position() < -180:\n            delete_clone()'
         },
         {
           title: '✅ Try it out!',
