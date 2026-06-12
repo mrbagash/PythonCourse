@@ -1152,15 +1152,36 @@ async function autoSubmitAssessmentForEarlyEnd() {
       assessment.responseRef.update({ finalSubmitInProgress: true, lastSeenAt: Date.now() }).catch(function() {});
     }
     if (spec.questions && spec.questions.length) {
+      // Read the Firebase-saved answers BEFORE touching in-memory state.
+      // This is critical for students who joined late (or refreshed during the
+      // ending window): loadAssessmentQuestionPaper resets assessment.questionAnswers
+      // to {} and then awaits a Firebase read, but the 'ending' listener can fire
+      // before that await resolves — leaving in-memory answers empty.
+      // Reading Firebase first gives us the authoritative saved state; we then
+      // overlay any non-empty in-memory answers (which may be more recent for
+      // on-time students who were mid-edit when the AP ended).
+      var answersToScore = {};
+      if (!assessment.debugMode && assessment.responseRef) {
+        try {
+          var latestSnap = await assessment.responseRef.get();
+          answersToScore = (latestSnap.val() || {}).answers || {};
+        } catch(e) {}
+      }
       saveCurrentQuestionAnswer(spec, { silent: true });
-      var result = await assessQuestionAssessmentAsync(spec, assessment.questionAnswers || {});
+      // Overlay in-memory: prefer in-memory value when it is non-empty
+      // (student may have typed something that hasn't autosaved yet)
+      var memAnswers = assessment.questionAnswers || {};
+      Object.keys(memAnswers).forEach(function(k) {
+        if (memAnswers[k]) answersToScore[k] = memAnswers[k];
+      });
+      var result = await assessQuestionAssessmentAsync(spec, answersToScore);
       saveLocalApBackup(result);
       assessment.completed = true;
       if (!assessment.debugMode && assessment.responseRef) {
         var completedAt = Date.now();
         var strippedRubric = stripRubricForStorage(result.criteria);
         await assessment.responseRef.update({
-          answers: assessment.questionAnswers || {},
+          answers: answersToScore,
           completed: true,
           autoSubmitted: true,
           completedAt: completedAt,
