@@ -524,7 +524,16 @@ async function finaliseIncompleteAssessmentResponses() {
       }
     }
     if (!result) {
-      result = { score: 0, maxScore: spec.maxScore || 21, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
+      // We have evidence but couldn't recompute a rubric (e.g. draftScore saved but
+      // draftRubric was null because Firebase dropped the empty array on an early save).
+      // Fall back to the stored draft score rather than zeroing.
+      var fallbackScore = typeof rec.draftScore === 'number' ? rec.draftScore
+                        : typeof rec.score     === 'number' ? rec.score
+                        : 0;
+      var fallbackMax   = typeof rec.draftMaxScore === 'number' ? rec.draftMaxScore
+                        : typeof rec.maxScore      === 'number' ? rec.maxScore
+                        : (spec.maxScore || 21);
+      result = { score: fallbackScore, maxScore: fallbackMax, criteria: zeroAssessmentCriteria(assessment.assessmentId) };
     }
     var completedAt = Date.now();
     await assessment.sessionRef.child('answers/0/' + code).update({
