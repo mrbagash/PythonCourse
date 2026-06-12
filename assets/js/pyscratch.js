@@ -129,6 +129,208 @@
     { n: 'ten_to',       s: 'ten_to(n)',              c: 'ops' },
   ];
 
+  // ── Tutorial data ─────────────────────────────────────────────
+  var TUTORIALS = [
+    {
+      id: 'keyboard-move',
+      title: 'Moving with Keys',
+      emoji: '🎮',
+      desc: 'Make a sprite walk around the stage using the arrow keys.',
+      steps: [
+        {
+          title: 'Start with a game loop',
+          text: 'All PyScratch programs begin with a <code>game_start()</code> function. ' +
+                'Inside it, use <code>while True:</code> to keep the game running forever. ' +
+                '<code>wait(0)</code> at the end of each loop lets the stage redraw — without it the browser will freeze.',
+          code: 'def game_start():\n    while True:\n        wait(0)'
+        },
+        {
+          title: 'Move left and right',
+          text: '<code>key_pressed()</code> returns <code>True</code> while a key is held. ' +
+                '<code>change_x()</code> moves the sprite horizontally — a positive number moves right, a negative number moves left.',
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        wait(0)'
+        },
+        {
+          title: 'Add up and down',
+          text: 'Add two more checks for the up and down arrow keys. ' +
+                '<code>change_y()</code> moves the sprite vertically — positive goes up, negative goes down. ' +
+                'Using <code>if</code> (not <code>elif</code>) lets the player hold two keys at once to move diagonally.',
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        wait(0)'
+        },
+        {
+          title: 'Bounce off the edges',
+          text: '<code>if_on_edge_bounce()</code> automatically flips the sprite\'s direction when it hits a stage boundary. ' +
+                'Call it once per frame — after the movement code — and the sprite will never escape.',
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        if_on_edge_bounce()\n        wait(0)'
+        },
+        {
+          title: '✅ Try it out!',
+          text: 'Paste the final code into the editor, click the <strong>green flag</strong>, and use the arrow keys to move the sprite around the stage.' +
+                '<br><br><strong>Challenge:</strong> Change the speed from <code>5</code> to a different number — what happens at <code>2</code>? At <code>15</code>?',
+          code: null
+        }
+      ]
+    },
+    {
+      id: 'score',
+      title: 'Keeping Score',
+      emoji: '🏆',
+      desc: 'Create a score counter that increases each time you press a key.',
+      steps: [
+        {
+          title: 'Python variables',
+          text: 'In PyScratch you store data in Python variables — no Scratch variable blocks needed. ' +
+                'Create a <code>score</code> variable at module level (outside any function) so multiple event handlers can share it.',
+          code: 'score = 0\n\ndef game_start():\n    while True:\n        wait(0)'
+        },
+        {
+          title: 'Display the score',
+          text: 'Use <code>say()</code> to show the score in a speech bubble next to the sprite. ' +
+                'Combine text and numbers with <code>str()</code> — Python won\'t let you join a string and an integer directly.',
+          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)'
+        },
+        {
+          title: 'Increase on key press',
+          text: '<code>when_key_pressed(key)</code> fires once per key-down — so the score only increments the moment you press, ' +
+                'not every frame the key is held. The <code>global</code> keyword tells Python you mean the shared variable, not a local copy.',
+          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1'
+        },
+        {
+          title: 'Reset with R',
+          text: 'Add a reset so pupils can start over without stopping the game. ' +
+                'Resetting inside <code>game_start()</code> also clears the score when the green flag is clicked.',
+          code: 'score = 0\n\ndef game_start():\n    global score\n    score = 0          # reset on green flag\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1\n    if key == "r":\n        score = 0'
+        },
+        {
+          title: '✅ Try it out!',
+          text: 'Click the <strong>green flag</strong>, press <strong>Space</strong> to score, and <strong>R</strong> to reset.' +
+                '<br><br><strong>Challenge:</strong> Score 10 points per press instead of 1. ' +
+                'Or add a <em>high score</em> variable that never resets even when the green flag is clicked.',
+          code: null
+        }
+      ]
+    },
+    {
+      id: 'animation',
+      title: 'Costume Animation',
+      emoji: '🎭',
+      desc: 'Flip through costumes to animate a walking character.',
+      steps: [
+        {
+          title: 'Check your costumes',
+          text: 'Click your sprite in the TurboWarp sprite panel then open the <strong>Costumes</strong> tab at the top left. ' +
+                'You need at least two costumes — for example <em>walk-1</em> and <em>walk-2</em>. ' +
+                'You can add more by drawing them or importing from the costume library.',
+          code: null
+        },
+        {
+          title: 'Cycle through costumes',
+          text: '<code>next_costume()</code> advances one costume forward, wrapping back to the first automatically. ' +
+                'Adding a <code>wait()</code> controls the animation speed — smaller numbers animate faster.',
+          code: 'def game_start():\n    while True:\n        next_costume()\n        wait(0.1)'
+        },
+        {
+          title: 'Animate while moving',
+          text: 'Combine movement and costume-switching. ' +
+                '<code>point_in_direction(90)</code> faces right and <code>point_in_direction(-90)</code> faces left, ' +
+                'so the sprite always looks the way it is walking.',
+          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n            next_costume()\n        elif key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n            next_costume()\n        wait(0.05)'
+        },
+        {
+          title: 'Stand still when not moving',
+          text: 'Use a boolean flag called <code>moved</code> to track whether the sprite actually moved this frame. ' +
+                'If it did not move, snap back to costume 1 (the idle pose) instead of mid-walk.',
+          code: 'def game_start():\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n            moved = True\n        elif key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)   # idle pose\n        wait(0.05)'
+        },
+        {
+          title: '✅ Try it out!',
+          text: 'Press the <strong>green flag</strong> and walk left and right — your sprite should animate as it moves and freeze in the idle pose when still.' +
+                '<br><br><strong>Challenge:</strong> Add a jump animation when the up key is pressed. Create a "jump" costume and use <code>set_costume("jump")</code>.',
+          code: null
+        }
+      ]
+    },
+    {
+      id: 'chase',
+      title: 'Chase the Mouse',
+      emoji: '🖱️',
+      desc: 'Make a sprite smoothly follow the mouse cursor around the stage.',
+      steps: [
+        {
+          title: 'Snap to the mouse',
+          text: 'The simplest version: <code>go_to("mouse_pointer")</code> teleports the sprite directly to the cursor every frame. ' +
+                'It is instant but looks jerky.',
+          code: 'def game_start():\n    while True:\n        go_to("mouse_pointer")\n        wait(0)'
+        },
+        {
+          title: 'Smooth following',
+          text: 'Instead of snapping, move a fraction of the way to the cursor each frame. ' +
+                'Multiplying by <code>0.1</code> moves 10% of the remaining distance — the sprite decelerates as it approaches.',
+          code: 'def game_start():\n    while True:\n        tx = mouse_x()\n        ty = mouse_y()\n        set_x(x_position() + (tx - x_position()) * 0.1)\n        set_y(y_position() + (ty - y_position()) * 0.1)\n        wait(0)'
+        },
+        {
+          title: 'Face the direction of travel',
+          text: '<code>point_towards("mouse_pointer")</code> rotates the sprite to always face the cursor, so it looks like it is actively chasing.',
+          code: 'def game_start():\n    while True:\n        point_towards("mouse_pointer")\n        set_x(x_position() + (mouse_x() - x_position()) * 0.1)\n        set_y(y_position() + (mouse_y() - y_position()) * 0.1)\n        wait(0)'
+        },
+        {
+          title: 'Only follow when clicked',
+          text: 'Use <code>mouse_down()</code> to make the sprite follow only while the mouse button is held. ' +
+                'When released, the sprite drifts to a stop.',
+          code: 'def game_start():\n    while True:\n        if mouse_down():\n            point_towards("mouse_pointer")\n            set_x(x_position() + (mouse_x() - x_position()) * 0.15)\n            set_y(y_position() + (mouse_y() - y_position()) * 0.15)\n        wait(0)'
+        },
+        {
+          title: '✅ Try it out!',
+          text: 'Click the <strong>green flag</strong>, hold the mouse button over the stage — your sprite should smoothly chase the cursor.' +
+                '<br><br><strong>Challenge:</strong> Add a second sprite and make it chase the first one. ' +
+                'Use <code>point_towards("Sprite1")</code> and the same lerp technique.',
+          code: null
+        }
+      ]
+    },
+    {
+      id: 'clones',
+      title: 'Clones',
+      emoji: '👾',
+      desc: 'Spawn many copies of a sprite, each moving on their own.',
+      steps: [
+        {
+          title: 'What is a clone?',
+          text: 'A <strong>clone</strong> is an automatic copy of a sprite. ' +
+                'You create one with <code>create_clone()</code>. Each clone then runs its own ' +
+                '<code>when_I_start_as_a_clone()</code> function independently — like a separate game object. ' +
+                'Call <code>delete_clone()</code> from inside the clone to remove it.',
+          code: null
+        },
+        {
+          title: 'Spawn clones on a timer',
+          text: '<code>game_start()</code> creates a new clone every 0.5 seconds. ' +
+                'The original sprite hides itself so only the clones are visible on stage.',
+          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)'
+        },
+        {
+          title: 'Each clone falls from the top',
+          text: 'When a clone starts it shows itself, jumps to a random x position at the top of the stage, ' +
+                'and then falls downward in its own loop — completely independent of every other clone.',
+          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        wait(0)'
+        },
+        {
+          title: 'Delete clones that fall off screen',
+          text: 'Without cleanup, clones pile up invisibly below the stage and slow the browser down. ' +
+                'Check <code>y_position()</code> and call <code>delete_clone()</code> when the clone disappears.',
+          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.4)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        if y_position() < -180:\n            delete_clone()\n        wait(0)'
+        },
+        {
+          title: '✅ Try it out!',
+          text: 'Click the <strong>green flag</strong> — clones should rain down from the top and disappear at the bottom.' +
+                '<br><br><strong>Challenge:</strong> Give each clone a random speed. ' +
+                'Add <code>speed = pick_random(2, 6)</code> inside <code>when_I_start_as_a_clone()</code> and use <code>change_y(-speed)</code>.',
+          code: null
+        }
+      ]
+    }
+  ];
+
   // ── Runtime state ─────────────────────────────────────────────
   var S = {
     vm:               null,
@@ -1409,9 +1611,13 @@
       '#ps-overlay{position:fixed;left:0;right:0;top:92px;bottom:0;z-index:45;display:flex;flex-direction:column;pointer-events:none;font-family:"Roboto","Segoe UI",Arial,sans-serif;font-size:14px}',
       '#ps-overlay.ps-suppressed{display:none}',
 
-      '#ps-help-btn{position:absolute;top:7px;right:10px;z-index:3;background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:12px;font-family:inherit;line-height:1.2;box-shadow:0 2px 8px var(--ps-shadow,rgba(0,0,0,.24))}',
-      '#ps-help-btn:hover{background:var(--ps-accent-soft,#303052);color:var(--ps-text-strong,#fff);border-color:var(--ps-accent,#6366f1)}',
-      '#ps-status{position:absolute;top:10px;right:64px;z-index:3;font-size:11px;color:var(--ps-success,#a6e3a1);opacity:.85;pointer-events:none}',
+      '#ps-help-btn,#ps-tut-btn{position:absolute;top:7px;z-index:3;background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:12px;font-family:inherit;line-height:1.2;box-shadow:0 2px 8px var(--ps-shadow,rgba(0,0,0,.24))}',
+      '#ps-help-btn{right:10px}',
+      '#ps-tut-btn{right:62px}',
+      '#ps-help-btn:hover,#ps-tut-btn:hover{background:var(--ps-accent-soft,#303052);color:var(--ps-text-strong,#fff);border-color:var(--ps-accent,#6366f1)}',
+      '#ps-tut-btn{border-color:var(--ps-tut-border,#3d3555)}',
+      '#ps-tut-btn:hover{border-color:var(--ps-tut-accent,#7c5fcf) !important}',
+      '#ps-status{position:absolute;top:10px;right:152px;z-index:3;font-size:11px;color:var(--ps-success,#a6e3a1);opacity:.85;pointer-events:none}',
 
       // Body split — width of ps-left is set dynamically by adjustOverlay()
       '#ps-body{flex:1;display:flex;overflow:hidden;pointer-events:none}',
@@ -1478,7 +1684,46 @@
       '.ps-hitem{margin-bottom:10px}',
       '.ps-hitem:last-child{margin-bottom:0}',
       '.ps-hitem code{background:var(--ps-code-bg,#312d4b);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--ps-accent,#cba6f7)}',
-      '.ps-hitem p{margin:4px 0 0;font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.4}'
+      '.ps-hitem p{margin:4px 0 0;font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.4}',
+
+      // Tutorial modal
+      '#ps-tut{position:fixed;inset:0;background:var(--ps-modal-scrim,rgba(0,0,0,.65));z-index:20000;display:flex;align-items:center;justify-content:center}',
+      '#ps-tut.hidden{display:none}',
+      '.ps-tbox{background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border-radius:10px;width:860px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;border:1px solid var(--ps-border-strong,#3f3f5a);font-family:"Roboto","Segoe UI",Arial,sans-serif}',
+      '.ps-thead{padding:12px 16px;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px;flex-shrink:0}',
+      '.ps-thead button{background:none;border:none;color:var(--ps-muted,#888);font-size:22px;cursor:pointer}',
+      '.ps-thead button:hover{color:var(--ps-text-strong,#ccc)}',
+      '.ps-tbody{flex:1;display:flex;overflow:hidden;min-height:0}',
+
+      // Tutorial sidebar list
+      '.ps-tlist{width:190px;background:var(--ps-panel-2,#18182a);border-right:1px solid var(--ps-border-strong,#3f3f5a);overflow-y:auto;padding:8px;flex-shrink:0}',
+      '.ps-tlist-item{padding:9px 10px;border-radius:7px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .12s}',
+      '.ps-tlist-item:hover{background:var(--ps-panel-hover,#2a2a44)}',
+      '.ps-tlist-item.active{background:var(--ps-accent-soft,#2e2a4a);border-color:var(--ps-tut-accent,#7c5fcf)}',
+      '.ps-tlist-emoji{font-size:18px;display:block;margin-bottom:3px}',
+      '.ps-tlist-name{font-size:12px;font-weight:600;color:var(--ps-text,#cdd6f4);line-height:1.3}',
+      '.ps-tlist-item.active .ps-tlist-name{color:var(--ps-text-strong,#fff)}',
+
+      // Tutorial content pane
+      '.ps-tcontent{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px 22px 16px}',
+      '.ps-tprogress{display:flex;gap:6px;margin-bottom:14px;flex-shrink:0}',
+      '.ps-tdot{width:8px;height:8px;border-radius:50%;background:var(--ps-border-strong,#3f3f5a);cursor:pointer;transition:background .15s,transform .15s}',
+      '.ps-tdot.done{background:var(--ps-tut-accent,#7c5fcf)}',
+      '.ps-tdot.current{background:#a78bfa;transform:scale(1.35)}',
+      '.ps-tstep-title{font-size:15px;font-weight:700;color:var(--ps-text-strong,#fff);margin-bottom:8px;flex-shrink:0}',
+      '.ps-tstep-text{font-size:13px;color:var(--ps-text,#cdd6f4);line-height:1.6;flex-shrink:0;margin-bottom:12px}',
+      '.ps-tstep-text code{background:var(--ps-code-bg,#312d4b);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:var(--ps-accent,#cba6f7)}',
+      '.ps-tcode-wrap{position:relative;flex:1;min-height:0;margin-bottom:14px;display:flex;flex-direction:column}',
+      '.ps-tcode-wrap.empty{display:none}',
+      '.ps-tcode{flex:1;background:var(--ps-console,#13131f);color:#a6e3a1;font-family:"Roboto Mono","Consolas",monospace;font-size:12.5px;line-height:1.65;padding:12px 14px;border-radius:7px;border:1px solid var(--ps-border-strong,#3f3f5a);overflow:auto;white-space:pre;margin:0;min-height:60px}',
+      '.ps-tcopy{position:absolute;top:7px;right:8px;background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-muted,#9090b0);cursor:pointer;padding:3px 9px;border-radius:5px;font-size:11px;font-family:inherit}',
+      '.ps-tcopy:hover{color:var(--ps-text-strong,#fff);border-color:var(--ps-tut-accent,#7c5fcf)}',
+      '.ps-tcopy.copied{color:#a6e3a1;border-color:#a6e3a1}',
+      '.ps-tnav{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}',
+      '.ps-tnav-info{font-size:11px;color:var(--ps-muted,#9090b0)}',
+      '.ps-tnav button{background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-family:inherit}',
+      '.ps-tnav button:hover:not(:disabled){background:var(--ps-tut-accent,#7c5fcf);border-color:var(--ps-tut-accent,#7c5fcf);color:#fff}',
+      '.ps-tnav button:disabled{opacity:.35;cursor:not-allowed}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -1488,7 +1733,8 @@
     o.innerHTML = [
       '<div id="ps-body">',
         '<div id="ps-left">',
-          '<button id="ps-help-btn" title="PyScratch help">Help</button>',
+          '<button id="ps-help-btn" title="PyScratch reference">Help</button>',
+          '<button id="ps-tut-btn" title="Step-by-step tutorials">Tutorials</button>',
           '<span id="ps-status"></span>',
           '<div id="ps-code-area">',
             '<div id="ps-threads">',
@@ -1516,6 +1762,14 @@
     hm.innerHTML = buildHelpHTML();
     document.body.appendChild(hm);
 
+    // Tutorial modal
+    var tm = document.createElement('div');
+    tm.id = 'ps-tut';
+    tm.className = 'hidden';
+    tm.innerHTML = buildTutorialHTML();
+    document.body.appendChild(tm);
+    initTutorialModal(tm);
+
     // Assign references
     ui.editor       = document.getElementById('ps-editor');
     ui.threadList   = document.getElementById('ps-thread-list');
@@ -1527,6 +1781,8 @@
     document.getElementById('ps-help-btn').onclick = function () { hm.classList.remove('hidden'); };
     hm.querySelector('.ps-mhead button').onclick = function () { hm.classList.add('hidden'); };
     hm.onclick = function (e) { if (e.target === hm) hm.classList.add('hidden'); };
+    document.getElementById('ps-tut-btn').onclick = function () { tm.classList.remove('hidden'); };
+    tm.onclick = function (e) { if (e.target === tm) tm.classList.add('hidden'); };
 
     // Editor behaviour
     ui.editor.addEventListener('keydown', function (e) {
@@ -1607,6 +1863,147 @@
         }
       } catch(e) {}
     });
+  }
+
+  // ── Tutorial modal HTML & logic ───────────────────────────────
+  function buildTutorialHTML() {
+    // Build sidebar list
+    var listItems = TUTORIALS.map(function (t, i) {
+      return '<div class="ps-tlist-item' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">' +
+             '<span class="ps-tlist-emoji">' + t.emoji + '</span>' +
+             '<span class="ps-tlist-name">' + t.title + '</span>' +
+             '</div>';
+    }).join('');
+
+    return '<div class="ps-tbox">' +
+      '<div class="ps-thead"><span>📚 PyScratch Tutorials</span><button title="Close">&times;</button></div>' +
+      '<div class="ps-tbody">' +
+        '<div class="ps-tlist">' + listItems + '</div>' +
+        '<div class="ps-tcontent">' +
+          '<div class="ps-tprogress"></div>' +
+          '<div class="ps-tstep-title"></div>' +
+          '<div class="ps-tstep-text"></div>' +
+          '<div class="ps-tcode-wrap">' +
+            '<pre class="ps-tcode"></pre>' +
+            '<button class="ps-tcopy">Copy</button>' +
+          '</div>' +
+          '<div class="ps-tnav">' +
+            '<button class="ps-tprev">◀ Previous</button>' +
+            '<span class="ps-tnav-info"></span>' +
+            '<button class="ps-tnext">Next ▶</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function initTutorialModal(tm) {
+    var state = { tut: 0, step: 0 };
+
+    var listItems   = tm.querySelectorAll('.ps-tlist-item');
+    var progress    = tm.querySelector('.ps-tprogress');
+    var stepTitle   = tm.querySelector('.ps-tstep-title');
+    var stepText    = tm.querySelector('.ps-tstep-text');
+    var codeWrap    = tm.querySelector('.ps-tcode-wrap');
+    var codeEl      = tm.querySelector('.ps-tcode');
+    var copyBtn     = tm.querySelector('.ps-tcopy');
+    var prevBtn     = tm.querySelector('.ps-tprev');
+    var nextBtn     = tm.querySelector('.ps-tnext');
+    var navInfo     = tm.querySelector('.ps-tnav-info');
+    var closeBtn    = tm.querySelector('.ps-thead button');
+
+    function render() {
+      var tut  = TUTORIALS[state.tut];
+      var step = tut.steps[state.step];
+
+      // Sidebar — highlight active tutorial
+      listItems.forEach(function (li, i) {
+        li.classList.toggle('active', i === state.tut);
+      });
+
+      // Progress dots
+      progress.innerHTML = tut.steps.map(function (_, i) {
+        var cls = i < state.step ? 'done' : (i === state.step ? 'current' : '');
+        return '<div class="ps-tdot ' + cls + '" data-step="' + i + '" title="Step ' + (i + 1) + '"></div>';
+      }).join('');
+      progress.querySelectorAll('.ps-tdot').forEach(function (dot) {
+        dot.onclick = function () { state.step = Number(dot.dataset.step); render(); };
+      });
+
+      // Step content
+      stepTitle.textContent = step.title;
+      stepText.innerHTML    = step.text;
+
+      if (step.code) {
+        codeWrap.classList.remove('empty');
+        codeEl.textContent = step.code;
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('copied');
+      } else {
+        codeWrap.classList.add('empty');
+      }
+
+      // Nav
+      prevBtn.disabled = (state.step === 0);
+      nextBtn.disabled = (state.step === tut.steps.length - 1);
+      nextBtn.textContent = (state.step === tut.steps.length - 2) ? 'Finish ✓' : 'Next ▶';
+      navInfo.textContent = 'Step ' + (state.step + 1) + ' of ' + tut.steps.length;
+    }
+
+    // Sidebar clicks
+    listItems.forEach(function (li, i) {
+      li.addEventListener('click', function () {
+        state.tut  = i;
+        state.step = 0;
+        render();
+      });
+    });
+
+    // Nav buttons
+    prevBtn.addEventListener('click', function () {
+      if (state.step > 0) { state.step--; render(); }
+    });
+    nextBtn.addEventListener('click', function () {
+      var tut = TUTORIALS[state.tut];
+      if (state.step < tut.steps.length - 1) { state.step++; render(); }
+    });
+
+    // Copy button
+    copyBtn.addEventListener('click', function () {
+      var code = TUTORIALS[state.tut].steps[state.step].code;
+      if (!code) return;
+      try {
+        navigator.clipboard.writeText(code).then(function () {
+          copyBtn.textContent = 'Copied ✓';
+          copyBtn.classList.add('copied');
+          setTimeout(function () {
+            copyBtn.textContent = 'Copy';
+            copyBtn.classList.remove('copied');
+          }, 1800);
+        });
+      } catch (e) {
+        // Fallback: select the pre text
+        var range = document.createRange();
+        range.selectNodeContents(codeEl);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    });
+
+    // Close
+    closeBtn.addEventListener('click', function () { tm.classList.add('hidden'); });
+
+    // Keyboard nav when modal is open
+    document.addEventListener('keydown', function (e) {
+      if (tm.classList.contains('hidden')) return;
+      if (e.key === 'Escape') { tm.classList.add('hidden'); return; }
+      var tut = TUTORIALS[state.tut];
+      if (e.key === 'ArrowRight' && state.step < tut.steps.length - 1) { state.step++; render(); e.stopPropagation(); }
+      if (e.key === 'ArrowLeft'  && state.step > 0)                    { state.step--; render(); e.stopPropagation(); }
+    });
+
+    render(); // draw initial state
   }
 
   // ── Help modal HTML ───────────────────────────────────────────
@@ -1892,7 +2289,7 @@
   }
 
   function isVisibleOverlayElement(el) {
-    if (!el || el.id === 'ps-overlay' || el.closest('#ps-overlay') || el.closest('#ps-help')) return false;
+    if (!el || el.id === 'ps-overlay' || el.closest('#ps-overlay') || el.closest('#ps-help') || el.closest('#ps-tut')) return false;
     var cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
     var rect = el.getBoundingClientRect();
