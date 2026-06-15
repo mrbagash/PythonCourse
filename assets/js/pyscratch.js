@@ -2478,6 +2478,25 @@
     applyTutBar(true);
   }
 
+  // Flexible requires matcher.
+  // Leading whitespace is matched exactly (Python indentation is significant).
+  // Internal spaces are made flexible so minor variations like extra spaces
+  // inside parentheses or around operators don't block validation.
+  // e.g. 'change_x( 5 )' and 'vx=3' both satisfy the right requires string.
+  function tutReqMatches(code, req) {
+    if (!req) return true;
+    // Fast path: exact substring match
+    if (code.indexOf(req) !== -1) return true;
+    // Slow path: build a regex with flexible internal spacing
+    try {
+      var m       = req.match(/^([ \t]*)([\s\S]*)$/);
+      var indent  = m[1];                                              // keep exact
+      var escaped = m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');     // escape body
+      var flex    = escaped.replace(/ /g, '[ \\t]*');                 // spaces → optional
+      return new RegExp(indent + flex).test(code);
+    } catch(e) { return false; }
+  }
+
   function applyTutBar(isNewStep) {
     var at   = S.activeTut;
     if (!at) return;
@@ -2511,7 +2530,8 @@
       var newSet  = {};
       (step.newLines || []).forEach(function (l) { newSet[l] = true; });
       codeBlock.innerHTML = step.target.split('\n').map(function (line) {
-        var cls = newSet[line] ? 'new' : 'old';
+        // Empty lines are never individually "typed" by the student — always dim.
+        var cls = (newSet[line] && line.trim() !== '') ? 'new' : 'old';
         return '<span class="ps-tb-cl ' + cls + '">' +
                line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
                '</span>';
@@ -2592,20 +2612,27 @@
     var allOk = true;
 
     // ── Code string checks ────────────────────────────────────────
+    // First pass: evaluate every requires item and update its checklist row.
     reqs.forEach(function (r) {
-      var found = code.indexOf(r) !== -1;
+      var found = tutReqMatches(code, r);
       if (!found) allOk = false;
       var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + r.replace(/"/g, '&quot;') + '"]');
       if (ckEl) {
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
         ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
       }
-      // Turn matching new-line spans green when found
-      bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
-        if (sp.textContent.indexOf(r) !== -1) {
-          sp.classList.toggle('typed', found);
-        }
+    });
+
+    // Second pass: colour code-block spans.
+    // A span turns green if ANY satisfied requires item covers its line text.
+    // Doing this in a separate pass prevents an unsatisfied req from removing
+    // the 'typed' class that a satisfied req already set on the same span.
+    bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
+      var lineText = sp.textContent;
+      var covered  = reqs.some(function (r) {
+        return tutReqMatches(code, r) && tutReqMatches(lineText, r);
       });
+      sp.classList.toggle('typed', covered);
     });
 
     // ── Sprite count check ────────────────────────────────────────
@@ -2647,7 +2674,7 @@
       validEl.textContent = '✓ All done — click Next';
       validEl.className   = 'ps-tb-valid tb-ok';
     } else {
-      var codeReqsDone = reqs.filter(function (r) { return code.indexOf(r) !== -1; }).length;
+      var codeReqsDone = reqs.filter(function (r) { return tutReqMatches(code, r); }).length;
       var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0);
       var spriteDone = 0;
       if (step.requiresSpriteCount !== undefined) {
