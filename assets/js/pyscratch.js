@@ -2638,20 +2638,9 @@
   function _getCurrentWord(editor) {
     var pos = editor.selectionStart;
     var txt = editor.value;
-    // word: the trailing identifier chars (letters/digits/underscore)
     var wordStart = pos;
     while (wordStart > 0 && /\w/.test(txt[wordStart - 1])) wordStart--;
-    // token: everything from the last whitespace/bracket up to cursor
-    // (captures "def game" as a single token so snippet can match "def game_start()")
-    var tokenStart = wordStart;
-    while (tokenStart > 0 && !/[ \t\n()\[\]{},;]/.test(txt[tokenStart - 1])) tokenStart--;
-    return {
-      word:       txt.substring(wordStart, pos),  // e.g. "game"
-      wordStart:  wordStart,
-      token:      txt.substring(tokenStart, pos), // e.g. "def game"
-      tokenStart: tokenStart,
-      end:        pos
-    };
+    return { word: txt.substring(wordStart, pos), wordStart: wordStart, end: pos };
   }
 
   function hideICSense() {
@@ -2664,10 +2653,26 @@
     if (!ui.editor || !comp) return;
     var w   = _getCurrentWord(ui.editor);
     var ins = comp.ins;
-    // If the full token is a prefix of ins (e.g. "def game" → ins "def game_start():"),
-    // replace the whole token. Otherwise replace just the trailing identifier.
-    var replStart = (w.token.length >= 2 && ins.toLowerCase().startsWith(w.token.toLowerCase()))
-                    ? w.tokenStart : w.wordStart;
+
+    // Look at the text on this line BEFORE the current word (e.g. "def " or "    def ").
+    // Strip any leading indent to get the non-indent prefix (e.g. "def ").
+    // If ins starts with that prefix, extend the replacement range leftward to consume
+    // the existing prefix and avoid duplication ("def def game_start" bug).
+    var rawBefore  = ui.editor.value.substring(0, w.wordStart);
+    var lineStart  = rawBefore.lastIndexOf('\n') + 1;
+    var linePre    = rawBefore.substring(lineStart);     // e.g. "def " or "    def "
+    var trimmed    = linePre.trimStart();                // e.g. "def "
+    var indentLen  = linePre.length - trimmed.length;   // leading spaces count
+
+    var replStart;
+    if (trimmed.length > 0 && ins.toLowerCase().startsWith(trimmed.toLowerCase())) {
+      // Replace from just after the indent, consuming the existing prefix
+      replStart = lineStart + indentLen;
+    } else {
+      // Normal case: just replace the current identifier
+      replStart = w.wordStart;
+    }
+
     var before = ui.editor.value.substring(0, replStart);
     var after  = ui.editor.value.substring(w.end);
     ui.editor.value = before + ins + after;
@@ -2683,16 +2688,11 @@
     var dd   = _icsEl();
     if (!dd) return;
     var w    = _getCurrentWord(ui.editor);
-    var tLow = w.token.toLowerCase(); // e.g. "def game"
-    var lLow = w.word.toLowerCase();  // e.g. "game"
+    var lLow = w.word.toLowerCase();
     if (lLow.length < 2) { hideICSense(); return; }
     var hits = PS_COMPLETIONS.filter(function (c) {
-      var insL = c.ins.toLowerCase();
-      var cL   = c.t.toLowerCase();
-      // Match if: full token is prefix of ins  (catches "def game" → "def game_start()")
-      //        OR last identifier is prefix of c.t (catches "game" → "game_start")
-      return (tLow.length >= 2 && insL.startsWith(tLow)) ||
-             (lLow.length >= 2 && cL.startsWith(lLow) && cL !== lLow);
+      var cL = c.t.toLowerCase();
+      return cL.startsWith(lLow) && cL !== lLow;
     }).slice(0, 8);
     if (!hits.length) { hideICSense(); return; }
 
