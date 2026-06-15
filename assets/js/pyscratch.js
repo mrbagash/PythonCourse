@@ -138,205 +138,357 @@
   ];
 
   // ── Tutorial data ─────────────────────────────────────────────
+  // Each step:
+  //   title    {string}   Shown in the tutorial bar header
+  //   text     {string}   Instruction HTML
+  //   starter  {string|null}  Pre-fill editor when this step loads (null = keep current)
+  //   target   {string|null}  Code shown as a hint block
+  //   requires {string[]} All must appear in editor before Next unlocks ([] = always unlocked)
   var TUTORIALS = [
     {
-      id: 'keyboard-move',
-      title: 'Moving with Keys',
-      emoji: '🎮',
-      desc: 'Make a sprite walk around the stage using the arrow keys.',
+      id: 'if-statements',
+      title: 'If Statements',
+      emoji: '❓',
+      desc: 'Learn to make decisions in Python — check a condition and run different code depending on whether it\'s true or false.',
       steps: [
         {
-          title: 'Start with a game loop',
-          text: 'All PyScratch programs begin with a <code>game_start()</code> function. ' +
-                'Inside it, use <code>while True:</code> to keep the game running forever — PyScratch handles the frame timing for you automatically.',
-          code: 'def game_start():\n    while True:\n        pass'
+          title: 'Type the game loop',
+          text: 'Every PyScratch program starts with a <code>game_start()</code> function. The <code>while True:</code> loop inside keeps it running every frame. Clear the editor and type this exactly:',
+          starter: '',
+          target: 'def game_start():\n    while True:\n        pass',
+          newLines: ['def game_start():', '    while True:', '        pass'],
+          requires: ['def game_start():', 'while True:']
         },
         {
-          title: 'Move left and right',
-          text: '<code>key_pressed()</code> returns <code>True</code> while a key is held. ' +
-                '<code>change_x()</code> moves the sprite horizontally — a positive number moves right, a negative number moves left.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)'
+          title: 'Your first if statement',
+          text: 'An <strong>if statement</strong> runs its code only when the condition is true. Replace <code>pass</code> with an if block that checks whether the right arrow key is held:',
+          starter: 'def game_start():\n    while True:\n        pass',
+          target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
+          newLines: ['        if key_pressed("right"):', '            change_x(5)'],
+          requires: ['if key_pressed("right"):', 'change_x(5)']
         },
         {
-          title: 'Add up and down',
-          text: 'Add two more checks for the up and down arrow keys. ' +
-                '<code>change_y()</code> moves the sprite vertically — positive goes up, negative goes down. ' +
-                'Using <code>if</code> (not <code>elif</code>) lets the player hold two keys at once to move diagonally.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)'
+          title: 'A second if for the left key',
+          text: 'Add another <code>if</code> block below the first. Using two separate <code>if</code> blocks (rather than <code>elif</code>) means both can fire at once — useful for diagonal movement later.',
+          starter: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
+          target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)',
+          newLines: ['        if key_pressed("left"):', '            change_x(-5)'],
+          requires: ['if key_pressed("left"):', 'change_x(-5)']
+        },
+        {
+          title: 'Code outside the if blocks',
+          text: 'Not everything needs a condition. Add <code>if_on_edge_bounce()</code> after both if blocks — it runs every single frame regardless of key presses and stops the sprite escaping the stage.',
+          starter: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)',
+          target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if_on_edge_bounce()',
+          newLines: ['        if_on_edge_bounce()'],
+          requires: ['if_on_edge_bounce()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong> and press the left and right arrow keys. The sprite should move and bounce off the edges.<br><br><strong>Challenge:</strong> Add <code>if</code> blocks for the up and down keys using <code>change_y(5)</code> and <code>change_y(-5)</code>.',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
+      id: 'for-loops',
+      title: 'For Loops',
+      emoji: '🔁',
+      desc: 'Repeat a block of code a fixed number of times using a for loop and range().',
+      steps: [
+        {
+          title: 'Set up the function',
+          text: 'Type the <code>game_start()</code> function. This time we won\'t use <code>while True:</code> — the for loop will run a fixed number of times and then stop.',
+          starter: '',
+          target: 'def game_start():\n    pass',
+          newLines: ['def game_start():', '    pass'],
+          requires: ['def game_start():']
+        },
+        {
+          title: 'Your first for loop',
+          text: 'A <strong>for loop</strong> repeats its code a set number of times. <code>range(5)</code> means "do this 5 times". Replace <code>pass</code> with a loop that moves the sprite and pauses between each step:',
+          starter: 'def game_start():\n    pass',
+          target: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
+          newLines: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
+          requires: ['for i in range(5):', 'change_x(30)', 'wait(0.3)']
+        },
+        {
+          title: 'Use the loop variable',
+          text: '<code>i</code> is the <strong>loop variable</strong> — Python sets it to the current count (0, 1, 2…). Add <code>say(str(i))</code> as the first line inside the loop. <code>str()</code> converts the number to text so <code>say()</code> can display it.',
+          starter: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
+          target: 'def game_start():\n    for i in range(5):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
+          newLines: ['        say(str(i))'],
+          requires: ['say(str(i))']
+        },
+        {
+          title: 'range() with a start and end',
+          text: '<code>range()</code> can take two arguments: a start and a stop. <code>range(1, 6)</code> counts 1, 2, 3, 4, 5 — starting at 1 instead of 0. Update your range:',
+          starter: 'def game_start():\n    for i in range(5):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
+          target: 'def game_start():\n    for i in range(1, 6):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
+          newLines: ['    for i in range(1, 6):'],
+          requires: ['range(1, 6)']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>. The sprite should move five steps right, counting 1 to 5 as it goes, then stop.<br><br><strong>Challenge:</strong> Change to <code>range(1, 11)</code> for 10 steps. Try counting backwards with <code>range(10, 0, -1)</code>.',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
+      id: 'while-loops',
+      title: 'While Loops',
+      emoji: '🔄',
+      desc: 'Keep repeating code until a condition becomes false — useful for countdowns, timers and waiting.',
+      steps: [
+        {
+          title: 'Set up with a counter',
+          text: 'Type the <code>game_start()</code> function and create a variable called <code>count</code> starting at 0. This will track how many times the loop has run.',
+          starter: '',
+          target: 'def game_start():\n    count = 0',
+          newLines: ['def game_start():', '    count = 0'],
+          requires: ['def game_start():', 'count = 0']
+        },
+        {
+          title: 'A while loop with a condition',
+          text: 'A <strong>while loop</strong> keeps running as long as its condition is true. Add the loop below — it moves the sprite right and counts up until <code>count</code> reaches 5:',
+          starter: 'def game_start():\n    count = 0',
+          target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
+          newLines: ['    while count < 5:', '        change_x(25)', '        count = count + 1', '        wait(0.2)'],
+          requires: ['while count < 5:', 'count = count + 1', 'wait(0.2)']
+        },
+        {
+          title: 'Code after the loop',
+          text: 'Once <code>count</code> reaches 5 the condition is false and the loop ends. Python then runs whatever comes next. Add <code>say("Done!")</code> — with <strong>no</strong> indent, so it\'s outside the loop:',
+          starter: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
+          target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)\n    say("Done!")',
+          newLines: ['    say("Done!")'],
+          requires: ['say("Done!")']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>. The sprite should slide right five times, then show a speech bubble saying "Done!".<br><br><strong>Challenge:</strong> Change <code>count < 5</code> to <code>count < 10</code>. Or count backwards — start at <code>count = 10</code> and use <code>while count > 0</code>, subtracting 1 each time.',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
+      id: 'left-right-movement',
+      title: 'Left & Right Movement',
+      emoji: '🎮',
+      desc: 'Make your sprite walk left and right with the arrow keys, facing the correct direction and bouncing off the edges.',
+      steps: [
+        {
+          title: 'The game loop',
+          text: 'Type the game loop. <code>set_rotation_style("left-right")</code> before the loop means the sprite will only flip horizontally — it will never tilt upside-down.',
+          starter: '',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        pass',
+          newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:', '        pass'],
+          requires: ['def game_start():', 'set_rotation_style("left-right")', 'while True:']
+        },
+        {
+          title: 'Move right',
+          text: 'Replace <code>pass</code> with a right-key check. <code>change_x(5)</code> moves 5 pixels right each frame. <code>point_in_direction(90)</code> faces the sprite right.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        pass',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
+          newLines: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)'],
+          requires: ['if key_pressed("right"):', 'change_x(5)', 'point_in_direction(90)']
+        },
+        {
+          title: 'Move left',
+          text: 'Add a second <code>if</code> block below. <code>change_x(-5)</code> moves left. <code>point_in_direction(-90)</code> flips the sprite to face left.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          newLines: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)'],
+          requires: ['if key_pressed("left"):', 'change_x(-5)', 'point_in_direction(-90)']
         },
         {
           title: 'Bounce off the edges',
-          text: '<code>if_on_edge_bounce()</code> automatically flips the sprite\'s direction when it hits a stage boundary. ' +
-                'Call it once per frame — after the movement code — and the sprite will never escape.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if key_pressed("up"):\n            change_y(5)\n        if key_pressed("down"):\n            change_y(-5)\n        if_on_edge_bounce()'
+          text: 'Add <code>if_on_edge_bounce()</code> outside both if blocks — at the same indent level as the if statements. It runs every frame and stops the sprite escaping the stage.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
+          newLines: ['        if_on_edge_bounce()'],
+          requires: ['if_on_edge_bounce()']
         },
         {
-          title: '✅ Try it out!',
-          text: 'Paste the final code into the editor, click the <strong>green flag</strong>, and use the arrow keys to move the sprite around the stage.' +
-                '<br><br><strong>Challenge:</strong> Change the speed from <code>5</code> to a different number — what happens at <code>2</code>? At <code>15</code>?',
-          code: null
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong> and press the arrow keys. Your sprite should move, face the right way, and bounce off the edges.<br><br><strong>Challenge:</strong> Add up and down movement with <code>change_y(5)</code> and <code>change_y(-5)</code>.',
+          starter: null, target: null, newLines: [], requires: []
         }
       ]
     },
     {
-      id: 'score',
-      title: 'Keeping Score',
-      emoji: '🏆',
-      desc: 'Create a score counter that increases each time you press a key.',
-      steps: [
-        {
-          title: 'Python variables',
-          text: 'In PyScratch you store data in Python variables — no Scratch variable blocks needed. ' +
-                'Create a <code>score</code> variable at module level (outside any function) so multiple event handlers can share it.',
-          code: 'score = 0\n\ndef game_start():\n    while True:\n        pass'
-        },
-        {
-          title: 'Display the score',
-          text: 'Use <code>say()</code> to show the score in a speech bubble next to the sprite. ' +
-                'Combine text and numbers with <code>str()</code> — Python won\'t let you join a string and an integer directly.',
-          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n        wait(0.1)'
-        },
-        {
-          title: 'Increase on key press',
-          text: '<code>when_key_pressed(key)</code> fires once per key-down — so the score only increments the moment you press, ' +
-                'not every frame the key is held. The <code>global</code> keyword tells Python you mean the shared variable, not a local copy.',
-          code: 'score = 0\n\ndef game_start():\n    global score\n    while True:\n        say("Score: " + str(score))\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1'
-        },
-        {
-          title: 'Reset with R',
-          text: 'Add a reset so pupils can start over without stopping the game. ' +
-                'Resetting inside <code>game_start()</code> also clears the score when the green flag is clicked.',
-          code: 'score = 0\n\ndef game_start():\n    global score\n    score = 0          # reset on green flag\n    while True:\n        say("Score: " + str(score))\n\ndef when_key_pressed(key):\n    global score\n    if key == "space":\n        score += 1\n    if key == "r":\n        score = 0'
-        },
-        {
-          title: '✅ Try it out!',
-          text: 'Click the <strong>green flag</strong>, press <strong>Space</strong> to score, and <strong>R</strong> to reset.' +
-                '<br><br><strong>Challenge:</strong> Score 10 points per press instead of 1. ' +
-                'Or add a <em>high score</em> variable that never resets even when the green flag is clicked.',
-          code: null
-        }
-      ]
-    },
-    {
-      id: 'animation',
+      id: 'costume-animation',
       title: 'Costume Animation',
       emoji: '🎭',
-      desc: 'Flip through costumes to animate a walking character.',
+      desc: 'Animate your sprite through its costumes when it moves and snap back to the idle pose when still.',
       steps: [
         {
-          title: 'Check your costumes',
-          text: 'Click your sprite in the TurboWarp sprite panel then open the <strong>Costumes</strong> tab at the top left. ' +
-                'You need at least two costumes — for example <em>walk-1</em> and <em>walk-2</em>. ' +
-                'You can add more by drawing them or importing from the costume library.',
-          code: null
-        },
-        {
-          title: 'Cycle through costumes',
-          text: '<code>next_costume()</code> advances one costume forward, wrapping back to the first automatically. ' +
-                'Adding a <code>wait()</code> controls the animation speed — smaller numbers animate faster.',
-          code: 'def game_start():\n    while True:\n        next_costume()\n        wait(0.1)'
+          title: 'Starting point',
+          text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, then two if blocks.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
+          target: null, newLines: [], requires: []
         },
         {
           title: 'Animate while moving',
-          text: 'Combine movement and costume-switching. ' +
-                '<code>point_in_direction(90)</code> faces right and <code>point_in_direction(-90)</code> faces left, ' +
-                'so the sprite always looks the way it is walking.',
-          code: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n            next_costume()\n        elif key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n            next_costume()\n        wait(0.05)'
+          text: 'Add <code>next_costume()</code> inside <strong>both</strong> if blocks, after each <code>point_in_direction</code> line. Each frame the key is held, the sprite advances one costume.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
+          newLines: ['            next_costume()'],
+          requires: ['next_costume()']
         },
         {
-          title: 'Stand still when not moving',
-          text: 'Use a boolean flag called <code>moved</code> to track whether the sprite actually moved this frame. ' +
-                'If it did not move, snap back to costume 1 (the idle pose) instead of mid-walk.',
-          code: 'def game_start():\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n            moved = True\n        elif key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)   # idle pose\n        wait(0.05)'
+          title: 'Idle pose when still',
+          text: 'Right now the sprite freezes mid-walk when you stop. Add a <code>moved</code> flag — set it <code>True</code> inside each key block, then use it to either animate or snap to costume 1:',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
+          newLines: ['        moved = False', '            moved = True', '        if moved:', '            next_costume()', '        else:', '            set_costume(1)'],
+          requires: ['moved = False', 'moved = True', 'set_costume(1)']
         },
         {
-          title: '✅ Try it out!',
-          text: 'Press the <strong>green flag</strong> and walk left and right — your sprite should animate as it moves and freeze in the idle pose when still.' +
-                '<br><br><strong>Challenge:</strong> Add a jump animation when the up key is pressed. Create a "jump" costume and use <code>set_costume("jump")</code>.',
-          code: null
+          title: 'Control animation speed',
+          text: 'Costumes are changing every frame — too fast. Add <code>wait(0.08)</code> before <code>if_on_edge_bounce()</code> to cap animation at about 12 changes per second.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        wait(0.08)\n        if_on_edge_bounce()',
+          newLines: ['        wait(0.08)'],
+          requires: ['wait(0.08)']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong> and walk left and right — your sprite should animate while moving and snap to idle when still.<br><br><strong>Challenge:</strong> Try <code>wait(0.2)</code> for a slow walk or <code>wait(0.04)</code> for a sprint.',
+          starter: null, target: null, newLines: [], requires: []
         }
       ]
     },
     {
-      id: 'chase',
-      title: 'Chase the Mouse',
-      emoji: '🖱️',
-      desc: 'Make a sprite smoothly follow the mouse cursor around the stage.',
+      id: 'gravity',
+      title: 'Gravity & Jumping',
+      emoji: '⬇️',
+      desc: 'Add a velocity variable, pull the sprite down each frame, and let the player jump by pressing the up arrow.',
       steps: [
         {
-          title: 'Snap to the mouse',
-          text: 'The simplest version: <code>go_to("mouse_pointer")</code> teleports the sprite directly to the cursor every frame. ' +
-                'It is instant but looks jerky.',
-          code: 'def game_start():\n    while True:\n        go_to("mouse_pointer")'
+          title: 'Create the velocity variable',
+          text: 'Type <code>vy = 0</code> at the very top of the editor, before any function. This stores the vertical velocity — how fast the sprite moves up or down. Starting at 0 means it is stationary.',
+          starter: '',
+          target: 'vy = 0\n\ndef game_start():\n    pass',
+          newLines: ['vy = 0', '', 'def game_start():', '    pass'],
+          requires: ['vy = 0', 'def game_start():']
         },
         {
-          title: 'Smooth following',
-          text: 'Instead of snapping, move a fraction of the way to the cursor each frame. ' +
-                'Multiplying by <code>0.1</code> moves 10% of the remaining distance — the sprite decelerates as it approaches.',
-          code: 'def game_start():\n    while True:\n        tx = mouse_x()\n        ty = mouse_y()\n        set_x(x_position() + (tx - x_position()) * 0.1)\n        set_y(y_position() + (ty - y_position()) * 0.1)'
+          title: 'The game loop with global',
+          text: 'Replace <code>pass</code> with <code>global vy</code> and <code>while True:</code>. Without <code>global</code>, Python would create a new local copy of <code>vy</code> inside the function instead of using the one you just created.',
+          starter: 'vy = 0\n\ndef game_start():\n    pass',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        pass',
+          newLines: ['    global vy', '    while True:', '        pass'],
+          requires: ['global vy', 'while True:']
         },
         {
-          title: 'Face the direction of travel',
-          text: '<code>point_towards("mouse_pointer")</code> rotates the sprite to always face the cursor, so it looks like it is actively chasing.',
-          code: 'def game_start():\n    while True:\n        point_towards("mouse_pointer")\n        set_x(x_position() + (mouse_x() - x_position()) * 0.1)\n        set_y(y_position() + (mouse_y() - y_position()) * 0.1)'
+          title: 'Apply gravity',
+          text: 'Each frame, subtract 0.5 from <code>vy</code> (it becomes more negative = faster downward), then move the sprite by that amount. Replace the inner <code>pass</code>:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        pass',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
+          newLines: ['        vy = vy - 0.5', '        change_y(vy)'],
+          requires: ['vy = vy - 0.5', 'change_y(vy)']
         },
         {
-          title: 'Only follow when clicked',
-          text: 'Use <code>mouse_down()</code> to make the sprite follow only while the mouse button is held. ' +
-                'When released, the sprite drifts to a stop.',
-          code: 'def game_start():\n    while True:\n        if mouse_down():\n            point_towards("mouse_pointer")\n            set_x(x_position() + (mouse_x() - x_position()) * 0.15)\n            set_y(y_position() + (mouse_y() - y_position()) * 0.15)'
+          title: 'Add a floor',
+          text: 'Without a floor the sprite falls forever. When it drops below y = −150, reset velocity to 0 and snap it back:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
+          newLines: ['        if y_position() < -150:', '            vy = 0', '            set_y(-150)'],
+          requires: ['y_position() < -150', 'set_y(-150)']
         },
         {
-          title: '✅ Try it out!',
-          text: 'Click the <strong>green flag</strong>, hold the mouse button over the stage — your sprite should smoothly chase the cursor.' +
-                '<br><br><strong>Challenge:</strong> Add a second sprite and make it chase the first one. ' +
-                'Use <code>point_towards("Sprite1")</code> and the same lerp technique.',
-          code: null
-        }
-      ]
-    },
-    {
-      id: 'clones',
-      title: 'Clones',
-      emoji: '👾',
-      desc: 'Spawn many copies of a sprite, each moving on their own.',
-      steps: [
-        {
-          title: 'What is a clone?',
-          text: 'A <strong>clone</strong> is an automatic copy of a sprite. ' +
-                'You create one with <code>create_clone()</code>. Each clone then runs its own ' +
-                '<code>when_I_start_as_a_clone()</code> function independently — like a separate game object. ' +
-                'Call <code>delete_clone()</code> from inside the clone to remove it.',
-          code: null
+          title: 'Jumping',
+          text: 'When the sprite is on the floor <em>and</em> the up key is pressed, set <code>vy</code> to 8 — this launches it upward. Gravity pulls it back down automatically:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)\n        if key_pressed("up") and y_position() <= -149:\n            vy = 8',
+          newLines: ['        if key_pressed("up") and y_position() <= -149:', '            vy = 8'],
+          requires: ['key_pressed("up")', 'vy = 8']
         },
         {
-          title: 'Spawn clones on a timer',
-          text: '<code>game_start()</code> creates a new clone every 0.5 seconds. ' +
-                'The original sprite hides itself so only the clones are visible on stage.',
-          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)'
-        },
-        {
-          title: 'Each clone falls from the top',
-          text: 'When a clone starts it shows itself, jumps to a random x position at the top of the stage, ' +
-                'and then falls downward in its own loop — completely independent of every other clone.',
-          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.5)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)'
-        },
-        {
-          title: 'Delete clones that fall off screen',
-          text: 'Without cleanup, clones pile up invisibly below the stage and slow the browser down. ' +
-                'Check <code>y_position()</code> and call <code>delete_clone()</code> when the clone disappears.',
-          code: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(0.4)\n\ndef when_I_start_as_a_clone():\n    show()\n    go_to_xy(pick_random(-220, 220), 180)\n    while True:\n        change_y(-3)\n        if y_position() < -180:\n            delete_clone()'
-        },
-        {
-          title: '✅ Try it out!',
-          text: 'Click the <strong>green flag</strong> — clones should rain down from the top and disappear at the bottom.' +
-                '<br><br><strong>Challenge:</strong> Give each clone a random speed. ' +
-                'Add <code>speed = pick_random(2, 6)</code> inside <code>when_I_start_as_a_clone()</code> and use <code>change_y(-speed)</code>.',
-          code: null
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong> and press the up arrow to jump. The sprite should fall with gravity, land, and jump on command.<br><br><strong>Challenge:</strong> Add left and right movement: <code>if key_pressed("right"): change_x(4)</code> and the same for left.',
+          starter: null, target: null, newLines: [], requires: []
         }
       ]
     }
   ];
+
+  // ── Intellisense completions ──────────────────────────────────
+  // t: trigger word   ins: text to insert   back: cursor back N chars after insert
+  // kind: 'kw'=keyword  'fn'=function  'sn'=snippet
+  var PS_COMPLETIONS = [
+    // Python keywords
+    {t:'def',                   ins:'def ',                                         detail:'Define a function',              kind:'kw'},
+    {t:'if',                    ins:'if ',                                           detail:'If statement',                   kind:'kw'},
+    {t:'elif',                  ins:'elif ',                                         detail:'Else-if branch',                 kind:'kw'},
+    {t:'else',                  ins:'else:',                                         detail:'Else branch',                    kind:'kw'},
+    {t:'while',                 ins:'while ',                                        detail:'While loop',                     kind:'kw'},
+    {t:'for',                   ins:'for ',                                          detail:'For loop',                       kind:'kw'},
+    {t:'return',                ins:'return ',                                       detail:'Return from function',           kind:'kw'},
+    {t:'global',                ins:'global ',                                       detail:'Access a global variable',       kind:'kw'},
+    {t:'True',                  ins:'True',                                          detail:'Boolean true',                   kind:'kw'},
+    {t:'False',                 ins:'False',                                         detail:'Boolean false',                  kind:'kw'},
+    {t:'pass',                  ins:'pass',                                          detail:'Placeholder — do nothing',       kind:'kw'},
+    {t:'break',                 ins:'break',                                         detail:'Exit the loop',                  kind:'kw'},
+    {t:'and',                   ins:'and ',                                          detail:'Logical and',                    kind:'kw'},
+    {t:'or',                    ins:'or ',                                           detail:'Logical or',                     kind:'kw'},
+    {t:'not',                   ins:'not ',                                          detail:'Logical not',                    kind:'kw'},
+    // Python builtins
+    {t:'range',                 ins:'range()',                                       detail:'Number range',                   kind:'fn', back:1},
+    {t:'str',                   ins:'str()',                                         detail:'Convert to string',              kind:'fn', back:1},
+    {t:'int',                   ins:'int()',                                         detail:'Convert to integer',             kind:'fn', back:1},
+    {t:'float',                 ins:'float()',                                       detail:'Convert to decimal',             kind:'fn', back:1},
+    {t:'len',                   ins:'len()',                                         detail:'Length of a list or string',     kind:'fn', back:1},
+    {t:'print',                 ins:'print()',                                       detail:'Print to console',               kind:'fn', back:1},
+    // PyScratch snippets
+    {t:'game_start',            ins:'def game_start():\n    ',                      detail:'Main game loop',                 kind:'sn'},
+    {t:'when_key_pressed',      ins:'def when_key_pressed(key):\n    ',             detail:'Key press event',                kind:'sn'},
+    {t:'when_I_start_as_a_clone', ins:'def when_I_start_as_a_clone():\n    ',      detail:'Clone start event',              kind:'sn'},
+    // Movement
+    {t:'change_x',              ins:'change_x()',                                   detail:'Move sprite left/right',         kind:'fn', back:1},
+    {t:'change_y',              ins:'change_y()',                                   detail:'Move sprite up/down',            kind:'fn', back:1},
+    {t:'set_x',                 ins:'set_x()',                                      detail:'Set x position',                 kind:'fn', back:1},
+    {t:'set_y',                 ins:'set_y()',                                      detail:'Set y position',                 kind:'fn', back:1},
+    {t:'x_position',            ins:'x_position()',                                 detail:'Current x position',             kind:'fn'},
+    {t:'y_position',            ins:'y_position()',                                 detail:'Current y position',             kind:'fn'},
+    {t:'move_steps',            ins:'move_steps()',                                 detail:'Move forward N steps',           kind:'fn', back:1},
+    {t:'go_to',                 ins:'go_to("")',                                    detail:'Teleport to target/random',      kind:'fn', back:2},
+    {t:'go_to_xy',              ins:'go_to_xy(0, 0)',                               detail:'Teleport to x, y',              kind:'fn', back:4},
+    {t:'glide_to_xy',           ins:'glide_to_xy(0, 0, 1)',                         detail:'Glide to x, y over N secs',     kind:'fn', back:6},
+    {t:'point_in_direction',    ins:'point_in_direction()',                         detail:'Face a direction (90=right)',     kind:'fn', back:1},
+    {t:'point_towards',         ins:'point_towards("")',                            detail:'Face a sprite or mouse',         kind:'fn', back:2},
+    {t:'turn_right',            ins:'turn_right()',                                 detail:'Rotate clockwise',               kind:'fn', back:1},
+    {t:'turn_left',             ins:'turn_left()',                                  detail:'Rotate anticlockwise',           kind:'fn', back:1},
+    {t:'set_rotation_style',    ins:'set_rotation_style("left-right")',             detail:'left-right / all-around / none', kind:'fn'},
+    {t:'if_on_edge_bounce',     ins:'if_on_edge_bounce()',                          detail:'Bounce off stage edges',         kind:'fn'},
+    // Input
+    {t:'key_pressed',           ins:'key_pressed("")',                              detail:'True while key is held',         kind:'fn', back:2},
+    {t:'mouse_x',               ins:'mouse_x()',                                    detail:'Mouse x position',               kind:'fn'},
+    {t:'mouse_y',               ins:'mouse_y()',                                    detail:'Mouse y position',               kind:'fn'},
+    {t:'mouse_down',            ins:'mouse_down()',                                 detail:'True while mouse button held',   kind:'fn'},
+    // Looks
+    {t:'next_costume',          ins:'next_costume()',                               detail:'Advance to next costume',        kind:'fn'},
+    {t:'set_costume',           ins:'set_costume()',                                detail:'Switch to a specific costume',   kind:'fn', back:1},
+    {t:'say',                   ins:'say("")',                                      detail:'Show speech bubble',             kind:'fn', back:2},
+    {t:'think',                 ins:'think("")',                                    detail:'Show thought bubble',            kind:'fn', back:2},
+    {t:'show',                  ins:'show()',                                       detail:'Make sprite visible',            kind:'fn'},
+    {t:'hide',                  ins:'hide()',                                       detail:'Hide the sprite',                kind:'fn'},
+    {t:'set_size',              ins:'set_size()',                                   detail:'Set sprite size %',              kind:'fn', back:1},
+    {t:'change_size',           ins:'change_size()',                                detail:'Change sprite size %',           kind:'fn', back:1},
+    // Clones & misc
+    {t:'wait',                  ins:'wait()',                                       detail:'Pause this thread N seconds',    kind:'fn', back:1},
+    {t:'pick_random',           ins:'pick_random(1, 10)',                           detail:'Random integer in range',        kind:'fn', back:5},
+    {t:'create_clone',          ins:'create_clone()',                              detail:'Spawn a copy of this sprite',    kind:'fn'},
+    {t:'delete_clone',          ins:'delete_clone()',                              detail:'Remove this clone',              kind:'fn'},
+    {t:'touching',              ins:'touching("")',                                 detail:'True when touching target',      kind:'fn', back:2},
+    {t:'on_edge',               ins:'on_edge()',                                    detail:'True when touching edge',        kind:'fn'},
+    {t:'timer',                 ins:'timer()',                                      detail:'Seconds since last reset',       kind:'fn'},
+    {t:'reset_timer',           ins:'reset_timer()',                               detail:'Reset the timer to 0',           kind:'fn'},
+  ];
+
+  var _icsActive = -1; // currently highlighted row in the intellisense dropdown
 
   // ── Runtime state ─────────────────────────────────────────────
   var S = {
@@ -350,8 +502,10 @@
     spriteCode:       {},   // spriteName → [{ id, name, code }]
     handlers:         {},   // spriteName → { event → { fn: SkFn, tgen: Number } }
     activeSprite:     null,
+    activeSpriteId:   null, // target.id of the active sprite (stable across renames)
     activeThreadIdx:  0,
-    themeSignature:   ''
+    themeSignature:   '',
+    activeTut:        null  // { tutIdx, stepIdx } when a tutorial bar is running
   };
 
   // ── DOM helpers ───────────────────────────────────────────────
@@ -382,8 +536,17 @@
   }
 
   // ── Thread storage ────────────────────────────────────────────
+  // Key by the sprite's stable target UUID so that:
+  //   • renames don't break the lookup (t.id stays the same after rename)
+  //   • different projects with the same sprite name use different keys
+  //     (each new project assigns fresh UUIDs to its targets)
   function storeKey(spriteName) {
-    return 'pyscratch:' + location.pathname + location.search + ':' + spriteName;
+    try {
+      var t = getTargetByName(spriteName);
+      if (t && t.id) return 'pyscratch:' + t.id;
+    } catch(e) {}
+    // Fallback: name-based key (used before the VM is ready)
+    return 'pyscratch:name:' + spriteName;
   }
 
   function loadThreads(spriteName) {
@@ -1348,10 +1511,13 @@
     updateRunState(false);
   }
 
-  // ── .psb3 save / load ────────────────────────────────────────
-  // .psb3 = standard .sb3 ZIP + pyscratch.json bundled inside.
-  // TurboWarp's own save/load UI is used unchanged; we intercept at VM level
-  // so every path (File menu, Ctrl+S, drag-and-drop) goes through our patches.
+  // ── Project save / load ───────────────────────────────────────
+  // Python code is stored as a "pyscratch" array directly on each target in
+  // project.json (inside the standard .sb3 ZIP).  vm.toJSON() is patched to
+  // inject the data; vm.loadProject() is patched to extract it.  Regular
+  // Scratch/TurboWarp ignores unknown target fields, so files remain valid .sb3.
+  // Legacy .psb3 files (which used a separate pyscratch.json in the ZIP) are
+  // still loaded correctly by extractPyScratchData.
 
   // Returns a Promise<JSZip>, loading the library from CDN on first call.
   function ensureJSZip() {
@@ -1379,22 +1545,14 @@
     });
   }
 
-  // Add pyscratch.json to an sb3 Blob/Buffer and return a new Blob.
-  function injectPyScratchData(sb3) {
-    return ensureJSZip().then(function (JSZip) {
-      return toArrayBuffer(sb3).then(function (buf) {
-        return JSZip.loadAsync(buf);
-      }).then(function (zip) {
-        zip.file('pyscratch.json', JSON.stringify({ v: 1, sprites: S.spriteCode }, null, 2));
-        return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-      });
-    });
-  }
-
-  // Try to read pyscratch.json from a binary input.
-  // Returns { buffer: ArrayBuffer, pyCode: object|null }.
-  // If the input is not a ZIP or has no pyscratch.json, pyCode is null and
-  // buffer is the original data unchanged (for normal .sb3 files).
+  // Extract Python code from a project file, returning { buffer, pyCode }.
+  //
+  // Supports two formats (in priority order):
+  //   1. Legacy .psb3: separate "pyscratch.json" file inside the ZIP.
+  //   2. New format:   "pyscratch" field on each target inside project.json.
+  //
+  // In both cases the field is stripped from the buffer before it is handed to
+  // TurboWarp's loader, so scratch-parser never sees unknown fields.
   function extractPyScratchData(input) {
     var isBinary = (input instanceof ArrayBuffer) || (input instanceof Uint8Array) ||
                    (typeof Blob !== 'undefined' && input instanceof Blob);
@@ -1403,16 +1561,48 @@
     return ensureJSZip().then(function (JSZip) {
       return toArrayBuffer(input).then(function (buf) {
         return JSZip.loadAsync(buf.slice(0) /* clone so original is preserved */).then(function (zip) {
+
+          // ── Legacy: separate pyscratch.json ─────────────────────
           var psFile = zip.file('pyscratch.json');
-          if (!psFile) return { buffer: buf, pyCode: null };
-          return psFile.async('string').then(function (raw) {
-            var pyCode = null;
-            try { var p = JSON.parse(raw); pyCode = p.sprites || p; } catch(e) {}
-            zip.remove('pyscratch.json');
+          if (psFile) {
+            return psFile.async('string').then(function (raw) {
+              var pyCode = null;
+              try { var p = JSON.parse(raw); pyCode = p.sprites || p; } catch(e) {}
+              zip.remove('pyscratch.json');
+              return zip.generateAsync({ type: 'arraybuffer' }).then(function (clean) {
+                return { buffer: clean, pyCode: pyCode };
+              });
+            });
+          }
+
+          // ── New: pyscratch fields inline on each target ──────────
+          var projFile = zip.file('project.json');
+          if (!projFile) return { buffer: buf, pyCode: null };
+
+          return projFile.async('string').then(function (raw) {
+            var proj;
+            try { proj = JSON.parse(raw); } catch(e) { return { buffer: buf, pyCode: null }; }
+            if (!proj || !Array.isArray(proj.targets)) return { buffer: buf, pyCode: null };
+
+            var extracted = {};
+            var found = false;
+            proj.targets.forEach(function (t) {
+              if (t.pyscratch) {
+                extracted[t.name] = t.pyscratch;
+                delete t.pyscratch;   // strip before TurboWarp's parser sees it
+                found = true;
+              }
+            });
+
+            if (!found) return { buffer: buf, pyCode: null };
+
+            // Re-pack project.json without the pyscratch fields
+            zip.file('project.json', JSON.stringify(proj));
             return zip.generateAsync({ type: 'arraybuffer' }).then(function (clean) {
-              return { buffer: clean, pyCode: pyCode };
+              return { buffer: clean, pyCode: extracted };
             });
           });
+
         }).catch(function () {
           // Not a valid ZIP — treat as plain .sb3
           return toArrayBuffer(input).then(function (buf2) { return { buffer: buf2, pyCode: null }; });
@@ -1693,44 +1883,85 @@
       '.ps-hitem code{background:var(--ps-code-bg,#312d4b);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--ps-accent,#cba6f7)}',
       '.ps-hitem p{margin:4px 0 0;font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.4}',
 
-      // Tutorial modal
+      // Tutorial pick modal
       '#ps-tut{position:fixed;inset:0;background:var(--ps-modal-scrim,rgba(0,0,0,.65));z-index:20000;display:flex;align-items:center;justify-content:center}',
       '#ps-tut.hidden{display:none}',
-      '.ps-tbox{background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border-radius:10px;width:860px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;border:1px solid var(--ps-border-strong,#3f3f5a);font-family:"Roboto","Segoe UI",Arial,sans-serif}',
-      '.ps-thead{padding:12px 16px;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px;flex-shrink:0}',
-      '.ps-thead button{background:none;border:none;color:var(--ps-muted,#888);font-size:22px;cursor:pointer}',
+      '.ps-tbox{background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border-radius:10px;width:680px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;border:1px solid var(--ps-border-strong,#3f3f5a);font-family:"Roboto","Segoe UI",Arial,sans-serif;overflow:hidden}',
+      '.ps-thead{padding:12px 16px;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;flex-shrink:0}',
+      '.ps-thead button{background:none;border:none;color:var(--ps-muted,#888);font-size:22px;cursor:pointer;line-height:1}',
       '.ps-thead button:hover{color:var(--ps-text-strong,#ccc)}',
-      '.ps-tbody{flex:1;display:flex;overflow:hidden;min-height:0}',
+      '.ps-tgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;overflow-y:auto}',
+      '.ps-tcard{background:var(--ps-panel-2,#18182a);border:1px solid var(--ps-border-strong,#3f3f5a);border-radius:8px;padding:14px 16px;cursor:default;transition:border-color .12s}',
+      '.ps-tcard:hover{border-color:var(--ps-tut-accent,#7c5fcf)}',
+      '.ps-tcard-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}',
+      '.ps-tcard-emoji{font-size:22px;line-height:1}',
+      '.ps-tcard-title{font-size:13px;font-weight:700;color:var(--ps-text-strong,#fff)}',
+      '.ps-tcard-desc{font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.5;margin-bottom:10px}',
+      '.ps-tcard-start{display:block;width:100%;background:var(--ps-tut-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
+      '.ps-tcard-start:hover{opacity:.85}',
 
-      // Tutorial sidebar list
-      '.ps-tlist{width:190px;background:var(--ps-panel-2,#18182a);border-right:1px solid var(--ps-border-strong,#3f3f5a);overflow-y:auto;padding:8px;flex-shrink:0}',
-      '.ps-tlist-item{padding:9px 10px;border-radius:7px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .12s}',
-      '.ps-tlist-item:hover{background:var(--ps-panel-hover,#2a2a44)}',
-      '.ps-tlist-item.active{background:var(--ps-accent-soft,#2e2a4a);border-color:var(--ps-tut-accent,#7c5fcf)}',
-      '.ps-tlist-emoji{font-size:18px;display:block;margin-bottom:3px}',
-      '.ps-tlist-name{font-size:12px;font-weight:600;color:var(--ps-text,#cdd6f4);line-height:1.3}',
-      '.ps-tlist-item.active .ps-tlist-name{color:var(--ps-text-strong,#fff)}',
+      // Tutorial bar (inline, above the editor)
+      '#ps-tut-bar{background:#181825;border-bottom:2px solid var(--ps-tut-accent,#7c5fcf);display:flex;flex-direction:column;flex-shrink:0;max-height:54vh;overflow-y:auto}',
+      '#ps-tut-bar.ps-tb-hidden{display:none}',
+      '.ps-tb-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1e1e2e;border-bottom:1px solid #2a2a44;flex-shrink:0}',
+      '.ps-tb-tut-name{font-size:11px;font-weight:700;color:#a78bfa;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.ps-tb-stepcount{font-size:10px;color:var(--ps-muted,#6a6a8a);white-space:nowrap;flex-shrink:0}',
+      '.ps-tb-exit{background:none;border:1px solid #45456a;color:var(--ps-muted,#888);cursor:pointer;padding:2px 7px;border-radius:4px;font-size:10px;font-family:inherit;flex-shrink:0}',
+      '.ps-tb-exit:hover{color:#fff;border-color:#888}',
+      '.ps-tb-dots{display:flex;gap:4px;padding:5px 10px 0;flex-shrink:0}',
+      '.ps-tb-dot{width:7px;height:7px;border-radius:50%;background:#2a2a44;transition:background .12s,transform .12s}',
+      '.ps-tb-dot.tb-done{background:#7c5fcf}',
+      '.ps-tb-dot.tb-cur{background:#a78bfa;transform:scale(1.4)}',
+      '.ps-tb-body{padding:8px 10px 4px;flex-shrink:0}',
+      '.ps-tb-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:5px}',
+      '.ps-tb-text{font-size:12px;color:#cdd6f4;line-height:1.55}',
+      '.ps-tb-text code{background:#312d4b;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:11px;color:#cba6f7}',
+      '.ps-tb-text strong{color:#fff}',
+      // Code block — split into per-line divs so new vs context can be styled separately
+      '.ps-tb-code-wrap{position:relative;margin:6px 10px 0;flex-shrink:0}',
+      '.ps-tb-code-wrap.ps-tb-no-target{display:none}',
+      '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:5px;padding:8px 10px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:11px;line-height:1.7}',
+      '.ps-tb-cl{white-space:pre;display:block}',
+      '.ps-tb-cl.old{color:#374151}',            // dim — context already typed
+      '.ps-tb-cl.new{color:#fbbf24;font-weight:600}', // amber — type this now
+      '.ps-tb-cl.new.typed{color:#4ade80}',       // green — correctly typed
+      '.ps-tb-copy{position:absolute;top:5px;right:6px;background:#21262d;border:1px solid #30363d;color:#8b949e;cursor:pointer;padding:2px 7px;border-radius:4px;font-size:10px;font-family:inherit}',
+      '.ps-tb-copy:hover{color:#e6edf3}',
+      '.ps-tb-copy.copied{color:#56d364;border-color:#56d364}',
+      // Checklist
+      '.ps-tb-checks{padding:6px 10px 2px;flex-shrink:0}',
+      '.ps-tb-checks.ps-tb-no-checks{display:none}',
+      '.ps-tb-ck{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;font-family:"Roboto Mono","Consolas","Courier New",monospace}',
+      '.ps-tb-ck-icon{width:14px;text-align:center;font-style:normal;flex-shrink:0}',
+      '.ps-tb-ck.ck-wait{color:#4b5563}',
+      '.ps-tb-ck.ck-ok{color:#4ade80}',
+      '.ps-tb-foot{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #2a2a44;margin-top:4px;flex-shrink:0}',
+      '.ps-tb-valid{flex:1;font-size:11px;color:var(--ps-muted,#888)}',
+      '.ps-tb-valid.tb-ok{color:#4ade80}',
+      '.ps-tb-btn{background:var(--ps-panel-3,#252537);border:1px solid #45456a;color:#cdd6f4;cursor:pointer;padding:4px 12px;border-radius:5px;font-size:11px;font-family:inherit;flex-shrink:0}',
+      '.ps-tb-btn:hover:not(:disabled){background:#7c5fcf;border-color:#7c5fcf;color:#fff}',
+      '.ps-tb-btn:disabled{opacity:.3;cursor:not-allowed}',
+      '.ps-tb-btn.tb-primary{background:#7c5fcf;border-color:#7c5fcf;color:#fff}',
+      '.ps-tb-btn.tb-primary:hover:not(:disabled){background:#6d4fc0}',
 
-      // Tutorial content pane
-      '.ps-tcontent{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px 22px 16px}',
-      '.ps-tprogress{display:flex;gap:6px;margin-bottom:14px;flex-shrink:0}',
-      '.ps-tdot{width:8px;height:8px;border-radius:50%;background:var(--ps-border-strong,#3f3f5a);cursor:pointer;transition:background .15s,transform .15s}',
-      '.ps-tdot.done{background:var(--ps-tut-accent,#7c5fcf)}',
-      '.ps-tdot.current{background:#a78bfa;transform:scale(1.35)}',
-      '.ps-tstep-title{font-size:15px;font-weight:700;color:var(--ps-text-strong,#fff);margin-bottom:8px;flex-shrink:0}',
-      '.ps-tstep-text{font-size:13px;color:var(--ps-text,#cdd6f4);line-height:1.6;flex-shrink:0;margin-bottom:12px}',
-      '.ps-tstep-text code{background:var(--ps-code-bg,#312d4b);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:var(--ps-accent,#cba6f7)}',
-      '.ps-tcode-wrap{position:relative;flex:1;min-height:0;margin-bottom:14px;display:flex;flex-direction:column}',
-      '.ps-tcode-wrap.empty{display:none}',
-      '.ps-tcode{flex:1;background:#0d1117;color:#e6edf3;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.75;padding:14px 16px;border-radius:7px;border:1px solid #30363d;overflow:auto;white-space:pre;margin:0;min-height:60px}',
-      '.ps-tcopy{position:absolute;top:7px;right:8px;background:#21262d;border:1px solid #30363d;color:#8b949e;cursor:pointer;padding:3px 9px;border-radius:5px;font-size:11px;font-family:inherit}',
-      '.ps-tcopy:hover{color:#e6edf3;border-color:var(--ps-tut-accent,#7c5fcf)}',
-      '.ps-tcopy.copied{color:#56d364;border-color:#56d364}',
-      '.ps-tnav{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}',
-      '.ps-tnav-info{font-size:11px;color:var(--ps-muted,#9090b0)}',
-      '.ps-tnav button{background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-family:inherit}',
-      '.ps-tnav button:hover:not(:disabled){background:var(--ps-tut-accent,#7c5fcf);border-color:var(--ps-tut-accent,#7c5fcf);color:#fff}',
-      '.ps-tnav button:disabled{opacity:.35;cursor:not-allowed}'
+      // Indent tip banner (shown when a step requires indented lines)
+      '.ps-tb-indent-tip{margin:4px 10px 0;padding:5px 8px;background:#1a1a2e;border:1px solid #2d2b55;border-radius:4px;font-size:11px;color:#9ca3af;line-height:1.5;flex-shrink:0}',
+      '.ps-tb-indent-tip.ps-tb-tip-hidden{display:none}',
+      '.ps-tb-indent-tip strong{color:#c4b5fd}',
+      '.ps-tb-indent-tip code{background:#312d4b;padding:1px 3px;border-radius:2px;font-family:monospace;font-size:10px;color:#a78bfa}',
+
+      // Intellisense dropdown
+      '#ps-icsense{position:fixed;background:#1e1e2e;border:1px solid #7c5fcf;border-radius:6px;z-index:30000;min-width:280px;max-width:400px;max-height:210px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.6);font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:12px}',
+      '#ps-icsense.ps-ics-hidden{display:none}',
+      '.ps-ics-item{padding:5px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid #2a2a44}',
+      '.ps-ics-item:last-child{border-bottom:none}',
+      '.ps-ics-item:hover,.ps-ics-item.ps-ics-sel{background:#2d2b55}',
+      '.ps-ics-kind{width:18px;height:18px;border-radius:3px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:"Segoe UI",sans-serif}',
+      '.ps-ics-kind.kw{background:#1d3a5f;color:#60a5fa}',
+      '.ps-ics-kind.fn{background:#1a3a2a;color:#4ade80}',
+      '.ps-ics-kind.sn{background:#3a1a3a;color:#c084fc}',
+      '.ps-ics-label{color:#e2e8f0;flex:1;white-space:nowrap}',
+      '.ps-ics-detail{color:#4b5563;font-size:10px;font-family:"Segoe UI",sans-serif;white-space:nowrap;overflow:hidden;max-width:140px;text-overflow:ellipsis}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -1752,6 +1983,31 @@
               '<div id="ps-thread-list"></div>',
             '</div>',
             '<div id="ps-editor-wrap">',
+              '<div id="ps-tut-bar" class="ps-tb-hidden">',
+                '<div class="ps-tb-head">',
+                  '<span class="ps-tb-tut-name"></span>',
+                  '<span class="ps-tb-stepcount"></span>',
+                  '<button class="ps-tb-exit">✕ Exit tutorial</button>',
+                '</div>',
+                '<div class="ps-tb-dots"></div>',
+                '<div class="ps-tb-body">',
+                  '<div class="ps-tb-title"></div>',
+                  '<div class="ps-tb-text"></div>',
+                '</div>',
+                '<div class="ps-tb-code-wrap ps-tb-no-target">',
+                  '<div class="ps-tb-code-block"></div>',
+                  '<button class="ps-tb-copy">Copy</button>',
+                '</div>',
+                '<div class="ps-tb-indent-tip ps-tb-tip-hidden">',
+                  '↹ Press <strong>Tab</strong> to indent (on some keyboards the key shows two arrows ↹ instead of "Tab") · 4 spaces per indent level',
+                '</div>',
+                '<div class="ps-tb-checks ps-tb-no-checks"></div>',
+                '<div class="ps-tb-foot">',
+                  '<span class="ps-tb-valid"></span>',
+                  '<button class="ps-tb-btn" data-tb="prev">← Back</button>',
+                  '<button class="ps-tb-btn tb-primary" data-tb="next">Next →</button>',
+                '</div>',
+              '</div>',
               '<textarea id="ps-editor" spellcheck="false"></textarea>',
               '<div id="ps-console"></div>',
             '</div>',
@@ -1776,6 +2032,13 @@
     tm.innerHTML = buildTutorialHTML();
     document.body.appendChild(tm);
     initTutorialModal(tm);
+    initTutorialBar();
+
+    // Intellisense dropdown (shared singleton)
+    var icsEl = document.createElement('div');
+    icsEl.id = 'ps-icsense';
+    icsEl.className = 'ps-ics-hidden';
+    document.body.appendChild(icsEl);
 
     // Assign references
     ui.editor       = document.getElementById('ps-editor');
@@ -1793,6 +2056,38 @@
 
     // Editor behaviour
     ui.editor.addEventListener('keydown', function (e) {
+      var dd         = _icsEl();
+      var icsVisible = dd && !dd.classList.contains('ps-ics-hidden');
+
+      // ── Intellisense key handling (takes priority) ──
+      if (e.key === 'Escape') { hideICSense(); return; }
+      if (icsVisible) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          _icsActive = Math.min(_icsActive + 1, (dd._hits || []).length - 1);
+          dd.querySelectorAll('.ps-ics-item').forEach(function (el, i) {
+            el.classList.toggle('ps-ics-sel', i === _icsActive);
+          });
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          _icsActive = Math.max(_icsActive - 1, 0);
+          dd.querySelectorAll('.ps-ics-item').forEach(function (el, i) {
+            el.classList.toggle('ps-ics-sel', i === _icsActive);
+          });
+          return;
+        }
+        if (e.key === 'Tab' || e.key === 'Enter') {
+          e.preventDefault();
+          if (_icsActive >= 0 && dd._hits && dd._hits[_icsActive]) {
+            applyCompletion(dd._hits[_icsActive]);
+          }
+          return;
+        }
+      }
+
+      // ── Normal editor behaviour ──
       if (e.key === 'Tab') {
         e.preventDefault();
         var s = ui.editor.selectionStart, v = ui.editor.value;
@@ -1810,7 +2105,15 @@
         document.execCommand('insertText', false, '\n' + indent);
       }
     });
-    ui.editor.addEventListener('input', saveCurrentCode);
+    ui.editor.addEventListener('input', function () {
+      saveCurrentCode();
+      if (S.activeTut) checkTutBar();
+      updateCompletions();
+    });
+    ui.editor.addEventListener('blur', function () {
+      // Small delay so mousedown on a dropdown item fires first
+      setTimeout(hideICSense, 150);
+    });
 
     // Key tracking
     var normKey = function (k) {
@@ -1872,145 +2175,343 @@
     });
   }
 
-  // ── Tutorial modal HTML & logic ───────────────────────────────
+  // ── Tutorial pick modal ───────────────────────────────────────
   function buildTutorialHTML() {
-    // Build sidebar list
-    var listItems = TUTORIALS.map(function (t, i) {
-      return '<div class="ps-tlist-item' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">' +
-             '<span class="ps-tlist-emoji">' + t.emoji + '</span>' +
-             '<span class="ps-tlist-name">' + t.title + '</span>' +
-             '</div>';
-    }).join('');
-
-    return '<div class="ps-tbox">' +
-      '<div class="ps-thead"><span>📚 PyScratch Tutorials</span><button title="Close">&times;</button></div>' +
-      '<div class="ps-tbody">' +
-        '<div class="ps-tlist">' + listItems + '</div>' +
-        '<div class="ps-tcontent">' +
-          '<div class="ps-tprogress"></div>' +
-          '<div class="ps-tstep-title"></div>' +
-          '<div class="ps-tstep-text"></div>' +
-          '<div class="ps-tcode-wrap">' +
-            '<pre class="ps-tcode"></pre>' +
-            '<button class="ps-tcopy">Copy</button>' +
-          '</div>' +
-          '<div class="ps-tnav">' +
-            '<button class="ps-tprev">◀ Previous</button>' +
-            '<span class="ps-tnav-info"></span>' +
-            '<button class="ps-tnext">Next ▶</button>' +
-          '</div>' +
+    var cards = TUTORIALS.map(function (t, i) {
+      return '<div class="ps-tcard" data-idx="' + i + '">' +
+        '<div class="ps-tcard-top">' +
+          '<span class="ps-tcard-emoji">' + t.emoji + '</span>' +
+          '<span class="ps-tcard-title">' + t.title + '</span>' +
         '</div>' +
-      '</div>' +
+        '<div class="ps-tcard-desc">' + t.desc + '</div>' +
+        '<button class="ps-tcard-start" data-idx="' + i + '">▶ Start (' + t.steps.length + ' steps)</button>' +
+      '</div>';
+    }).join('');
+    return '<div class="ps-tbox">' +
+      '<div class="ps-thead"><span>📚 Tutorials</span><button title="Close">&times;</button></div>' +
+      '<div class="ps-tgrid">' + cards + '</div>' +
     '</div>';
   }
 
   function initTutorialModal(tm) {
-    var state = { tut: 0, step: 0 };
-
-    var listItems   = tm.querySelectorAll('.ps-tlist-item');
-    var progress    = tm.querySelector('.ps-tprogress');
-    var stepTitle   = tm.querySelector('.ps-tstep-title');
-    var stepText    = tm.querySelector('.ps-tstep-text');
-    var codeWrap    = tm.querySelector('.ps-tcode-wrap');
-    var codeEl      = tm.querySelector('.ps-tcode');
-    var copyBtn     = tm.querySelector('.ps-tcopy');
-    var prevBtn     = tm.querySelector('.ps-tprev');
-    var nextBtn     = tm.querySelector('.ps-tnext');
-    var navInfo     = tm.querySelector('.ps-tnav-info');
-    var closeBtn    = tm.querySelector('.ps-thead button');
-
-    function render() {
-      var tut  = TUTORIALS[state.tut];
-      var step = tut.steps[state.step];
-
-      // Sidebar — highlight active tutorial
-      listItems.forEach(function (li, i) {
-        li.classList.toggle('active', i === state.tut);
-      });
-
-      // Progress dots
-      progress.innerHTML = tut.steps.map(function (_, i) {
-        var cls = i < state.step ? 'done' : (i === state.step ? 'current' : '');
-        return '<div class="ps-tdot ' + cls + '" data-step="' + i + '" title="Step ' + (i + 1) + '"></div>';
-      }).join('');
-      progress.querySelectorAll('.ps-tdot').forEach(function (dot) {
-        dot.onclick = function () { state.step = Number(dot.dataset.step); render(); };
-      });
-
-      // Step content
-      stepTitle.textContent = step.title;
-      stepText.innerHTML    = step.text;
-
-      if (step.code) {
-        codeWrap.classList.remove('empty');
-        codeEl.textContent = step.code;
-        copyBtn.textContent = 'Copy';
-        copyBtn.classList.remove('copied');
-      } else {
-        codeWrap.classList.add('empty');
-      }
-
-      // Nav
-      prevBtn.disabled = (state.step === 0);
-      nextBtn.disabled = (state.step === tut.steps.length - 1);
-      nextBtn.textContent = (state.step === tut.steps.length - 2) ? 'Finish ✓' : 'Next ▶';
-      navInfo.textContent = 'Step ' + (state.step + 1) + ' of ' + tut.steps.length;
-    }
-
-    // Sidebar clicks
-    listItems.forEach(function (li, i) {
-      li.addEventListener('click', function () {
-        state.tut  = i;
-        state.step = 0;
-        render();
-      });
-    });
-
-    // Nav buttons
-    prevBtn.addEventListener('click', function () {
-      if (state.step > 0) { state.step--; render(); }
-    });
-    nextBtn.addEventListener('click', function () {
-      var tut = TUTORIALS[state.tut];
-      if (state.step < tut.steps.length - 1) { state.step++; render(); }
-    });
-
-    // Copy button
-    copyBtn.addEventListener('click', function () {
-      var code = TUTORIALS[state.tut].steps[state.step].code;
-      if (!code) return;
-      try {
-        navigator.clipboard.writeText(code).then(function () {
-          copyBtn.textContent = 'Copied ✓';
-          copyBtn.classList.add('copied');
-          setTimeout(function () {
-            copyBtn.textContent = 'Copy';
-            copyBtn.classList.remove('copied');
-          }, 1800);
-        });
-      } catch (e) {
-        // Fallback: select the pre text
-        var range = document.createRange();
-        range.selectNodeContents(codeEl);
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-    });
-
-    // Close
+    var closeBtn = tm.querySelector('.ps-thead button');
     closeBtn.addEventListener('click', function () { tm.classList.add('hidden'); });
 
-    // Keyboard nav when modal is open
     document.addEventListener('keydown', function (e) {
-      if (tm.classList.contains('hidden')) return;
-      if (e.key === 'Escape') { tm.classList.add('hidden'); return; }
-      var tut = TUTORIALS[state.tut];
-      if (e.key === 'ArrowRight' && state.step < tut.steps.length - 1) { state.step++; render(); e.stopPropagation(); }
-      if (e.key === 'ArrowLeft'  && state.step > 0)                    { state.step--; render(); e.stopPropagation(); }
+      if (!tm.classList.contains('hidden') && e.key === 'Escape') tm.classList.add('hidden');
     });
 
-    render(); // draw initial state
+    tm.querySelectorAll('.ps-tcard-start').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.dataset.idx, 10);
+        tm.classList.add('hidden');
+        startTutorial(idx);
+      });
+    });
+  }
+
+  // ── Tutorial bar (interactive in-editor walkthrough) ──────────
+  function startTutorial(tutIdx) {
+    S.activeTut = { tutIdx: tutIdx, stepIdx: 0 };
+    applyTutBar(true);
+  }
+
+  function applyTutBar(isNewStep) {
+    var at   = S.activeTut;
+    if (!at) return;
+    var tut  = TUTORIALS[at.tutIdx];
+    var step = tut.steps[at.stepIdx];
+    var bar  = document.getElementById('ps-tut-bar');
+    if (!bar) return;
+
+    bar.classList.remove('ps-tb-hidden');
+
+    // Header
+    bar.querySelector('.ps-tb-tut-name').textContent = tut.emoji + '  ' + tut.title;
+    bar.querySelector('.ps-tb-stepcount').textContent = 'Step ' + (at.stepIdx + 1) + ' of ' + tut.steps.length;
+
+    // Progress dots
+    var dotsEl = bar.querySelector('.ps-tb-dots');
+    dotsEl.innerHTML = tut.steps.map(function (_, i) {
+      var cls = i < at.stepIdx ? 'tb-done' : (i === at.stepIdx ? 'tb-cur' : '');
+      return '<div class="ps-tb-dot ' + cls + '" title="Step ' + (i + 1) + '"></div>';
+    }).join('');
+
+    // Body
+    bar.querySelector('.ps-tb-title').textContent = step.title;
+    bar.querySelector('.ps-tb-text').innerHTML    = step.text;
+
+    // Code block — highlight new lines in amber, dim context lines
+    var codeWrap  = bar.querySelector('.ps-tb-code-wrap');
+    var codeBlock = bar.querySelector('.ps-tb-code-block');
+    var copyBtn   = bar.querySelector('.ps-tb-copy');
+    if (step.target) {
+      codeWrap.classList.remove('ps-tb-no-target');
+      var newSet  = {};
+      (step.newLines || []).forEach(function (l) { newSet[l] = true; });
+      codeBlock.innerHTML = step.target.split('\n').map(function (line) {
+        var cls = newSet[line] ? 'new' : 'old';
+        return '<span class="ps-tb-cl ' + cls + '">' +
+               line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+               '</span>';
+      }).join('');
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+    } else {
+      codeWrap.classList.add('ps-tb-no-target');
+      codeBlock.innerHTML = '';
+    }
+
+    // Indent tip — show whenever any new line has leading spaces
+    var indentTip = bar.querySelector('.ps-tb-indent-tip');
+    var needsIndent = (step.newLines || []).some(function (l) { return /^ /.test(l); });
+    indentTip.classList.toggle('ps-tb-tip-hidden', !needsIndent);
+
+    // Checklist — one row per requires item
+    var checksEl = bar.querySelector('.ps-tb-checks');
+    var reqs     = step.requires || [];
+    if (reqs.length > 0) {
+      checksEl.classList.remove('ps-tb-no-checks');
+      checksEl.innerHTML = reqs.map(function (r) {
+        return '<div class="ps-tb-ck ck-wait" data-req="' + r.replace(/"/g, '&quot;') + '">' +
+               '<i class="ps-tb-ck-icon">⏳</i>' +
+               '<span>' + r.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>' +
+               '</div>';
+      }).join('');
+    } else {
+      checksEl.classList.add('ps-tb-no-checks');
+      checksEl.innerHTML = '';
+    }
+
+    // Buttons
+    var prevBtn = bar.querySelector('[data-tb="prev"]');
+    var nextBtn = bar.querySelector('[data-tb="next"]');
+    prevBtn.disabled    = (at.stepIdx === 0);
+    nextBtn.textContent = (at.stepIdx === tut.steps.length - 1) ? 'Finish ✓' : 'Next →';
+
+    // Pre-fill editor if this step has a starter
+    if (isNewStep && step.starter !== null && step.starter !== undefined) {
+      if (ui.editor) {
+        var threads = loadThreads(S.activeSprite);
+        if (!S.activeThreadIdx) S.activeThreadIdx = 0;
+        if (threads[S.activeThreadIdx]) {
+          threads[S.activeThreadIdx].code = step.starter;
+          saveThreads(S.activeSprite);
+          loadCodeToEditor();
+        }
+      }
+    }
+
+    // Scroll bar to top
+    bar.scrollTop = 0;
+
+    checkTutBar();
+  }
+
+  function checkTutBar() {
+    var at = S.activeTut;
+    if (!at) return;
+    var step    = TUTORIALS[at.tutIdx].steps[at.stepIdx];
+    var code    = ui.editor ? ui.editor.value : '';
+    var reqs    = step.requires || [];
+    var bar     = document.getElementById('ps-tut-bar');
+    if (!bar) return;
+
+    var allOk = true;
+    // Update each checklist row
+    reqs.forEach(function (r) {
+      var found = code.indexOf(r) !== -1;
+      if (!found) allOk = false;
+      var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + r.replace(/"/g, '&quot;') + '"]');
+      if (ckEl) {
+        ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
+        ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
+      }
+      // Also turn the matching new-line span green when found
+      var spans = bar.querySelectorAll('.ps-tb-cl.new');
+      spans.forEach(function (sp) {
+        if (sp.textContent.indexOf(r) !== -1) {
+          if (found) sp.classList.add('typed'); else sp.classList.remove('typed');
+        }
+      });
+    });
+
+    var nextBtn = bar.querySelector('[data-tb="next"]');
+    var validEl = bar.querySelector('.ps-tb-valid');
+    nextBtn.disabled = (reqs.length > 0 && !allOk);
+    if (reqs.length === 0) {
+      validEl.textContent = '';
+      validEl.className   = 'ps-tb-valid';
+    } else if (allOk) {
+      validEl.textContent = '✓ All done — click Next';
+      validEl.className   = 'ps-tb-valid tb-ok';
+    } else {
+      var done = reqs.filter(function (r) { return code.indexOf(r) !== -1; }).length;
+      validEl.textContent = done + ' / ' + reqs.length + ' lines typed';
+      validEl.className   = 'ps-tb-valid';
+    }
+  }
+
+  function exitTutorial() {
+    S.activeTut = null;
+    var bar = document.getElementById('ps-tut-bar');
+    if (bar) bar.classList.add('ps-tb-hidden');
+  }
+
+  // ── Intellisense ──────────────────────────────────────────────
+  function _icsEl() { return document.getElementById('ps-icsense'); }
+
+  function _getCaretPos(editor) {
+    // Approximate pixel position of the cursor inside the textarea
+    var text  = editor.value.substring(0, editor.selectionStart);
+    var lines = text.split('\n');
+    var lineN = lines.length - 1;
+    var cs    = getComputedStyle(editor);
+    var lh    = parseFloat(cs.lineHeight)  || 21;
+    var pt    = parseFloat(cs.paddingTop)  || 12;
+    var pl    = parseFloat(cs.paddingLeft) || 12;
+    if (!editor._icsCharW) {
+      try {
+        var cvs = document.createElement('canvas');
+        var ctx = cvs.getContext('2d');
+        ctx.font = cs.fontSize + ' ' + cs.fontFamily;
+        editor._icsCharW = ctx.measureText('m').width || 7.8;
+      } catch(e) { editor._icsCharW = 7.8; }
+    }
+    var colN  = lines[lineN].length;
+    var rect  = editor.getBoundingClientRect();
+    return {
+      top:  rect.top  + pt + (lineN + 1) * lh - editor.scrollTop + 2,
+      left: rect.left + pl + colN * editor._icsCharW
+    };
+  }
+
+  function _getCurrentWord(editor) {
+    var pos = editor.selectionStart;
+    var txt = editor.value;
+    // word: the trailing identifier chars (letters/digits/underscore)
+    var wordStart = pos;
+    while (wordStart > 0 && /\w/.test(txt[wordStart - 1])) wordStart--;
+    // token: everything from the last whitespace/bracket up to cursor
+    // (captures "def game" as a single token so snippet can match "def game_start()")
+    var tokenStart = wordStart;
+    while (tokenStart > 0 && !/[ \t\n()\[\]{},;]/.test(txt[tokenStart - 1])) tokenStart--;
+    return {
+      word:       txt.substring(wordStart, pos),  // e.g. "game"
+      wordStart:  wordStart,
+      token:      txt.substring(tokenStart, pos), // e.g. "def game"
+      tokenStart: tokenStart,
+      end:        pos
+    };
+  }
+
+  function hideICSense() {
+    var dd = _icsEl();
+    if (dd) dd.classList.add('ps-ics-hidden');
+    _icsActive = -1;
+  }
+
+  function applyCompletion(comp) {
+    if (!ui.editor || !comp) return;
+    var w   = _getCurrentWord(ui.editor);
+    var ins = comp.ins;
+    // If the full token is a prefix of ins (e.g. "def game" → ins "def game_start():"),
+    // replace the whole token. Otherwise replace just the trailing identifier.
+    var replStart = (w.token.length >= 2 && ins.toLowerCase().startsWith(w.token.toLowerCase()))
+                    ? w.tokenStart : w.wordStart;
+    var before = ui.editor.value.substring(0, replStart);
+    var after  = ui.editor.value.substring(w.end);
+    ui.editor.value = before + ins + after;
+    var cur = before.length + ins.length - (comp.back || 0);
+    ui.editor.selectionStart = ui.editor.selectionEnd = cur;
+    hideICSense();
+    saveCurrentCode();
+    if (S.activeTut) checkTutBar();
+  }
+
+  function updateCompletions() {
+    if (!ui.editor) return;
+    var dd   = _icsEl();
+    if (!dd) return;
+    var w    = _getCurrentWord(ui.editor);
+    var tLow = w.token.toLowerCase(); // e.g. "def game"
+    var lLow = w.word.toLowerCase();  // e.g. "game"
+    if (lLow.length < 2) { hideICSense(); return; }
+    var hits = PS_COMPLETIONS.filter(function (c) {
+      var insL = c.ins.toLowerCase();
+      var cL   = c.t.toLowerCase();
+      // Match if: full token is prefix of ins  (catches "def game" → "def game_start()")
+      //        OR last identifier is prefix of c.t (catches "game" → "game_start")
+      return (tLow.length >= 2 && insL.startsWith(tLow)) ||
+             (lLow.length >= 2 && cL.startsWith(lLow) && cL !== lLow);
+    }).slice(0, 8);
+    if (!hits.length) { hideICSense(); return; }
+
+    _icsActive = 0;
+    dd._hits   = hits;
+    dd.innerHTML = hits.map(function (c, i) {
+      var kindLabel = c.kind === 'kw' ? 'KW' : c.kind === 'sn' ? 'SN' : 'fn';
+      return '<div class="ps-ics-item' + (i === 0 ? ' ps-ics-sel' : '') + '" data-i="' + i + '">' +
+             '<span class="ps-ics-kind ' + c.kind + '">' + kindLabel + '</span>' +
+             '<span class="ps-ics-label">' + c.t + '</span>' +
+             '<span class="ps-ics-detail">' + c.detail + '</span>' +
+             '</div>';
+    }).join('');
+
+    var pos = _getCaretPos(ui.editor);
+    // Keep dropdown on screen
+    var ddH = Math.min(hits.length * 29, 210);
+    var top = (pos.top + ddH > window.innerHeight - 10) ? pos.top - ddH - 4 : pos.top;
+    dd.style.top  = Math.max(4, top) + 'px';
+    dd.style.left = Math.min(pos.left, window.innerWidth - 410) + 'px';
+    dd.classList.remove('ps-ics-hidden');
+
+    dd.querySelectorAll('.ps-ics-item').forEach(function (item) {
+      item.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        applyCompletion(hits[parseInt(item.dataset.i, 10)]);
+      });
+    });
+  }
+
+  function initTutorialBar() {
+    var bar = document.getElementById('ps-tut-bar');
+    if (!bar) return;
+
+    // Exit button
+    bar.querySelector('.ps-tb-exit').addEventListener('click', exitTutorial);
+
+    // Copy button
+    bar.querySelector('.ps-tb-copy').addEventListener('click', function () {
+      if (!S.activeTut) return;
+      var step = TUTORIALS[S.activeTut.tutIdx].steps[S.activeTut.stepIdx];
+      if (!step.target) return;
+      var btn = bar.querySelector('.ps-tb-copy');
+      try {
+        navigator.clipboard.writeText(step.target).then(function () {
+          btn.textContent = 'Copied ✓';
+          btn.classList.add('copied');
+          setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+        }).catch(function () {});
+      } catch (e) {}
+    });
+
+    // Prev / Next buttons
+    bar.querySelector('[data-tb="prev"]').addEventListener('click', function () {
+      if (!S.activeTut || S.activeTut.stepIdx === 0) return;
+      S.activeTut.stepIdx--;
+      applyTutBar(true);
+    });
+    bar.querySelector('[data-tb="next"]').addEventListener('click', function () {
+      if (!S.activeTut) return;
+      var tut = TUTORIALS[S.activeTut.tutIdx];
+      if (S.activeTut.stepIdx >= tut.steps.length - 1) {
+        exitTutorial();
+      } else {
+        S.activeTut.stepIdx++;
+        applyTutBar(true);
+      }
+    });
   }
 
   // ── Help modal HTML ───────────────────────────────────────────
@@ -2152,9 +2653,40 @@
     var selectedName = nativeSelectedSpriteName() || (S.activeSprite && getTargetByName(S.activeSprite) ? S.activeSprite : sprites[0].sprite.name);
     if (!selectedName) return;
     if (force || selectedName !== S.activeSprite) {
+      // Save editor content into S.spriteCode before we switch
       saveCurrentCode();
-      S.activeSprite = selectedName;
+
+      // ── Rename detection ──────────────────────────────────────────
+      // If the old sprite name has vanished from the VM but the editing
+      // target has the same ID as before, the sprite was renamed (not
+      // replaced).  Migrate the in-memory code to the new name so work
+      // isn't lost, and tidy up any stale fallback localStorage entry.
+      if (S.activeSprite && selectedName !== S.activeSprite &&
+          !getTargetByName(S.activeSprite)) {
+        var selTarget = null;
+        try { selTarget = S.vm && S.vm.editingTarget; } catch(e) {}
+        if (selTarget && S.activeSpriteId && selTarget.id === S.activeSpriteId) {
+          if (S.spriteCode[S.activeSprite]) {
+            S.spriteCode[selectedName] = S.spriteCode[S.activeSprite];
+            delete S.spriteCode[S.activeSprite];
+            // storeKey now resolves correctly via the target ID, so just
+            // re-save under the new name and remove the stale fallback entry.
+            saveThreads(selectedName);
+            try { localStorage.removeItem('pyscratch:name:' + S.activeSprite); } catch(e) {}
+          }
+        }
+      }
+      // ── End rename detection ──────────────────────────────────────
+
+      S.activeSprite    = selectedName;
       S.activeThreadIdx = 0;
+
+      // Track the target's stable UUID so future rename detection works
+      try {
+        var activeTarget = getTargetByName(selectedName);
+        S.activeSpriteId = activeTarget ? activeTarget.id : null;
+      } catch(e) { S.activeSpriteId = null; }
+
       renderThreadList();
       loadCodeToEditor();
     }
@@ -2630,9 +3162,13 @@
     'sprite-panel': '[class*="sprite-selector_scroll"],[class*="spriteSelector"]',
     'costumes-tab': '[class*="tab_tab"]:nth-child(2),[id*="react-tabs-2"]',
     'sounds-tab':   '[class*="tab_tab"]:nth-child(3),[id*="react-tabs-4"]',
-    'editor':       '#ps-editor',
-    'threads':      '#ps-threads',
-    'help':         '#ps-help-btn',
+    'editor':          '#ps-editor',
+    'threads':         '#ps-left',        // entire left panel (thread list + editor)
+    'thread-list':     '#ps-threads',     // narrow thread-list column only
+    'add-thread':      '#ps-add-thread',  // the + button
+    'rename-thread-1': '#ps-thread-list .ps-titem:first-child .ps-tactions button',
+    'rename-thread-2': '#ps-thread-list .ps-titem:nth-child(2) .ps-tactions button',
+    'help':            '#ps-help-btn',
     'tutorials':    '#ps-tut-btn',
     'console':      '#ps-console',
   };
@@ -2650,6 +3186,9 @@
     'tab-bar':        '[class*="tab-selector_"],[class*="tabSelector_"],[role="tablist"]',
     // "Add sprite" action button
     'add-sprite':     '[class*="action-menu_"],[class*="actionMenu_"]',
+    // PyScratch thread management controls
+    'thread-add-btn':    '#ps-add-thread',
+    'thread-delete-btn': '#ps-thread-list button[title="Delete"]',
   };
 
   var _uiHideStyle = null;
@@ -2685,17 +3224,25 @@
     if (_hlBox) return;
     var s = document.createElement('style');
     s.textContent = [
+      /* Alternate border + glow between amber and cyan for maximum contrast */
       '@keyframes ps-hl-pulse{' +
-        '0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.85),0 0 0 3px #fbbf24}' +
-        '55%{box-shadow:0 0 0 8px rgba(251,191,36,0),0 0 0 3px rgba(251,191,36,.7)}' +
+        '0%,100%{border-color:#fbbf24;' +
+          'box-shadow:0 0 0 3px #fbbf24,0 0 16px 5px rgba(251,191,36,.75)}' +
+        '50%{border-color:#22d3ee;' +
+          'box-shadow:0 0 0 3px #22d3ee,0 0 16px 5px rgba(34,211,238,.75)}' +
+      '}',
+      '@keyframes ps-hl-label-pulse{' +
+        '0%,100%{background:#fbbf24;color:#1a1200}' +
+        '50%{background:#22d3ee;color:#0a2030}' +
       '}',
       '#ps-hl{position:fixed;pointer-events:none;z-index:99999;border:3px solid #fbbf24;' +
-        'border-radius:7px;animation:ps-hl-pulse 1.1s ease-in-out infinite;' +
+        'border-radius:7px;animation:ps-hl-pulse 1.2s ease-in-out infinite;' +
         'display:none;box-sizing:border-box;transition:left .12s,top .12s,width .12s,height .12s}',
       '#ps-hl-label{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);' +
         'background:#fbbf24;color:#1a1200;font-size:11px;font-weight:700;' +
         'font-family:"Roboto","Segoe UI",sans-serif;padding:3px 10px;border-radius:99px;' +
-        'white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.35)}',
+        'white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.45);' +
+        'animation:ps-hl-label-pulse 1.2s ease-in-out infinite}',
     ].join('\n');
     document.head.appendChild(s);
     _hlBox = document.createElement('div');
@@ -2723,7 +3270,7 @@
     var sel = HIGHLIGHT_PRESETS[targetOrSelector] || targetOrSelector;
     var el = null;
     try { el = sel ? document.querySelector(sel) : null; } catch(e) {}
-    if (!el) return;
+    if (!el) { console.warn('[PyScratch] highlight: no element found for', sel); return; }
 
     _hlTargetEl = el;
 
@@ -2734,7 +3281,7 @@
     }
 
     _positionHighlight();
-    _hlBox.style.display = '';
+    _hlBox.style.display = 'block';
 
     // Track position every frame so the box stays aligned after layout changes
     (function track() { _positionHighlight(); _hlRafId = requestAnimationFrame(track); })();
@@ -2802,6 +3349,43 @@
         if (e.data.type === 'PS_SHOW')      { showUiElements(e.data.elements || []); }
         if (e.data.type === 'PS_CLEAR_UI')  { clearUiHides(); }
         if (e.data.type === 'PS_GET_STATE') { emitState(); }
+        // Force thread action buttons (pencil / delete) always visible so the
+        // highlight can find and frame them even without a mouse hover.
+        if (e.data.type === 'PS_SHOW_THREAD_ACTIONS') {
+          var _sa = document.getElementById('ps-action-override') || document.createElement('style');
+          _sa.id = 'ps-action-override';
+          _sa.textContent = '.ps-tactions{display:flex!important}';
+          document.head.appendChild(_sa);
+        }
+        if (e.data.type === 'PS_HIDE_THREAD_ACTIONS') {
+          var _sa = document.getElementById('ps-action-override');
+          if (_sa) _sa.remove();
+        }
+        // Select a thread by name and optionally lock switching to others.
+        if (e.data.type === 'PS_SELECT_THREAD') {
+          var _stName = (e.data.name || '').toLowerCase().trim();
+          var _stList = loadThreads(S.activeSprite);
+          var _stIdx  = -1;
+          _stList.forEach(function(t, i) {
+            if ((t.name || '').toLowerCase().trim() === _stName) _stIdx = i;
+          });
+          if (_stIdx !== -1) {
+            saveCurrentCode();
+            S.activeThreadIdx = _stIdx;
+            renderThreadList();
+            loadCodeToEditor();
+          }
+          if (e.data.lock) {
+            var _tl = document.getElementById('ps-thread-lock') || document.createElement('style');
+            _tl.id = 'ps-thread-lock';
+            _tl.textContent = '.ps-titem:not(.active){opacity:0.3;pointer-events:none;cursor:default}';
+            document.head.appendChild(_tl);
+          }
+        }
+        if (e.data.type === 'PS_UNLOCK_THREADS') {
+          var _tl = document.getElementById('ps-thread-lock');
+          if (_tl) _tl.remove();
+        }
       });
       // URL param: ?ps_highlight=green-flag&ps_highlight_label=Click+this!
       (function() {
@@ -2870,34 +3454,36 @@
         });
       } catch(e) {}
 
-      // ── .psb3 interception ──────────────────────────────────────
-      // In demo mode saving is disabled — the iframe is read-only.
+      // ── Project save: embed Python inside project.json ──────────
+      // Patch vm.toJSON() — called by every TurboWarp save path:
+      //   • File → Save (saveProjectSb3 → _saveProjectZip → toJSON)
+      //   • Ctrl+S toolbar button
+      //   • TurboWarp restore-point system (saveProjectSb3DontZip → toJSON)
+      // Python code is added as a "pyscratch" array on each non-stage target.
+      // Standard .sb3 files: TurboWarp/Scratch ignores unknown target fields,
+      // and our extractPyScratchData strips them back out on load so the parser
+      // never sees them.  No custom .psb3 extension needed.
       if (!DEMO_MODE) {
-        // Wrap vm.saveProjectSb3 so every TurboWarp save path (File menu,
-        // Ctrl+S, toolbar button) embeds pyscratch.json in the output blob.
         try {
-          var _origSaveSb3 = vm.saveProjectSb3.bind(vm);
-          vm.saveProjectSb3 = function () {
-            saveCurrentCode();                         // flush editor textarea first
-            return _origSaveSb3().then(injectPyScratchData);
+          var _origToJSON = vm.toJSON.bind(vm);
+          vm.toJSON = function (optTargetId, serializationOptions) {
+            saveCurrentCode();   // flush editor textarea into S.spriteCode first
+            var jsonStr = _origToJSON(optTargetId, serializationOptions);
+            try {
+              var proj = JSON.parse(jsonStr);
+              (proj.targets || []).forEach(function (t) {
+                if (!t.isStage && S.spriteCode[t.name] && S.spriteCode[t.name].length) {
+                  t.pyscratch = S.spriteCode[t.name];
+                }
+              });
+              return JSON.stringify(proj);
+            } catch(e) {
+              return jsonStr;   // fallback: return original if anything goes wrong
+            }
           };
         } catch(e) {
-          console.warn('[PyScratch] Could not patch saveProjectSb3:', e);
+          console.warn('[PyScratch] Could not patch vm.toJSON:', e);
         }
-
-        // Rename the downloaded file from .sb3 → .psb3 by intercepting the
-        // anchor.click() call that TurboWarp uses to trigger the download.
-        // The check (blob: URL + .sb3 download attribute) is specific enough to
-        // avoid affecting any other anchor clicks on the page.
-        (function () {
-          var _origAnchorClick = HTMLAnchorElement.prototype.click;
-          HTMLAnchorElement.prototype.click = function () {
-            if (this.download && /\.sb3$/i.test(this.download) && /^blob:/i.test(this.href)) {
-              this.download = this.download.replace(/\.sb3$/i, '.psb3');
-            }
-            return _origAnchorClick.call(this);
-          };
-        })();
       }
 
       // Wrap vm.loadProject so any file loaded through TurboWarp's UI
