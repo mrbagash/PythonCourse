@@ -109,6 +109,8 @@
     { n: 'volume',                s: 'volume()',                        c: 'snd'  },
     // Sensing
     { n: 'touching',        s: 'touching(target)',                   c: 'sens' },
+    { n: 'touching_colour', s: 'touching_colour("#hexcolor")',        c: 'sens' },
+    { n: 'touching_color',  s: 'touching_color("#hexcolor")',         c: 'sens' },
     { n: 'distance_to',     s: 'distance_to(target)',                c: 'sens' },
     { n: 'key_pressed',     s: 'key_pressed(key)',                   c: 'sens' },
     { n: 'mouse_x',         s: 'mouse_x()',                          c: 'sens' },
@@ -840,6 +842,8 @@
     {t:'create_clone',          ins:'create_clone()',                              detail:'Spawn a copy of this sprite',    kind:'fn'},
     {t:'delete_clone',          ins:'delete_clone()',                              detail:'Remove this clone',              kind:'fn'},
     {t:'touching',              ins:'touching("")',                                 detail:'True when touching target',      kind:'fn', back:2},
+    {t:'touching_colour',       ins:'touching_colour("")',                          detail:'True when touching a colour',    kind:'fn', back:2},
+    {t:'touching_color',        ins:'touching_color("")',                           detail:'True when touching a colour',    kind:'fn', back:2},
     {t:'on_edge',               ins:'on_edge()',                                    detail:'True when touching edge',        kind:'fn'},
     {t:'timer',                 ins:'timer()',                                      detail:'Seconds since last reset',       kind:'fn'},
     {t:'reset_timer',           ins:'reset_timer()',                               detail:'Reset the timer to 0',           kind:'fn'},
@@ -1053,6 +1057,8 @@
       'def volume(): return _psc("volume")',
       // Sensing
       'def touching(t): return _psc("touching",t)',
+      'def touching_colour(c): return _psc("touching_colour",c)',
+      'def touching_color(c): return _psc("touching_color",c)',
       'def distance_to(t): return _psc("distance_to",t)',
       'def key_pressed(k): return _psc("key_pressed",k)',
       'def mouse_x(): return _psc("mouse_x")',
@@ -1671,6 +1677,89 @@
           return Math.abs(target.x - other.x) < 30 && Math.abs(target.y - other.y) < 30;
         }
       }
+      case 'touching_colour':
+      case 'touching_color': {
+        if (!target) return false;
+        try {
+          var colHex = String(a || '').trim().replace(/^#/, '');
+          if (colHex.length === 3) colHex = colHex[0]+colHex[0]+colHex[1]+colHex[1]+colHex[2]+colHex[2];
+          if (!/^[0-9a-fA-F]{6}$/.test(colHex)) return false;
+          var colR = parseInt(colHex.slice(0,2), 16);
+          var colG = parseInt(colHex.slice(2,4), 16);
+          var colB = parseInt(colHex.slice(4,6), 16);
+
+          // One-shot diagnostic — logs to PS console on first call only
+          if (!S._tcDiag) {
+            S._tcDiag = true;
+            var rdrDbg = S.vm.runtime.renderer;
+            log('[tc] target=' + (target.sprite && target.sprite.name) +
+              ' drawableID=' + target.drawableID +
+              ' rgb=[' + colR + ',' + colG + ',' + colB + ']' +
+              ' hasTITC=' + (typeof target.isTouchingColor) +
+              ' hasRdr=' + (!!rdrDbg) +
+              ' hasRdrITC=' + (rdrDbg ? typeof rdrDbg.isTouchingColor : 'n/a') +
+              ' hasBounds=' + (rdrDbg ? typeof rdrDbg.getBounds : 'n/a') +
+              ' canvas=' + (rdrDbg ? !!(rdrDbg.canvas || (rdrDbg._gl && rdrDbg._gl.canvas)) : 'n/a') + '\n');
+          }
+
+          // Tier 1 — VM RenderedTarget method (same path Scratch's own sensing block uses)
+          if (typeof target.isTouchingColor === 'function') {
+            try {
+              var t1 = target.isTouchingColor({r:colR, g:colG, b:colB});
+              if (t1 !== null && t1 !== undefined && typeof t1 !== 'object') return !!t1;
+            } catch(e1) { log('[tc] tier1 err: ' + e1.message + '\n'); }
+          }
+
+          // Tier 2 — renderer.isTouchingColor directly
+          var rdr = S.vm.runtime.renderer;
+          if (rdr && typeof rdr.isTouchingColor === 'function') {
+            try {
+              var t2 = rdr.isTouchingColor(target.drawableID, [colR, colG, colB]);
+              if (t2 !== null && t2 !== undefined && typeof t2 !== 'object') return !!t2;
+            } catch(e2) { log('[tc] tier2 err: ' + e2.message + '\n'); }
+          }
+
+          // Tier 3 — canvas pixel sampling (works regardless of internal API changes)
+          if (rdr) {
+            var cv = rdr.canvas || (rdr._gl && rdr._gl.canvas);
+            if (!cv) return false;
+            var bnds = null;
+            if (typeof rdr.getBounds === 'function') {
+              try { bnds = rdr.getBounds(target.drawableID); } catch(eb) {}
+            }
+            if (!bnds) {
+              var rad = (target.size / 100) * 50;
+              bnds = { left:target.x-rad, right:target.x+rad, top:target.y+rad, bottom:target.y-rad };
+            }
+            var xSc = cv.width / 480, ySc = cv.height / 360;
+            var px1 = Math.max(0,        Math.floor((bnds.left  + 240) * xSc));
+            var px2 = Math.min(cv.width,  Math.ceil((bnds.right + 240) * xSc));
+            var py1 = Math.max(0,        Math.floor((180 - bnds.top)   * ySc));
+            var py2 = Math.min(cv.height, Math.ceil((180 - bnds.bottom)* ySc));
+            if (px2 <= px1 || py2 <= py1) return false;
+            var oc = document.createElement('canvas');
+            oc.width = px2 - px1; oc.height = py2 - py1;
+            var c2d = oc.getContext('2d');
+            c2d.drawImage(cv, px1, py1, oc.width, oc.height, 0, 0, oc.width, oc.height);
+            // Sample a few pixels and log the first few on first call
+            var pxd = c2d.getImageData(0, 0, oc.width, oc.height).data;
+            if (!S._tcDiag2) {
+              S._tcDiag2 = true;
+              log('[tc] tier3 canvas ' + oc.width + 'x' + oc.height +
+                ' px@0=[' + pxd[0] + ',' + pxd[1] + ',' + pxd[2] + ',' + pxd[3] + ']' +
+                ' px@mid=[' + (pxd[pxd.length/2|0] || '?') + ']\n');
+            }
+            var tol = 30;
+            for (var pi = 0; pi < pxd.length; pi += 4) {
+              if (pxd[pi+3] < 10) continue;
+              if (Math.abs(pxd[pi]   - colR) <= tol &&
+                  Math.abs(pxd[pi+1] - colG) <= tol &&
+                  Math.abs(pxd[pi+2] - colB) <= tol) return true;
+            }
+          }
+        } catch(e) { log('[tc] outer err: ' + e.message + '\n'); }
+        return false;
+      }
       case 'distance_to': {
         var tgt = (a === 'mouse_pointer' || a === 'mouse pointer')
           ? S.mouse
@@ -1991,6 +2080,8 @@
     S.running    = false;
     S.gen++;              // sleeping threads see gen mismatch → throw __pyscratch_stopped__
     S.deadClones = new Set(); // clear per-clone tombstones for a fresh run
+    S._tcDiag  = false;   // reset colour-sensing diagnostic flag for next run
+    S._tcDiag2 = false;
     updateRunState(false);
   }
 
@@ -2328,6 +2419,12 @@
       '#ps-console{height:72px;background:var(--ps-console,#13131f);color:var(--ps-success,#a6e3a1);font-family:"Roboto Mono","Consolas",monospace;font-size:11px;padding:5px 10px;overflow-y:auto;border-top:1px solid var(--ps-border,#312d4b);flex-shrink:0;line-height:1.5}',
       '.ps-con-err{color:var(--ps-error,#f38ba8)}',
 
+      // Colour picker badge (appears when cursor is inside touching_colour(...))
+      '#ps-colour-pick{position:fixed;display:none;align-items:center;gap:6px;background:#2a2a3e;border:1px solid #555;border-radius:6px;padding:4px 9px;z-index:10001;box-shadow:0 2px 10px rgba(0,0,0,.55);cursor:pointer;font-size:11px;color:#cdd6f4;user-select:none;white-space:nowrap}',
+      '#ps-colour-pick:hover{background:#333355;border-color:#7878aa}',
+      '#ps-cp-swatch{width:16px;height:16px;border-radius:3px;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;display:inline-block}',
+      '#ps-cp-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}',
+
       // Hide TurboWarp blocks and related elements when PyScratch is active
       '.blocklyDiv,.blocklyToolboxDiv,.blocklyFlyout,.blocklyWidgetDiv{display:none !important}',
 
@@ -2521,6 +2618,33 @@
     icsEl.className = 'ps-ics-hidden';
     document.body.appendChild(icsEl);
 
+    // Colour picker badge — appears when cursor is inside touching_colour(...)
+    var cpEl = document.createElement('div');
+    cpEl.id = 'ps-colour-pick';
+    cpEl.innerHTML = '<span id="ps-cp-swatch"></span><span>Pick colour</span><input type="color" id="ps-cp-input">';
+    document.body.appendChild(cpEl);
+    (function () {
+      var cpInput  = document.getElementById('ps-cp-input');
+      var cpSwatch = document.getElementById('ps-cp-swatch');
+      // Live update the editor as the colour picker changes
+      cpInput.addEventListener('input', function () {
+        var ctx = getColourPickerCtx(ui.editor);
+        if (!ctx) return;
+        var ins = '"' + cpInput.value + '"';
+        var text = ui.editor.value;
+        ui.editor.value = text.slice(0, ctx.open) + ins + text.slice(ctx.close);
+        ui.editor.selectionStart = ui.editor.selectionEnd = ctx.open + ins.length;
+        cpSwatch.style.background = cpInput.value;
+        saveCurrentCode();
+        if (S.activeTut) checkTutBar();
+      });
+      // Prevent editor blur when clicking the badge; open native colour picker
+      cpEl.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        cpInput.click();
+      });
+    }());
+
     // Assign references
     ui.editor       = document.getElementById('ps-editor');
     ui.threadList   = document.getElementById('ps-thread-list');
@@ -2634,10 +2758,20 @@
       saveCurrentCode();
       if (S.activeTut) checkTutBar();
       updateCompletions();
+      updateColourPicker();
     });
+    ui.editor.addEventListener('click', function () { updateColourPicker(); });
+    ui.editor.addEventListener('keyup', function () { updateColourPicker(); });
     ui.editor.addEventListener('blur', function () {
       // Small delay so mousedown on a dropdown item fires first
       setTimeout(hideICSense, 150);
+      // Hide colour picker — delayed so a click on the badge can fire first
+      setTimeout(function () {
+        var cpEl = document.getElementById('ps-colour-pick');
+        if (cpEl && document.activeElement !== document.getElementById('ps-cp-input')) {
+          cpEl.style.display = 'none';
+        }
+      }, 200);
     });
 
     // Key tracking
@@ -3016,6 +3150,54 @@
     _icsActive = -1;
   }
 
+  // ── Colour picker ─────────────────────────────────────────────
+  // Returns {open, close, hex} when the cursor is between the parentheses of
+  // touching_colour(...) or touching_color(...), otherwise null.
+  function getColourPickerCtx(editor) {
+    if (!editor) return null;
+    var pos  = editor.selectionStart;
+    var text = editor.value;
+    var re   = /touching_colou?r\(/g;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var open = m.index + m[0].length;
+      var lineEnd = text.indexOf('\n', open);
+      if (lineEnd === -1) lineEnd = text.length;
+      var close = text.indexOf(')', open);
+      if (close === -1 || close > lineEnd) continue;
+      if (pos >= open && pos <= close) {
+        var inner = text.slice(open, close);
+        var hexM  = inner.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/);
+        var hex   = hexM ? '#' + hexM[1] : '#ff0000';
+        // Normalise 3-digit → 6-digit
+        if (hex.length === 4) hex = '#' + hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3];
+        return { open: open, close: close, hex: hex };
+      }
+    }
+    return null;
+  }
+
+  // Show or hide the colour picker badge near the caret.
+  function updateColourPicker() {
+    var cpEl = document.getElementById('ps-colour-pick');
+    if (!cpEl || !ui.editor) return;
+    var ctx = getColourPickerCtx(ui.editor);
+    if (!ctx) { cpEl.style.display = 'none'; return; }
+    var hex = ctx.hex;
+    document.getElementById('ps-cp-input').value  = hex;
+    document.getElementById('ps-cp-swatch').style.background = hex;
+    // Approximate caret Y: 13px font × 1.65 line-height = ~21.45 px per line
+    var textBefore = ui.editor.value.substring(0, ui.editor.selectionStart);
+    var lineNum    = (textBefore.match(/\n/g) || []).length;
+    var rect       = ui.editor.getBoundingClientRect();
+    var lineH      = Math.round(13 * 1.65);
+    var caretY     = rect.top + 12 + lineNum * lineH;
+    caretY = Math.max(rect.top + 4, Math.min(caretY, rect.bottom - 44));
+    cpEl.style.top  = (caretY + lineH + 2) + 'px';
+    cpEl.style.left = (rect.left + 8) + 'px';
+    cpEl.style.display = 'flex';
+  }
+
   function applyCompletion(comp) {
     if (!ui.editor || !comp) return;
     var w   = _getCurrentWord(ui.editor);
@@ -3183,6 +3365,7 @@
       { cat:'sens', title:'Sensing', items:[
         { code:'touching("SpriteName")', desc:'True if this sprite is touching another sprite.' },
         { code:'touching("mouse_pointer")', desc:'True if touching the mouse cursor.' },
+        { code:'touching_colour("#ff0000")', desc:'True if this sprite is touching a specific colour on the stage or another sprite. While typing inside the brackets a colour picker badge appears — click it to open the colour picker. Both touching_colour and touching_color are accepted.' },
         { code:'distance_to("SpriteName")', desc:'Pixel distance to another sprite or "mouse_pointer".' },
         { code:'key_pressed("space")', desc:'True while a key is held. Keys: space, up, down, left, right, a–z, 0–9.' },
         { code:'mouse_x() / mouse_y()', desc:'Mouse position in Scratch coordinates (0,0 = centre).' },
