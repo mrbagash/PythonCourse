@@ -153,16 +153,16 @@
       steps: [
         {
           title: 'Type the game loop',
-          text: 'Every PyScratch program starts with a <code>game_start()</code> function. The <code>while True:</code> loop inside keeps it running every frame. Clear the editor and type this exactly:',
+          text: 'Every PyScratch program starts with a <code>game_start()</code> function. The <code>while True:</code> loop inside keeps it running every frame. Clear the editor and type this:',
           starter: '',
-          target: 'def game_start():\n    while True:\n        pass',
-          newLines: ['def game_start():', '    while True:', '        pass'],
+          target: 'def game_start():\n    while True:',
+          newLines: ['def game_start():', '    while True:'],
           requires: ['def game_start():', 'while True:']
         },
         {
           title: 'Your first if statement',
-          text: 'An <strong>if statement</strong> runs its code only when the condition is true. Replace <code>pass</code> with an if block that checks whether the right arrow key is held:',
-          starter: 'def game_start():\n    while True:\n        pass',
+          text: 'An <strong>if statement</strong> runs its code only when the condition is true. Add an if block inside the loop that checks whether the right arrow key is held:',
+          starter: 'def game_start():\n    while True:',
           target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)'],
           requires: ['if key_pressed("right"):', 'change_x(5)']
@@ -176,16 +176,8 @@
           requires: ['if key_pressed("left"):', 'change_x(-5)']
         },
         {
-          title: 'Code outside the if blocks',
-          text: 'Not everything needs a condition. Add <code>if_on_edge_bounce()</code> after both if blocks — it runs every single frame regardless of key presses and stops the sprite escaping the stage.',
-          starter: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)',
-          target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)\n        if_on_edge_bounce()',
-          newLines: ['        if_on_edge_bounce()'],
-          requires: ['if_on_edge_bounce()']
-        },
-        {
           title: '✅ Try it!',
-          text: 'Click the <strong>green flag ▶</strong> and press the left and right arrow keys. The sprite should move and bounce off the edges.<br><br><strong>Challenge:</strong> Add <code>if</code> blocks for the up and down keys using <code>change_y(5)</code> and <code>change_y(-5)</code>.',
+          text: 'Click the <strong>green flag ▶</strong> and press the left and right arrow keys. The sprite should move — Scratch keeps it on screen automatically.<br><br><strong>Challenge:</strong> Add <code>if</code> blocks for the up and down keys using <code>change_y(5)</code> and <code>change_y(-5)</code>.',
           starter: null, target: null, newLines: [], requires: []
         }
       ]
@@ -197,17 +189,9 @@
       desc: 'Repeat a block of code a fixed number of times using a for loop and range().',
       steps: [
         {
-          title: 'Set up the function',
-          text: 'Type the <code>game_start()</code> function. This time we won\'t use <code>while True:</code> — the for loop will run a fixed number of times and then stop.',
-          starter: '',
-          target: 'def game_start():\n    pass',
-          newLines: ['def game_start():', '    pass'],
-          requires: ['def game_start():']
-        },
-        {
           title: 'Your first for loop',
-          text: 'A <strong>for loop</strong> repeats its code a set number of times. <code>range(5)</code> means "do this 5 times". Replace <code>pass</code> with a loop that moves the sprite and pauses between each step:',
-          starter: 'def game_start():\n    pass',
+          text: 'A <strong>for loop</strong> repeats its code a fixed number of times — no <code>while True:</code> needed. <code>range(5)</code> means "do this 5 times". Type the full function:',
+          starter: '',
           target: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           newLines: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
           requires: ['for i in range(5):', 'change_x(30)', 'wait(0.3)']
@@ -282,14 +266,14 @@
           title: 'The game loop',
           text: 'Type the game loop. <code>set_rotation_style("left-right")</code> before the loop means the sprite will only flip horizontally — it will never tilt upside-down.',
           starter: '',
-          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        pass',
-          newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:', '        pass'],
+          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
+          newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:'],
           requires: ['def game_start():', 'set_rotation_style("left-right")', 'while True:']
         },
         {
           title: 'Move right',
-          text: 'Replace <code>pass</code> with a right-key check. <code>change_x(5)</code> moves 5 pixels right each frame. <code>point_in_direction(90)</code> faces the sprite right.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        pass',
+          text: 'Add a right-key check inside the loop. <code>change_x(5)</code> moves 5 pixels right each frame. <code>point_in_direction(90)</code> faces the sprite right.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)'],
           requires: ['if key_pressed("right"):', 'change_x(5)', 'point_in_direction(90)']
@@ -303,16 +287,8 @@
           requires: ['if key_pressed("left"):', 'change_x(-5)', 'point_in_direction(-90)']
         },
         {
-          title: 'Bounce off the edges',
-          text: 'Add <code>if_on_edge_bounce()</code> outside both if blocks — at the same indent level as the if statements. It runs every frame and stops the sprite escaping the stage.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
-          target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
-          newLines: ['        if_on_edge_bounce()'],
-          requires: ['if_on_edge_bounce()']
-        },
-        {
           title: '✅ Try it!',
-          text: 'Click the <strong>green flag ▶</strong> and press the arrow keys. Your sprite should move, face the right way, and bounce off the edges.<br><br><strong>Challenge:</strong> Add up and down movement with <code>change_y(5)</code> and <code>change_y(-5)</code>.',
+          text: 'Click the <strong>green flag ▶</strong> and press the arrow keys. Your sprite should move and face the right way — Scratch keeps it on screen automatically.<br><br><strong>Challenge:</strong> Add up and down movement with <code>change_y(5)</code> and <code>change_y(-5)</code>.',
           starter: null, target: null, newLines: [], requires: []
         }
       ]
@@ -326,13 +302,13 @@
         {
           title: 'Starting point',
           text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, then two if blocks.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           target: null, newLines: [], requires: []
         },
         {
           title: 'Animate while moving',
           text: 'Add <code>next_costume()</code> inside <strong>both</strong> if blocks, after each <code>point_in_direction</code> line. Each frame the key is held, the sprite advances one costume.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           newLines: ['            next_costume()'],
           requires: ['next_costume()']
@@ -370,22 +346,22 @@
           title: 'Create the velocity variable',
           text: 'Type <code>vy = 0</code> at the very top of the editor, before any function. This stores the vertical velocity — how fast the sprite moves up or down. Starting at 0 means it is stationary.',
           starter: '',
-          target: 'vy = 0\n\ndef game_start():\n    pass',
-          newLines: ['vy = 0', '', 'def game_start():', '    pass'],
+          target: 'vy = 0\n\ndef game_start():',
+          newLines: ['vy = 0', '', 'def game_start():'],
           requires: ['vy = 0', 'def game_start():']
         },
         {
           title: 'The game loop with global',
-          text: 'Replace <code>pass</code> with <code>global vy</code> and <code>while True:</code>. Without <code>global</code>, Python would create a new local copy of <code>vy</code> inside the function instead of using the one you just created.',
-          starter: 'vy = 0\n\ndef game_start():\n    pass',
-          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        pass',
-          newLines: ['    global vy', '    while True:', '        pass'],
+          text: 'Add <code>global vy</code> and <code>while True:</code> inside the function. Without <code>global</code>, Python would create a new local copy of <code>vy</code> instead of using the one you just created.',
+          starter: 'vy = 0\n\ndef game_start():',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
+          newLines: ['    global vy', '    while True:'],
           requires: ['global vy', 'while True:']
         },
         {
           title: 'Apply gravity',
-          text: 'Each frame, subtract 0.5 from <code>vy</code> (it becomes more negative = faster downward), then move the sprite by that amount. Replace the inner <code>pass</code>:',
-          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        pass',
+          text: 'Each frame, subtract 0.5 from <code>vy</code> (it becomes more negative = faster downward), then move the sprite by that amount. Add both lines inside the loop:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
           newLines: ['        vy = vy - 0.5', '        change_y(vy)'],
           requires: ['vy = vy - 0.5', 'change_y(vy)']
@@ -412,6 +388,190 @@
           starter: null, target: null, newLines: [], requires: []
         }
       ]
+    },
+    {
+      id: 'flappy-bird',
+      title: 'Flappy Bird',
+      emoji: '🐦',
+      desc: 'Build the Flappy Bird mechanic — gravity, tap-to-flap, tilting, and a pipe sprite that loops across the screen. You\'ll use two sprites: one for the bird, one for the pipe.',
+      steps: [
+        {
+          title: 'Set up the velocity variable',
+          text: 'Flappy Bird is all about vertical velocity. Type <code>vy = 0</code> before the function — the bird starts stationary and gravity will pull it down from there.',
+          starter: '',
+          target: 'vy = 0\n\ndef game_start():',
+          newLines: ['vy = 0', '', 'def game_start():'],
+          requires: ['vy = 0', 'def game_start():']
+        },
+        {
+          title: 'Apply gravity',
+          text: 'Add the game loop with <code>global vy</code> so gravity can update the velocity each frame, then move the sprite by it:',
+          starter: 'vy = 0\n\ndef game_start():',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)',
+          newLines: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)'],
+          requires: ['global vy', 'while True:', 'vy = vy - 0.3', 'change_y(vy)']
+        },
+        {
+          title: 'Add a floor and ceiling',
+          text: 'Without limits the bird falls forever or flies off screen. Add both boundaries — floor at y = −150 and ceiling at y = 150:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0',
+          newLines: ['        if y_position() < -150:', '            set_y(-150)', '            vy = 0', '        if y_position() > 150:', '            set_y(150)', '            vy = 0'],
+          requires: ['y_position() < -150', 'y_position() > 150']
+        },
+        {
+          title: 'Flap with the Space key',
+          text: 'In Flappy Bird the player <strong>taps</strong> — not holds — a key. <code>when_key_pressed</code> fires <em>once</em> per tap, unlike <code>key_pressed()</code> which is true every frame the key is held down. Add a new function <strong>below</strong> <code>game_start</code>:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0\n\ndef when_key_pressed(key):\n    global vy\n    if key == "space":\n        vy = 5',
+          newLines: ['def when_key_pressed(key):', '    global vy', '    if key == "space":', '        vy = 5'],
+          requires: ['def when_key_pressed(key):', 'if key == "space":', 'vy = 5']
+        },
+        {
+          title: 'Tilt with velocity',
+          text: 'A real Flappy Bird tilts up when rising and droops when falling. Add <code>set_rotation_style("all around")</code> before the loop, then tilt based on <code>vy</code> inside it:',
+          starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0\n\ndef when_key_pressed(key):\n    global vy\n    if key == "space":\n        vy = 5',
+          target: 'vy = 0\n\ndef game_start():\n    global vy\n    set_rotation_style("all around")\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if vy > 0:\n            point_in_direction(-20)\n        else:\n            point_in_direction(20)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0\n\ndef when_key_pressed(key):\n    global vy\n    if key == "space":\n        vy = 5',
+          newLines: ['    set_rotation_style("all around")', '        if vy > 0:', '            point_in_direction(-20)', '        else:', '            point_in_direction(20)'],
+          requires: ['set_rotation_style("all around")', 'point_in_direction(-20)', 'point_in_direction(20)']
+        },
+        {
+          title: 'Add your obstacle sprite',
+          text: 'Threads let one sprite do multiple things at once — but an obstacle is a <strong>completely different object</strong> in the game. It needs its own sprite with its own position.<br><br>Click the glowing <strong>sprite panel</strong> at the bottom of TurboWarp and add a new sprite. Choose anything — a ball, a block, a drawn shape — as long as it\'s something to dodge. Then click your new sprite to select it.',
+          highlight: 'add-sprite-btn',
+          highlightLabel: 'Add a sprite here',
+          requiresSpriteCount: 2,
+          requiresSpriteHint: 'Add a new sprite using the highlighted buttons',
+          starter: null,
+          target: null,
+          newLines: [],
+          requires: []
+        },
+        {
+          title: 'Move the obstacle left',
+          text: 'You\'re now editing the <strong>obstacle sprite\'s</strong> code — completely separate from the bird. Start it off-screen to the right at a <strong>random height</strong> using <code>pick_random</code>, then slide it left every frame:',
+          starter: '',
+          target: 'def game_start():\n    go_to_xy(240, pick_random(-100, 100))\n    while True:\n        change_x(-3)',
+          newLines: ['def game_start():', '    go_to_xy(240, pick_random(-100, 100))', '    while True:', '        change_x(-3)'],
+          requires: ['go_to_xy(240', 'pick_random(-100, 100)', 'change_x(-3)']
+        },
+        {
+          title: 'Loop back at a new random height',
+          text: 'When the obstacle slides past the left edge, reset it to the right at another <strong>random height</strong>. Each pass the player has to dodge a different position:',
+          starter: 'def game_start():\n    go_to_xy(240, pick_random(-100, 100))\n    while True:\n        change_x(-3)',
+          target: 'def game_start():\n    go_to_xy(240, pick_random(-100, 100))\n    while True:\n        change_x(-3)\n        if x_position() < -260:\n            go_to_xy(260, pick_random(-100, 100))',
+          newLines: ['        if x_position() < -260:', '            go_to_xy(260, pick_random(-100, 100))'],
+          requires: ['x_position() < -260', 'go_to_xy(260', 'pick_random(-100, 100)']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong> and tap <strong>Space</strong> to flap. The bird should fall with gravity, tilt with velocity, and a pipe should scroll across from right to left on a loop.<br><br><strong>Challenge:</strong> Give the pipe sprite a tall thin costume so it actually looks like a pipe. Try <code>go_to_xy(pick_random(200, 280), pick_random(-80, 80))</code> when resetting so each pipe appears at a random height.',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
+      id: 'doodle-jump',
+      title: 'Doodle Jump',
+      emoji: '🦘',
+      desc: 'Build the Doodle Jump mechanic — the character bounces upward automatically, moves left and right, and wraps around the screen edges.',
+      steps: [
+        {
+          title: 'Starting velocity',
+          text: 'In Doodle Jump the character immediately shoots upward. Set <code>vy = 8</code> (positive = upward) so it launches straight away — gravity will curve it back down.',
+          starter: '',
+          target: 'vy = 8\n\ndef game_start():',
+          newLines: ['vy = 8', '', 'def game_start():'],
+          requires: ['vy = 8', 'def game_start():']
+        },
+        {
+          title: 'Gravity',
+          text: 'Add the game loop with <code>global vy</code>, apply gravity each frame, and move the sprite by the velocity:',
+          starter: 'vy = 8\n\ndef game_start():',
+          target: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)',
+          newLines: ['    global vy', '    while True:', '        vy = vy - 0.4', '        change_y(vy)'],
+          requires: ['global vy', 'while True:', 'vy = vy - 0.4', 'change_y(vy)']
+        },
+        {
+          title: 'Bounce off the floor',
+          text: 'Instead of stopping at the floor like in the gravity tutorial, set <code>vy</code> back to <code>8</code> when the sprite lands — this launches it upward again automatically:',
+          starter: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)',
+          target: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8',
+          newLines: ['        if y_position() < -150:', '            set_y(-150)', '            vy = 8'],
+          requires: ['y_position() < -150', 'set_y(-150)', 'vy = 8']
+        },
+        {
+          title: 'Left and right movement',
+          text: 'Add horizontal controls. <code>set_rotation_style("left-right")</code> goes before the loop so the sprite only flips — it never tilts:',
+          starter: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8',
+          target: 'vy = 8\n\ndef game_start():\n    global vy\n    set_rotation_style("left-right")\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          newLines: ['    set_rotation_style("left-right")', '        if key_pressed("right"):', '            change_x(4)', '            point_in_direction(90)', '        if key_pressed("left"):', '            change_x(-4)', '            point_in_direction(-90)'],
+          requires: ['set_rotation_style("left-right")', 'key_pressed("right")', 'key_pressed("left")', 'change_x(4)', 'change_x(-4)']
+        },
+        {
+          title: 'Wrap around the screen',
+          text: 'In Doodle Jump, going off the left edge brings you back on the right and vice versa. Add checks for both horizontal edges:',
+          starter: 'vy = 8\n\ndef game_start():\n    global vy\n    set_rotation_style("left-right")\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          target: 'vy = 8\n\ndef game_start():\n    global vy\n    set_rotation_style("left-right")\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if x_position() > 240:\n            set_x(-240)\n        if x_position() < -240:\n            set_x(240)',
+          newLines: ['        if x_position() > 240:', '            set_x(-240)', '        if x_position() < -240:', '            set_x(240)'],
+          requires: ['x_position() > 240', 'set_x(-240)', 'x_position() < -240', 'set_x(240)']
+        },
+        {
+          title: 'Add the platform sprite',
+          text: 'Platforms are their own game object — they need a <strong>separate sprite</strong> with their own position and code. Click the highlighted button to add a new sprite, give it a <strong>flat wide rectangular costume</strong>, and name it <strong>Platform</strong>.',
+          highlight: 'add-sprite-btn',
+          highlightLabel: 'Add a sprite here',
+          requiresSpriteCount: 2,
+          requiresSpriteHint: 'Add a new sprite for the platform',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Platform falls down',
+          text: 'You\'re now editing the <strong>Platform sprite\'s</strong> code — completely separate from the player. Start it at a random horizontal position and make it fall steadily:',
+          starter: '',
+          target: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)',
+          newLines: ['def game_start():', '    go_to_xy(pick_random(-150, 150), 0)', '    while True:', '        change_y(-2)'],
+          requires: ['go_to_xy(pick_random(-150, 150), 0)', 'change_y(-2)']
+        },
+        {
+          title: 'Reset to the top',
+          text: 'When the platform falls off the bottom, jump it back to the top at a new random x position — this makes it loop forever:',
+          starter: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)',
+          target: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)\n        if y_position() < -185:\n            go_to_xy(pick_random(-150, 150), 185)',
+          newLines: ['        if y_position() < -185:', '            go_to_xy(pick_random(-150, 150), 185)'],
+          requires: ['y_position() < -185', 'go_to_xy(pick_random(-150, 150), 185)']
+        },
+        {
+          title: 'Bounce on the platform',
+          text: 'Click your <strong>player sprite</strong> in the sprite panel to switch back to its code. Add a check inside the loop — when the player is falling (<code>vy</code> is negative) and touching the platform, launch back up:',
+          starter: null,
+          target: '        if touching("Platform") and vy < 0:\n            vy = 8',
+          newLines: ['        if touching("Platform") and vy < 0:', '            vy = 8'],
+          requires: ['touching("Platform")', 'vy < 0']
+        },
+        {
+          title: 'Add the death barrier',
+          text: 'Add one more sprite as the death zone. Click the highlighted button, give it a <strong>wide flat costume</strong> that spans the full width of the stage, and name it <strong>Death</strong>. Position it at the very bottom of the stage.',
+          highlight: 'add-sprite-btn',
+          highlightLabel: 'Add a sprite here',
+          requiresSpriteCount: 3,
+          requiresSpriteHint: 'Add a new sprite for the death barrier',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Game over',
+          text: 'Click your <strong>player sprite</strong> again. Add a game over check inside the loop — if the player touches the Death barrier, show a message and use <code>break</code> to exit the loop and stop the game:',
+          starter: null,
+          target: '        if touching("Death"):\n            say("Game Over!")\n            break',
+          newLines: ['        if touching("Death"):', '            say("Game Over!")', '            break'],
+          requires: ['touching("Death")', 'say("Game Over!")', 'break']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>. Bounce on the platform to stay alive — fall into the death zone and it\'s game over.<br><br><strong>Challenge:</strong> Add 2 or 3 more Platform sprites at different starting heights so there are always several platforms to land on. Try making them fall at different speeds using different values instead of <code>-2</code>.',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
     }
   ];
 
@@ -430,7 +590,6 @@
     {t:'global',                ins:'global ',                                       detail:'Access a global variable',       kind:'kw'},
     {t:'True',                  ins:'True',                                          detail:'Boolean true',                   kind:'kw'},
     {t:'False',                 ins:'False',                                         detail:'Boolean false',                  kind:'kw'},
-    {t:'pass',                  ins:'pass',                                          detail:'Placeholder — do nothing',       kind:'kw'},
     {t:'break',                 ins:'break',                                         detail:'Exit the loop',                  kind:'kw'},
     {t:'and',                   ins:'and ',                                          detail:'Logical and',                    kind:'kw'},
     {t:'or',                    ins:'or ',                                           detail:'Logical or',                     kind:'kw'},
@@ -488,7 +647,8 @@
     {t:'reset_timer',           ins:'reset_timer()',                               detail:'Reset the timer to 0',           kind:'fn'},
   ];
 
-  var _icsActive = -1; // currently highlighted row in the intellisense dropdown
+  var _icsActive   = -1;  // currently highlighted row in the intellisense dropdown
+  var _tutPollTid  = null; // setInterval id used when a tut step needs sprite-count polling
 
   // ── Runtime state ─────────────────────────────────────────────
   var S = {
@@ -1922,12 +2082,11 @@
       '.ps-tb-code-wrap.ps-tb-no-target{display:none}',
       '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:5px;padding:8px 10px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:11px;line-height:1.7}',
       '.ps-tb-cl{white-space:pre;display:block}',
-      '.ps-tb-cl.old{color:#374151}',            // dim — context already typed
-      '.ps-tb-cl.new{color:#fbbf24;font-weight:600}', // amber — type this now
-      '.ps-tb-cl.new.typed{color:#4ade80}',       // green — correctly typed
-      '.ps-tb-copy{position:absolute;top:5px;right:6px;background:#21262d;border:1px solid #30363d;color:#8b949e;cursor:pointer;padding:2px 7px;border-radius:4px;font-size:10px;font-family:inherit}',
-      '.ps-tb-copy:hover{color:#e6edf3}',
-      '.ps-tb-copy.copied{color:#56d364;border-color:#56d364}',
+      '.ps-tb-cl.old{color:#374151}',
+      '.ps-tb-cl.new{color:#fbbf24;font-weight:600}',
+      '.ps-tb-cl.new.typed{color:#4ade80}',
+      // Prevent selecting or copying the reference code — students must type it themselves
+      '.ps-tb-code-block{user-select:none;-webkit-user-select:none;-moz-user-select:none}',
       // Checklist
       '.ps-tb-checks{padding:6px 10px 2px;flex-shrink:0}',
       '.ps-tb-checks.ps-tb-no-checks{display:none}',
@@ -1996,7 +2155,6 @@
                 '</div>',
                 '<div class="ps-tb-code-wrap ps-tb-no-target">',
                   '<div class="ps-tb-code-block"></div>',
-                  '<button class="ps-tb-copy">Copy</button>',
                 '</div>',
                 '<div class="ps-tb-indent-tip ps-tb-tip-hidden">',
                   '↹ Press <strong>Tab</strong> to indent (on some keyboards the key shows two arrows ↹ instead of "Tab") · 4 spaces per indent level',
@@ -2059,8 +2217,10 @@
       var dd         = _icsEl();
       var icsVisible = dd && !dd.classList.contains('ps-ics-hidden');
 
-      // ── Intellisense key handling (takes priority) ──
+      // ── Escape: dismiss intellisense ──
       if (e.key === 'Escape') { hideICSense(); return; }
+
+      // ── Intellisense navigation (takes priority over Tab / Enter) ──
       if (icsVisible) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -2087,22 +2247,64 @@
         }
       }
 
-      // ── Normal editor behaviour ──
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        var s = ui.editor.selectionStart, v = ui.editor.value;
-        ui.editor.value = v.substring(0, s) + '    ' + v.substring(ui.editor.selectionEnd);
-        ui.editor.selectionStart = ui.editor.selectionEnd = s + 4;
-        saveCurrentCode();
+      // ── Smart backspace: delete a whole indent block (4 spaces) ──
+      // Only fires when the cursor is at an indent boundary (nothing but spaces
+      // between the start of the line and the cursor).
+      if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey &&
+          ui.editor.selectionStart === ui.editor.selectionEnd) {
+        var bs  = ui.editor.selectionStart;
+        var bv  = ui.editor.value;
+        var bls = bv.lastIndexOf('\n', bs - 1) + 1;
+        var bpx = bv.substring(bls, bs); // text on this line before cursor
+        if (/^ +$/.test(bpx)) {
+          e.preventDefault();
+          // Snap to previous 4-space boundary (delete the 'overhang')
+          var del = bpx.length % 4 === 0 ? 4 : bpx.length % 4;
+          del = Math.min(del, bpx.length);
+          ui.editor.setSelectionRange(bs - del, bs);
+          document.execCommand('insertText', false, '');
+          saveCurrentCode();
+          return;
+        }
       }
+
+      // ── Tab: insert 4-space indent ──
+      if (e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault();
+        document.execCommand('insertText', false, '    ');
+        saveCurrentCode();
+        return;
+      }
+
+      // ── Shift+Tab: remove one indent level from the current line ──
+      if (e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault();
+        var ts  = ui.editor.selectionStart;
+        var tv  = ui.editor.value;
+        var tls = tv.lastIndexOf('\n', ts - 1) + 1;
+        var m   = tv.substring(tls).match(/^( {1,4})/);
+        if (m) {
+          var sp = m[1].length;
+          ui.editor.setSelectionRange(tls, tls + sp);
+          document.execCommand('insertText', false, '');
+          // Keep cursor at sensible position (clamp to line start if needed)
+          var newPos = Math.max(tls, ts - sp);
+          ui.editor.setSelectionRange(newPos, newPos);
+          saveCurrentCode();
+        }
+        return;
+      }
+
+      // ── Enter: auto-indent, matching current line + extra level after colon ──
       if (e.key === 'Enter') {
         e.preventDefault();
-        var s2 = ui.editor.selectionStart, v2 = ui.editor.value;
-        var lineStart = v2.lastIndexOf('\n', s2 - 1) + 1;
-        var line = v2.substring(lineStart, s2);
-        var indent = (line.match(/^(\s*)/) || ['', ''])[1];
-        if (line.trimEnd().endsWith(':')) indent += '    ';
-        document.execCommand('insertText', false, '\n' + indent);
+        var es  = ui.editor.selectionStart;
+        var ev  = ui.editor.value;
+        var els = ev.lastIndexOf('\n', es - 1) + 1;
+        var el  = ev.substring(els, es);
+        var ind = (el.match(/^(\s*)/) || ['', ''])[1];
+        if (el.trimEnd().endsWith(':')) ind += '    ';
+        document.execCommand('insertText', false, '\n' + ind);
       }
     });
     ui.editor.addEventListener('input', function () {
@@ -2244,7 +2446,6 @@
     // Code block — highlight new lines in amber, dim context lines
     var codeWrap  = bar.querySelector('.ps-tb-code-wrap');
     var codeBlock = bar.querySelector('.ps-tb-code-block');
-    var copyBtn   = bar.querySelector('.ps-tb-copy');
     if (step.target) {
       codeWrap.classList.remove('ps-tb-no-target');
       var newSet  = {};
@@ -2255,8 +2456,6 @@
                line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
                '</span>';
       }).join('');
-      copyBtn.textContent = 'Copy';
-      copyBtn.classList.remove('copied');
     } else {
       codeWrap.classList.add('ps-tb-no-target');
       codeBlock.innerHTML = '';
@@ -2302,6 +2501,19 @@
       }
     }
 
+    // Highlight a TurboWarp / PyScratch UI element if the step asks for it
+    if (_tutPollTid) { clearInterval(_tutPollTid); _tutPollTid = null; }
+    if (step.highlight) {
+      showHighlight(step.highlight, step.highlightLabel || '');
+    } else {
+      clearHighlight();
+    }
+
+    // Poll sprite count for steps that wait for the student to add a sprite
+    if (step.requiresSpriteCount !== undefined) {
+      _tutPollTid = setInterval(checkTutBar, 600);
+    }
+
     // Scroll bar to top
     bar.scrollTop = 0;
 
@@ -2318,7 +2530,8 @@
     if (!bar) return;
 
     var allOk = true;
-    // Update each checklist row
+
+    // ── Code string checks ────────────────────────────────────────
     reqs.forEach(function (r) {
       var found = code.indexOf(r) !== -1;
       if (!found) allOk = false;
@@ -2327,33 +2540,69 @@
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
         ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
       }
-      // Also turn the matching new-line span green when found
-      var spans = bar.querySelectorAll('.ps-tb-cl.new');
-      spans.forEach(function (sp) {
+      // Turn matching new-line spans green when found
+      bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
         if (sp.textContent.indexOf(r) !== -1) {
-          if (found) sp.classList.add('typed'); else sp.classList.remove('typed');
+          sp.classList.toggle('typed', found);
         }
       });
     });
 
+    // ── Sprite count check ────────────────────────────────────────
+    if (step.requiresSpriteCount !== undefined) {
+      var spriteCount = 0;
+      try { spriteCount = vm.runtime.targets.filter(function (t) { return !t.isStage; }).length; } catch(e) {}
+      var spriteOk = spriteCount >= step.requiresSpriteCount;
+      if (!spriteOk) allOk = false;
+
+      // Update the sprite-count checklist row (keyed by data-req="__sprite__")
+      var scEl = bar.querySelector('.ps-tb-ck[data-req="__sprite__"]');
+      if (!scEl) {
+        // First time: inject the row into the checks container
+        var checksEl = bar.querySelector('.ps-tb-checks');
+        checksEl.classList.remove('ps-tb-no-checks');
+        scEl = document.createElement('div');
+        scEl.className = 'ps-tb-ck ck-wait';
+        scEl.dataset.req = '__sprite__';
+        scEl.innerHTML = '<i class="ps-tb-ck-icon">⏳</i><span>' +
+          (step.requiresSpriteHint || 'Add a new sprite in the sprite panel') + '</span>';
+        checksEl.insertBefore(scEl, checksEl.firstChild);
+      }
+      scEl.className = 'ps-tb-ck ' + (spriteOk ? 'ck-ok' : 'ck-wait');
+      scEl.querySelector('.ps-tb-ck-icon').textContent = spriteOk ? '✓' : '⏳';
+
+      // Clear the highlight once the sprite is added
+      if (spriteOk && step.highlight) clearHighlight();
+    }
+
+    // ── Footer status ─────────────────────────────────────────────
     var nextBtn = bar.querySelector('[data-tb="next"]');
     var validEl = bar.querySelector('.ps-tb-valid');
-    nextBtn.disabled = (reqs.length > 0 && !allOk);
-    if (reqs.length === 0) {
+    var hasAnyReq = reqs.length > 0 || step.requiresSpriteCount !== undefined;
+    nextBtn.disabled = hasAnyReq && !allOk;
+    if (!hasAnyReq) {
       validEl.textContent = '';
       validEl.className   = 'ps-tb-valid';
     } else if (allOk) {
       validEl.textContent = '✓ All done — click Next';
       validEl.className   = 'ps-tb-valid tb-ok';
     } else {
-      var done = reqs.filter(function (r) { return code.indexOf(r) !== -1; }).length;
-      validEl.textContent = done + ' / ' + reqs.length + ' lines typed';
+      var codeReqsDone = reqs.filter(function (r) { return code.indexOf(r) !== -1; }).length;
+      var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0);
+      var spriteDone = 0;
+      if (step.requiresSpriteCount !== undefined) {
+        try { spriteDone = vm.runtime.targets.filter(function(t){return !t.isStage;}).length >= step.requiresSpriteCount ? 1 : 0; } catch(e){}
+      }
+      var done  = codeReqsDone + spriteDone;
+      validEl.textContent = done + ' / ' + total + ' tasks complete';
       validEl.className   = 'ps-tb-valid';
     }
   }
 
   function exitTutorial() {
     S.activeTut = null;
+    if (_tutPollTid) { clearInterval(_tutPollTid); _tutPollTid = null; }
+    clearHighlight();
     var bar = document.getElementById('ps-tut-bar');
     if (bar) bar.classList.add('ps-tb-hidden');
   }
@@ -2480,21 +2729,6 @@
 
     // Exit button
     bar.querySelector('.ps-tb-exit').addEventListener('click', exitTutorial);
-
-    // Copy button
-    bar.querySelector('.ps-tb-copy').addEventListener('click', function () {
-      if (!S.activeTut) return;
-      var step = TUTORIALS[S.activeTut.tutIdx].steps[S.activeTut.stepIdx];
-      if (!step.target) return;
-      var btn = bar.querySelector('.ps-tb-copy');
-      try {
-        navigator.clipboard.writeText(step.target).then(function () {
-          btn.textContent = 'Copied ✓';
-          btn.classList.add('copied');
-          setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
-        }).catch(function () {});
-      } catch (e) {}
-    });
 
     // Prev / Next buttons
     bar.querySelector('[data-tb="prev"]').addEventListener('click', function () {
@@ -3171,6 +3405,8 @@
     'help':            '#ps-help-btn',
     'tutorials':    '#ps-tut-btn',
     'console':      '#ps-console',
+    // TurboWarp sprite panel — the action-menu + buttons at the bottom-left
+    'add-sprite-btn': '[class*="action-menu_"],[class*="actionMenu_"]',
   };
 
   // Named targets for PS_HIDE / PS_SHOW postMessages.
