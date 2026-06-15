@@ -619,6 +619,63 @@
       ]
     },
     {
+      emoji: '🦆',
+      title: 'Duck Hunt',
+      desc: 'A duck zigzags around the screen bouncing off every edge. Click it to shoot — score goes up and the duck reappears at a random new spot with a new speed.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'A Duck Hunt clone! The duck moves around the stage bouncing off every edge using two velocity variables. Click the duck with your mouse to shoot it — the score goes up and the duck teleports to a new random location at a new speed.<br><br>You only need <strong>one sprite</strong> — the duck itself. The on-screen Score counter is created automatically the first time you call <code>set_variable("Score", 0)</code>.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Velocity variables and game loop',
+          text: '<code>vx</code> controls left/right speed, <code>vy</code> controls up/down speed. Both are global so <code>when_clicked</code> can change them too. <code>go_to_xy(0, 50)</code> places the duck centre-screen at the start:',
+          starter: '',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
+          newLines: ['vx = 3', 'vy = 2', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    set_rotation_style("left-right")', '    go_to_xy(0, 50)', '    while True:'],
+          requires: ['vx = 3', 'vy = 2', 'def game_start():', 'global vx, vy', 'set_variable("Score"', 'while True:']
+        },
+        {
+          title: 'Make the duck fly',
+          text: 'Each frame, move the duck by its current velocity. Add both lines inside the <code>while True:</code> loop:',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          newLines: ['        change_x(vx)', '        change_y(vy)'],
+          requires: ['change_x(vx)', 'change_y(vy)']
+        },
+        {
+          title: 'Bounce off the edges',
+          text: 'When the duck reaches the left or right edge, flip <code>vx</code> — multiplying by <code>-1</code> reverses the sign so it bounces back. Do the same for top and bottom with <code>vy</code>:',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          newLines: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1', '        if y_position() > 150 or y_position() < -130:', '            vy = vy * -1'],
+          requires: ['x_position() > 220', 'x_position() < -220', 'vx = vx * -1', 'y_position() > 150', 'vy = vy * -1']
+        },
+        {
+          title: 'Make the duck face where it\'s flying',
+          text: 'After flipping <code>vx</code>, check its new sign to face the duck the right way. <code>set_rotation_style("left-right")</code> (already set) means the sprite only ever flips — it never tilts. Add these lines <strong>inside</strong> the <code>x_position</code> block, after <code>vx = vx * -1</code>:',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          newLines: ['            if vx > 0:', '                point_in_direction(90)', '            else:', '                point_in_direction(-90)'],
+          requires: ['vx > 0', 'point_in_direction(90)', 'point_in_direction(-90)']
+        },
+        {
+          title: 'Shoot the duck on click',
+          text: '<code>def when_clicked():</code> runs every time the player clicks the sprite. Hide the duck (shot!), wait briefly, then send it to a random new location at a random new speed so every duck is different to track:',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          target: 'def when_clicked():\n    global vx, vy\n    change_variable("Score", 1)\n    hide()\n    wait(0.8)\n    go_to_xy(pick_random(-180, 180), pick_random(0, 120))\n    vx = pick_random(3, 6)\n    vy = pick_random(2, 4)\n    show()',
+          newLines: ['def when_clicked():', '    global vx, vy', '    change_variable("Score", 1)', '    hide()', '    wait(0.8)', '    go_to_xy(pick_random(-180, 180), pick_random(0, 120))', '    vx = pick_random(3, 6)', '    vy = pick_random(2, 4)', '    show()'],
+          requires: ['def when_clicked():', 'change_variable("Score"', 'hide()', 'wait(0.8)', 'go_to_xy(pick_random(', 'vx = pick_random(', 'show()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>, then click the duck as fast as you can! Each hit scores a point and the duck respawns faster and in a new spot.<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Add a <code>shots = 3</code> variable — each click costs a shot, game over at 0 (<em>hint: use <code>set_variable("Shots", shots)</code></em>)</li><li>Make the duck speed up after each shot — add a small amount to <code>vx</code> and <code>vy</code> inside <code>when_clicked</code></li><li>Add a timer: use <code>timer()</code> to display how long the player survived before missing</li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
       emoji: '⚔️',
       title: 'RPG Survivor',
       desc: 'Enemies clone themselves and walk toward the player. Dodge with arrow keys, attack with space. Score goes up for each kill — survive as long as you can!',
