@@ -617,6 +617,102 @@
           starter: null, target: null, newLines: [], requires: []
         }
       ]
+    },
+    {
+      emoji: '⚔️',
+      title: 'RPG Survivor',
+      desc: 'Enemies clone themselves and walk toward the player. Dodge with arrow keys, attack with space. Score goes up for each kill — survive as long as you can!',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'An RPG survivor game using clones! Enemy clones spawn from the top of the screen and walk toward the player. Touching an enemy costs HP — attack back with <strong>space</strong> to kill them and earn score.<br><br>Before you start, make sure your sprite is named <strong>Player</strong> exactly — the enemy code looks for that name when it checks collisions.<br><br>The <code>HP</code> and <code>Score</code> displays on screen are created automatically by your code using <code>set_variable()</code> — no need to touch TurboWarp\'s menus.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Player: HP variable and game loop',
+          text: 'On your <strong>Player</strong> sprite, type this. <code>hp = 3</code> is a Python variable that tracks health. <code>set_variable("HP", hp)</code> creates a <em>HP</em> counter on stage and keeps it in sync — calling it once is enough to make it appear. The same creates <em>Score</em>:',
+          starter: null,
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:',
+          newLines: ['hp = 3', '', 'def game_start():', '    global hp', '    set_variable("HP", hp)', '    set_variable("Score", 0)', '    set_rotation_style("left-right")', '    while True:'],
+          requires: ['hp = 3', 'def game_start():', 'global hp', 'set_variable("HP"', 'set_variable("Score"', 'while True:']
+        },
+        {
+          title: 'Player: left and right movement',
+          text: 'Add left and right movement inside the <code>while True:</code> loop. <code>point_in_direction</code> makes the sprite face the right way when it flips:',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:',
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          newLines: ['        if key_pressed("right"):', '            change_x(4)', '            point_in_direction(90)', '        if key_pressed("left"):', '            change_x(-4)', '            point_in_direction(-90)'],
+          requires: ['key_pressed("right")', 'change_x(4)', 'key_pressed("left")', 'change_x(-4)']
+        },
+        {
+          title: 'Player: up and down movement',
+          text: 'Add up and down movement so the player can dodge in all four directions:',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
+          newLines: ['        if key_pressed("up"):', '            change_y(4)', '        if key_pressed("down"):', '            change_y(-4)'],
+          requires: ['key_pressed("up")', 'change_y(4)', 'key_pressed("down")', 'change_y(-4)']
+        },
+        {
+          title: 'Player: take damage from enemies',
+          text: 'When the player touches an enemy clone, reduce HP, update the display, then teleport to a random position. Add this after the movement checks inside the loop:',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
+          target: '        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))',
+          newLines: ['        if touching("Enemy"):', '            hp = hp - 1', '            set_variable("HP", hp)', '            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))'],
+          requires: ['touching("Enemy")', 'hp = hp - 1', 'set_variable("HP"', 'go_to_xy(pick_random(']
+        },
+        {
+          title: 'Player: game over at zero HP',
+          text: 'Inside the <code>if touching("Enemy"):</code> block, after updating HP, check if the player has run out of health:',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))',
+          target: '        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))\n            if hp <= 0:\n                say("Game Over!")\n                stop()',
+          newLines: ['            if hp <= 0:', '                say("Game Over!")', '                stop()'],
+          requires: ['hp <= 0', 'say("Game Over!")', 'stop()']
+        },
+        {
+          title: 'Player: attack with space',
+          text: 'Pressing <strong>space</strong> broadcasts <code>"attack"</code> — enemy clones will listen for this and delete themselves if they are touching the player. Add this at the very end of the <code>while True</code> loop:',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))\n            if hp <= 0:\n                say("Game Over!")\n                stop()',
+          target: '        if key_pressed("space"):\n            broadcast("attack")',
+          newLines: ['        if key_pressed("space"):', '            broadcast("attack")'],
+          requires: ['key_pressed("space")', 'broadcast("attack")']
+        },
+        {
+          title: 'Add the Enemy sprite',
+          text: 'Click the <strong>+</strong> button to add a new sprite. <strong>Name it exactly <code>Enemy</code></strong> — the player code uses <code>touching("Enemy")</code> to detect collisions, so the name must match exactly.',
+          starter: null, target: null, newLines: [], requires: [],
+          highlight: 'add-sprite-btn', highlightLabel: 'Add sprite here',
+          requiresSpriteCount: 2, requiresSpriteHint: 'Add a new sprite and name it "Enemy"'
+        },
+        {
+          title: 'Enemy: spawn clones every 2 seconds',
+          text: 'Click your <strong>Enemy</strong> sprite. Clear the default code and type this. The original sprite stays hidden — it only exists to create clones every 2 seconds:',
+          starter: null,
+          target: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(2)',
+          newLines: ['def game_start():', '    hide()', '    while True:', '        create_clone()', '        wait(2)'],
+          requires: ['def game_start():', 'hide()', 'create_clone()', 'wait(2)']
+        },
+        {
+          title: 'Enemy: clone appears and walks toward player',
+          text: 'Each clone spawns at a random x position off the top of the screen, then chases the player. Add this below <code>game_start</code> (leave a blank line between them):',
+          starter: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(2)',
+          target: 'def when_I_start_as_a_clone():\n    go_to_xy(pick_random(-240, 240), 190)\n    show()\n    while True:\n        point_towards("Player")\n        move_steps(2)',
+          newLines: ['def when_I_start_as_a_clone():', '    go_to_xy(pick_random(-240, 240), 190)', '    show()', '    while True:', '        point_towards("Player")', '        move_steps(2)'],
+          requires: ['def when_I_start_as_a_clone():', 'go_to_xy(pick_random(', 'show()', 'point_towards("Player")', 'move_steps(2)']
+        },
+        {
+          title: 'Enemy: die when attacked',
+          text: 'Each clone listens for the <code>"attack"</code> broadcast. If it receives it <em>while touching the player</em>, it adds 1 to the Score Scratch variable then deletes itself. <code>change_variable</code> adds to a Scratch variable directly without needing a Python <code>global</code>:',
+          starter: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(2)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-240, 240), 190)\n    show()\n    while True:\n        point_towards("Player")\n        move_steps(2)',
+          target: 'def when_message_received(message):\n    if message == "attack":\n        if touching("Player"):\n            change_variable("Score", 1)\n            delete_clone()',
+          newLines: ['def when_message_received(message):', '    if message == "attack":', '        if touching("Player"):', '            change_variable("Score", 1)', '            delete_clone()'],
+          requires: ['def when_message_received(message):', 'message == "attack"', 'touching("Player")', 'change_variable("Score"', 'delete_clone()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>. Move with arrow keys and press <strong>space</strong> when an enemy is right next to you to kill it.<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Make enemies spawn faster as Score increases — use <code>get_variable("Score")</code> to read the current score and reduce the <code>wait()</code></li><li>Make enemies move faster as the game goes on — increase <code>move_steps</code> based on Score</li><li>Add a second type of enemy with a different speed or size using another sprite and <code>create_clone_of("FastEnemy")</code></li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
     }
   ];
 
@@ -690,6 +786,12 @@
     {t:'on_edge',               ins:'on_edge()',                                    detail:'True when touching edge',        kind:'fn'},
     {t:'timer',                 ins:'timer()',                                      detail:'Seconds since last reset',       kind:'fn'},
     {t:'reset_timer',           ins:'reset_timer()',                               detail:'Reset the timer to 0',           kind:'fn'},
+    // Scratch variables
+    {t:'set_variable',          ins:'set_variable("", 0)',                          detail:'Set a Scratch variable value',   kind:'fn', back:4},
+    {t:'get_variable',          ins:'get_variable("")',                             detail:'Get a Scratch variable value',   kind:'fn', back:2},
+    {t:'change_variable',       ins:'change_variable("", 1)',                       detail:'Add to a Scratch variable',      kind:'fn', back:4},
+    {t:'broadcast',             ins:'broadcast("")',                                detail:'Send a message to all handlers', kind:'fn', back:2},
+    {t:'broadcast_and_wait',    ins:'broadcast_and_wait("")',                       detail:'Send message and wait for all',  kind:'fn', back:2},
   ];
 
   var _icsActive   = -1;  // currently highlighted row in the intellisense dropdown
@@ -706,6 +808,7 @@
     lastAnswer:       '',  // last answer from ask()
     spriteCode:       {},   // spriteName → [{ id, name, code }]
     handlers:         {},   // spriteName → { event → { fn: SkFn, tgen: Number } }
+    deadClones:       new Set(), // target IDs deleted mid-run; all their coroutines stop
     activeSprite:     null,
     activeSpriteId:   null, // target.id of the active sprite (stable across renames)
     activeThreadIdx:  0,
@@ -877,6 +980,10 @@
       // Events — broadcasts (hat-block functions are defined by the student, not here)
       'def broadcast(m): return _psc("broadcast",m)',
       'def broadcast_and_wait(m): return _psc("broadcast_and_wait",m)',
+      // Scratch variables — sync Python values with the on-screen Scratch display
+      'def set_variable(n,v): return _psc("set_variable",n,v)',
+      'def get_variable(n): return _psc("get_variable",n)',
+      'def change_variable(n,v): return _psc("change_variable",n,v)',
       // Sound
       'def play_sound(n): return _psc("play_sound",n)',
       'def play_sound_until_done(n): return _psc("play_sound_until_done",n)',
@@ -957,11 +1064,14 @@
     // __ps_call(fn, sprite, tgen, a0, a1, a2)
     // tgen: the calling thread's own generation integer, passed from __ps_tgen__
     Sk.builtins['__ps_call'] = new Sk.builtin.func(function (fn, sp, tgen, a0, a1, a2) {
-      var g = Sk.ffi.remapToJs(tgen);
-      if (!S.running || S.gen !== g) throw new Error('__pyscratch_stopped__');
+      var g      = Sk.ffi.remapToJs(tgen);
+      var spName = Sk.ffi.remapToJs(sp);
+      if (!S.running || S.gen !== g || S.deadClones.has(spName)) {
+        throw new Error('__pyscratch_stopped__');
+      }
       return skVal(callAPI(
         Sk.ffi.remapToJs(fn),
-        Sk.ffi.remapToJs(sp),
+        spName,
         [jsArg(a0), jsArg(a1), jsArg(a2)]
       ));
     });
@@ -1090,11 +1200,81 @@
     return s;
   }
 
+  // ── Scratch variable bridge ───────────────────────────────────
+  // Finds a scalar variable by name across all targets.
+  // Stage (global) variables are checked first; sprite-local variables follow.
+  // Find an existing scalar variable by name (stage-first).
+  function findVariable(name) {
+    var targets = S.vm && S.vm.runtime && S.vm.runtime.targets;
+    if (!targets) return null;
+    var nameStr = String(name);
+    var stage = null, sprites = [];
+    targets.forEach(function(t) { if (t.isStage) stage = t; else sprites.push(t); });
+    var ordered = stage ? [stage].concat(sprites) : sprites;
+    for (var i = 0; i < ordered.length; i++) {
+      var vars = ordered[i].variables;
+      for (var id in vars) {
+        var v = vars[id];
+        if (v && v.name === nameStr && (v.type === '' || v.type === undefined)) return v;
+      }
+    }
+    return null;
+  }
+
+  // Find a variable or create it on the stage if it doesn't exist.
+  // Also registers a monitor block so the on-screen counter appears automatically —
+  // students don't need to touch TurboWarp's Variables panel at all.
+  function findOrCreateVariable(name, initialValue) {
+    var existing = findVariable(name);
+    if (existing) return existing;
+
+    var rt = S.vm && S.vm.runtime;
+    if (!rt) return null;
+    var stage = rt.targets && rt.targets.find(function(t) { return t.isStage; });
+    if (!stage) return null;
+
+    var nameStr = String(name);
+    // Deterministic ID so repeated calls are idempotent
+    var vid = 'pyscratch_v_' + nameStr.toLowerCase().replace(/\W/g, '_');
+    var v = { id: vid, name: nameStr,
+              value: (initialValue !== undefined && initialValue !== null) ? initialValue : 0,
+              type: '', isCloud: false };
+    stage.variables[vid] = v;
+
+    // Register a monitor block so the variable shows on stage.
+    // TurboWarp renders variable monitors from runtime.monitorBlocks.
+    try {
+      var mb = rt.monitorBlocks;
+      if (mb) {
+        var blockDef = {
+          id: vid, opcode: 'data_variable',
+          inputs: {}, fields: { VARIABLE: { name: 'VARIABLE', value: nameStr, id: vid } },
+          next: null, topLevel: true, parentId: null, shadow: false,
+          x: 5, y: 5, isMonitored: true, visible: true
+        };
+        if (typeof mb.createBlock === 'function') {
+          mb.createBlock(blockDef);
+        } else if (mb._blocks) {
+          mb._blocks[vid] = blockDef;
+        }
+        // Some TurboWarp builds expose changeBlock for monitor visibility
+        if (typeof mb.changeBlock === 'function') {
+          try { mb.changeBlock({ id: vid, element: 'checkbox', value: true }); } catch(e2) {}
+        }
+      }
+    } catch(e) {}
+
+    try { rt.requestUpdateMonitors(); } catch(e) {}
+    return v;
+  }
+
   // Functions that work without a sprite target.
   var NOTARGET_FNS = {
     // Stage / backdrop
     set_backdrop:1, next_backdrop:1, previous_backdrop:1,
     backdrop_name:1, backdrop_number:1,
+    // Variables
+    set_variable:1, get_variable:1, change_variable:1,
     // Sensing — global state
     mouse_down:1, ask:1, answer:1,
     timer:1, reset_timer:1,
@@ -1384,16 +1564,17 @@
         // target.isClone is a getter (!isOriginal) in TurboWarp; check both to
         // be safe across Scratch VM versions.
         if (target && (target.isClone || target.isOriginal === false)) {
+          // Mark dead BEFORE disposing so every other coroutine running for this
+          // clone (e.g. a when_I_start_as_a_clone movement loop that is currently
+          // suspended) sees the tombstone and stops at its next __ps_call.
+          S.deadClones.add(spriteName);
           try {
-            // disposeTarget handles its own renderer + thread cleanup — no need
-            // to call stopForTarget first (that can cause side-effects).
             if (typeof S.vm.runtime.disposeTarget === 'function') {
               S.vm.runtime.disposeTarget(target);
             } else if (typeof S.vm.runtime.removeTarget === 'function') {
               S.vm.runtime.removeTarget(target);
             }
           } catch(e) {}
-          // Terminate this Python thread — same mechanism as the gen-check throw.
           throw new Error('__pyscratch_stopped__');
         }
         break;
@@ -1501,6 +1682,36 @@
       case 'log':     return Math.log10 ? Math.log10(Number(a)) : Math.log(Number(a)) / Math.LN10;
       case 'e_to':    return Math.exp(Number(a));
       case 'ten_to':  return Math.pow(10, Number(a));
+
+      // ── Scratch variables ───────────────────────────────────────
+      // set_variable(name, value) — write to an existing Scratch variable
+      // get_variable(name)        — read its current value
+      // change_variable(name, n)  — add n to its value
+      // These operate on stage-global variables first (searched by name).
+      // The monitor refreshes automatically so the on-screen display updates.
+      case 'set_variable': {
+        // Creates the variable + its on-screen monitor if they don't exist yet.
+        var sv = findOrCreateVariable(a, b);
+        if (sv) {
+          sv.value = (b !== null && b !== undefined) ? b : 0;
+          try { S.vm.runtime.requestUpdateMonitors(); } catch(e) {}
+        }
+        break;
+      }
+      case 'get_variable': {
+        // Read-only: don't auto-create (return 0 as a safe default).
+        var gv = findVariable(a);
+        return gv ? Number(gv.value) : 0;
+      }
+      case 'change_variable': {
+        // Creates the variable if it doesn't exist yet, then increments.
+        var cv = findOrCreateVariable(a, 0);
+        if (cv) {
+          cv.value = (Number(cv.value) || 0) + (Number(b) || 0);
+          try { S.vm.runtime.requestUpdateMonitors(); } catch(e) {}
+        }
+        break;
+      }
 
       default:
         console.warn('PyScratch: unknown API:', fn);
@@ -1720,8 +1931,9 @@
   // is the single place that calls both stopAll() + the original TurboWarp stop.
   // Calling vm.stopAll from here would cause infinite recursion.
   function stopAll() {
-    S.running = false;
-    S.gen++;   // sleeping threads see gen mismatch → throw __pyscratch_stopped__
+    S.running    = false;
+    S.gen++;              // sleeping threads see gen mismatch → throw __pyscratch_stopped__
+    S.deadClones = new Set(); // clear per-clone tombstones for a fresh run
     updateRunState(false);
   }
 
@@ -2918,6 +3130,11 @@
         { code:'reset_timer()', desc:'Reset the timer back to zero.' },
         { code:'current("year")', desc:'Return the current year, month, date, day of week, hour, minute, or second.' },
         { code:'days_since_2000()', desc:'Floating-point number of days elapsed since 1 January 2000.' },
+      ]},
+      { cat:'vars', title:'Variables', items:[
+        { code:'set_variable("Score", 0)', desc:'Set a Scratch stage variable by name. If the variable does not exist yet it is created automatically and an on-screen counter appears — no TurboWarp menus needed.' },
+        { code:'get_variable("Score")', desc:'Read the current value of a Scratch stage variable. Returns 0 if the variable does not exist.' },
+        { code:'change_variable("Score", 1)', desc:'Add a number to a Scratch stage variable — shortcut for get then set. Creates the variable if needed. Use negative numbers to subtract.' },
       ]},
       { cat:'ops', title:'Operators', items:[
         { code:'pick_random(1, 10)', desc:'Random integer between the two values (inclusive). Returns a float if either value is a float.' },
