@@ -390,6 +390,51 @@
       ]
     },
     {
+      id: 'bouncing-ball',
+      title: 'Bouncing Ball',
+      emoji: '🎱',
+      desc: 'Make a sprite bounce around the stage by tracking its speed with variables and reversing direction when it hits a wall.',
+      steps: [
+        {
+          title: 'Set up the velocity variables',
+          text: 'A bouncing ball needs to track speed in both directions. <code>vx</code> is horizontal speed (positive = right), <code>vy</code> is vertical speed (positive = up). Type both at the top of the editor:',
+          starter: '',
+          target: 'vx = 3\nvy = 3\n\ndef game_start():',
+          newLines: ['vx = 3', 'vy = 3', '', 'def game_start():'],
+          requires: ['vx = 3', 'vy = 3', 'def game_start():']
+        },
+        {
+          title: 'Move every frame',
+          text: 'Add the game loop. Each frame, move the sprite by <code>vx</code> horizontally and <code>vy</code> vertically. <code>global vx, vy</code> lets the loop change both variables later when bouncing:',
+          starter: 'vx = 3\nvy = 3\n\ndef game_start():',
+          target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          newLines: ['    global vx, vy', '    while True:', '        change_x(vx)', '        change_y(vy)'],
+          requires: ['    global vx, vy', '    while True:', '        change_x(vx)', '        change_y(vy)']
+        },
+        {
+          title: 'Bounce off left and right walls',
+          text: 'When the ball hits the left or right edge, reverse its horizontal direction by flipping the sign of <code>vx</code>. Multiplying by <code>-1</code> turns 3 into -3 and vice versa:',
+          starter: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
+          newLines: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
+          requires: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1']
+        },
+        {
+          title: 'Bounce off top and bottom',
+          text: 'Do the same for the top and bottom edges — flip <code>vy</code> when the ball goes above or below the stage:',
+          starter: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
+          target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 160 or y_position() < -160:\n            vy = vy * -1',
+          newLines: ['        if y_position() > 160 or y_position() < -160:', '            vy = vy * -1'],
+          requires: ['        if y_position() > 160 or y_position() < -160:', '            vy = vy * -1']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click the <strong>green flag ▶</strong>. The ball should bounce around forever without escaping.<br><br><strong>Challenge:</strong> Change <code>vx = 3</code> and <code>vy = 3</code> to different numbers so the ball takes a less predictable path. Try <code>vx = 4</code> and <code>vy = 3</code>. Can you add a second bouncing sprite?',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+    {
       id: 'flappy-bird',
       title: 'Flappy Bird',
       emoji: '🐦',
