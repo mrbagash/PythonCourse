@@ -157,7 +157,7 @@
           starter: '',
           target: 'def game_start():\n    while True:',
           newLines: ['def game_start():', '    while True:'],
-          requires: ['def game_start():', 'while True:']
+          requires: ['def game_start():', '    while True:']
         },
         {
           title: 'Your first if statement',
@@ -165,7 +165,7 @@
           starter: 'def game_start():\n    while True:',
           target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)'],
-          requires: ['if key_pressed("right"):', 'change_x(5)']
+          requires: ['        if key_pressed("right"):', '            change_x(5)']
         },
         {
           title: 'A second if for the left key',
@@ -173,7 +173,7 @@
           starter: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
           target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)',
           newLines: ['        if key_pressed("left"):', '            change_x(-5)'],
-          requires: ['if key_pressed("left"):', 'change_x(-5)']
+          requires: ['        if key_pressed("left"):', '            change_x(-5)']
         },
         {
           title: '✅ Try it!',
@@ -194,7 +194,7 @@
           starter: '',
           target: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           newLines: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
-          requires: ['for i in range(5):', 'change_x(30)', 'wait(0.3)']
+          requires: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)']
         },
         {
           title: 'Use the loop variable',
@@ -202,7 +202,7 @@
           starter: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           target: 'def game_start():\n    for i in range(5):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
           newLines: ['        say(str(i))'],
-          requires: ['say(str(i))']
+          requires: ['        say(str(i))']
         },
         {
           title: 'range() with a start and end',
@@ -231,7 +231,7 @@
           starter: '',
           target: 'def game_start():\n    count = 0',
           newLines: ['def game_start():', '    count = 0'],
-          requires: ['def game_start():', 'count = 0']
+          requires: ['def game_start():', '    count = 0']
         },
         {
           title: 'A while loop with a condition',
@@ -239,7 +239,7 @@
           starter: 'def game_start():\n    count = 0',
           target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
           newLines: ['    while count < 5:', '        change_x(25)', '        count = count + 1', '        wait(0.2)'],
-          requires: ['while count < 5:', 'count = count + 1', 'wait(0.2)']
+          requires: ['    while count < 5:', '        count = count + 1', '        wait(0.2)']
         },
         {
           title: 'Code after the loop',
@@ -247,7 +247,7 @@
           starter: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
           target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)\n    say("Done!")',
           newLines: ['    say("Done!")'],
-          requires: ['say("Done!")']
+          requires: ['    say("Done!")']
         },
         {
           title: '✅ Try it!',
@@ -268,7 +268,7 @@
           starter: '',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:'],
-          requires: ['def game_start():', 'set_rotation_style("left-right")', 'while True:']
+          requires: ['def game_start():', '    set_rotation_style("left-right")', '    while True:']
         },
         {
           title: 'Move right',
@@ -276,7 +276,7 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)'],
-          requires: ['if key_pressed("right"):', 'change_x(5)', 'point_in_direction(90)']
+          requires: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)']
         },
         {
           title: 'Move left',
@@ -284,7 +284,7 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           newLines: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)'],
-          requires: ['if key_pressed("left"):', 'change_x(-5)', 'point_in_direction(-90)']
+          requires: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)']
         },
         {
           title: '✅ Try it!',
@@ -356,7 +356,7 @@
           starter: 'vy = 0\n\ndef game_start():',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
           newLines: ['    global vy', '    while True:'],
-          requires: ['global vy', 'while True:']
+          requires: ['    global vy', '    while True:']
         },
         {
           title: 'Apply gravity',
@@ -364,7 +364,7 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
           newLines: ['        vy = vy - 0.5', '        change_y(vy)'],
-          requires: ['vy = vy - 0.5', 'change_y(vy)']
+          requires: ['        vy = vy - 0.5', '        change_y(vy)']
         },
         {
           title: 'Add a floor',
@@ -372,7 +372,7 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
           newLines: ['        if y_position() < -150:', '            vy = 0', '            set_y(-150)'],
-          requires: ['y_position() < -150', 'set_y(-150)']
+          requires: ['        if y_position() < -150:', '            set_y(-150)']
         },
         {
           title: 'Jumping',
@@ -380,7 +380,7 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)\n        if key_pressed("up") and y_position() <= -149:\n            vy = 8',
           newLines: ['        if key_pressed("up") and y_position() <= -149:', '            vy = 8'],
-          requires: ['key_pressed("up")', 'vy = 8']
+          requires: ['        if key_pressed("up")', '            vy = 8']
         },
         {
           title: '✅ Try it!',
@@ -409,7 +409,7 @@
           starter: 'vy = 0\n\ndef game_start():',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)',
           newLines: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)'],
-          requires: ['global vy', 'while True:', 'vy = vy - 0.3', 'change_y(vy)']
+          requires: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)']
         },
         {
           title: 'Add a floor and ceiling',
@@ -490,7 +490,7 @@
           starter: 'vy = 8\n\ndef game_start():',
           target: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)',
           newLines: ['    global vy', '    while True:', '        vy = vy - 0.4', '        change_y(vy)'],
-          requires: ['global vy', 'while True:', 'vy = vy - 0.4', 'change_y(vy)']
+          requires: ['    global vy', '    while True:', '        vy = vy - 0.4', '        change_y(vy)']
         },
         {
           title: 'Bounce off the floor',
@@ -2052,35 +2052,35 @@
       '.ps-thead button:hover{color:var(--ps-text-strong,#ccc)}',
       '.ps-tgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;overflow-y:auto}',
       '.ps-tcard{background:var(--ps-panel-2,#18182a);border:1px solid var(--ps-border-strong,#3f3f5a);border-radius:8px;padding:14px 16px;cursor:default;transition:border-color .12s}',
-      '.ps-tcard:hover{border-color:var(--ps-tut-accent,#7c5fcf)}',
+      '.ps-tcard:hover{border-color:var(--ps-accent,#7c5fcf)}',
       '.ps-tcard-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}',
       '.ps-tcard-emoji{font-size:22px;line-height:1}',
       '.ps-tcard-title{font-size:13px;font-weight:700;color:var(--ps-text-strong,#fff)}',
       '.ps-tcard-desc{font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.5;margin-bottom:10px}',
-      '.ps-tcard-start{display:block;width:100%;background:var(--ps-tut-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
+      '.ps-tcard-start{display:block;width:100%;background:var(--ps-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
       '.ps-tcard-start:hover{opacity:.85}',
 
       // Tutorial bar (inline, above the editor)
-      '#ps-tut-bar{background:#181825;border-bottom:2px solid var(--ps-tut-accent,#7c5fcf);display:flex;flex-direction:column;flex-shrink:0;max-height:54vh;overflow-y:auto}',
+      '#ps-tut-bar{background:var(--ps-panel-2,#18182a);border-bottom:2px solid var(--ps-accent,#7c5fcf);display:flex;flex-direction:column;flex-shrink:0;max-height:26vh;overflow-y:auto}',
       '#ps-tut-bar.ps-tb-hidden{display:none}',
-      '.ps-tb-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1e1e2e;border-bottom:1px solid #2a2a44;flex-shrink:0}',
-      '.ps-tb-tut-name{font-size:11px;font-weight:700;color:#a78bfa;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.ps-tb-head{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--ps-panel,#1e1e2e);border-bottom:1px solid var(--ps-border,#2a2a44);flex-shrink:0}',
+      '.ps-tb-tut-name{font-size:10px;font-weight:700;color:var(--ps-accent,#a78bfa);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.ps-tb-stepcount{font-size:10px;color:var(--ps-muted,#6a6a8a);white-space:nowrap;flex-shrink:0}',
-      '.ps-tb-exit{background:none;border:1px solid #45456a;color:var(--ps-muted,#888);cursor:pointer;padding:2px 7px;border-radius:4px;font-size:10px;font-family:inherit;flex-shrink:0}',
-      '.ps-tb-exit:hover{color:#fff;border-color:#888}',
-      '.ps-tb-dots{display:flex;gap:4px;padding:5px 10px 0;flex-shrink:0}',
-      '.ps-tb-dot{width:7px;height:7px;border-radius:50%;background:#2a2a44;transition:background .12s,transform .12s}',
-      '.ps-tb-dot.tb-done{background:#7c5fcf}',
-      '.ps-tb-dot.tb-cur{background:#a78bfa;transform:scale(1.4)}',
-      '.ps-tb-body{padding:8px 10px 4px;flex-shrink:0}',
-      '.ps-tb-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:5px}',
-      '.ps-tb-text{font-size:12px;color:#cdd6f4;line-height:1.55}',
-      '.ps-tb-text code{background:#312d4b;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:11px;color:#cba6f7}',
-      '.ps-tb-text strong{color:#fff}',
+      '.ps-tb-exit{background:none;border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-muted,#888);cursor:pointer;padding:1px 6px;border-radius:4px;font-size:10px;font-family:inherit;flex-shrink:0}',
+      '.ps-tb-exit:hover{color:var(--ps-text-strong,#fff);border-color:var(--ps-muted,#888)}',
+      '.ps-tb-dots{display:flex;gap:4px;padding:3px 8px 0;flex-shrink:0}',
+      '.ps-tb-dot{width:6px;height:6px;border-radius:50%;background:var(--ps-border,#2a2a44);transition:background .12s,transform .12s}',
+      '.ps-tb-dot.tb-done{background:var(--ps-accent,#7c5fcf)}',
+      '.ps-tb-dot.tb-cur{background:var(--ps-accent,#a78bfa);transform:scale(1.4)}',
+      '.ps-tb-body{padding:4px 8px 2px;flex-shrink:0}',
+      '.ps-tb-title{font-size:11px;font-weight:700;color:var(--ps-text-strong,#fff);margin-bottom:3px}',
+      '.ps-tb-text{font-size:11px;color:var(--ps-text,#cdd6f4);line-height:1.45}',
+      '.ps-tb-text code{background:var(--ps-code-bg,#312d4b);padding:1px 3px;border-radius:3px;font-family:monospace;font-size:10px;color:#cba6f7}',
+      '.ps-tb-text strong{color:var(--ps-text-strong,#fff)}',
       // Code block — split into per-line divs so new vs context can be styled separately
-      '.ps-tb-code-wrap{position:relative;margin:6px 10px 0;flex-shrink:0}',
+      '.ps-tb-code-wrap{position:relative;margin:3px 8px 0;flex-shrink:0}',
       '.ps-tb-code-wrap.ps-tb-no-target{display:none}',
-      '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:5px;padding:8px 10px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:11px;line-height:1.7}',
+      '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:5px 8px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:10px;line-height:1.55}',
       '.ps-tb-cl{white-space:pre;display:block}',
       '.ps-tb-cl.old{color:#374151}',
       '.ps-tb-cl.new{color:#fbbf24;font-weight:600}',
@@ -2088,31 +2088,31 @@
       // Prevent selecting or copying the reference code — students must type it themselves
       '.ps-tb-code-block{user-select:none;-webkit-user-select:none;-moz-user-select:none}',
       // Checklist
-      '.ps-tb-checks{padding:6px 10px 2px;flex-shrink:0}',
+      '.ps-tb-checks{padding:3px 8px 1px;flex-shrink:0}',
       '.ps-tb-checks.ps-tb-no-checks{display:none}',
-      '.ps-tb-ck{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;font-family:"Roboto Mono","Consolas","Courier New",monospace}',
-      '.ps-tb-ck-icon{width:14px;text-align:center;font-style:normal;flex-shrink:0}',
-      '.ps-tb-ck.ck-wait{color:#4b5563}',
+      '.ps-tb-ck{display:flex;align-items:center;gap:5px;padding:1px 0;font-size:10px;font-family:"Roboto Mono","Consolas","Courier New",monospace}',
+      '.ps-tb-ck-icon{width:12px;text-align:center;font-style:normal;flex-shrink:0}',
+      '.ps-tb-ck.ck-wait{color:var(--ps-muted,#4b5563)}',
       '.ps-tb-ck.ck-ok{color:#4ade80}',
-      '.ps-tb-foot{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #2a2a44;margin-top:4px;flex-shrink:0}',
-      '.ps-tb-valid{flex:1;font-size:11px;color:var(--ps-muted,#888)}',
+      '.ps-tb-foot{display:flex;align-items:center;gap:5px;padding:4px 8px;border-top:1px solid var(--ps-border,#2a2a44);margin-top:2px;flex-shrink:0}',
+      '.ps-tb-valid{flex:1;font-size:10px;color:var(--ps-muted,#888)}',
       '.ps-tb-valid.tb-ok{color:#4ade80}',
-      '.ps-tb-btn{background:var(--ps-panel-3,#252537);border:1px solid #45456a;color:#cdd6f4;cursor:pointer;padding:4px 12px;border-radius:5px;font-size:11px;font-family:inherit;flex-shrink:0}',
-      '.ps-tb-btn:hover:not(:disabled){background:#7c5fcf;border-color:#7c5fcf;color:#fff}',
+      '.ps-tb-btn{background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:3px 10px;border-radius:4px;font-size:10px;font-family:inherit;flex-shrink:0}',
+      '.ps-tb-btn:hover:not(:disabled){background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
       '.ps-tb-btn:disabled{opacity:.3;cursor:not-allowed}',
-      '.ps-tb-btn.tb-primary{background:#7c5fcf;border-color:#7c5fcf;color:#fff}',
-      '.ps-tb-btn.tb-primary:hover:not(:disabled){background:#6d4fc0}',
+      '.ps-tb-btn.tb-primary{background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
+      '.ps-tb-btn.tb-primary:hover:not(:disabled){opacity:.85}',
 
       // Indent tip banner (shown when a step requires indented lines)
-      '.ps-tb-indent-tip{margin:4px 10px 0;padding:5px 8px;background:#1a1a2e;border:1px solid #2d2b55;border-radius:4px;font-size:11px;color:#9ca3af;line-height:1.5;flex-shrink:0}',
+      '.ps-tb-indent-tip{margin:3px 8px 0;padding:3px 7px;background:var(--ps-panel,#1a1a2e);border:1px solid var(--ps-border,#2d2b55);border-radius:4px;font-size:10px;color:var(--ps-muted,#9ca3af);line-height:1.4;flex-shrink:0}',
       '.ps-tb-indent-tip.ps-tb-tip-hidden{display:none}',
-      '.ps-tb-indent-tip strong{color:#c4b5fd}',
-      '.ps-tb-indent-tip code{background:#312d4b;padding:1px 3px;border-radius:2px;font-family:monospace;font-size:10px;color:#a78bfa}',
+      '.ps-tb-indent-tip strong{color:var(--ps-accent,#c4b5fd)}',
+      '.ps-tb-indent-tip code{background:var(--ps-code-bg,#312d4b);padding:1px 3px;border-radius:2px;font-family:monospace;font-size:10px;color:var(--ps-accent,#a78bfa)}',
 
       // Intellisense dropdown
-      '#ps-icsense{position:fixed;background:#1e1e2e;border:1px solid #7c5fcf;border-radius:6px;z-index:30000;min-width:280px;max-width:400px;max-height:210px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.6);font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:12px}',
+      '#ps-icsense{position:fixed;background:var(--ps-panel,#1e1e2e);border:1px solid #7c5fcf;border-radius:6px;z-index:30000;min-width:280px;max-width:400px;max-height:210px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.6);font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:12px}',
       '#ps-icsense.ps-ics-hidden{display:none}',
-      '.ps-ics-item{padding:5px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid #2a2a44}',
+      '.ps-ics-item{padding:5px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--ps-border,#2a2a44)}',
       '.ps-ics-item:last-child{border-bottom:none}',
       '.ps-ics-item:hover,.ps-ics-item.ps-ics-sel{background:#2d2b55}',
       '.ps-ics-kind{width:18px;height:18px;border-radius:3px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:"Segoe UI",sans-serif}',
@@ -2415,6 +2415,12 @@
   // ── Tutorial bar (interactive in-editor walkthrough) ──────────
   function startTutorial(tutIdx) {
     S.activeTut = { tutIdx: tutIdx, stepIdx: 0 };
+    // Hide the Help/Tutorials buttons — they sit at the same y as the tutorial bar
+    // header and would overlap it. Restored when the tutorial exits.
+    var hb = document.getElementById('ps-help-btn');
+    var tb = document.getElementById('ps-tut-btn');
+    if (hb) hb.style.display = 'none';
+    if (tb) tb.style.display = 'none';
     applyTutBar(true);
   }
 
@@ -2605,6 +2611,11 @@
     clearHighlight();
     var bar = document.getElementById('ps-tut-bar');
     if (bar) bar.classList.add('ps-tb-hidden');
+    // Restore the Help/Tutorials buttons that were hidden when the tutorial started
+    var hb = document.getElementById('ps-help-btn');
+    var tb = document.getElementById('ps-tut-btn');
+    if (hb) hb.style.display = '';
+    if (tb) tb.style.display = '';
   }
 
   // ── Intellisense ──────────────────────────────────────────────
