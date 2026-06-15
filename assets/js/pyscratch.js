@@ -2836,15 +2836,21 @@
     });
 
     // Second pass: colour code-block spans.
-    // A span turns green if ANY satisfied requires item covers its line text.
-    // Doing this in a separate pass prevents an unsatisfied req from removing
-    // the 'typed' class that a satisfied req already set on the same span.
+    // A span turns green when EITHER:
+    //   (a) its exact line text is present in the editor — handles body lines
+    //       of if-blocks that have no dedicated requires item (e.g. set_y(-150),
+    //       vy = 0 inside a collision check), OR
+    //   (b) a satisfied requires item whose text is a substring of this line.
+    // Separate pass so no unsatisfied req can undo a green already set.
     bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
       var lineText = sp.textContent;
-      var covered  = reqs.some(function (r) {
+      // (a) direct match — the exact line text appears somewhere in the code
+      var lineInCode = code.indexOf(lineText) !== -1 || tutReqMatches(code, lineText);
+      // (b) a satisfied req covers this span (substring match)
+      var covByReq = !lineInCode && reqs.some(function (r) {
         return tutReqMatches(code, r) && tutReqMatches(lineText, r);
       });
-      sp.classList.toggle('typed', covered);
+      sp.classList.toggle('typed', lineInCode || covByReq);
     });
 
     // ── Sprite count check ────────────────────────────────────────
