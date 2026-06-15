@@ -25,6 +25,10 @@ function lockStudentAnswers() {
   var pyBotWrap = document.getElementById('qs-pybot-wrap');
   if (pyBotWrap && pyBotWrap.classList.contains('qs-pybot-fullscreen')) toggleQsPyBotFullscreen();
   if (window._qsPyBotMsg) { window.removeEventListener('message', window._qsPyBotMsg); window._qsPyBotMsg = null; }
+  var pyScratchBtn = document.getElementById('btn-quiz-submit-pyscratch');
+  if (pyScratchBtn) pyScratchBtn.disabled = true;
+  var pyScratchWrap = document.getElementById('qs-pyscratch-wrap');
+  if (pyScratchWrap && pyScratchWrap.classList.contains('qs-pyscratch-fullscreen')) toggleQsPyScratchFullscreen();
 }
 
 async function submitStudentAnswer(qIdx, answerIdx, btn) {

@@ -623,15 +623,17 @@ function renderHostQuestionView(qIdx, questionStart, duration) {
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
   var isSpreadsheet = q.type === 'spreadsheet_task';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
+  var isPyScratch = q.type === 'pyscratch_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet && !isPyScratch;
   var hostOptions = ['qh-opt-0','qh-opt-1','qh-opt-2','qh-opt-3'].map(function(id) { return document.getElementById(id); });
-  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet) {
+  if (isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet || isPyScratch) {
     var label = isWidget ? 'Interactive answer'
       : isTextInput ? 'Typed answer'
       : isScratch ? 'Scratch build'
       : isPyBot ? 'PyBot level'
       : isBlockbench ? 'Blockbench build'
       : isSpreadsheet ? 'Spreadsheet task'
+      : isPyScratch ? 'PyScratch build'
       : 'Code answer';
     hostOptions.forEach(function(el) {
       el.textContent = label;
@@ -775,7 +777,8 @@ async function showAnswerReveal(expectedQIdx, expectedQuestionStart) {
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
   var isSpreadsheet = q.type === 'spreadsheet_task';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
+  var isPyScratch = q.type === 'pyscratch_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet && !isPyScratch;
 
   await quiz.sessionRef.update({ state: 'answer', answerRevealStart: now });
   await renderHostRevealView(qIdx, now);
@@ -793,7 +796,8 @@ async function renderHostRevealView(qIdx, revealStart) {
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
   var isSpreadsheet = q.type === 'spreadsheet_task';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
+  var isPyScratch = q.type === 'pyscratch_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet && !isPyScratch;
   if (isTextInput || isWidget) {
     safeText(revealEl, 'Answer: ' + q.answer);
     revealEl.className = 'text-2xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono';
@@ -809,6 +813,9 @@ async function renderHostRevealView(qIdx, revealStart) {
   } else if (isSpreadsheet) {
     safeText(revealEl, q.sampleAnswer || 'Spreadsheet task checked automatically');
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 whitespace-pre-wrap';
+  } else if (isPyScratch) {
+    safeText(revealEl, q.sampleAnswer || 'Code checked automatically');
+    revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono whitespace-pre-wrap';
   } else if (isCodeQuestion) {
     safeText(revealEl, q.sampleAnswer || 'Teacher checks accepted code');
     revealEl.className = 'text-xl font-bold rounded-xl px-8 py-4 mb-6 bg-green-600 font-mono whitespace-pre-wrap';

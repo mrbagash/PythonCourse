@@ -14,6 +14,41 @@
   ],
   "quizQuestions": [
     {
+      "type": "pyscratch_build",
+      "q": "In the PyScratch editor, write a complete game_start() function containing a while True: loop. You don't need anything inside the loop yet — just the structure.",
+      "requires": ["def game_start():", "while True:"],
+      "sampleAnswer": "def game_start():\n    while True:",
+      "duration": 90
+    },
+    {
+      "type": "pyscratch_build",
+      "q": "In the PyScratch editor, write a full game_start() function with a while True: loop that moves the sprite 5 pixels to the right when the right arrow key is held.",
+      "requires": ["def game_start():", "while True:", "key_pressed(\"right\")", "change_x("],
+      "sampleAnswer": "def game_start():\n    while True:\n        if key_pressed(\"right\"):\n            change_x(5)",
+      "duration": 120
+    },
+    {
+      "type": "pyscratch_build",
+      "q": "In the PyScratch editor, write a game_start() function that moves the sprite left OR right using the arrow keys. Both directions must be handled.",
+      "requires": ["key_pressed(\"right\")", "key_pressed(\"left\")", "change_x("],
+      "sampleAnswer": "def game_start():\n    while True:\n        if key_pressed(\"right\"):\n            change_x(5)\n        if key_pressed(\"left\"):\n            change_x(-5)",
+      "duration": 120
+    },
+    {
+      "type": "pyscratch_build",
+      "q": "In the PyScratch editor, create a velocity variable vy = 0 before the function, then declare it global inside game_start().",
+      "requires": ["vy = 0", "global vy"],
+      "sampleAnswer": "vy = 0\n\ndef game_start():\n    global vy\n    while True:",
+      "duration": 120
+    },
+    {
+      "type": "pyscratch_build",
+      "q": "In the PyScratch editor, apply gravity inside the game loop: increase vy by 1 each frame, then move the sprite vertically by vy.",
+      "requires": ["vy", "change_y(vy)"],
+      "sampleAnswer": "vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy += 1\n        change_y(vy)",
+      "duration": 120
+    },
+    {
       "type": "mcq",
       "q": "What is the name of the function every PyScratch program must include?",
       "options": [

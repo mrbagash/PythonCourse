@@ -806,3 +806,190 @@ function scratchBuildRuleMatches(q, info) {
     return info.fieldRuleMatches(rule);
   });
 }
+
+// ── PyScratch quiz frame ────────────────────────────────────────────────────
+// Mirrors the Scratch/Blockbench quiz frame pattern but loads the PyScratch
+// editor (scratch/editor.html?pyscratch=1) and validates by sending PS_GET_CODE
+// to the iframe and checking the response against q.requires strings.
+
+function scalePyScratchQuizFrame() {
+  var frame  = document.getElementById('qs-pyscratch-frame');
+  var wrap   = document.getElementById('qs-pyscratch-wrap');
+  var scroll = document.getElementById('qs-pyscratch-scroll');
+  if (!frame || !wrap || !scroll) return;
+  var NW = 1100, NH = 650;
+  var checkBarEl = wrap.querySelector('.qs-pyscratch-checkbar');
+  var checkBarH  = checkBarEl ? checkBarEl.offsetHeight : 44;
+  var isFs = wrap.classList.contains('qs-pyscratch-fullscreen');
+  var scale, availW;
+  if (isFs) {
+    availW = window.innerWidth;
+    scale  = Math.min(1, availW / NW, (window.innerHeight - checkBarH) / NH);
+  } else {
+    var headerEl = document.querySelector('#quiz-student-screen > div:first-child');
+    var qTextEl  = document.getElementById('qs-q-text');
+    var headerH  = headerEl ? headerEl.offsetHeight     : 44;
+    var qTextH   = qTextEl  ? qTextEl.offsetHeight + 40 : 80;
+    var maxH     = Math.max(260, window.innerHeight - headerH - 42 - qTextH - checkBarH - 16);
+    availW       = Math.max(320, window.innerWidth - 48);
+    scale        = Math.min(1, availW / NW);
+    scroll.style.maxHeight = Math.min(Math.ceil(NH * scale), maxH) + 'px';
+    scroll.scrollLeft = 0;
+  }
+  frame.style.width        = NW + 'px';
+  frame.style.height       = NH + 'px';
+  frame.style.transform    = 'scale(' + scale + ')';
+  frame.style.marginBottom = Math.round(NH * (scale - 1)) + 'px';
+  frame.style.marginLeft   = Math.max(0, Math.round((availW - NW * scale) / 2)) + 'px';
+}
+
+function toggleQsPyScratchFullscreen() {
+  var wrap = document.getElementById('qs-pyscratch-wrap');
+  var btn  = document.getElementById('btn-qs-pyscratch-fs');
+  var isFs = wrap.classList.toggle('qs-pyscratch-fullscreen');
+  btn.textContent = isFs ? '×' : '⛶';
+  btn.title = isFs ? 'Exit full screen (Esc)' : 'Full screen';
+  scalePyScratchQuizFrame();
+}
+
+function pyScratchQuizEditorUrl(loadKey, attempt) {
+  return './scratch/editor.html?pyscratch=1&suppressBeforeUnload=1&quiz=' +
+    encodeURIComponent(loadKey) + '&attempt=' + encodeURIComponent(attempt || 0);
+}
+
+function loadPyScratchQuizEditor(qIdx, loadKey, attempt) {
+  var frame     = document.getElementById('qs-pyscratch-frame');
+  var fb        = document.getElementById('qs-pyscratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-pyscratch');
+  if (!frame || !submitBtn) return;
+  frame.style.pointerEvents    = '';
+  frame.dataset.quizLoadKey    = loadKey;
+  submitBtn.disabled           = true;
+  submitBtn.textContent        = 'Loading editor...';
+  submitBtn.onclick            = null;
+  if (fb) fb.textContent = attempt ? 'Reloading PyScratch editor...' : 'Loading PyScratch editor...';
+  frame.onload = function() {
+    requestAnimationFrame(scalePyScratchQuizFrame);
+    waitForPyScratchQuizReady(qIdx, loadKey, attempt || 0);
+  };
+  frame.src = pyScratchQuizEditorUrl(loadKey, attempt || 0);
+  // Also start polling immediately in case onload already fired
+  waitForPyScratchQuizReady(qIdx, loadKey, attempt || 0);
+}
+
+function waitForPyScratchQuizReady(qIdx, loadKey, attempt) {
+  var frame     = document.getElementById('qs-pyscratch-frame');
+  var fb        = document.getElementById('qs-pyscratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-pyscratch');
+  if (!frame || !submitBtn || frame.dataset.quizLoadKey !== loadKey) return;
+  var started = Date.now();
+  function isReady() {
+    try {
+      return !!(frame.contentWindow && frame.contentWindow.document.getElementById('ps-editor'));
+    } catch(e) { return false; }
+  }
+  function finishReady() {
+    submitBtn.disabled  = false;
+    submitBtn.textContent = 'Check & Submit';
+    submitBtn.onclick   = function() { submitStudentPyScratchAnswer(qIdx); };
+    if (fb) fb.textContent = 'Write your code in the editor above, then click Check & Submit.';
+  }
+  function showManualReload() {
+    submitBtn.disabled  = false;
+    submitBtn.textContent = 'Reload editor';
+    submitBtn.onclick   = function() { loadPyScratchQuizEditor(qIdx, loadKey, (attempt || 0) + 1); };
+    if (fb) fb.textContent = 'The editor is taking too long to load — click to reload.';
+  }
+  function poll() {
+    var answerBox = document.getElementById('qs-pyscratch-answer');
+    if (!answerBox || answerBox.classList.contains('hidden') || frame.dataset.quizLoadKey !== loadKey) return;
+    if (isReady()) { finishReady(); return; }
+    if (Date.now() - started > 12000) {
+      if ((attempt || 0) < 1) loadPyScratchQuizEditor(qIdx, loadKey, (attempt || 0) + 1);
+      else showManualReload();
+      return;
+    }
+    setTimeout(poll, 250);
+  }
+  poll();
+}
+
+function resetPyScratchQuizFrame() {
+  var frame = document.getElementById('qs-pyscratch-frame');
+  if (!frame) return;
+  var wrap = document.getElementById('qs-pyscratch-wrap');
+  if (wrap && wrap.classList.contains('qs-pyscratch-fullscreen')) toggleQsPyScratchFullscreen();
+  frame.style.pointerEvents = '';
+  frame.onload              = null;
+  frame.dataset.quizLoadKey = '';
+  if (frame.src !== 'about:blank') frame.src = 'about:blank';
+}
+
+// Sends PS_GET_CODE to the PyScratch iframe and resolves with the code string.
+function getPyScratchCode(frame) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() {
+      window.removeEventListener('message', handler);
+      reject(new Error('PyScratch did not respond in time.'));
+    }, 4000);
+    function handler(e) {
+      if (!e.data || e.data.type !== 'PS_CODE_RESPONSE') return;
+      clearTimeout(timer);
+      window.removeEventListener('message', handler);
+      resolve(e.data.code || '');
+    }
+    window.addEventListener('message', handler);
+    try {
+      frame.contentWindow.postMessage({ type: 'PS_GET_CODE' }, '*');
+    } catch(e2) {
+      clearTimeout(timer);
+      window.removeEventListener('message', handler);
+      reject(e2);
+    }
+  });
+}
+
+async function submitStudentPyScratchAnswer(qIdx) {
+  if (quiz.myAnswered) return;
+  var q         = quiz.questions[qIdx];
+  var frame     = document.getElementById('qs-pyscratch-frame');
+  var fb        = document.getElementById('qs-pyscratch-feedback');
+  var submitBtn = document.getElementById('btn-quiz-submit-pyscratch');
+  var origText  = submitBtn ? submitBtn.textContent : 'Check & Submit';
+  function unlock() {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText; }
+    if (frame) frame.style.pointerEvents = '';
+  }
+  try {
+    var cw = frame && frame.contentWindow;
+    if (!cw || !cw.document.getElementById('ps-editor')) {
+      if (fb) fb.textContent = 'Editor still loading — wait a moment and try again.';
+      return;
+    }
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Checking...'; }
+    if (frame) frame.style.pointerEvents = 'none';
+    if (fb) fb.textContent = 'Reading your code...';
+
+    var code     = await getPyScratchCode(frame);
+    var requires = Array.isArray(q.requires) ? q.requires : [];
+    var missing  = requires.filter(function(r) { return code.indexOf(r) === -1; });
+
+    if (missing.length > 0) {
+      if (fb) fb.textContent = 'Not quite yet — check your code and try again.';
+      unlock();
+      return;
+    }
+
+    quiz.myAnswered = true;
+    lockStudentAnswers();
+    await quiz.sessionRef.child('answers/' + qIdx + '/' + state.uid).set({
+      correct: true,
+      answeredAt: Date.now()
+    });
+    document.getElementById('qs-answered-msg').classList.remove('hidden');
+    document.getElementById('qs-pyscratch-answer').classList.add('hidden');
+  } catch(e) {
+    unlock();
+    if (fb) fb.textContent = 'Could not check: ' + e.message;
+  }
+}

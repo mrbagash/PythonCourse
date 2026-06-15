@@ -1381,18 +1381,19 @@
         break;
       }
       case 'delete_clone':
-        if (target && target.isClone) {
+        // target.isClone is a getter (!isOriginal) in TurboWarp; check both to
+        // be safe across Scratch VM versions.
+        if (target && (target.isClone || target.isOriginal === false)) {
           try {
-            if (typeof S.vm.runtime.stopForTarget === 'function') {
-              S.vm.runtime.stopForTarget(target);
-            }
+            // disposeTarget handles its own renderer + thread cleanup — no need
+            // to call stopForTarget first (that can cause side-effects).
             if (typeof S.vm.runtime.disposeTarget === 'function') {
               S.vm.runtime.disposeTarget(target);
             } else if (typeof S.vm.runtime.removeTarget === 'function') {
               S.vm.runtime.removeTarget(target);
             }
           } catch(e) {}
-          // Stop this Python thread immediately — clone is gone
+          // Terminate this Python thread — same mechanism as the gen-check throw.
           throw new Error('__pyscratch_stopped__');
         }
         break;
@@ -1650,22 +1651,14 @@
     var userCode = injectFrameYields(thread.code);
     var fullCode = prologue + userCode + postlude;
 
-    Sk.configure({
-      output: function (text) { log(text); },
-      read: function (x) {
-        if (Sk.builtinFiles && Sk.builtinFiles.files[x]) return Sk.builtinFiles.files[x];
-        throw new Error("File not found: '" + x + "'");
-      },
-      execLimit: undefined,
-      yieldLimit: 1000
-    });
-
     var label = '<ps:' + spriteName + ':' + thread.name + (isClone ? ':clone' : '') + '>';
     return Sk.misceval.asyncToPromise(function () {
       return Sk.importMainWithBody(label, false, fullCode, true);
     }).catch(function (err) {
       if (!err) return;
-      var msg = (err.args && err.args.v && err.args.v[0] && err.args.v[0].v) || err.toString();
+      var msg = (err.args && err.args.v && err.args.v[0] && err.args.v[0].v)
+             || (err.nativeError && (err.nativeError.message || err.nativeError.toString()))
+             || err.toString();
       if (msg.indexOf('__pyscratch_stopped__') !== -1) return;
       logError(spriteName + ' / ' + thread.name + ': ' + msg);
     });
@@ -1690,6 +1683,22 @@
     S.running    = true;
     S.timerStart = Date.now();   // timer() counts from green-flag press
     clearConsole();
+
+    // Configure Skulpt ONCE per run, before any threads start.
+    // IMPORTANT: Sk.configure resets Sk.sysmodules (the module cache).
+    // Calling it inside runThread (once per thread/clone) would clear the cache
+    // mid-execution for already-running coroutines, causing "no module found"
+    // errors.  A single call here is safe because all threads share the same
+    // read/output functions for the entire run.
+    Sk.configure({
+      output: function (text) { log(text); },
+      read: function (x) {
+        if (Sk.builtinFiles && Sk.builtinFiles.files[x]) return Sk.builtinFiles.files[x];
+        throw new Error("File not found: '" + x + "'");
+      },
+      execLimit: undefined,
+      yieldLimit: 1000
+    });
 
     // Capture the generation AFTER stopAll() incremented it so every new thread
     // gets the same gen value. Old threads have a smaller gen and die at the very
@@ -3677,6 +3686,23 @@
         if (e.data.type === 'PS_UNLOCK_THREADS') {
           var _tl = document.getElementById('ps-thread-lock');
           if (_tl) _tl.remove();
+        }
+        // Quiz: parent asks for all code from every sprite/thread.
+        // pyscratch.js saves the active editor first so nothing is missed, then
+        // posts PS_CODE_RESPONSE with the concatenated code back to the parent.
+        if (e.data.type === 'PS_GET_CODE') {
+          saveCurrentCode();
+          var _allCode = '';
+          Object.keys(S.spriteCode).forEach(function(spriteName) {
+            (S.spriteCode[spriteName] || []).forEach(function(t) {
+              _allCode += (t.code || '') + '\n';
+            });
+          });
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: 'PS_CODE_RESPONSE', code: _allCode }, '*');
+            }
+          } catch(_e2) {}
         }
       });
       // URL param: ?ps_highlight=green-flag&ps_highlight_label=Click+this!

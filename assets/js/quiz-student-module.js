@@ -525,8 +525,9 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   var isPyBot = q.type === 'pybot_level';
   var isBlockbench = q.type === 'blockbench_build';
   var isSpreadsheet = q.type === 'spreadsheet_task';
-  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet;
-  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet);
+  var isPyScratch = q.type === 'pyscratch_build';
+  var isCodeQuestion = q.type && q.type !== 'mcq' && q.type !== 'scratch_mcq' && !isTextInput && !isWidget && !isScratch && !isPyBot && !isBlockbench && !isSpreadsheet && !isPyScratch;
+  document.getElementById('qs-answer-grid').classList.toggle('hidden', isCodeQuestion || isTextInput || isWidget || isScratch || isPyBot || isBlockbench || isSpreadsheet || isPyScratch);
   document.getElementById('qs-code-answer').classList.toggle('hidden', !isCodeQuestion);
   document.getElementById('qs-text-answer').classList.toggle('hidden', !isTextInput);
   document.getElementById('qs-widget-answer').classList.toggle('hidden', !isWidget);
@@ -534,8 +535,10 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
   document.getElementById('qs-pybot-answer').classList.toggle('hidden', !isPyBot);
   document.getElementById('qs-blockbench-answer').classList.toggle('hidden', !isBlockbench);
   document.getElementById('qs-spreadsheet-answer').classList.toggle('hidden', !isSpreadsheet);
+  document.getElementById('qs-pyscratch-answer').classList.toggle('hidden', !isPyScratch);
   if (!isScratch) resetScratchQuizFrame();
   if (!isBlockbench) resetBlockbenchQuizFrame();
+  if (!isPyScratch) resetPyScratchQuizFrame();
   if (isWidget) {
     quiz.currentWidget = null;
     var widgetContainer = document.getElementById('qs-widget-container');
@@ -683,6 +686,33 @@ function renderStudentQuestion(qIdx, questionStart, duration) {
       }
     };
     document.addEventListener('keydown', window._qsBlockbenchEsc);
+  } else if (isPyScratch) {
+    var pyScratchFrame = document.getElementById('qs-pyscratch-frame');
+    if (pyScratchFrame) pyScratchFrame.style.pointerEvents = '';
+    var psLoadKey = qIdx + ':' + questionStart;
+    var psSubmitBtn = document.getElementById('btn-quiz-submit-pyscratch');
+    psSubmitBtn.disabled = true;
+    psSubmitBtn.textContent = 'Loading editor...';
+    psSubmitBtn.onclick = null;
+    document.getElementById('qs-pyscratch-feedback').textContent = 'Loading PyScratch editor...';
+    if (pyScratchFrame && pyScratchFrame.dataset.quizLoadKey !== psLoadKey) {
+      loadPyScratchQuizEditor(qIdx, psLoadKey, 0);
+    } else {
+      requestAnimationFrame(scalePyScratchQuizFrame);
+      waitForPyScratchQuizReady(qIdx, psLoadKey, 0);
+    }
+    document.getElementById('btn-qs-pyscratch-fs').onclick = toggleQsPyScratchFullscreen;
+    if (window._qsPyScratchResize) window.removeEventListener('resize', window._qsPyScratchResize);
+    window._qsPyScratchResize = scalePyScratchQuizFrame;
+    window.addEventListener('resize', window._qsPyScratchResize);
+    if (window._qsPyScratchEsc) document.removeEventListener('keydown', window._qsPyScratchEsc);
+    window._qsPyScratchEsc = function(e) {
+      if (e.key === 'Escape') {
+        var w = document.getElementById('qs-pyscratch-wrap');
+        if (w && w.classList.contains('qs-pyscratch-fullscreen')) toggleQsPyScratchFullscreen();
+      }
+    };
+    document.addEventListener('keydown', window._qsPyScratchEsc);
   } else if (isSpreadsheet) {
     renderQuizSpreadsheetTask(qIdx, q);
   } else {

@@ -101,6 +101,9 @@
     #qs-blockbench-wrap.qs-blockbench-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
     #qs-blockbench-wrap.qs-blockbench-fullscreen #qs-blockbench-scroll { flex:1; overflow:auto; max-height:none!important; }
     #btn-qs-blockbench-fs:hover { background:#334155; color:#e2e8f0; }
+    #qs-pyscratch-wrap.qs-pyscratch-fullscreen { position:fixed!important; inset:0!important; z-index:9999!important; border-radius:0!important; border:none!important; background:#111827; display:flex; flex-direction:column; }
+    #qs-pyscratch-wrap.qs-pyscratch-fullscreen #qs-pyscratch-scroll { flex:1; overflow:auto; max-height:none!important; }
+    #btn-qs-pyscratch-fs:hover { background:#334155; color:#e2e8f0; }
     .ex-input,
     .ex-textarea {
       display: block;
@@ -1064,6 +1067,18 @@
             <button id="btn-quiz-submit-blockbench" class="jhncc-primary px-6 py-2 rounded font-semibold text-sm">Check &amp; Submit</button>
             <span id="qs-blockbench-feedback" style="font-size:0.82rem;color:#94a3b8;flex:1"></span>
             <button id="btn-qs-blockbench-fs" title="Full screen" style="background:none;border:1px solid #475569;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#94a3b8;line-height:1">&#x26F6;</button>
+          </div>
+        </div>
+      </div>
+      <div id="qs-pyscratch-answer" class="hidden w-full" style="max-width:100%">
+        <div id="qs-pyscratch-wrap" style="border-radius:0.5rem;overflow:hidden;border:1px solid #334155">
+          <div id="qs-pyscratch-scroll" style="overflow:auto;background:#111827">
+            <iframe id="qs-pyscratch-frame" src="about:blank" allow="microphone; camera" style="display:block;border:none;width:1100px;height:650px"></iframe>
+          </div>
+          <div class="qs-pyscratch-checkbar" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;background:#1e293b;border-top:1px solid #334155">
+            <button id="btn-quiz-submit-pyscratch" class="jhncc-primary px-6 py-2 rounded font-semibold text-sm">Check &amp; Submit</button>
+            <span id="qs-pyscratch-feedback" style="font-size:0.82rem;color:#94a3b8;flex:1"></span>
+            <button id="btn-qs-pyscratch-fs" title="Full screen" style="background:none;border:1px solid #475569;border-radius:0.3rem;cursor:pointer;padding:0.15rem 0.5rem;font-size:1rem;color:#94a3b8;line-height:1">&#x26F6;</button>
           </div>
         </div>
       </div>
