@@ -2782,8 +2782,11 @@
       '.ps-tcard-emoji{font-size:22px;line-height:1}',
       '.ps-tcard-title{font-size:13px;font-weight:700;color:var(--ps-text-strong,#fff)}',
       '.ps-tcard-desc{font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.5;margin-bottom:10px}',
-      '.ps-tcard-start{display:block;width:100%;background:var(--ps-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
+      '.ps-tcard-foot{display:flex;gap:6px;align-items:center}',
+      '.ps-tcard-start{flex:1;background:var(--ps-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
       '.ps-tcard-start:hover{opacity:.85}',
+      '.ps-tcard-reset{background:none;border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-muted,#9090b0);cursor:pointer;padding:5px 8px;border-radius:5px;font-size:12px;font-family:inherit;flex-shrink:0;transition:color .1s,border-color .1s}',
+      '.ps-tcard-reset:hover{color:#ef4444;border-color:#ef4444}',
       // Tutorial tab bar
       '.ps-ttabs{display:flex;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);padding:0 16px;flex-shrink:0}',
       '.ps-ttab{padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--ps-muted,#9090b0);user-select:none;margin-bottom:-1px;transition:color .1s}',
@@ -3204,7 +3207,10 @@
           '<span class="ps-tcard-title">' + t.title + '</span>' +
         '</div>' +
         '<div class="ps-tcard-desc">' + t.desc + '</div>' +
-        '<button class="ps-tcard-start" data-idx="' + i + '">▶ Start (' + t.steps.length + ' steps)</button>' +
+        '<div class="ps-tcard-foot">' +
+          '<button class="ps-tcard-start" data-idx="' + i + '">▶ Start (' + t.steps.length + ' steps)</button>' +
+          '<button class="ps-tcard-reset" data-idx="' + i + '" title="Clear saved progress" style="display:none">↺ Reset</button>' +
+        '</div>' +
       '</div>';
     }).join('');
     return '<div class="ps-tbox">' +
@@ -3239,6 +3245,23 @@
     });
     switchTab('concept'); // start on Concepts tab
 
+    function refreshTutorialCards() {
+      tm.querySelectorAll('.ps-tcard').forEach(function (card) {
+        var idx      = parseInt(card.dataset.idx, 10);
+        var tut      = TUTORIALS[idx];
+        var prog     = loadTutProgress(idx);
+        var startBtn = card.querySelector('.ps-tcard-start');
+        var resetBtn = card.querySelector('.ps-tcard-reset');
+        if (prog && prog.stepIdx > 0) {
+          startBtn.textContent   = '▶ Resume (step ' + (prog.stepIdx + 1) + ' of ' + tut.steps.length + ')';
+          if (resetBtn) resetBtn.style.display = '';
+        } else {
+          startBtn.textContent   = '▶ Start (' + tut.steps.length + ' steps)';
+          if (resetBtn) resetBtn.style.display = 'none';
+        }
+      });
+    }
+
     tm.querySelectorAll('.ps-tcard-start').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var idx = parseInt(btn.dataset.idx, 10);
@@ -3246,6 +3269,20 @@
         startTutorial(idx);
       });
     });
+
+    tm.querySelectorAll('.ps-tcard-reset').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var idx = parseInt(btn.dataset.idx, 10);
+        clearTutProgress(idx);
+        clearTutSnapshot(idx);
+        refreshTutorialCards();
+      });
+    });
+
+    // Refresh card states whenever the modal is opened
+    document.getElementById('ps-tut-btn').addEventListener('click', refreshTutorialCards);
+    refreshTutorialCards(); // also run once on init
   }
 
   // ── Tutorial progress & snapshot persistence ─────────────────
