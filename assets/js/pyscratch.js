@@ -1339,7 +1339,9 @@
     activeSpriteId:   null, // target.id of the active sprite (stable across renames)
     activeThreadIdx:  0,
     themeSignature:   '',
-    activeTut:        null  // { tutIdx, stepIdx } when a tutorial bar is running
+    activeTut:        null,  // { tutIdx, stepIdx } when a tutorial bar is running
+    trackedPyVars:    {},    // varName → { capturedGlobals, scratchVarId, visible }
+    trackedVarTick:   null   // setInterval id for Python-variable→monitor polling
   };
 
   // ── DOM helpers ───────────────────────────────────────────────
@@ -1727,6 +1729,48 @@
     var s = String(eff || '').toLowerCase().trim();
     if (s === 'pan' || s === 'panleftright' || s === 'pan left/right') return 'pan left right';
     return s;
+  }
+
+  // ── Python-variable → monitor polling ────────────────────────
+  // When display_variable("score", True) is called from Python, we capture
+  // Sk.globals (the current thread's module $d object) and register the
+  // variable name in S.trackedPyVars.  A setInterval then reads
+  // capturedGlobals["score"] every 50 ms and pushes the value to TurboWarp's
+  // _monitorState so the on-screen counter stays in sync with the plain Python
+  // variable — no set_variable() / get_variable() needed by the student.
+  function startTrackedVarPoll() {
+    if (S.trackedVarTick) return;
+    S.trackedVarTick = setInterval(function () {
+      var rt = S.vm && S.vm.runtime;
+      if (!rt) return;
+      var ms = rt._monitorState;
+      Object.keys(S.trackedPyVars).forEach(function (pyName) {
+        var tv = S.trackedPyVars[pyName];
+        if (!tv || !tv.visible || !tv.capturedGlobals) return;
+        try {
+          var pyObj = tv.capturedGlobals[pyName];
+          if (pyObj === undefined) return;
+          var jsVal = Sk.ffi.remapToJs(pyObj);
+          if (jsVal === null || jsVal === undefined) jsVal = 0;
+          // Keep the Scratch variable in sync for get_variable() calls.
+          var sv = findVariable(pyName);
+          if (sv) sv.value = jsVal;
+          // Push the new value into the monitor state.
+          if (ms && typeof ms.set === 'function') {
+            ms.set(tv.scratchVarId, { value: jsVal });
+          }
+        } catch(e) {}
+      });
+      try { rt.requestUpdateMonitors(); } catch(e) {}
+    }, 50);
+  }
+
+  function stopTrackedVarPoll() {
+    if (S.trackedVarTick) {
+      clearInterval(S.trackedVarTick);
+      S.trackedVarTick = null;
+    }
+    S.trackedPyVars = {};
   }
 
   // ── Scratch variable bridge ───────────────────────────────────
@@ -2280,26 +2324,42 @@
         // Creates the variable if needed, then shows or hides its on-screen monitor.
         // b is the Python bool (true/false from Skulpt); default True shows the counter.
         var dvShow = (b !== false && b !== 0 && b !== 'False');
-        var dvVar  = findOrCreateVariable(String(a), 0);
+        var dvVarName = String(a);
+        var dvVar  = findOrCreateVariable(dvVarName, 0);
         if (!dvVar) break;
         var dvId   = dvVar.id;
-        var dvName = dvVar.name;
         var dvRt   = S.vm && S.vm.runtime;
         if (!dvRt) break;
 
-        // ── Primary path ────────────────────────────────────────────
-        // TurboWarp stores monitor display state in runtime._monitorState
-        // (tw-monitor-state.js). _monitorState.set(id, JSDelta) accepts a plain
-        // JS object and marks dirty=true. requestUpdateMonitors() then emits
-        // _monitorState.shallowClone() as the MONITORS_UPDATE event that the GUI
-        // uses to render on-screen counters. This bypasses the monitorBlocks
-        // change detection which requires an exact false→true isMonitored transition.
+        // ── Python variable tracking ──────────────────────────────────
+        // Capture Sk.globals (the calling thread's module $d object) right now,
+        // while we are inside the Python execution. Python keeps this same object
+        // alive and mutates its keys in place — so capturedGlobals[dvVarName] will
+        // always reflect the latest value of the Python variable.
+        // A 50 ms polling interval reads it and pushes updates to the monitor.
+        if (dvShow) {
+          S.trackedPyVars[dvVarName] = {
+            capturedGlobals: Sk.globals,   // live reference to thread's module $d
+            scratchVarId:    dvId,
+            visible:         true
+          };
+          startTrackedVarPoll();
+        } else {
+          if (S.trackedPyVars[dvVarName]) {
+            S.trackedPyVars[dvVarName].visible = false;
+          }
+        }
+
+        // ── Primary path: TurboWarp _monitorState ────────────────────
+        // _monitorState.set(id, JSDelta) accepts a plain JS object and marks
+        // dirty=true. requestUpdateMonitors() emits _monitorState.shallowClone()
+        // as the MONITORS_UPDATE event that the GUI uses to render on-screen counters.
         try {
           var dvMs = dvRt._monitorState;
           if (dvMs && typeof dvMs.set === 'function') {
             dvMs.set(dvId, {
               id: dvId, targetId: null, spriteName: null,
-              opcode: 'data_variable', params: { VARIABLE: dvName },
+              opcode: 'data_variable', params: { VARIABLE: dvVarName },
               value: (dvVar.value != null ? dvVar.value : 0),
               mode: 'default', visible: dvShow,
               x: 5, y: 5, width: 0, height: 0,
@@ -2308,8 +2368,7 @@
           }
         } catch(e) {}
 
-        // ── Fallback path ────────────────────────────────────────────
-        // For older/standard Scratch VM builds that don't have _monitorState.set.
+        // ── Fallback: standard Scratch VM changeBlock ─────────────────
         // IMPORTANT: do NOT pre-set block.isMonitored before calling changeBlock —
         // changeBlock detects the false→true transition to call requestAddMonitor.
         try {
@@ -2400,6 +2459,86 @@
     return promises;
   }
 
+  // ── Display-variable global hoisting ─────────────────────────
+  // Syntactic sugar: when a student writes display_variable("score", True)
+  // anywhere in their code, any function in the same thread that assigns to
+  // `score` automatically gets a `global score` declaration injected at the
+  // top of its body.  This means students can write:
+  //
+  //   def game_start():
+  //       display_variable("score", True)
+  //       score = 0
+  //       while True:
+  //           score += 1
+  //           wait(1)
+  //
+  // without ever needing to know about Python's global/local distinction.
+  // The transform happens before Skulpt compiles the code, so from the VM's
+  // perspective the code was always written correctly.
+  function injectDisplayVarGlobals(code) {
+    // Collect all variable names passed to display_variable("name", ...).
+    var tracked = {};
+    var dvRe = /display_variable\s*\(\s*["'](\w+)["']/g;
+    var m;
+    while ((m = dvRe.exec(code)) !== null) tracked[m[1]] = true;
+    if (!Object.keys(tracked).length) return code;
+
+    var lines = code.split('\n');
+    var out   = [];
+    var i     = 0;
+    while (i < lines.length) {
+      var line = lines[i];
+      var defM = line.match(/^(\s*)def\s+\w+\s*\([^)]*\)\s*:/);
+      if (!defM) { out.push(line); i++; continue; }
+
+      var defIndent = defM[1];
+      out.push(line); i++;
+
+      // Collect all lines that belong to this function body.
+      var body = [];
+      while (i < lines.length) {
+        var bl = lines[i];
+        var pastEnd = bl.trim() !== '' && !bl.startsWith(defIndent + ' ') && !bl.startsWith(defIndent + '\t');
+        if (pastEnd) break;
+        body.push(bl); i++;
+      }
+
+      // Determine the body indent level from the first non-blank line.
+      var bIndent = defIndent + '    ';
+      for (var j = 0; j < body.length; j++) {
+        if (body[j].trim()) {
+          var bm = body[j].match(/^(\s+)/);
+          if (bm) bIndent = bm[1];
+          break;
+        }
+      }
+
+      // Find which tracked vars are assigned in this function but lack a
+      // `global` declaration (augmented assignment counts: +=, -=, etc.)
+      var bodyStr   = body.join('\n');
+      var toGlobal  = [];
+      Object.keys(tracked).forEach(function (v) {
+        var alreadyGlobal = new RegExp('(?:^|\\n)[ \\t]*global\\b[^\\n]*\\b' + v + '\\b').test(bodyStr);
+        if (alreadyGlobal) return;
+        var isAssigned = new RegExp('(?:^|\\n)[ \\t]+' + v + '\\s*(?:[+\\-*/%&|^]|\\*\\*|\\/\\/)?=(?!=)').test(bodyStr);
+        if (isAssigned) toGlobal.push(v);
+      });
+
+      // Inject `global v1, v2` before the first non-blank, non-comment body line.
+      if (toGlobal.length) {
+        var ins = 0;
+        for (var j = 0; j < body.length; j++) {
+          if (body[j].trim() && body[j].trim()[0] !== '#') { ins = j; break; }
+          ins = j + 1;
+        }
+        body.splice(ins, 0, bIndent + 'global ' + toGlobal.join(', '));
+      }
+
+      out = out.concat(body);
+    }
+    return out.join('\n');
+  }
+
   // ── Auto-yield injection ──────────────────────────────────────
   // Injects wait(0) as the first line of every `while True:` body.
   // This gives exactly one-iteration-per-frame behaviour — like Scratch's
@@ -2469,7 +2608,7 @@
       ''
     ].join('\n');
 
-    var userCode = injectFrameYields(thread.code);
+    var userCode = injectFrameYields(injectDisplayVarGlobals(thread.code));
     var fullCode = prologue + userCode + postlude;
 
     var label = '<ps:' + spriteName + ':' + thread.name + (isClone ? ':clone' : '') + '>';
@@ -2559,6 +2698,7 @@
     S.running    = false;
     S.gen++;              // sleeping threads see gen mismatch → throw __pyscratch_stopped__
     S.deadClones = new Set(); // clear per-clone tombstones for a fresh run
+    stopTrackedVarPoll(); // cancel Python-variable→monitor polling
     updateRunState(false);
   }
 
@@ -3404,7 +3544,14 @@
           var tgt = S.vm.runtime.targets.find(function (t) {
             return !t.isStage && t.drawableID === drawableID;
           });
-          if (tgt && tgt.sprite) fireEventHandlers(tgt.sprite.name, 'clicked', null);
+          if (tgt && tgt.sprite) {
+            // Clones register their handler under tgt.id (the clone UUID used as
+            // __ps_sprite__ in the prologue). The original sprite registers under
+            // tgt.sprite.name. Dispatch to whichever key matches the clicked target
+            // so clicking a clone runs the handler in that clone's Python context.
+            var clickKey = tgt.isClone ? tgt.id : tgt.sprite.name;
+            fireEventHandlers(clickKey, 'clicked', null);
+          }
         }
       } catch(e) {}
     });
@@ -3635,6 +3782,57 @@
     }
   }
 
+  // ── Context-aware code search helpers ────────────────────────
+  // Extracts just the body of one named def function from a block of code.
+  // Lines at the same (top-level, column 0) indentation as the def statement
+  // terminate the extraction, so nested defs work correctly.
+  function getCodeInContext(code, fn) {
+    var re = new RegExp('^def\\s+' + fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(');
+    var lines  = code.split('\n');
+    var out    = [];
+    var inside = false;
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i];
+      if (!inside) {
+        if (re.test(l)) { inside = true; out.push(l); }
+      } else {
+        // Empty lines are fine; any non-blank non-indented line ends the function.
+        if (l.length && l[0] !== ' ' && l[0] !== '\t') break;
+        out.push(l);
+      }
+    }
+    return out.join('\n');
+  }
+
+  // Given a target string, returns an array (parallel to target.split('\n')) where
+  // each element is the name of the def-function that line sits inside, or null.
+  function buildTargetCtxArray(target) {
+    var ctx = null;
+    return (target || '').split('\n').map(function (line) {
+      var m = line.match(/^def\s+(\w+)\s*\(/);
+      if (m) ctx = m[1];
+      return ctx;
+    });
+  }
+
+  // For a requires string, find which function it belongs to in target.
+  // Returns the function name if the string exists in exactly ONE function;
+  // returns null if it appears in multiple functions (ambiguous) or nowhere.
+  function reqContextInTarget(target, reqStr) {
+    if (!target || !reqStr) return null;
+    var lines = target.split('\n');
+    var ctx = null; var found = null; var ambiguous = false;
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^def\s+(\w+)\s*\(/);
+      if (m) ctx = m[1];
+      if (lines[i] === reqStr) {
+        if (found === null) found = ctx;
+        else if (found !== ctx) { ambiguous = true; break; }
+      }
+    }
+    return ambiguous ? null : found;
+  }
+
   // Flexible requires matcher.
   // Leading whitespace is matched exactly (Python indentation is significant).
   // Internal spaces are made flexible so minor variations like extra spaces
@@ -3685,13 +3883,17 @@
     } catch(e) { return 0; }
   }
 
-  // Normalise a requires entry to { reqStr, count, label }.
-  // Entries can be plain strings (count = 1) or { req, count, label } objects.
+  // Normalise a requires entry to { reqStr, count, label, context }.
+  // Entries can be:
+  //   'some code line'                  → plain string, count=1, context=null (auto-derived)
+  //   { req, count, label }             → object form (context=null → auto-derived)
+  //   { req, context: 'when_clicked' }  → explicit function context (overrides auto-derive)
   function _normReq(r) {
     if (typeof r === 'object' && r !== null) {
-      return { reqStr: r.req, count: r.count || 1, label: r.label || r.req };
+      return { reqStr: r.req, count: r.count || 1,
+               label: r.label || r.req, context: r.context || null };
     }
-    return { reqStr: r, count: 1, label: r };
+    return { reqStr: r, count: 1, label: r, context: null };
   }
 
   function applyTutBar(isNewStep) {
@@ -3726,10 +3928,16 @@
       codeWrap.classList.remove('ps-tb-no-target');
       var newSet  = {};
       (step.newLines || []).forEach(function (l) { newSet[l] = true; });
-      codeBlock.innerHTML = step.target.split('\n').map(function (line) {
+      // Build a per-line context array so each span knows which def-function it
+      // lives in. This lets the green-check pass restrict its search to the right
+      // function instead of matching the same line in ANY function.
+      var tgtCtxArr = buildTargetCtxArray(step.target);
+      codeBlock.innerHTML = step.target.split('\n').map(function (line, idx) {
         // Empty lines are never individually "typed" by the student — always dim.
-        var cls = (newSet[line] && line.trim() !== '') ? 'new' : 'old';
-        return '<span class="ps-tb-cl ' + cls + '">' +
+        var cls    = (newSet[line] && line.trim() !== '') ? 'new' : 'old';
+        var ctxVal = tgtCtxArr[idx];
+        var ctxAttr = ctxVal ? ' data-ctx="' + ctxVal + '"' : '';
+        return '<span class="ps-tb-cl ' + cls + '"' + ctxAttr + '>' +
                line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
                '</span>';
       }).join('');
@@ -3754,7 +3962,12 @@
         var lbl  = n.label + (n.count > 1 ? ' <em>×' + n.count + '</em>' : '');
         lbl = lbl.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                  .replace(/&lt;em&gt;/g,'<em>').replace(/&lt;\/em&gt;/g,'</em>');
-        return '<div class="ps-tb-ck ck-wait" data-req="' + dReq + '">' +
+        // Stamp the context (which def-function this requires item lives in)
+        // so checkTutBar can restrict its search to the right function.
+        // Explicit context wins; otherwise auto-derive from target.
+        var ctx = n.context || reqContextInTarget(step.target, n.reqStr);
+        var ctxAttr = ctx ? ' data-ctx="' + ctx + '"' : '';
+        return '<div class="ps-tb-ck ck-wait" data-req="' + dReq + '"' + ctxAttr + '>' +
                '<i class="ps-tb-ck-icon">⏳</i><span>' + lbl + '</span>' +
                '</div>';
       }).join('');
@@ -3813,14 +4026,22 @@
     var allOk = true;
 
     // ── Code string checks ────────────────────────────────────────
+    // Helper: get the code to search for a given checklist element.
+    // If the element has data-ctx, restrict the search to that def-function's body.
+    function _searchCode(ckEl) {
+      var ctx = ckEl && ckEl.dataset && ckEl.dataset.ctx;
+      return ctx ? getCodeInContext(code, ctx) : code;
+    }
+
     // First pass: evaluate every requires item and update its checklist row.
     reqs.forEach(function (r) {
-      var n = _normReq(r);
-      var found = n.count > 1
-        ? tutReqCount(code, n.reqStr) >= n.count
-        : tutReqMatches(code, n.reqStr);
-      if (!found) allOk = false;
+      var n    = _normReq(r);
       var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
+      var sc   = _searchCode(ckEl);
+      var found = n.count > 1
+        ? tutReqCount(sc, n.reqStr) >= n.count
+        : tutReqMatches(sc, n.reqStr);
+      if (!found) allOk = false;
       if (ckEl) {
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
         ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
@@ -3829,19 +4050,25 @@
 
     // Second pass: colour code-block spans.
     // A span turns green when EITHER:
-    //   (a) its exact line text is present in the editor — handles body lines
-    //       of if-blocks that have no dedicated requires item (e.g. set_y(-150),
-    //       vy = 0 inside a collision check), OR
-    //   (b) a satisfied requires item whose text is a substring of this line.
+    //   (a) its exact line text is present in the editor within the span's function
+    //       context (data-ctx). If no context, searches all code — handles context
+    //       lines of if-blocks that have no dedicated requires item.
+    //   (b) a satisfied requires item whose text is a substring of this span's line,
+    //       and the req's context matches this span's context.
     // Separate pass so no unsatisfied req can undo a green already set.
     bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
       var lineText = sp.textContent;
-      // (a) direct match — the exact line text appears somewhere in the code
-      var lineInCode = code.indexOf(lineText) !== -1 || tutReqMatches(code, lineText);
-      // (b) a satisfied req covers this span (substring match)
+      var ctx  = sp.dataset && sp.dataset.ctx;
+      var sc   = ctx ? getCodeInContext(code, ctx) : code;
+      // (a) direct match within context
+      var lineInCode = tutReqMatches(sc, lineText);
+      // (b) a satisfied req whose text is a substring of this span's line,
+      //     searched in the same context as this span
       var covByReq = !lineInCode && reqs.some(function (r) {
-        var n = _normReq(r);
-        return tutReqMatches(code, n.reqStr) && tutReqMatches(lineText, n.reqStr);
+        var n    = _normReq(r);
+        var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
+        var rsc  = _searchCode(ckEl);
+        return tutReqMatches(rsc, n.reqStr) && tutReqMatches(lineText, n.reqStr);
       });
       sp.classList.toggle('typed', lineInCode || covByReq);
     });
@@ -3901,8 +4128,10 @@
       validEl.className   = 'ps-tb-valid tb-ok';
     } else {
       var codeReqsDone = reqs.filter(function (r) {
-        var n = _normReq(r);
-        return n.count > 1 ? tutReqCount(code, n.reqStr) >= n.count : tutReqMatches(code, n.reqStr);
+        var n    = _normReq(r);
+        var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
+        var sc   = _searchCode(ckEl);
+        return n.count > 1 ? tutReqCount(sc, n.reqStr) >= n.count : tutReqMatches(sc, n.reqStr);
       }).length;
       var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0);
       var spriteDone = 0;
