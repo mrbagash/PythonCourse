@@ -137,6 +137,11 @@
     { n: 'log',          s: 'log(n)',                 c: 'ops' },
     { n: 'e_to',         s: 'e_to(n)',                c: 'ops' },
     { n: 'ten_to',       s: 'ten_to(n)',              c: 'ops' },
+    // Variables
+    { n: 'set_variable',      s: 'set_variable(name, value)',          c: 'var' },
+    { n: 'get_variable',      s: 'get_variable(name)',                 c: 'var' },
+    { n: 'change_variable',   s: 'change_variable(name, amount)',      c: 'var' },
+    { n: 'display_variable',  s: 'display_variable(name, visible)',    c: 'var' },
   ];
 
   // ── Tutorial data ─────────────────────────────────────────────
@@ -1147,6 +1152,7 @@
     {t:'set_variable',          ins:'set_variable("", 0)',                          detail:'Set a Scratch variable value',   kind:'fn', back:4},
     {t:'get_variable',          ins:'get_variable("")',                             detail:'Get a Scratch variable value',   kind:'fn', back:2},
     {t:'change_variable',       ins:'change_variable("", 1)',                       detail:'Add to a Scratch variable',      kind:'fn', back:4},
+    {t:'display_variable',      ins:'display_variable("", True)',                   detail:'Show/hide variable on stage',    kind:'fn', back:6},
     {t:'broadcast',             ins:'broadcast("")',                                detail:'Send a message to all handlers', kind:'fn', back:2},
     {t:'broadcast_and_wait',    ins:'broadcast_and_wait("")',                       detail:'Send message and wait for all',  kind:'fn', back:2},
   ];
@@ -1341,6 +1347,7 @@
       'def set_variable(n,v): return _psc("set_variable",n,v)',
       'def get_variable(n): return _psc("get_variable",n)',
       'def change_variable(n,v): return _psc("change_variable",n,v)',
+      'def display_variable(n,visible=True): return _psc("display_variable",n,visible)',
       // Sound
       'def play_sound(n): return _psc("play_sound",n)',
       'def play_sound_until_done(n): return _psc("play_sound_until_done",n)',
@@ -1633,7 +1640,7 @@
     set_backdrop:1, next_backdrop:1, previous_backdrop:1,
     backdrop_name:1, backdrop_number:1,
     // Variables
-    set_variable:1, get_variable:1, change_variable:1,
+    set_variable:1, get_variable:1, change_variable:1, display_variable:1,
     // Sensing — global state
     mouse_down:1, ask:1, answer:1,
     timer:1, reset_timer:1,
@@ -2106,6 +2113,32 @@
           cv.value = (Number(cv.value) || 0) + (Number(b) || 0);
           try { S.vm.runtime.requestUpdateMonitors(); } catch(e) {}
         }
+        break;
+      }
+      case 'display_variable': {
+        // Creates the variable if needed, then shows or hides its on-screen monitor.
+        // b is the Python bool (true/false from Skulpt); default True shows the counter.
+        var dvShow = (b !== false && b !== 0 && b !== 'False');
+        var dvVar  = findOrCreateVariable(String(a), 0);
+        if (!dvVar) break;
+        var dvId = dvVar.id;
+        var dvRt = S.vm && S.vm.runtime;
+        if (!dvRt) break;
+        var dvMb = dvRt.monitorBlocks;
+        if (dvMb) {
+          // Primary path: changeBlock mirrors what TurboWarp does when toggling
+          // the checkbox in its own Variables panel.
+          if (typeof dvMb.changeBlock === 'function') {
+            try { dvMb.changeBlock({ id: dvId, element: 'checkbox', value: dvShow }); } catch(e) {}
+          }
+          // Fallback: write directly onto the block definition stored in _blocks.
+          var dvBlk = dvMb._blocks && dvMb._blocks[dvId];
+          if (dvBlk) {
+            dvBlk.visible     = dvShow;
+            dvBlk.isMonitored = dvShow;
+          }
+        }
+        try { dvRt.requestUpdateMonitors(); } catch(e) {}
         break;
       }
 
@@ -2660,6 +2693,22 @@
       '.ps-tactions button{background:none;border:none;cursor:pointer;color:var(--ps-muted,#777);font-size:11px;padding:1px 4px;border-radius:3px}',
       '.ps-tactions button:hover{color:var(--ps-text-strong,#fff);background:var(--ps-accent-soft,#444)}',
 
+      // Panel tabs (Threads / Snapshots) at top of #ps-threads column
+      '#ps-panel-tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--ps-border,#312d4b)}',
+      '.ps-ptab{flex:1;text-align:center;padding:5px 2px;font-size:10px;font-weight:600;cursor:pointer;color:var(--ps-muted,#6666aa);border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:.04em;user-select:none;transition:color .1s}',
+      '.ps-ptab.ps-ptab-active{color:var(--ps-accent-bright,#a87fff);border-bottom-color:var(--ps-accent-bright,#a87fff)}',
+      '.ps-ptab:hover:not(.ps-ptab-active){color:var(--ps-text,#cdd6f4)}',
+
+      // Snapshot list panel
+      '#ps-snap-list{flex:1;overflow-y:auto;padding:5px;display:none}',
+      '.ps-snap-empty{font-size:10px;color:var(--ps-muted,#6a6a8a);padding:14px 6px;line-height:1.6;text-align:center}',
+      '.ps-snap-item{padding:6px 7px;border-radius:5px;background:var(--ps-panel-3,#252538);border:1px solid transparent;margin-bottom:4px}',
+      '.ps-snap-item:hover{border-color:var(--ps-border-strong,#45456a)}',
+      '.ps-snap-label{font-weight:700;font-size:10px;color:var(--ps-text,#cdd6f4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.ps-snap-time{color:var(--ps-muted,#888);font-size:9px;margin:2px 0 5px}',
+      '.ps-snap-restore{background:var(--ps-panel,#1e1e2e);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-muted,#cdd6f4);cursor:pointer;padding:2px 7px;border-radius:3px;font-size:9px;font-family:inherit;width:100%;transition:background .1s}',
+      '.ps-snap-restore:hover{background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
+
       // Editor + console
       '#ps-editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}',
       '#ps-editor{flex:1;background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border:none;outline:none;resize:none;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.65;padding:12px;tab-size:4;overflow-y:auto;min-height:0}',
@@ -2776,6 +2825,22 @@
       '.ps-tb-btn.tb-primary{background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
       '.ps-tb-btn.tb-primary:hover:not(:disabled){opacity:.85}',
 
+      // Tutorial dialog (resume / keep-or-restore popups)
+      '#ps-tut-dialog{position:fixed;inset:0;z-index:10010;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}',
+      '#ps-tut-dialog.ps-td-hidden{display:none}',
+      '.ps-td-box{background:#1e1e2e;border:1px solid var(--ps-border-strong,#3f3f5a);border-radius:10px;padding:20px 22px 16px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.6);font-size:13px;color:var(--ps-text,#cdd6f4);text-align:center}',
+      '.ps-td-icon{font-size:32px;margin-bottom:8px}',
+      '.ps-td-title{font-size:15px;font-weight:700;color:var(--ps-text-strong,#fff);margin-bottom:6px}',
+      '.ps-td-body{font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.5;margin-bottom:16px}',
+      '.ps-td-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}',
+      '.ps-td-btn{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;font-family:inherit;transition:opacity .1s}',
+      '.ps-td-btn.td-primary{background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
+      '.ps-td-btn.td-primary:hover{opacity:.85}',
+      '.ps-td-btn.td-secondary{background:transparent;border-color:var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4)}',
+      '.ps-td-btn.td-secondary:hover{border-color:var(--ps-muted,#888);color:#fff}',
+      '.ps-td-btn.td-danger{background:transparent;border-color:#ef4444;color:#ef4444}',
+      '.ps-td-btn.td-danger:hover{background:#ef4444;color:#fff}',
+
       // Indent tip banner (shown when a step requires indented lines)
       '.ps-tb-indent-tip{margin:3px 8px 0;padding:3px 7px;background:var(--ps-panel,#1a1a2e);border:1px solid var(--ps-border,#2d2b55);border-radius:4px;font-size:10px;color:var(--ps-muted,#9ca3af);line-height:1.4;flex-shrink:0}',
       '.ps-tb-indent-tip.ps-tb-tip-hidden{display:none}',
@@ -2808,11 +2873,16 @@
           '<span id="ps-status"></span>',
           '<div id="ps-code-area">',
             '<div id="ps-threads">',
+              '<div id="ps-panel-tabs">',
+                '<div class="ps-ptab ps-ptab-active" data-panel="threads">Threads</div>',
+                '<div class="ps-ptab" data-panel="snapshots">Snapshots</div>',
+              '</div>',
               '<div id="ps-thread-head">',
                 '<span>Threads</span>',
                 '<button id="ps-add-thread" title="Add thread">+</button>',
               '</div>',
               '<div id="ps-thread-list"></div>',
+              '<div id="ps-snap-list"></div>',
             '</div>',
             '<div id="ps-editor-wrap">',
               '<div id="ps-tut-bar" class="ps-tb-hidden">',
@@ -2864,6 +2934,21 @@
     document.body.appendChild(tm);
     initTutorialModal(tm);
     initTutorialBar();
+
+    // Panel tab switching (Threads ↔ Snapshots)
+    document.querySelectorAll('.ps-ptab').forEach(function (tab) {
+      tab.addEventListener('click', function () { switchPanelTab(tab.dataset.panel); });
+    });
+
+    // Auto-snapshot timer — every 3 minutes, skip during tutorials
+    startSnapshotTimer();
+
+    // Tutorial dialog (resume / keep-or-restore)
+    var tdEl = document.createElement('div');
+    tdEl.id = 'ps-tut-dialog';
+    tdEl.className = 'ps-td-hidden';
+    tdEl.innerHTML = '<div class="ps-td-box"><div class="ps-td-icon" id="ps-td-icon"></div><div class="ps-td-title" id="ps-td-title"></div><div class="ps-td-body" id="ps-td-body"></div><div class="ps-td-btns" id="ps-td-btns"></div></div>';
+    document.body.appendChild(tdEl);
 
     // Intellisense dropdown (shared singleton)
     var icsEl = document.createElement('div');
@@ -3155,16 +3240,135 @@
     });
   }
 
+  // ── Tutorial progress & snapshot persistence ─────────────────
+  function _tutProgressKey(tutIdx) { return 'pyscratch:tut:' + tutIdx + ':progress'; }
+  function _tutSnapshotKey(tutIdx) { return 'pyscratch:tut:' + tutIdx + ':snapshot'; }
+
+  function saveTutProgress() {
+    var at = S.activeTut;
+    if (!at) return;
+    try { localStorage.setItem(_tutProgressKey(at.tutIdx), JSON.stringify({ stepIdx: at.stepIdx })); } catch(e) {}
+  }
+
+  function loadTutProgress(tutIdx) {
+    try {
+      var raw = localStorage.getItem(_tutProgressKey(tutIdx));
+      if (raw) { var p = JSON.parse(raw); if (p && p.stepIdx > 0) return p; }
+    } catch(e) {}
+    return null;
+  }
+
+  function clearTutProgress(tutIdx) {
+    try { localStorage.removeItem(_tutProgressKey(tutIdx)); } catch(e) {}
+  }
+
+  // Save ALL sprites' current threads so we can restore them if the student wants
+  function saveTutSnapshot(tutIdx) {
+    try {
+      saveCurrentCode(); // flush editor → S.spriteCode
+      var snap = {};
+      Object.keys(S.spriteCode).forEach(function (name) {
+        snap[name] = JSON.parse(JSON.stringify(S.spriteCode[name]));
+      });
+      localStorage.setItem(_tutSnapshotKey(tutIdx), JSON.stringify(snap));
+    } catch(e) {}
+  }
+
+  function loadTutSnapshot(tutIdx) {
+    try {
+      var raw = localStorage.getItem(_tutSnapshotKey(tutIdx));
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  }
+
+  function clearTutSnapshot(tutIdx) {
+    try { localStorage.removeItem(_tutSnapshotKey(tutIdx)); } catch(e) {}
+  }
+
+  // Restore all sprites' code from a snapshot
+  function restoreTutSnapshot(tutIdx) {
+    var snap = loadTutSnapshot(tutIdx);
+    if (!snap) return;
+    Object.keys(snap).forEach(function (name) {
+      S.spriteCode[name] = snap[name];
+      saveThreads(name);
+    });
+    // Reload editor if the active sprite is in the snapshot
+    if (S.activeSprite && snap[S.activeSprite]) {
+      S.activeThreadIdx = 0;
+      loadCodeToEditor();
+    }
+  }
+
+  // ── Tutorial dialog (resume / keep-or-restore) ────────────────
+  function showTutDialog(icon, title, body, buttons) {
+    // buttons: [{label, cls, cb}]
+    var dlg   = document.getElementById('ps-tut-dialog');
+    if (!dlg) return;
+    document.getElementById('ps-td-icon').textContent  = icon;
+    document.getElementById('ps-td-title').textContent = title;
+    document.getElementById('ps-td-body').innerHTML    = body;
+    var btnsEl = document.getElementById('ps-td-btns');
+    btnsEl.innerHTML = '';
+    buttons.forEach(function (b) {
+      var btn = document.createElement('button');
+      btn.className = 'ps-td-btn ' + (b.cls || 'td-secondary');
+      btn.textContent = b.label;
+      btn.addEventListener('click', function () {
+        dlg.classList.add('ps-td-hidden');
+        if (b.cb) b.cb();
+      });
+      btnsEl.appendChild(btn);
+    });
+    dlg.classList.remove('ps-td-hidden');
+    // Click backdrop to dismiss (treat as primary action)
+    dlg.onclick = function (e) {
+      if (e.target === dlg) {
+        dlg.classList.add('ps-td-hidden');
+        if (buttons[0] && buttons[0].cb) buttons[0].cb();
+      }
+    };
+  }
+
   // ── Tutorial bar (interactive in-editor walkthrough) ──────────
-  function startTutorial(tutIdx) {
-    S.activeTut = { tutIdx: tutIdx, stepIdx: 0 };
-    // Hide the Help/Tutorials buttons — they sit at the same y as the tutorial bar
-    // header and would overlap it. Restored when the tutorial exits.
+  function _doStartTutorial(tutIdx, stepIdx) {
+    S.activeTut = { tutIdx: tutIdx, stepIdx: stepIdx };
     var hb = document.getElementById('ps-help-btn');
     var tb = document.getElementById('ps-tut-btn');
     if (hb) hb.style.display = 'none';
     if (tb) tb.style.display = 'none';
+    saveTutProgress();
     applyTutBar(true);
+  }
+
+  function startTutorial(tutIdx) {
+    var tut      = TUTORIALS[tutIdx];
+    var saved    = loadTutProgress(tutIdx);
+    var hasSnap  = !!loadTutSnapshot(tutIdx);
+
+    if (saved && hasSnap) {
+      // Student has unfinished progress — offer to resume
+      showTutDialog(
+        tut.emoji || '📚',
+        tut.title,
+        'You left off at <strong>Step ' + (saved.stepIdx + 1) + ' of ' + tut.steps.length + '</strong>. Want to pick up where you left off?',
+        [
+          { label: 'Resume →', cls: 'td-primary', cb: function () {
+              _doStartTutorial(tutIdx, saved.stepIdx);
+          }},
+          { label: 'Start Fresh', cls: 'td-secondary', cb: function () {
+              clearTutProgress(tutIdx);
+              saveTutSnapshot(tutIdx); // overwrite snapshot with current code
+              _doStartTutorial(tutIdx, 0);
+          }}
+        ]
+      );
+    } else {
+      // Fresh start — save a named "before tutorial" snapshot then begin
+      if (S.activeSprite) takeSnapshot(S.activeSprite, 'Before ' + tut.title, 'before-tutorial');
+      saveTutSnapshot(tutIdx);
+      _doStartTutorial(tutIdx, 0);
+    }
   }
 
   // Flexible requires matcher.
@@ -3381,17 +3585,59 @@
     }
   }
 
-  function exitTutorial() {
+  // Low-level exit — clears state, hides bar, shows buttons
+  function _doExitTutorial() {
     S.activeTut = null;
     if (_tutPollTid) { clearInterval(_tutPollTid); _tutPollTid = null; }
     clearHighlight();
     var bar = document.getElementById('ps-tut-bar');
     if (bar) bar.classList.add('ps-tb-hidden');
-    // Restore the Help/Tutorials buttons that were hidden when the tutorial started
     var hb = document.getElementById('ps-help-btn');
     var tb = document.getElementById('ps-tut-btn');
     if (hb) hb.style.display = '';
     if (tb) tb.style.display = '';
+  }
+
+  // Public exit — prompts for keep/restore then cleans up
+  function exitTutorial(isFinished) {
+    var at = S.activeTut;
+    if (!at) { _doExitTutorial(); return; }
+    var tutIdx  = at.tutIdx;
+    var tut     = TUTORIALS[tutIdx];
+    var hasSnap = !!loadTutSnapshot(tutIdx);
+
+    if (!hasSnap) {
+      // No snapshot means nothing to restore — just exit
+      if (isFinished) clearTutProgress(tutIdx);
+      _doExitTutorial();
+      return;
+    }
+
+    // Save "after tutorial" snapshot so the code written during the tutorial
+    // is always recoverable from the Snapshots panel, regardless of keep/restore choice.
+    if (isFinished && S.activeSprite) {
+      takeSnapshot(S.activeSprite, tut.title + ' — finished', 'after-tutorial');
+    }
+
+    var icon  = isFinished ? '🎉' : '📚';
+    var title = isFinished ? 'Tutorial Complete!' : 'Exit Tutorial';
+    var body  = isFinished
+      ? 'Great work finishing <strong>' + tut.title + '</strong>! What would you like to do with the code you wrote?'
+      : 'What would you like to do with the code you typed during <strong>' + tut.title + '</strong>?';
+
+    showTutDialog(icon, title, body, [
+      { label: 'Keep My Code', cls: 'td-primary', cb: function () {
+          clearTutSnapshot(tutIdx);
+          clearTutProgress(tutIdx);
+          _doExitTutorial();
+      }},
+      { label: 'Restore Original Code', cls: 'td-danger', cb: function () {
+          restoreTutSnapshot(tutIdx);
+          clearTutSnapshot(tutIdx);
+          clearTutProgress(tutIdx);
+          _doExitTutorial();
+      }}
+    ]);
   }
 
   // ── Intellisense ──────────────────────────────────────────────
@@ -3562,22 +3808,26 @@
     var bar = document.getElementById('ps-tut-bar');
     if (!bar) return;
 
-    // Exit button
-    bar.querySelector('.ps-tb-exit').addEventListener('click', exitTutorial);
+    // Exit button — mid-tutorial exit, keep progress saved for resume
+    bar.querySelector('.ps-tb-exit').addEventListener('click', function () {
+      exitTutorial(false);
+    });
 
     // Prev / Next buttons
     bar.querySelector('[data-tb="prev"]').addEventListener('click', function () {
       if (!S.activeTut || S.activeTut.stepIdx === 0) return;
       S.activeTut.stepIdx--;
+      saveTutProgress();
       applyTutBar(true);
     });
     bar.querySelector('[data-tb="next"]').addEventListener('click', function () {
       if (!S.activeTut) return;
       var tut = TUTORIALS[S.activeTut.tutIdx];
       if (S.activeTut.stepIdx >= tut.steps.length - 1) {
-        exitTutorial();
+        exitTutorial(true); // finished — clears progress after dialog
       } else {
         S.activeTut.stepIdx++;
+        saveTutProgress();
         applyTutBar(true);
       }
     });
@@ -3667,6 +3917,7 @@
         { code:'set_variable("Score", 0)', desc:'Set a Scratch stage variable by name. If the variable does not exist yet it is created automatically and an on-screen counter appears — no TurboWarp menus needed.' },
         { code:'get_variable("Score")', desc:'Read the current value of a Scratch stage variable. Returns 0 if the variable does not exist.' },
         { code:'change_variable("Score", 1)', desc:'Add a number to a Scratch stage variable — shortcut for get then set. Creates the variable if needed. Use negative numbers to subtract.' },
+        { code:'display_variable("Score", True)', desc:'Creates the variable if it does not exist, then shows (True) or hides (False) its on-screen counter — exactly the same as ticking or unticking the checkbox next to a variable in the Scratch Variables panel. Useful for hiding internal variables like HP that you only want shown at certain times.' },
       ]},
       { cat:'ops', title:'Operators', items:[
         { code:'pick_random(1, 10)', desc:'Random integer between the two values (inclusive). Returns a float if either value is a float.' },
@@ -3764,6 +4015,148 @@
 
       renderThreadList();
       loadCodeToEditor();
+      // Refresh snapshot list if that tab is currently visible
+      var snapEl = document.getElementById('ps-snap-list');
+      if (snapEl && snapEl.style.display !== 'none') renderSnapList();
+    }
+  }
+
+  // ── Per-sprite code snapshots ─────────────────────────────────
+  var SNAP_MAX = 5;
+
+  function snapStoreKey(spriteName) {
+    try {
+      var t = getTargetByName(spriteName);
+      if (t && t.id) return 'pyscratch:snaps:' + t.id;
+    } catch(e) {}
+    return 'pyscratch:snaps:name:' + spriteName;
+  }
+
+  function loadSnaps(spriteName) {
+    try {
+      var raw = localStorage.getItem(snapStoreKey(spriteName));
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return [];
+  }
+
+  function saveSnaps(spriteName, snaps) {
+    try { localStorage.setItem(snapStoreKey(spriteName), JSON.stringify(snaps)); } catch(e) {}
+  }
+
+  // kind: 'auto' | 'before-tutorial' | 'after-tutorial'
+  function takeSnapshot(spriteName, label, kind) {
+    if (!spriteName) return;
+    saveCurrentCode(); // flush editor → S.spriteCode
+    var threads = loadThreads(spriteName);
+    var snaps   = loadSnaps(spriteName);
+    // Skip auto-snapshots when code is unchanged from the most recent snap
+    if (kind === 'auto' && snaps.length > 0) {
+      var lastCode = JSON.stringify(snaps[snaps.length - 1].threads);
+      var curCode  = JSON.stringify(threads);
+      if (lastCode === curCode) return;
+    }
+    var snap = {
+      ts:      Date.now(),
+      label:   label || 'Auto',
+      kind:    kind  || 'auto',
+      threads: JSON.parse(JSON.stringify(threads))
+    };
+    snaps.push(snap);
+    if (snaps.length > SNAP_MAX) snaps = snaps.slice(snaps.length - SNAP_MAX);
+    saveSnaps(spriteName, snaps);
+    // Refresh snap list panel if it's currently visible
+    var snapEl = document.getElementById('ps-snap-list');
+    if (snapEl && snapEl.style.display !== 'none') renderSnapList();
+  }
+
+  var _snapTimerId = null;
+  function startSnapshotTimer() {
+    if (_snapTimerId) return;
+    _snapTimerId = setInterval(function () {
+      if (S.activeSprite && !S.activeTut) {
+        takeSnapshot(S.activeSprite, 'Auto', 'auto');
+      }
+    }, 3 * 60 * 1000); // every 3 minutes
+  }
+
+  function snapRelativeTime(ts) {
+    var diff = Math.max(0, Date.now() - ts);
+    var mins = Math.round(diff / 60000);
+    if (mins < 1)  return 'just now';
+    if (mins < 60) return mins + ' min ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24)  return hrs + ' hr ago';
+    var d = new Date(ts);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+           d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderSnapList() {
+    var el = document.getElementById('ps-snap-list');
+    if (!el) return;
+    var spriteName = S.activeSprite;
+    if (!spriteName) {
+      el.innerHTML = '<div class="ps-snap-empty">No sprite selected.</div>';
+      return;
+    }
+    var snaps = loadSnaps(spriteName);
+    if (!snaps.length) {
+      el.innerHTML = '<div class="ps-snap-empty">No snapshots yet.<br>Auto-saves every 3 min when code changes.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    // Newest first
+    snaps.slice().reverse().forEach(function (snap) {
+      var div = document.createElement('div');
+      div.className = 'ps-snap-item';
+
+      var icon = snap.kind === 'before-tutorial' ? '📚 '
+               : snap.kind === 'after-tutorial'  ? '🎉 '
+               : '';
+      var lbl = document.createElement('div');
+      lbl.className   = 'ps-snap-label';
+      lbl.textContent = icon + snap.label;
+
+      var ts = document.createElement('div');
+      ts.className   = 'ps-snap-time';
+      ts.textContent = snapRelativeTime(snap.ts);
+
+      var btn = document.createElement('button');
+      btn.className   = 'ps-snap-restore';
+      btn.textContent = 'Restore this snapshot';
+      btn.onclick = (function (s) {
+        return function () {
+          if (!confirm('Restore "' + s.label + '"?\nCurrent code will be replaced.')) return;
+          S.spriteCode[spriteName] = JSON.parse(JSON.stringify(s.threads));
+          saveThreads(spriteName);
+          S.activeThreadIdx = 0;
+          renderThreadList();
+          loadCodeToEditor();
+          switchPanelTab('threads'); // jump back to threads view after restore
+        };
+      })(snap);
+
+      div.appendChild(lbl);
+      div.appendChild(ts);
+      div.appendChild(btn);
+      el.appendChild(div);
+    });
+  }
+
+  function switchPanelTab(name) {
+    document.querySelectorAll('.ps-ptab').forEach(function (t) {
+      t.classList.toggle('ps-ptab-active', t.dataset.panel === name);
+    });
+    var inThreads = name === 'threads';
+    var headEl    = document.getElementById('ps-thread-head');
+    var listEl    = document.getElementById('ps-thread-list');
+    var snapEl    = document.getElementById('ps-snap-list');
+    if (headEl) headEl.style.display = inThreads ? '' : 'none';
+    if (listEl) listEl.style.display = inThreads ? '' : 'none';
+    if (snapEl) {
+      snapEl.style.display = inThreads ? 'none' : '';
+      if (!inThreads) renderSnapList();
     }
   }
 
