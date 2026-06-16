@@ -156,7 +156,7 @@
       id: 'if-statements',
       title: 'If Statements',
       emoji: '❓',
-      desc: 'Learn to make decisions in Python — check a condition and run different code depending on whether it\'s true or false.',
+      desc: 'Run different code based on a condition. If the condition is true, one block runs; if not, it skips.',
       steps: [
         {
           title: 'Type the game loop',
@@ -269,11 +269,11 @@
       id: 'while-loops',
       title: 'While Loops',
       emoji: '🔄',
-      desc: 'Keep repeating code until a condition becomes false — useful for countdowns, timers and waiting.',
+      desc: 'Repeat code for as long as a condition is true. Good for countdowns, timers and waiting for something to happen.',
       steps: [
         {
           title: 'Set up with a counter',
-          text: 'Type the <code>game_start()</code> function and create a variable called <code>count</code> starting at 0. This will track how many times the loop has run.',
+          text: 'Type the <code>game_start()</code> function and create a variable called <code>count</code> starting at 0. It tracks how many times the loop has run.',
           starter: '',
           target: 'def game_start():\n    count = 0',
           newLines: ['def game_start():', '    count = 0'],
@@ -324,7 +324,7 @@
       steps: [
         {
           title: 'The game loop',
-          text: 'Type the game loop. <code>set_rotation_style("left-right")</code> before the loop means the sprite will only flip horizontally — it will never tilt upside-down.',
+          text: 'Type the game loop. <code>set_rotation_style("left-right")</code> before the loop means the sprite only flips horizontally, never tilting upside-down.',
           starter: '',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:'],
@@ -446,7 +446,7 @@
       steps: [
         {
           title: 'Create the velocity variable',
-          text: 'Type <code>vy = 0</code> at the very top of the editor, before any function. This stores the vertical velocity — how fast the sprite moves up or down. Starting at 0 means it is stationary.',
+          text: 'Type <code>vy = 0</code> at the very top of the editor, before any function. <code>vy</code> is the vertical velocity: positive moves up, negative moves down. Starting at 0 means the sprite is stationary.',
           starter: '',
           target: 'vy = 0\n\ndef game_start():',
           newLines: ['vy = 0', '', 'def game_start():'],
@@ -590,7 +590,7 @@
       steps: [
         {
           title: 'Set up the velocity variable',
-          text: 'Flappy Bird is all about vertical velocity. Type <code>vy = 0</code> before the function — the bird starts stationary and gravity will pull it down from there.',
+          text: 'Flappy Bird is all about vertical velocity. Type <code>vy = 0</code> before the function. The bird starts stationary and gravity pulls it down from there.',
           starter: '',
           target: 'vy = 0\n\ndef game_start():',
           newLines: ['vy = 0', '', 'def game_start():'],
@@ -664,7 +664,7 @@
         },
         {
           title: 'Move the obstacle left',
-          text: 'You\'re now editing the <strong>obstacle sprite\'s</strong> code — completely separate from the bird. Start it off-screen to the right at a <strong>random height</strong> using <code>pick_random</code>, then slide it left every frame:',
+          text: 'You\'re now editing the <strong>obstacle sprite\'s</strong> code. Start it off-screen to the right at a <strong>random height</strong> using <code>pick_random</code>, then slide it left every frame:',
           starter: '',
           target: 'def game_start():\n    go_to_xy(240, pick_random(-100, 100))\n    while True:\n        change_x(-3)',
           newLines: ['def game_start():', '    go_to_xy(240, pick_random(-100, 100))', '    while True:', '        change_x(-3)'],
@@ -733,7 +733,7 @@
         },
         {
           title: 'Add the platform sprite',
-          text: 'Platforms are their own game object — they need a <strong>separate sprite</strong> with their own position and code. Click the highlighted button to add a new sprite, give it a <strong>flat wide rectangular costume</strong>, and name it <strong>Platform</strong>.',
+          text: 'Platforms are their own game object: they need a <strong>separate sprite</strong> with their own position and code. Click the highlighted button to add a new sprite, give it a <strong>flat wide rectangular costume</strong>, and name it <strong>Platform</strong>.',
           highlight: 'add-sprite-btn',
           highlightLabel: 'Add a sprite here',
           requiresSpriteCount: 2,
@@ -742,7 +742,7 @@
         },
         {
           title: 'Platform falls down',
-          text: 'You\'re now editing the <strong>Platform sprite\'s</strong> code — completely separate from the player. Start it at a random horizontal position and make it fall steadily:',
+          text: 'You\'re now editing the <strong>Platform sprite\'s</strong> code. Start it at a random horizontal position and make it fall steadily:',
           starter: '',
           target: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)',
           newLines: ['def game_start():', '    go_to_xy(pick_random(-150, 150), 0)', '    while True:', '        change_y(-2)'],
@@ -750,7 +750,7 @@
         },
         {
           title: 'Reset to the top',
-          text: 'When the platform falls off the bottom, jump it back to the top at a new random x position — this makes it loop forever:',
+          text: 'When the platform falls off the bottom, jump it back to the top at a new random x position so it loops forever:',
           starter: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)',
           target: 'def game_start():\n    go_to_xy(pick_random(-150, 150), 0)\n    while True:\n        change_y(-2)\n        if y_position() < -185:\n            go_to_xy(pick_random(-150, 150), 185)',
           newLines: ['        if y_position() < -185:', '            go_to_xy(pick_random(-150, 150), 185)'],
@@ -795,7 +795,7 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'A Duck Hunt clone! The duck moves around the stage bouncing off every edge using two velocity variables. Click the duck with your mouse to shoot it — the score goes up and the duck teleports to a new random location at a new speed.<br><br>You only need <strong>one sprite</strong> — the duck itself. The Score variable is created by <code>set_variable("Score", 0)</code> and shown on screen by <code>display_variable("Score", True)</code>.',
+          text: 'A Duck Hunt clone! The duck moves around the stage bouncing off every edge using two velocity variables. Click the duck with your mouse to shoot it — the score goes up and the duck teleports to a new random location at a new speed.<br><br>You only need <strong>one sprite</strong>: the duck. The Score variable is created by <code>set_variable("Score", 0)</code> and shown on screen by <code>display_variable("Score", True)</code>.',
           starter: null, target: null, newLines: [], requires: []
         },
         {
@@ -824,7 +824,7 @@
         },
         {
           title: 'Make the duck face where it\'s flying',
-          text: 'After flipping <code>vx</code>, check its new sign to face the duck the right way. <code>set_rotation_style("left-right")</code> (already set) means the sprite only ever flips — it never tilts. Add these lines <strong>inside</strong> the <code>x_position</code> block, after <code>vx = vx * -1</code>:',
+          text: 'After flipping <code>vx</code>, check its new sign to face the duck the right way. <code>set_rotation_style("left-right")</code> (already set) means the sprite only ever flips, never tilts. Add these lines <strong>inside</strong> the <code>x_position</code> block, after <code>vx = vx * -1</code>:',
           starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
           target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
           newLines: ['            if vx > 0:', '                point_in_direction(90)', '            else:', '                point_in_direction(-90)'],
@@ -905,14 +905,14 @@
         },
         {
           title: 'Add the Enemy sprite',
-          text: 'Click the <strong>+</strong> button to add a new sprite. <strong>Name it exactly <code>Enemy</code></strong> — the player code uses <code>touching("Enemy")</code> to detect collisions, so the name must match exactly.',
+          text: 'Click the <strong>+</strong> button to add a new sprite. <strong>Name it exactly <code>Enemy</code></strong> — the player code uses <code>touching("Enemy")</code> to detect collisions, so spelling must match.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add sprite here',
           requiresSpriteCount: 2, requiresSpriteHint: 'Add a new sprite and name it "Enemy"'
         },
         {
           title: 'Enemy: spawn clones every 2 seconds',
-          text: 'Click your <strong>Enemy</strong> sprite. Clear the default code and type this. The original sprite stays hidden — it only exists to create clones every 2 seconds:',
+          text: 'Click your <strong>Enemy</strong> sprite. Clear the default code and type this. The original stays hidden and just spawns a new clone every 2 seconds:',
           starter: null,
           target: 'def game_start():\n    hide()\n    while True:\n        create_clone()\n        wait(2)',
           newLines: ['def game_start():', '    hide()', '    while True:', '        create_clone()', '        wait(2)'],
@@ -947,7 +947,7 @@
       cat: 'game',
       emoji: '🍎',
       title: 'Apple Catcher',
-      desc: 'Catch falling apples with a basket. Move left and right to score points — miss an apple and you lose a life. A great first two-sprite game.',
+      desc: 'Catch falling apples with a basket. Move left and right to score — miss one and you lose a life. Two sprites, score and lives counters.',
       steps: [
         {
           title: 'What are we building?',
@@ -1006,11 +1006,11 @@
       cat: 'game',
       emoji: '🔨',
       title: 'Whack-a-Mole',
-      desc: 'Moles pop up at random positions and vanish after a random time. Click them fast to score. Teaches timed clone lifetimes and when_clicked on clones.',
+      desc: 'Moles pop up at random positions and vanish after a random time. Click them fast to score. Uses timed clone lifetimes and when_clicked on clones.',
       steps: [
         {
           title: 'What are we building?',
-          text: 'A Whack-a-Mole game! The original sprite stays hidden. Every 1.5 seconds it spawns a <strong>clone</strong> that appears at a random position for a random amount of time then vanishes. Click a mole to score a point and destroy it instantly.<br><br>You only need <strong>one sprite</strong> — the mole itself.',
+          text: 'A Whack-a-Mole game! The original sprite stays hidden. Every 1.5 seconds it spawns a <strong>clone</strong> that appears at a random position for a random amount of time then vanishes. Click a mole to score a point and destroy it instantly.<br><br>You only need <strong>one sprite</strong>: the mole.',
           starter: null, target: null, newLines: [], requires: []
         },
         {
@@ -1058,7 +1058,7 @@
       cat: 'game',
       emoji: '🚀',
       title: 'Space Shooter',
-      desc: 'Fly a ship left and right and press space to fire bullets upward. Bullets are clones that delete themselves on impact. Teaches the broadcast → clone projectile pattern.',
+      desc: 'Fly a ship left and right and press space to fire bullets upward. Bullets are clones that delete themselves on impact. Uses the broadcast → clone projectile pattern.',
       steps: [
         {
           title: 'What are we building?',
@@ -1117,7 +1117,7 @@
       cat: 'game',
       emoji: '🏓',
       title: 'Pong',
-      desc: 'Classic one-player Pong. Bounce the ball off the walls and your paddle — miss it and it\'s game over. Teaches velocity-based bounce and two-sprite interaction.',
+      desc: 'Classic one-player Pong. Bounce the ball off the walls and your paddle — miss it and it\'s game over. Velocity-based bounce across two sprites.',
       steps: [
         {
           title: 'What are we building?',
@@ -1176,7 +1176,7 @@
       cat: 'game',
       emoji: '🧱',
       title: 'Breakout',
-      desc: 'Bounce a ball off a paddle to smash rows of brick clones. Each brick deletes itself on impact. Teaches nested loops for grid layout and multi-sprite collision.',
+      desc: 'Bounce a ball off a paddle to smash rows of brick clones. Each brick deletes itself on impact. Nested loops build the grid, three-sprite collision throughout.',
       steps: [
         {
           title: 'What are we building?',
@@ -1265,10 +1265,13 @@
     {t:'float',                 ins:'float()',                                       detail:'Convert to decimal',             kind:'fn', back:1},
     {t:'len',                   ins:'len()',                                         detail:'Length of a list or string',     kind:'fn', back:1},
     {t:'print',                 ins:'print()',                                       detail:'Print to console',               kind:'fn', back:1},
-    // PyScratch snippets
-    {t:'game_start',            ins:'def game_start():\n    ',                      detail:'Main game loop',                 kind:'sn'},
-    {t:'when_key_pressed',      ins:'def when_key_pressed(key):\n    ',             detail:'Key press event',                kind:'sn'},
-    {t:'when_I_start_as_a_clone', ins:'def when_I_start_as_a_clone():\n    ',      detail:'Clone start event',              kind:'sn'},
+    // PyScratch event handler snippets
+    {t:'game_start',              ins:'def game_start():\n    ',                          detail:'Runs when green flag clicked',      kind:'sn'},
+    {t:'when_clicked',            ins:'def when_clicked():\n    ',                        detail:'Runs when this sprite is clicked',  kind:'sn'},
+    {t:'when_key_pressed',        ins:'def when_key_pressed(key):\n    ',                 detail:'Runs when a key is pressed',        kind:'sn'},
+    {t:'when_message_received',   ins:'def when_message_received(message):\n    ',        detail:'Runs when a broadcast is received', kind:'sn'},
+    {t:'when_backdrop_switches_to', ins:'def when_backdrop_switches_to(backdrop):\n    ', detail:'Runs when backdrop changes',        kind:'sn'},
+    {t:'when_I_start_as_a_clone', ins:'def when_I_start_as_a_clone():\n    ',            detail:'Runs when a clone is created',      kind:'sn'},
     // Movement
     {t:'change_x',              ins:'change_x()',                                   detail:'Move sprite left/right',         kind:'fn', back:1},
     {t:'change_y',              ins:'change_y()',                                   detail:'Move sprite up/down',            kind:'fn', back:1},
@@ -1295,23 +1298,45 @@
     {t:'next_costume',          ins:'next_costume()',                               detail:'Advance to next costume',        kind:'fn'},
     {t:'set_costume',           ins:'set_costume()',                                detail:'Switch to a specific costume',   kind:'fn', back:1},
     {t:'say',                   ins:'say("")',                                      detail:'Show speech bubble',             kind:'fn', back:2},
+    {t:'say_for_secs',          ins:'say_for_secs("", 2)',                          detail:'Speech bubble for N seconds',    kind:'fn', back:4},
     {t:'think',                 ins:'think("")',                                    detail:'Show thought bubble',            kind:'fn', back:2},
+    {t:'think_for_secs',        ins:'think_for_secs("", 2)',                        detail:'Thought bubble for N seconds',   kind:'fn', back:4},
     {t:'show',                  ins:'show()',                                       detail:'Make sprite visible',            kind:'fn'},
     {t:'hide',                  ins:'hide()',                                       detail:'Hide the sprite',                kind:'fn'},
     {t:'set_size',              ins:'set_size()',                                   detail:'Set sprite size %',              kind:'fn', back:1},
     {t:'change_size',           ins:'change_size()',                                detail:'Change sprite size %',           kind:'fn', back:1},
+    {t:'set_effect',            ins:'set_effect("color", 0)',                       detail:'Set a visual effect value',      kind:'fn', back:4},
+    {t:'change_effect',         ins:'change_effect("color", 25)',                   detail:'Change a visual effect value',   kind:'fn', back:6},
+    {t:'clear_effects',         ins:'clear_effects()',                              detail:'Remove all visual effects',      kind:'fn'},
+    {t:'costume_name',          ins:'costume_name()',                               detail:'Name of current costume',        kind:'fn'},
+    {t:'costume_number',        ins:'costume_number()',                             detail:'Number of current costume',      kind:'fn'},
+    // Backdrop
+    {t:'set_backdrop',          ins:'set_backdrop("")',                             detail:'Switch to a backdrop by name',   kind:'fn', back:2},
+    {t:'next_backdrop',         ins:'next_backdrop()',                              detail:'Switch to next backdrop',        kind:'fn'},
+    {t:'backdrop_name',         ins:'backdrop_name()',                              detail:'Name of current backdrop',       kind:'fn'},
+    {t:'backdrop_number',       ins:'backdrop_number()',                            detail:'Number of current backdrop',     kind:'fn'},
+    // Sound
+    {t:'play_sound',            ins:'play_sound("")',                               detail:'Start playing a sound',          kind:'fn', back:2},
+    {t:'play_sound_until_done', ins:'play_sound_until_done("")',                    detail:'Play sound and wait',            kind:'fn', back:2},
+    {t:'stop_all_sounds',       ins:'stop_all_sounds()',                            detail:'Stop all playing sounds',        kind:'fn'},
+    {t:'set_volume',            ins:'set_volume(100)',                              detail:'Set volume 0-100',               kind:'fn', back:3},
+    // Sensing
+    {t:'ask',                   ins:'ask("")',                                      detail:'Ask player a question',          kind:'fn', back:2},
+    {t:'answer',                ins:'answer()',                                     detail:'Last answer from ask()',          kind:'fn'},
+    {t:'distance_to',           ins:'distance_to("")',                              detail:'Distance to sprite or mouse',    kind:'fn', back:2},
     // Clones & misc
     {t:'wait',                  ins:'wait()',                                       detail:'Pause this thread N seconds',    kind:'fn', back:1},
     {t:'pick_random',           ins:'pick_random(1, 10)',                           detail:'Random integer in range',        kind:'fn', back:5},
-    {t:'create_clone',          ins:'create_clone()',                              detail:'Spawn a copy of this sprite',    kind:'fn'},
-    {t:'delete_clone',          ins:'delete_clone()',                              detail:'Remove this clone',              kind:'fn'},
+    {t:'create_clone',          ins:'create_clone()',                               detail:'Spawn a copy of this sprite',   kind:'fn'},
+    {t:'delete_clone',          ins:'delete_clone()',                               detail:'Remove this clone',             kind:'fn'},
+    {t:'is_clone',              ins:'is_clone()',                                   detail:'True if this is a clone',        kind:'fn'},
     {t:'touching',              ins:'touching("")',                                 detail:'True when touching target',      kind:'fn', back:2},
     {t:'touching_colour',       ins:'touching_colour("")',                          detail:'True when touching a colour',    kind:'fn', back:2},
     {t:'touching_color',        ins:'touching_color("")',                           detail:'True when touching a colour',    kind:'fn', back:2},
     {t:'on_edge',               ins:'on_edge()',                                    detail:'True when touching edge',        kind:'fn'},
     {t:'timer',                 ins:'timer()',                                      detail:'Seconds since last reset',       kind:'fn'},
-    {t:'reset_timer',           ins:'reset_timer()',                               detail:'Reset the timer to 0',           kind:'fn'},
-    // Scratch variables
+    {t:'reset_timer',           ins:'reset_timer()',                                detail:'Reset the timer to 0',          kind:'fn'},
+    // Scratch variables & events
     {t:'set_variable',          ins:'set_variable("", 0)',                          detail:'Set a Scratch variable value',   kind:'fn', back:4},
     {t:'get_variable',          ins:'get_variable("")',                             detail:'Get a Scratch variable value',   kind:'fn', back:2},
     {t:'change_variable',       ins:'change_variable("", 1)',                       detail:'Add to a Scratch variable',      kind:'fn', back:4},
