@@ -772,6 +772,302 @@
           starter: null, target: null, newLines: [], requires: []
         }
       ]
+    },
+
+    // ── Apple Catcher ─────────────────────────────────────────────
+    {
+      cat: 'game',
+      emoji: '🍎',
+      title: 'Apple Catcher',
+      desc: 'Catch falling apples with a basket. Move left and right to score points — miss an apple and you lose a life. A great first two-sprite game.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'An Apple Catcher game! Apples fall from the top and you move a basket to catch them.<br><br>Before you start: <strong>rename your sprite to <code>Catcher</code></strong> using the name box below the stage. The Apple sprite will use <code>touching("Catcher")</code> to detect a catch.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Catcher: position and variables',
+          text: 'Write <code>game_start()</code> for the Catcher sprite. Place it at the bottom and create Score and Lives counters using <code>set_variable</code>:',
+          starter: '',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:',
+          newLines: ['def game_start():', '    set_variable("Score", 0)', '    set_variable("Lives", 3)', '    go_to_xy(0, -140)', '    while True:'],
+          requires: ['def game_start():', 'set_variable("Score"', 'set_variable("Lives"', 'go_to_xy(0, -140)', '    while True:']
+        },
+        {
+          title: 'Catcher: arrow key movement',
+          text: 'Inside the loop, move the basket with the arrow keys. The <code>set_x</code> clamps stop it going off screen:',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:\n        if key_pressed("right"):\n            change_x(8)\n        if key_pressed("left"):\n            change_x(-8)\n        if x_position() > 210:\n            set_x(210)\n        if x_position() < -210:\n            set_x(-210)',
+          newLines: ['        if key_pressed("right"):', '            change_x(8)', '        if key_pressed("left"):', '            change_x(-8)', '        if x_position() > 210:', '            set_x(210)', '        if x_position() < -210:', '            set_x(-210)'],
+          requires: ['key_pressed("right")', 'change_x(8)', 'key_pressed("left")', 'change_x(-8)', 'x_position() > 210', 'set_x(210)', 'x_position() < -210', 'set_x(-210)']
+        },
+        {
+          title: 'Add the Apple sprite',
+          text: 'Click the <strong>+</strong> sprite button and add a second sprite. <strong>Name it exactly <code>Apple</code></strong>. Then click the Apple sprite in the panel to switch to its code.',
+          starter: null, target: null, newLines: [], requires: [],
+          highlight: 'add-sprite-btn', highlightLabel: 'Add Apple sprite here',
+          requiresSpriteCount: 2, requiresSpriteHint: 'Add a sprite and name it "Apple"'
+        },
+        {
+          title: 'Apple: fall from the top',
+          text: 'With the <strong>Apple</strong> sprite selected, write its <code>game_start()</code>. It starts at a random x position at the top and falls downward every frame:',
+          starter: null,
+          target: 'def game_start():\n    go_to_xy(pick_random(-200, 200), 180)\n    while True:\n        change_y(-4)',
+          newLines: ['def game_start():', '    go_to_xy(pick_random(-200, 200), 180)', '    while True:', '        change_y(-4)'],
+          requires: ['def game_start():', 'go_to_xy(pick_random(-200, 200), 180)', '    while True:', 'change_y(-4)']
+        },
+        {
+          title: 'Apple: catch and miss',
+          text: 'Add two checks inside the loop. If the apple is touching the basket, score a point and reset to the top. If it falls off the bottom, lose a life and reset:',
+          starter: 'def game_start():\n    go_to_xy(pick_random(-200, 200), 180)\n    while True:\n        change_y(-4)',
+          target: 'def game_start():\n    go_to_xy(pick_random(-200, 200), 180)\n    while True:\n        change_y(-4)\n        if touching("Catcher"):\n            change_variable("Score", 1)\n            go_to_xy(pick_random(-200, 200), 180)\n        if y_position() < -180:\n            change_variable("Lives", -1)\n            go_to_xy(pick_random(-200, 200), 180)',
+          newLines: ['        if touching("Catcher"):', '            change_variable("Score", 1)', '            go_to_xy(pick_random(-200, 200), 180)', '        if y_position() < -180:', '            change_variable("Lives", -1)'],
+          requires: ['touching("Catcher")', 'change_variable("Score", 1)', 'y_position() < -180', 'change_variable("Lives", -1)']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click <strong>▶</strong>. Apples should fall at random positions — catch them with your basket!<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Add a game-over check: <code>if get_variable("Lives") &lt;= 0: say("Game Over!") stop()</code></li><li>Add <code>wait(0.3)</code> after the reset so there\'s a brief gap before the apple reappears</li><li>Make apples speed up — use a variable for speed instead of the fixed <code>-4</code></li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+
+    // ── Whack-a-Mole ──────────────────────────────────────────────
+    {
+      cat: 'game',
+      emoji: '🔨',
+      title: 'Whack-a-Mole',
+      desc: 'Moles pop up at random positions and vanish after a random time. Click them fast to score. Teaches timed clone lifetimes and when_clicked on clones.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'A Whack-a-Mole game! The original sprite stays hidden. Every 1.5 seconds it spawns a <strong>clone</strong> that appears at a random position for a random amount of time then vanishes. Click a mole to score a point and destroy it instantly.<br><br>You only need <strong>one sprite</strong> — the mole itself.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Main loop: spawn clones',
+          text: 'The original sprite hides itself then spawns a new clone every 1.5 seconds. <code>set_variable</code> creates the on-screen Score counter:',
+          starter: '',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
+          newLines: ['def game_start():', '    set_variable("Score", 0)', '    hide()', '    while True:', '        create_clone()', '        wait(1.5)'],
+          requires: ['def game_start():', 'set_variable("Score"', 'hide()', 'create_clone()', 'wait(1.5)']
+        },
+        {
+          title: 'Clone: appear at a random spot',
+          text: 'Each clone starts its own script. Move it to a random position and show it:',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
+          newLines: ['def when_I_start_as_a_clone():', '    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))', '    show()'],
+          requires: ['def when_I_start_as_a_clone():', 'go_to_xy(pick_random(-180, 180), pick_random(-100, 100))', 'show()']
+        },
+        {
+          title: 'Clone: vanish after a random time',
+          text: 'After showing, the clone waits a random amount of time (between 1 and 3 seconds), then hides and deletes itself:',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
+          newLines: ['    wait(pick_random(1, 3))', '    hide()', '    delete_clone()'],
+          requires: ['wait(pick_random(1, 3))', '    hide()', 'delete_clone()']
+        },
+        {
+          title: 'Click handler: whack it!',
+          text: '<code>def when_clicked():</code> fires on the clone that was clicked. Add 1 to Score and immediately destroy the clone:',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()\n\ndef when_clicked():\n    change_variable("Score", 1)\n    hide()\n    delete_clone()',
+          newLines: ['def when_clicked():', '    change_variable("Score", 1)', '    hide()', '    delete_clone()'],
+          requires: ['def when_clicked():', 'change_variable("Score", 1)', '    hide()', '    delete_clone()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click <strong>▶</strong>. Moles should pop up at random spots — click them before they vanish!<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Speed up the game over time — reduce the <code>wait(1.5)</code> in <code>game_start</code> based on <code>get_variable("Score")</code></li><li>Add a 30-second time limit using <code>timer()</code> and <code>if timer() &gt; 30: say("Time\'s up!") stop()</code></li><li>Make moles shrink as your score increases using <code>set_size()</code></li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+
+    // ── Space Shooter ─────────────────────────────────────────────
+    {
+      cat: 'game',
+      emoji: '🚀',
+      title: 'Space Shooter',
+      desc: 'Fly a ship left and right and press space to fire bullets upward. Bullets are clones that delete themselves on impact. Teaches the broadcast → clone projectile pattern.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'A Space Shooter! Move your ship left and right. Press <strong>space</strong> to fire bullets upward at an enemy that patrols the top of the screen.<br><br>You need <strong>three sprites</strong>: <code>Player</code> (the ship), <code>Bullet</code> (a small projectile), and <code>Enemy</code>. <strong>Rename your default sprite to <code>Player</code></strong>.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Player: movement and boundary',
+          text: 'Write the Player\'s <code>game_start()</code> — left/right movement with arrow keys and clamping so it stays on screen:',
+          starter: '',
+          target: 'def game_start():\n    go_to_xy(0, -150)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if x_position() > 220:\n            set_x(220)\n        if x_position() < -220:\n            set_x(-220)',
+          newLines: ['def game_start():', '    go_to_xy(0, -150)', '    set_rotation_style("left-right")', '    while True:', '        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)', '        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)', '        if x_position() > 220:', '            set_x(220)', '        if x_position() < -220:', '            set_x(-220)'],
+          requires: ['go_to_xy(0, -150)', 'key_pressed("right")', 'change_x(5)', 'key_pressed("left")', 'change_x(-5)', 'x_position() > 220', 'set_x(220)', 'x_position() < -220', 'set_x(-220)']
+        },
+        {
+          title: 'Player: fire bullets',
+          text: 'At the end of the loop, check whether the space key is pressed and broadcast <code>"fire"</code>. The Bullet sprite will listen for this:',
+          starter: 'def game_start():\n    go_to_xy(0, -150)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if x_position() > 220:\n            set_x(220)\n        if x_position() < -220:\n            set_x(-220)',
+          target: 'def game_start():\n    go_to_xy(0, -150)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if x_position() > 220:\n            set_x(220)\n        if x_position() < -220:\n            set_x(-220)\n        if key_pressed("space"):\n            broadcast("fire")',
+          newLines: ['        if key_pressed("space"):', '            broadcast("fire")'],
+          requires: ['key_pressed("space")', 'broadcast("fire")']
+        },
+        {
+          title: 'Add the Bullet and Enemy sprites',
+          text: 'Click <strong>+</strong> twice to add two more sprites. Name them exactly <strong><code>Bullet</code></strong> and <strong><code>Enemy</code></strong>. Then click the <strong>Bullet</strong> sprite to switch to its code.',
+          starter: null, target: null, newLines: [], requires: [],
+          highlight: 'add-sprite-btn', highlightLabel: 'Add sprites here',
+          requiresSpriteCount: 3, requiresSpriteHint: 'Add "Bullet" and "Enemy" sprites'
+        },
+        {
+          title: 'Bullet: listen for "fire" and launch a clone',
+          text: 'With the <strong>Bullet</strong> sprite selected, write its code. The base sprite hides itself. When the "fire" broadcast arrives it jumps to the Player\'s position and spawns a clone. The clone then shoots upward:',
+          starter: null,
+          target: 'def game_start():\n    hide()\n\ndef when_message_received(message):\n    if message == "fire":\n        go_to("Player")\n        create_clone()\n\ndef when_I_start_as_a_clone():\n    show()\n    while True:\n        change_y(8)\n        if y_position() > 180:\n            delete_clone()\n        if touching("Enemy"):\n            change_variable("Score", 1)\n            delete_clone()',
+          newLines: ['def game_start():', '    hide()', 'def when_message_received(message):', '    if message == "fire":', '        go_to("Player")', '        create_clone()', 'def when_I_start_as_a_clone():', '    show()', '    while True:', '        change_y(8)', '        if y_position() > 180:', '            delete_clone()', '        if touching("Enemy"):', '            change_variable("Score", 1)', '            delete_clone()'],
+          requires: ['def game_start():', 'hide()', 'def when_message_received(message):', 'message == "fire"', 'go_to("Player")', 'create_clone()', 'def when_I_start_as_a_clone():', 'show()', 'change_y(8)', 'y_position() > 180', 'touching("Enemy")', 'change_variable("Score"', 'delete_clone()']
+        },
+        {
+          title: 'Enemy: patrol left and right',
+          text: 'Click the <strong>Enemy</strong> sprite. Give it a velocity variable and a simple loop that bounces it off the edges of the screen. <code>set_variable("Score", 0)</code> creates the score counter:',
+          starter: null,
+          target: 'vx = 3\n\ndef game_start():\n    global vx\n    set_variable("Score", 0)\n    go_to_xy(-200, 120)\n    while True:\n        change_x(vx)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
+          newLines: ['vx = 3', '', 'def game_start():', '    global vx', '    set_variable("Score", 0)', '    go_to_xy(-200, 120)', '    while True:', '        change_x(vx)', '        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
+          requires: ['vx = 3', 'def game_start():', 'global vx', 'set_variable("Score"', 'go_to_xy(-200, 120)', 'change_x(vx)', 'x_position() > 220', 'vx = vx * -1']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click <strong>▶</strong>. Move with arrow keys, fire with space — hit the enemy to score!<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Add a <code>wait(0.2)</code> after <code>broadcast("fire")</code> so bullets have a fire rate limit</li><li>Speed the enemy up as Score increases — use <code>get_variable("Score")</code> to scale <code>vx</code></li><li>Add multiple enemies using <code>create_clone_of("Enemy")</code> from the Player code</li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+
+    // ── Pong ──────────────────────────────────────────────────────
+    {
+      cat: 'game',
+      emoji: '🏓',
+      title: 'Pong',
+      desc: 'Classic one-player Pong. Bounce the ball off the walls and your paddle — miss it and it\'s game over. Teaches velocity-based bounce and two-sprite interaction.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'A one-player Pong game! A ball bounces off the left, right, and top walls. Move the paddle to bounce it back up. If the ball gets past the paddle it\'s game over.<br><br>You need <strong>two sprites</strong>: <code>Paddle</code> and <code>Ball</code>. <strong>Rename your default sprite to <code>Paddle</code></strong>.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Paddle: movement and boundary',
+          text: 'Write the Paddle\'s <code>game_start()</code>. Position it at the bottom and move it left and right with the arrow keys:',
+          starter: '',
+          target: 'def game_start():\n    go_to_xy(0, -150)\n    while True:\n        if key_pressed("right"):\n            change_x(8)\n        if key_pressed("left"):\n            change_x(-8)\n        if x_position() > 200:\n            set_x(200)\n        if x_position() < -200:\n            set_x(-200)',
+          newLines: ['def game_start():', '    go_to_xy(0, -150)', '    while True:', '        if key_pressed("right"):', '            change_x(8)', '        if key_pressed("left"):', '            change_x(-8)', '        if x_position() > 200:', '            set_x(200)', '        if x_position() < -200:', '            set_x(-200)'],
+          requires: ['go_to_xy(0, -150)', 'key_pressed("right")', 'change_x(8)', 'key_pressed("left")', 'change_x(-8)', 'x_position() > 200', 'set_x(200)', 'x_position() < -200', 'set_x(-200)']
+        },
+        {
+          title: 'Add the Ball sprite',
+          text: 'Click <strong>+</strong> to add a second sprite. Name it <strong><code>Ball</code></strong>. Then click the Ball in the sprite panel to switch to its code.',
+          starter: null, target: null, newLines: [], requires: [],
+          highlight: 'add-sprite-btn', highlightLabel: 'Add Ball sprite here',
+          requiresSpriteCount: 2, requiresSpriteHint: 'Add a sprite and name it "Ball"'
+        },
+        {
+          title: 'Ball: velocity variables',
+          text: 'With <strong>Ball</strong> selected, set up two global velocity variables outside <code>game_start</code>. Then start the ball in the centre and set up the Score counter:',
+          starter: null,
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)',
+          newLines: ['vx = 4', 'vy = 3', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    go_to_xy(0, 50)'],
+          requires: ['vx = 4', 'vy = 3', 'global vx, vy', 'set_variable("Score"', 'go_to_xy(0, 50)']
+        },
+        {
+          title: 'Ball: movement and wall bouncing',
+          text: 'Add the <code>while True:</code> loop. The ball moves by its velocity each frame and reverses direction when it hits the left/right walls or the top:',
+          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)',
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          newLines: ['    while True:', '        change_x(vx)', '        change_y(vy)', '        if x_position() > 225 or x_position() < -225:', '            vx = vx * -1', '        if y_position() > 165:', '            vy = vy * -1'],
+          requires: ['    while True:', 'change_x(vx)', 'change_y(vy)', 'x_position() > 225', 'vx = vx * -1', 'y_position() > 165', 'vy = vy * -1']
+        },
+        {
+          title: 'Ball: bounce off paddle and game over',
+          text: 'Add two more checks: bounce upward when the ball touches the Paddle (only if already moving downward), and stop the game if it drops off the bottom:',
+          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
+          newLines: ['        if touching("Paddle") and vy < 0:', '            vy = vy * -1', '            change_variable("Score", 1)', '        if y_position() < -175:', '            say("Game Over!")', '            stop()'],
+          requires: ['touching("Paddle") and vy < 0', '            vy = vy * -1', 'change_variable("Score", 1)', 'y_position() < -175', 'say("Game Over!")', 'stop()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click <strong>▶</strong>. Keep the ball alive with your paddle — each bounce scores a point!<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Speed the ball up over time — add <code>vy = vy * 1.05</code> each time you hit the paddle</li><li>Make the bounce angle depend on where the ball hits the paddle using <code>x_position() - touching("Paddle")</code> — look up how Scratch Pong angle maths works</li><li>Add a two-player mode: second paddle controlled with W/S keys, both using <code>change_y</code></li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
+    },
+
+    // ── Breakout ──────────────────────────────────────────────────
+    {
+      cat: 'game',
+      emoji: '🧱',
+      title: 'Breakout',
+      desc: 'Bounce a ball off a paddle to smash rows of brick clones. Each brick deletes itself on impact. Teaches nested loops for grid layout and multi-sprite collision.',
+      steps: [
+        {
+          title: 'What are we building?',
+          text: 'Breakout! A ball bounces around the screen. Use the paddle to keep it alive — when the ball hits a Brick clone it destroys it and you score a point.<br><br>You need <strong>three sprites</strong>: <code>Paddle</code>, <code>Ball</code>, and <code>Brick</code>. <strong>Rename your sprite to <code>Paddle</code></strong>.',
+          starter: null, target: null, newLines: [], requires: []
+        },
+        {
+          title: 'Paddle: movement and boundary',
+          text: 'Write the Paddle\'s <code>game_start()</code> — identical to Pong. Place it at the bottom and move left/right with clamping:',
+          starter: '',
+          target: 'def game_start():\n    go_to_xy(0, -150)\n    while True:\n        if key_pressed("right"):\n            change_x(8)\n        if key_pressed("left"):\n            change_x(-8)\n        if x_position() > 200:\n            set_x(200)\n        if x_position() < -200:\n            set_x(-200)',
+          newLines: ['def game_start():', '    go_to_xy(0, -150)', '    while True:', '        if key_pressed("right"):', '            change_x(8)', '        if key_pressed("left"):', '            change_x(-8)', '        if x_position() > 200:', '            set_x(200)', '        if x_position() < -200:', '            set_x(-200)'],
+          requires: ['go_to_xy(0, -150)', 'key_pressed("right")', 'change_x(8)', 'key_pressed("left")', 'change_x(-8)', 'x_position() > 200', 'set_x(200)', 'x_position() < -200', 'set_x(-200)']
+        },
+        {
+          title: 'Add Ball and Brick sprites',
+          text: 'Click <strong>+</strong> twice. Name the sprites <strong><code>Ball</code></strong> and <strong><code>Brick</code></strong>. Then click <strong>Ball</strong> to switch to its code.',
+          starter: null, target: null, newLines: [], requires: [],
+          highlight: 'add-sprite-btn', highlightLabel: 'Add sprites here',
+          requiresSpriteCount: 3, requiresSpriteHint: 'Add "Ball" and "Brick" sprites'
+        },
+        {
+          title: 'Ball: velocity and movement',
+          text: 'With <strong>Ball</strong> selected, add velocity variables then write the movement loop with wall and ceiling bouncing:',
+          starter: null,
+          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          newLines: ['vx = 4', 'vy = 4', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    go_to_xy(0, -30)', '    while True:', '        change_x(vx)', '        change_y(vy)', '        if x_position() > 225 or x_position() < -225:', '            vx = vx * -1', '        if y_position() > 165:', '            vy = vy * -1'],
+          requires: ['vx = 4', 'vy = 4', 'global vx, vy', 'set_variable("Score"', 'go_to_xy(0, -30)', 'change_x(vx)', 'change_y(vy)', 'x_position() > 225', 'vx = vx * -1', 'y_position() > 165', 'vy = vy * -1']
+        },
+        {
+          title: 'Ball: paddle bounce, brick bounce, game over',
+          text: 'Add three more checks: bounce off the Paddle, bounce off any Brick and score, and stop the game if the ball falls past the bottom:',
+          starter: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n        if touching("Brick"):\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
+          newLines: ['        if touching("Paddle") and vy < 0:', '            vy = vy * -1', '        if touching("Brick"):', '            vy = vy * -1', '            change_variable("Score", 1)', '        if y_position() < -175:', '            say("Game Over!")', '            stop()'],
+          requires: ['touching("Paddle") and vy < 0', 'touching("Brick")', '            change_variable("Score", 1)', 'y_position() < -175', 'say("Game Over!")', 'stop()']
+        },
+        {
+          title: 'Brick: build the grid',
+          text: 'Click the <strong>Brick</strong> sprite. Use two nested <code>for</code> loops to create 3 rows of 8 bricks. The base sprite hides itself — only clones are visible:',
+          starter: null,
+          target: 'def game_start():\n    hide()\n    for row in range(3):\n        for col in range(8):\n            go_to_xy(-175 + col * 50, 80 - row * 30)\n            create_clone()',
+          newLines: ['def game_start():', '    hide()', '    for row in range(3):', '        for col in range(8):', '            go_to_xy(-175 + col * 50, 80 - row * 30)', '            create_clone()'],
+          requires: ['def game_start():', 'hide()', 'for row in range(3):', 'for col in range(8):', 'go_to_xy(-175 + col * 50, 80 - row * 30)', 'create_clone()']
+        },
+        {
+          title: 'Brick: clones appear and die on contact',
+          text: 'Each brick clone shows itself when created. It watches for the Ball touching it — when hit, it deletes itself (the Ball\'s code already reverses direction):',
+          starter: 'def game_start():\n    hide()\n    for row in range(3):\n        for col in range(8):\n            go_to_xy(-175 + col * 50, 80 - row * 30)\n            create_clone()',
+          target: 'def game_start():\n    hide()\n    for row in range(3):\n        for col in range(8):\n            go_to_xy(-175 + col * 50, 80 - row * 30)\n            create_clone()\n\ndef when_I_start_as_a_clone():\n    show()\n    while True:\n        if touching("Ball"):\n            delete_clone()',
+          newLines: ['def when_I_start_as_a_clone():', '    show()', '    while True:', '        if touching("Ball"):', '            delete_clone()'],
+          requires: ['def when_I_start_as_a_clone():', '    show()', 'while True:', 'touching("Ball")', 'delete_clone()']
+        },
+        {
+          title: '✅ Try it!',
+          text: 'Click <strong>▶</strong>. Smash all the bricks — each one scores a point!<br><br><strong>Challenges:</strong><ul style="margin-top:0.5rem;padding-left:1.2rem"><li>Add more rows of bricks by changing <code>range(3)</code> to a larger number</li><li>Add a win condition: when Score reaches the total brick count, say "You Win!" and <code>stop()</code></li><li>Make different coloured rows worth different points using <code>set_effect("color", ...)</code> on each clone based on <code>row</code></li></ul>',
+          starter: null, target: null, newLines: [], requires: []
+        }
+      ]
     }
   ];
 
@@ -2431,6 +2727,11 @@
       '.ps-tcard-desc{font-size:12px;color:var(--ps-muted,#9090b0);line-height:1.5;margin-bottom:10px}',
       '.ps-tcard-start{display:block;width:100%;background:var(--ps-accent,#7c5fcf);border:none;color:#fff;cursor:pointer;padding:6px 0;border-radius:5px;font-size:12px;font-weight:600;font-family:inherit;transition:opacity .1s}',
       '.ps-tcard-start:hover{opacity:.85}',
+      // Tutorial tab bar
+      '.ps-ttabs{display:flex;border-bottom:1px solid var(--ps-border-strong,#3f3f5a);padding:0 16px;flex-shrink:0}',
+      '.ps-ttab{padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--ps-muted,#9090b0);user-select:none;margin-bottom:-1px;transition:color .1s}',
+      '.ps-ttab.ps-ttab-active{color:var(--ps-accent-bright,#a87fff);border-bottom-color:var(--ps-accent-bright,#a87fff)}',
+      '.ps-ttab:hover:not(.ps-ttab-active){color:var(--ps-text,#cdd6f4)}',
 
       // Tutorial bar (inline, above the editor)
       '#ps-tut-bar{background:var(--ps-panel-2,#18182a);border-bottom:2px solid var(--ps-accent,#7c5fcf);display:flex;flex-direction:column;flex-shrink:0;max-height:26vh;overflow-y:auto}',
@@ -2795,9 +3096,16 @@
   }
 
   // ── Tutorial pick modal ───────────────────────────────────────
+  // Tutorials categorised as games (the rest are Concepts)
+  var _GAME_TITLES = {
+    'Flappy Bird':1,'Doodle Jump':1,'Duck Hunt':1,'RPG Survivor':1,
+    'Apple Catcher':1,'Whack-a-Mole':1,'Space Shooter':1,'Pong':1,'Breakout':1
+  };
+
   function buildTutorialHTML() {
     var cards = TUTORIALS.map(function (t, i) {
-      return '<div class="ps-tcard" data-idx="' + i + '">' +
+      var cat = (_GAME_TITLES[t.title] || t.cat === 'game') ? 'game' : 'concept';
+      return '<div class="ps-tcard" data-idx="' + i + '" data-cat="' + cat + '">' +
         '<div class="ps-tcard-top">' +
           '<span class="ps-tcard-emoji">' + t.emoji + '</span>' +
           '<span class="ps-tcard-title">' + t.title + '</span>' +
@@ -2808,6 +3116,10 @@
     }).join('');
     return '<div class="ps-tbox">' +
       '<div class="ps-thead"><span>📚 Tutorials</span><button title="Close">&times;</button></div>' +
+      '<div class="ps-ttabs">' +
+        '<div class="ps-ttab ps-ttab-active" data-cat="concept">📐 Concepts</div>' +
+        '<div class="ps-ttab" data-cat="game">🎮 Games</div>' +
+      '</div>' +
       '<div class="ps-tgrid">' + cards + '</div>' +
     '</div>';
   }
@@ -2819,6 +3131,20 @@
     document.addEventListener('keydown', function (e) {
       if (!tm.classList.contains('hidden') && e.key === 'Escape') tm.classList.add('hidden');
     });
+
+    // Tab switching
+    function switchTab(activeCat) {
+      tm.querySelectorAll('.ps-ttab').forEach(function (tab) {
+        tab.classList.toggle('ps-ttab-active', tab.dataset.cat === activeCat);
+      });
+      tm.querySelectorAll('.ps-tcard').forEach(function (card) {
+        card.style.display = card.dataset.cat === activeCat ? '' : 'none';
+      });
+    }
+    tm.querySelectorAll('.ps-ttab').forEach(function (tab) {
+      tab.addEventListener('click', function () { switchTab(tab.dataset.cat); });
+    });
+    switchTab('concept'); // start on Concepts tab
 
     tm.querySelectorAll('.ps-tcard-start').forEach(function (btn) {
       btn.addEventListener('click', function () {
