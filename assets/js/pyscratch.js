@@ -1770,10 +1770,10 @@
               type: '', isCloud: false };
     stage.variables[vid] = v;
 
-    // Register a monitor block so the variable shows on stage.
-    // TurboWarp renders variable monitors from runtime.monitorBlocks.
-    // requestUpdateMonitors() iterates monitorBlocks.getScripts() which reads
-    // from _scripts — so we must ensure the block ID is in _scripts, not just _blocks.
+    // Register a monitor block in monitorBlocks so the changeBlock fallback
+    // path in display_variable() can find it. Block starts with isMonitored:false
+    // so that changeBlock correctly detects the false→true transition and calls
+    // requestAddMonitor. The primary display path uses _monitorState.set() directly.
     try {
       var mb = rt.monitorBlocks;
       if (mb) {
@@ -1783,18 +1783,12 @@
           next: null, topLevel: true, parentId: null, shadow: false,
           x: 5, y: 5, isMonitored: false, visible: false
         };
-        // Try the official API (may also update _scripts internally)
         if (typeof mb.createBlock === 'function') {
           try { mb.createBlock(blockDef); } catch(e2) {}
         }
-        // Always ensure the block is in _blocks and _scripts — createBlock may be
-        // a no-op, may throw, or may exist on the prototype but not update _scripts.
-        if (mb._blocks && !mb._blocks[vid]) {
-          mb._blocks[vid] = blockDef;
-        }
-        if (mb._scripts && mb._scripts.indexOf(vid) === -1) {
-          mb._scripts.push(vid);
-        }
+        // Defensive write in case createBlock failed or doesn't update _blocks/_scripts.
+        if (mb._blocks && !mb._blocks[vid]) mb._blocks[vid] = blockDef;
+        if (mb._scripts && mb._scripts.indexOf(vid) === -1) mb._scripts.push(vid);
       }
     } catch(e) {}
 
@@ -2288,28 +2282,43 @@
         var dvShow = (b !== false && b !== 0 && b !== 'False');
         var dvVar  = findOrCreateVariable(String(a), 0);
         if (!dvVar) break;
-        var dvId = dvVar.id;
-        var dvRt = S.vm && S.vm.runtime;
+        var dvId   = dvVar.id;
+        var dvName = dvVar.name;
+        var dvRt   = S.vm && S.vm.runtime;
         if (!dvRt) break;
-        var dvMb = dvRt.monitorBlocks;
-        if (dvMb) {
-          // Directly flip the block's visibility — works regardless of whether
-          // changeBlock exists or finds the block.
-          var dvBlk = dvMb._blocks && dvMb._blocks[dvId];
-          if (dvBlk) {
-            dvBlk.visible     = dvShow;
-            dvBlk.isMonitored = dvShow;
+
+        // ── Primary path ────────────────────────────────────────────
+        // TurboWarp stores monitor display state in runtime._monitorState
+        // (tw-monitor-state.js). _monitorState.set(id, JSDelta) accepts a plain
+        // JS object and marks dirty=true. requestUpdateMonitors() then emits
+        // _monitorState.shallowClone() as the MONITORS_UPDATE event that the GUI
+        // uses to render on-screen counters. This bypasses the monitorBlocks
+        // change detection which requires an exact false→true isMonitored transition.
+        try {
+          var dvMs = dvRt._monitorState;
+          if (dvMs && typeof dvMs.set === 'function') {
+            dvMs.set(dvId, {
+              id: dvId, targetId: null, spriteName: null,
+              opcode: 'data_variable', params: { VARIABLE: dvName },
+              value: (dvVar.value != null ? dvVar.value : 0),
+              mode: 'default', visible: dvShow,
+              x: 5, y: 5, width: 0, height: 0,
+              sliderMin: 0, sliderMax: 100, isDiscrete: true
+            });
           }
-          // requestUpdateMonitors iterates _scripts, not _blocks. Make sure the ID
-          // is in _scripts or the monitor is silently skipped.
-          if (dvShow && dvMb._scripts && dvMb._scripts.indexOf(dvId) === -1) {
-            dvMb._scripts.push(dvId);
+        } catch(e) {}
+
+        // ── Fallback path ────────────────────────────────────────────
+        // For older/standard Scratch VM builds that don't have _monitorState.set.
+        // IMPORTANT: do NOT pre-set block.isMonitored before calling changeBlock —
+        // changeBlock detects the false→true transition to call requestAddMonitor.
+        try {
+          var dvMb2 = dvRt.monitorBlocks;
+          if (dvMb2 && typeof dvMb2.changeBlock === 'function') {
+            dvMb2.changeBlock({ id: dvId, element: 'checkbox', value: dvShow });
           }
-          // Also call the official API as a belt-and-suspenders measure.
-          if (typeof dvMb.changeBlock === 'function') {
-            try { dvMb.changeBlock({ id: dvId, element: 'checkbox', value: dvShow }); } catch(e) {}
-          }
-        }
+        } catch(e) {}
+
         try { dvRt.requestUpdateMonitors(); } catch(e) {}
         break;
       }
