@@ -1772,6 +1772,8 @@
 
     // Register a monitor block so the variable shows on stage.
     // TurboWarp renders variable monitors from runtime.monitorBlocks.
+    // requestUpdateMonitors() iterates monitorBlocks.getScripts() which reads
+    // from _scripts — so we must ensure the block ID is in _scripts, not just _blocks.
     try {
       var mb = rt.monitorBlocks;
       if (mb) {
@@ -1779,21 +1781,23 @@
           id: vid, opcode: 'data_variable',
           inputs: {}, fields: { VARIABLE: { name: 'VARIABLE', value: nameStr, id: vid } },
           next: null, topLevel: true, parentId: null, shadow: false,
-          x: 5, y: 5, isMonitored: true, visible: true
+          x: 5, y: 5, isMonitored: false, visible: false
         };
+        // Try the official API (may also update _scripts internally)
         if (typeof mb.createBlock === 'function') {
-          mb.createBlock(blockDef);
-        } else if (mb._blocks) {
+          try { mb.createBlock(blockDef); } catch(e2) {}
+        }
+        // Always ensure the block is in _blocks and _scripts — createBlock may be
+        // a no-op, may throw, or may exist on the prototype but not update _scripts.
+        if (mb._blocks && !mb._blocks[vid]) {
           mb._blocks[vid] = blockDef;
         }
-        // Some TurboWarp builds expose changeBlock for monitor visibility
-        if (typeof mb.changeBlock === 'function') {
-          try { mb.changeBlock({ id: vid, element: 'checkbox', value: true }); } catch(e2) {}
+        if (mb._scripts && mb._scripts.indexOf(vid) === -1) {
+          mb._scripts.push(vid);
         }
       }
     } catch(e) {}
 
-    try { rt.requestUpdateMonitors(); } catch(e) {}
     return v;
   }
 
@@ -2289,16 +2293,21 @@
         if (!dvRt) break;
         var dvMb = dvRt.monitorBlocks;
         if (dvMb) {
-          // Primary path: changeBlock mirrors what TurboWarp does when toggling
-          // the checkbox in its own Variables panel.
-          if (typeof dvMb.changeBlock === 'function') {
-            try { dvMb.changeBlock({ id: dvId, element: 'checkbox', value: dvShow }); } catch(e) {}
-          }
-          // Fallback: write directly onto the block definition stored in _blocks.
+          // Directly flip the block's visibility — works regardless of whether
+          // changeBlock exists or finds the block.
           var dvBlk = dvMb._blocks && dvMb._blocks[dvId];
           if (dvBlk) {
             dvBlk.visible     = dvShow;
             dvBlk.isMonitored = dvShow;
+          }
+          // requestUpdateMonitors iterates _scripts, not _blocks. Make sure the ID
+          // is in _scripts or the monitor is silently skipped.
+          if (dvShow && dvMb._scripts && dvMb._scripts.indexOf(dvId) === -1) {
+            dvMb._scripts.push(dvId);
+          }
+          // Also call the official API as a belt-and-suspenders measure.
+          if (typeof dvMb.changeBlock === 'function') {
+            try { dvMb.changeBlock({ id: dvId, element: 'checkbox', value: dvShow }); } catch(e) {}
           }
         }
         try { dvRt.requestUpdateMonitors(); } catch(e) {}
