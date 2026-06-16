@@ -2440,6 +2440,7 @@
             if (!proj || !Array.isArray(proj.targets)) return { buffer: buf, pyCode: null };
 
             var extracted = {};
+            var extractedSnaps = {};
             var found = false;
             proj.targets.forEach(function (t) {
               if (t.pyscratch) {
@@ -2447,14 +2448,21 @@
                 delete t.pyscratch;   // strip before TurboWarp's parser sees it
                 found = true;
               }
+              if (t.pyscratchSnaps) {
+                extractedSnaps[t.name] = t.pyscratchSnaps;
+                delete t.pyscratchSnaps; // strip before TurboWarp's parser sees it
+              }
             });
 
-            if (!found) return { buffer: buf, pyCode: null };
+            // Re-pack project.json to strip pyscratch fields.
+            // Always re-pack if we extracted anything (code or snapshots), so
+            // TurboWarp's parser never sees the unknown fields.
+            var hasSnaps = Object.keys(extractedSnaps).length > 0;
+            if (!found && !hasSnaps) return { buffer: buf, pyCode: null, snapshots: {} };
 
-            // Re-pack project.json without the pyscratch fields
             zip.file('project.json', JSON.stringify(proj));
             return zip.generateAsync({ type: 'arraybuffer' }).then(function (clean) {
-              return { buffer: clean, pyCode: extracted };
+              return { buffer: clean, pyCode: found ? extracted : null, snapshots: extractedSnaps };
             });
           });
 
@@ -4022,7 +4030,7 @@
   }
 
   // ── Per-sprite code snapshots ─────────────────────────────────
-  var SNAP_MAX = 5;
+  var SNAP_MAX = 20;
 
   function snapStoreKey(spriteName) {
     try {
@@ -4959,8 +4967,13 @@
             try {
               var proj = JSON.parse(jsonStr);
               (proj.targets || []).forEach(function (t) {
-                if (!t.isStage && S.spriteCode[t.name] && S.spriteCode[t.name].length) {
-                  t.pyscratch = S.spriteCode[t.name];
+                if (!t.isStage) {
+                  if (S.spriteCode[t.name] && S.spriteCode[t.name].length) {
+                    t.pyscratch = S.spriteCode[t.name];
+                  }
+                  // Embed snapshots so they travel with the .sb3
+                  var snaps = loadSnaps(t.name);
+                  if (snaps && snaps.length) t.pyscratchSnaps = snaps;
                 }
               });
               return JSON.stringify(proj);
@@ -4981,7 +4994,16 @@
         vm.loadProject = function (input) {
           return extractPyScratchData(input).then(function (result) {
             if (result.pyCode) S.spriteCode = result.pyCode;
-            return _origLoadProject(result.buffer);
+            return _origLoadProject(result.buffer).then(function (r) {
+              // Re-key snapshots by UUID now that targets exist in the VM
+              if (result.snapshots) {
+                Object.keys(result.snapshots).forEach(function (name) {
+                  var snaps = result.snapshots[name];
+                  if (snaps && snaps.length) saveSnaps(name, snaps);
+                });
+              }
+              return r;
+            });
           });
         };
       } catch(e) {
