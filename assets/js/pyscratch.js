@@ -317,8 +317,8 @@
           text: 'Add <code>next_costume()</code> inside <strong>both</strong> if blocks, after each <code>point_in_direction</code> line. Each frame the key is held, the sprite advances one costume.',
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
-          newLines: ['            next_costume()'],
-          requires: ['next_costume()']
+          newLines: ['            next_costume()', '            next_costume()'],
+          requires: [{ req: '            next_costume()', count: 2, label: 'next_costume() in both if blocks' }]
         },
         {
           title: 'Idle pose when still',
@@ -326,7 +326,7 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
           newLines: ['        moved = False', '            moved = True', '        if moved:', '            next_costume()', '        else:', '            set_costume(1)'],
-          requires: ['moved = False', 'moved = True', 'set_costume(1)']
+          requires: ['moved = False', { req: '            moved = True', count: 2, label: 'moved = True in both if blocks' }, 'set_costume(1)']
         },
         {
           title: 'Control animation speed',
@@ -550,7 +550,7 @@
           starter: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)',
           target: 'vy = 8\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.4\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 8',
           newLines: ['        if y_position() < -150:', '            set_y(-150)', '            vy = 8'],
-          requires: ['y_position() < -150', 'set_y(-150)', 'vy = 8']
+          requires: ['y_position() < -150', '            set_y(-150)', '            vy = 8']
         },
         {
           title: 'Left and right movement',
@@ -872,7 +872,7 @@
           starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
           target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
           newLines: ['    wait(pick_random(1, 3))', '    hide()', '    delete_clone()'],
-          requires: ['wait(pick_random(1, 3))', '    hide()', 'delete_clone()']
+          requires: ['wait(pick_random(1, 3))', '    delete_clone()']
         },
         {
           title: 'Click handler: whack it!',
@@ -880,7 +880,7 @@
           starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
           target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()\n\ndef when_clicked():\n    change_variable("Score", 1)\n    hide()\n    delete_clone()',
           newLines: ['def when_clicked():', '    change_variable("Score", 1)', '    hide()', '    delete_clone()'],
-          requires: ['def when_clicked():', 'change_variable("Score", 1)', '    hide()', '    delete_clone()']
+          requires: ['def when_clicked():', 'change_variable("Score", 1)']
         },
         {
           title: '✅ Try it!',
@@ -1227,7 +1227,7 @@
       if (saved) { S.spriteCode[spriteName] = JSON.parse(saved); return S.spriteCode[spriteName]; }
     } catch (e) {}
     var def = [{ id: 't_' + Date.now(), name: 'Main',
-      code: 'def game_start():\n    while True:\n        move_steps(5)\n        if on_edge():\n            bounce()\n' }];
+      code: 'def game_start():\n    pass  # Delete this line before writing code\n' }];
     S.spriteCode[spriteName] = def;
     return def;
   }
@@ -2818,6 +2818,18 @@
       '.ps-tb-cl.old{color:#374151}',
       '.ps-tb-cl.new{color:#fbbf24;font-weight:600}',
       '.ps-tb-cl.new.typed{color:#4ade80}',
+      // Color legend below the code block
+      '.ps-tb-code-leg{display:flex;gap:10px;padding:4px 8px 2px;flex-shrink:0;flex-wrap:wrap}',
+      '.ps-tb-leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--ps-muted,#6a6a8a);white-space:nowrap}',
+      '.ps-tb-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}',
+      '.ps-tb-leg-dot.ld-old{background:#374151;border:1px solid #4b5563}',
+      '.ps-tb-leg-dot.ld-new{background:#fbbf24}',
+      '.ps-tb-leg-dot.ld-done{background:#4ade80}',
+      // Warning shown when grey lines have been deleted
+      '.ps-tb-miss{margin:2px 8px 0;padding:4px 8px;background:#2a1a1a;border:1px solid #7f1d1d;border-radius:4px;font-size:10px;color:#fca5a5;display:flex;align-items:center;gap:6px;flex-shrink:0}',
+      '.ps-tb-miss.ps-tb-miss-hidden{display:none}',
+      '.ps-tb-miss-restore{margin-left:auto;background:none;border:1px solid #f87171;color:#f87171;cursor:pointer;padding:2px 7px;border-radius:3px;font-size:9px;font-family:inherit;flex-shrink:0}',
+      '.ps-tb-miss-restore:hover{background:#7f1d1d}',
       // Prevent selecting or copying the reference code — students must type it themselves
       '.ps-tb-code-block{user-select:none;-webkit-user-select:none;-moz-user-select:none}',
       // Checklist
@@ -2909,6 +2921,15 @@
                 '</div>',
                 '<div class="ps-tb-code-wrap ps-tb-no-target">',
                   '<div class="ps-tb-code-block"></div>',
+                  '<div class="ps-tb-code-leg">',
+                    '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-old"></span>Already in your editor — keep it</span>',
+                    '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-new"></span>Type this</span>',
+                    '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-done"></span>Done ✓</span>',
+                  '</div>',
+                  '<div class="ps-tb-miss ps-tb-miss-hidden">',
+                    '⚠️ Some grey lines have been deleted',
+                    '<button class="ps-tb-miss-restore">↺ Restore</button>',
+                  '</div>',
                 '</div>',
                 '<div class="ps-tb-indent-tip ps-tb-tip-hidden">',
                   '↹ Press <strong>Tab</strong> to indent (on some keyboards the key shows two arrows ↹ instead of "Tab") · 4 spaces per indent level',
@@ -3423,16 +3444,56 @@
   // e.g. 'change_x( 5 )' and 'vx=3' both satisfy the right requires string.
   function tutReqMatches(code, req) {
     if (!req) return true;
-    // Fast path: exact substring match
-    if (code.indexOf(req) !== -1) return true;
-    // Slow path: build a regex with flexible internal spacing
+    var m      = req.match(/^([ \t]*)([\s\S]*)$/);
+    var indent = m[1];
+    if (indent.length > 0) {
+      // ── Indented requires: line-anchored ──────────────────────────
+      // Leading whitespace must match exactly at the start of a line so that
+      // over-indented code (e.g. 12 spaces when 8 are expected) is rejected.
+      if (('\n' + code).indexOf('\n' + req) !== -1) return true;
+      try {
+        var escaped = m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var flex    = escaped.replace(/ /g, '[ \\t]*');
+        return new RegExp('^' + indent + flex, 'm').test(code);
+      } catch(e) { return false; }
+    } else {
+      // ── Unindented requires: match anywhere (indent-agnostic) ─────
+      // Many requires deliberately omit indentation so they pass regardless
+      // of nesting depth (e.g. 'next_costume()' inside any if block).
+      if (code.indexOf(req) !== -1) return true;
+      try {
+        var escaped2 = req.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var flex2    = escaped2.replace(/ /g, '[ \\t]*');
+        return new RegExp(flex2).test(code);
+      } catch(e) { return false; }
+    }
+  }
+
+  // Count how many times a line-anchored req appears in code (for count-based checks).
+  function tutReqCount(code, req) {
+    var count  = 0;
+    var search = '\n' + code;
+    var needle = '\n' + req;
+    var pos    = 0;
+    while ((pos = search.indexOf(needle, pos)) !== -1) { count++; pos += needle.length; }
+    if (count > 0) return count;
+    // Flex-spacing fallback
     try {
-      var m       = req.match(/^([ \t]*)([\s\S]*)$/);
-      var indent  = m[1];                                              // keep exact
-      var escaped = m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');     // escape body
-      var flex    = escaped.replace(/ /g, '[ \\t]*');                 // spaces → optional
-      return new RegExp(indent + flex).test(code);
-    } catch(e) { return false; }
+      var mm      = req.match(/^([ \t]*)([\s\S]*)$/);
+      var escaped = mm[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var flex    = escaped.replace(/ /g, '[ \\t]*');
+      var hits    = code.match(new RegExp('^' + mm[1] + flex, 'gm'));
+      return hits ? hits.length : 0;
+    } catch(e) { return 0; }
+  }
+
+  // Normalise a requires entry to { reqStr, count, label }.
+  // Entries can be plain strings (count = 1) or { req, count, label } objects.
+  function _normReq(r) {
+    if (typeof r === 'object' && r !== null) {
+      return { reqStr: r.req, count: r.count || 1, label: r.label || r.req };
+    }
+    return { reqStr: r, count: 1, label: r };
   }
 
   function applyTutBar(isNewStep) {
@@ -3490,9 +3551,13 @@
     if (reqs.length > 0) {
       checksEl.classList.remove('ps-tb-no-checks');
       checksEl.innerHTML = reqs.map(function (r) {
-        return '<div class="ps-tb-ck ck-wait" data-req="' + r.replace(/"/g, '&quot;') + '">' +
-               '<i class="ps-tb-ck-icon">⏳</i>' +
-               '<span>' + r.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>' +
+        var n    = _normReq(r);
+        var dReq = n.reqStr.replace(/"/g, '&quot;');
+        var lbl  = n.label + (n.count > 1 ? ' <em>×' + n.count + '</em>' : '');
+        lbl = lbl.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                 .replace(/&lt;em&gt;/g,'<em>').replace(/&lt;\/em&gt;/g,'</em>');
+        return '<div class="ps-tb-ck ck-wait" data-req="' + dReq + '">' +
+               '<i class="ps-tb-ck-icon">⏳</i><span>' + lbl + '</span>' +
                '</div>';
       }).join('');
     } else {
@@ -3552,9 +3617,12 @@
     // ── Code string checks ────────────────────────────────────────
     // First pass: evaluate every requires item and update its checklist row.
     reqs.forEach(function (r) {
-      var found = tutReqMatches(code, r);
+      var n = _normReq(r);
+      var found = n.count > 1
+        ? tutReqCount(code, n.reqStr) >= n.count
+        : tutReqMatches(code, n.reqStr);
       if (!found) allOk = false;
-      var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + r.replace(/"/g, '&quot;') + '"]');
+      var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
       if (ckEl) {
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
         ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
@@ -3574,10 +3642,26 @@
       var lineInCode = code.indexOf(lineText) !== -1 || tutReqMatches(code, lineText);
       // (b) a satisfied req covers this span (substring match)
       var covByReq = !lineInCode && reqs.some(function (r) {
-        return tutReqMatches(code, r) && tutReqMatches(lineText, r);
+        var n = _normReq(r);
+        return tutReqMatches(code, n.reqStr) && tutReqMatches(lineText, n.reqStr);
       });
       sp.classList.toggle('typed', lineInCode || covByReq);
     });
+
+    // ── Missing grey-line detection ──────────────────────────────
+    // Check if any "old" (grey, context) lines have been deleted from the editor.
+    // Old lines = non-empty lines that appear in target but are NOT in newLines.
+    var missWarn = bar.querySelector('.ps-tb-miss');
+    if (missWarn && step.target) {
+      var newLineSet = {};
+      (step.newLines || []).forEach(function (l) { newLineSet[l] = true; });
+      var missingOld = step.target.split('\n').some(function (line) {
+        return line.trim() !== '' && !newLineSet[line] && code.indexOf(line) === -1;
+      });
+      missWarn.classList.toggle('ps-tb-miss-hidden', !missingOld);
+    } else if (missWarn) {
+      missWarn.classList.add('ps-tb-miss-hidden');
+    }
 
     // ── Sprite count check ────────────────────────────────────────
     if (step.requiresSpriteCount !== undefined) {
@@ -3618,7 +3702,10 @@
       validEl.textContent = '✓ All done — click Next';
       validEl.className   = 'ps-tb-valid tb-ok';
     } else {
-      var codeReqsDone = reqs.filter(function (r) { return tutReqMatches(code, r); }).length;
+      var codeReqsDone = reqs.filter(function (r) {
+        var n = _normReq(r);
+        return n.count > 1 ? tutReqCount(code, n.reqStr) >= n.count : tutReqMatches(code, n.reqStr);
+      }).length;
       var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0);
       var spriteDone = 0;
       if (step.requiresSpriteCount !== undefined) {
@@ -3856,6 +3943,11 @@
     // Exit button — mid-tutorial exit, keep progress saved for resume
     bar.querySelector('.ps-tb-exit').addEventListener('click', function () {
       exitTutorial(false);
+    });
+
+    // Restore button — re-applies the step's starter code
+    bar.querySelector('.ps-tb-miss-restore').addEventListener('click', function () {
+      applyTutBar(true); // re-loads starter, same as navigating to this step fresh
     });
 
     // Prev / Next buttons
