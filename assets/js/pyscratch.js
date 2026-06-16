@@ -2683,6 +2683,9 @@
     S.running    = true;
     S.timerStart = Date.now();   // timer() counts from green-flag press
     clearConsole();
+    // Snapshot on every run so the Snapshots panel accumulates history naturally.
+    // The "skip if unchanged" check inside takeSnapshot prevents duplicates.
+    if (S.activeSprite && !S.activeTut) takeSnapshot(S.activeSprite, 'Run', 'auto');
 
     // Configure Skulpt ONCE per run, before any threads start.
     // IMPORTANT: Sk.configure resets Sk.sysmodules (the module cache).
