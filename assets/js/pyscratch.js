@@ -172,7 +172,15 @@
           starter: 'def game_start():\n    while True:',
           target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)'],
-          requires: ['        if key_pressed("right"):', '            change_x(5)']
+          requires: ['        if key_pressed("right"):', '            change_x(5)'],
+          behaviorCheck: {
+            hint: 'Hold the right arrow key — the sprite should move right. Check your if statement and <code>change_x(5)</code>.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'A second if for the left key',
@@ -180,7 +188,17 @@
           starter: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)',
           target: 'def game_start():\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n        if key_pressed("left"):\n            change_x(-5)',
           newLines: ['        if key_pressed("left"):', '            change_x(-5)'],
-          requires: ['        if key_pressed("left"):', '            change_x(-5)']
+          requires: ['        if key_pressed("left"):', '            change_x(-5)'],
+          behaviorCheck: {
+            hint: 'Check both arrow keys work — the sprite should move right when right is held and left when left is held.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] },
+              { label: 'left key moves sprite left', holdKey: 'left', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '-' }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -201,7 +219,14 @@
           starter: '',
           target: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           newLines: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
-          requires: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)']
+          requires: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should move right 5 times automatically. Check <code>change_x(30)</code> is inside the loop.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 2200, checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'Use the loop variable',
@@ -209,7 +234,14 @@
           starter: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           target: 'def game_start():\n    for i in range(5):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
           newLines: ['        say(str(i))'],
-          requires: ['        say(str(i))']
+          requires: ['        say(str(i))'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should move right and show numbers. Check <code>say(str(i))</code> is inside the loop.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 2200, checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'range() with a start and end',
@@ -217,7 +249,14 @@
           starter: 'def game_start():\n    for i in range(5):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
           target: 'def game_start():\n    for i in range(1, 6):\n        say(str(i))\n        change_x(30)\n        wait(0.3)',
           newLines: ['    for i in range(1, 6):'],
-          requires: ['range(1, 6)']
+          requires: ['range(1, 6)'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should move right 5 times counting 1 to 5. Check <code>range(1, 6)</code>.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 2200, checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -246,7 +285,14 @@
           starter: 'def game_start():\n    count = 0',
           target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
           newLines: ['    while count < 5:', '        change_x(25)', '        count = count + 1', '        wait(0.2)'],
-          requires: ['    while count < 5:', '        count = count + 1', '        wait(0.2)']
+          requires: ['    while count < 5:', '        count = count + 1', '        wait(0.2)'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should slide right 5 times and stop. Check your loop and <code>change_x(25)</code>.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 1800, checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'Code after the loop',
@@ -254,7 +300,14 @@
           starter: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)',
           target: 'def game_start():\n    count = 0\n    while count < 5:\n        change_x(25)\n        count = count + 1\n        wait(0.2)\n    say("Done!")',
           newLines: ['    say("Done!")'],
-          requires: ['    say("Done!")']
+          requires: ['    say("Done!")'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should slide right then say "Done!". Check <code>say("Done!")</code> is outside (less indented than) the loop.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 1800, checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -283,7 +336,15 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
           newLines: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)'],
-          requires: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)']
+          requires: ['        if key_pressed("right"):', '            change_x(5)', '            point_in_direction(90)'],
+          behaviorCheck: {
+            hint: 'Hold the right arrow key — the sprite should move right. Check your <code>if key_pressed("right"):</code> block.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'Move left',
@@ -291,7 +352,17 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           newLines: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)'],
-          requires: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)']
+          requires: ['        if key_pressed("left"):', '            change_x(-5)', '            point_in_direction(-90)'],
+          behaviorCheck: {
+            hint: 'Check both arrow keys work — right should move the sprite right, left should move it left.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] },
+              { label: 'left key moves sprite left', holdKey: 'left', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '-' }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -318,7 +389,15 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           newLines: ['            next_costume()', '            next_costume()'],
-          requires: [{ req: '            next_costume()', count: 2, label: 'next_costume() in both if blocks' }]
+          requires: [{ req: '            next_costume()', count: 2, label: 'next_costume() in both if blocks' }],
+          behaviorCheck: {
+            hint: 'Hold the right arrow key — the sprite should move right. Check both <code>next_costume()</code> calls are inside their if blocks.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'Idle pose when still',
@@ -326,7 +405,15 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
           newLines: ['        moved = False', '            moved = True', '        if moved:', '            next_costume()', '        else:', '            set_costume(1)'],
-          requires: ['moved = False', { req: '            moved = True', count: 2, label: 'moved = True in both if blocks' }, 'set_costume(1)']
+          requires: ['moved = False', { req: '            moved = True', count: 2, label: 'moved = True in both if blocks' }, 'set_costume(1)'],
+          behaviorCheck: {
+            hint: 'Hold the right arrow key — the sprite should move right. Check <code>moved = True</code> is in both if blocks.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 400,
+                checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: 'Control animation speed',
@@ -334,7 +421,15 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        wait(0.08)\n        if_on_edge_bounce()',
           newLines: ['        wait(0.08)'],
-          requires: ['wait(0.08)']
+          requires: ['wait(0.08)'],
+          behaviorCheck: {
+            hint: 'Hold the right arrow key — the sprite should still move right. Check the overall code structure is intact after adding <code>wait(0.08)</code>.',
+            setupMs: 400,
+            scenarios: [
+              { label: 'right key moves sprite right', holdKey: 'right', durationMs: 500,
+                checks: [{ type: 'xChanged', dir: '+' }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -371,7 +466,14 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
           newLines: ['        vy = vy - 0.5', '        change_y(vy)'],
-          requires: ['        vy = vy - 0.5', '        change_y(vy)']
+          requires: ['        vy = vy - 0.5', '        change_y(vy)'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should fall downward automatically. Check <code>vy = vy - 0.5</code> and <code>change_y(vy)</code> are both inside the loop.',
+            setupMs: 200,
+            scenarios: [
+              { waitMs: 700, checks: [{ type: 'yChanged', dir: '-' }] }
+            ]
+          }
         },
         {
           title: 'Add a floor',
@@ -379,7 +481,14 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
           newLines: ['        if y_position() < -150:', '            vy = 0', '            set_y(-150)'],
-          requires: ['        if y_position() < -150:', '            set_y(-150)']
+          requires: ['        if y_position() < -150:', '            set_y(-150)'],
+          behaviorCheck: {
+            hint: 'Run your code — the sprite should fall and land at y = −150 without falling off-screen. Check your <code>if y_position() &lt; -150:</code> block.',
+            setupMs: 1000,
+            scenarios: [
+              { waitMs: 100, checks: [{ type: 'yAbove', value: -160 }] }
+            ]
+          }
         },
         {
           title: 'Jumping',
@@ -387,7 +496,15 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.5\n        change_y(vy)\n        if y_position() < -150:\n            vy = 0\n            set_y(-150)\n        if key_pressed("up") and y_position() <= -149:\n            vy = 8',
           newLines: ['        if key_pressed("up") and y_position() <= -149:', '            vy = 8'],
-          requires: ['        if key_pressed("up")', '            vy = 8']
+          requires: ['        if key_pressed("up")', '            vy = 8'],
+          behaviorCheck: {
+            hint: 'Press the up arrow — the sprite should jump upward from the floor. Check your <code>if key_pressed("up")</code> block and <code>vy = 8</code>.',
+            setupMs: 800,
+            scenarios: [
+              { label: 'up key launches sprite upward', holdKey: 'up', durationMs: 80, waitMs: 300,
+                checks: [{ type: 'yAbove', value: -135 }] }
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -416,7 +533,14 @@
           starter: 'vx = 3\nvy = 3\n\ndef game_start():',
           target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)',
           newLines: ['    global vx, vy', '    while True:', '        change_x(vx)', '        change_y(vy)'],
-          requires: ['    global vx, vy', '    while True:', '        change_x(vx)', '        change_y(vy)']
+          requires: ['    global vx, vy', '    while True:', '        change_x(vx)', '        change_y(vy)'],
+          behaviorCheck: {
+            hint: 'Run your code — the ball should move automatically. Check <code>change_x(vx)</code> and <code>change_y(vy)</code> are inside the loop.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 500, checks: [{ type: 'moved' }] }
+            ]
+          }
         },
         {
           title: 'Bounce off left and right walls',
@@ -424,7 +548,14 @@
           starter: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)',
           target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
           newLines: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
-          requires: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1']
+          requires: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
+          behaviorCheck: {
+            hint: 'Run your code — the ball should bounce back from the left and right walls, staying on screen. Check your <code>if x_position()</code> block.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 2500, checks: [{ type: 'xAbove', value: -225 }, { type: 'xBelow', value: 225 }] }
+            ]
+          }
         },
         {
           title: 'Bounce off top and bottom',
@@ -432,7 +563,17 @@
           starter: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
           target: 'vx = 3\nvy = 3\n\ndef game_start():\n    global vx, vy\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 160 or y_position() < -160:\n            vy = vy * -1',
           newLines: ['        if y_position() > 160 or y_position() < -160:', '            vy = vy * -1'],
-          requires: ['        if y_position() > 160 or y_position() < -160:', '            vy = vy * -1']
+          requires: ['        if y_position() > 160 or y_position() < -160:', '            vy = vy * -1'],
+          behaviorCheck: {
+            hint: 'Run your code — the ball should bounce off all four walls and stay on screen. Check your <code>if y_position()</code> block.',
+            setupMs: 100,
+            scenarios: [
+              { waitMs: 3500, checks: [
+                  { type: 'xAbove', value: -225 }, { type: 'xBelow', value: 225 },
+                  { type: 'yAbove', value: -165 }, { type: 'yBelow', value: 165 }
+              ]}
+            ]
+          }
         },
         {
           title: '✅ Try it!',
@@ -461,7 +602,14 @@
           starter: 'vy = 0\n\ndef game_start():',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)',
           newLines: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)'],
-          requires: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)']
+          requires: ['    global vy', '    while True:', '        vy = vy - 0.3', '        change_y(vy)'],
+          behaviorCheck: {
+            hint: 'Run your code — the bird should fall downward automatically. Check <code>vy = vy - 0.3</code> and <code>change_y(vy)</code> are inside the loop.',
+            setupMs: 200,
+            scenarios: [
+              { waitMs: 600, checks: [{ type: 'yChanged', dir: '-' }] }
+            ]
+          }
         },
         {
           title: 'Add a floor and ceiling',
@@ -469,7 +617,14 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0',
           newLines: ['        if y_position() < -150:', '            set_y(-150)', '            vy = 0', '        if y_position() > 150:', '            set_y(150)', '            vy = 0'],
-          requires: ['y_position() < -150', 'y_position() > 150']
+          requires: ['y_position() < -150', 'y_position() > 150'],
+          behaviorCheck: {
+            hint: 'Run your code — the bird should fall and land at y = −150 without going off-screen. Check both your floor and ceiling <code>if</code> blocks.',
+            setupMs: 900,
+            scenarios: [
+              { waitMs: 100, checks: [{ type: 'yAbove', value: -155 }] }
+            ]
+          }
         },
         {
           title: 'Flap with the Space key',
@@ -477,7 +632,15 @@
           starter: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:\n        vy = vy - 0.3\n        change_y(vy)\n        if y_position() < -150:\n            set_y(-150)\n            vy = 0\n        if y_position() > 150:\n            set_y(150)\n            vy = 0\n\ndef when_key_pressed(key):\n    global vy\n    if key == "space":\n        vy = 5',
           newLines: ['def when_key_pressed(key):', '    global vy', '    if key == "space":', '        vy = 5'],
-          requires: ['def when_key_pressed(key):', 'if key == "space":', 'vy = 5']
+          requires: ['def when_key_pressed(key):', 'if key == "space":', 'vy = 5'],
+          behaviorCheck: {
+            hint: 'Press Space — the bird should flap upward from the floor. Check your <code>when_key_pressed</code> function and <code>vy = 5</code>.',
+            setupMs: 800,
+            scenarios: [
+              { label: 'space key flaps bird upward', holdKey: 'space', durationMs: 80, waitMs: 300,
+                checks: [{ type: 'yAbove', value: -130 }] }
+            ]
+          }
         },
         {
           title: 'Tilt with velocity',
@@ -632,45 +795,45 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'A Duck Hunt clone! The duck moves around the stage bouncing off every edge using two velocity variables. Click the duck with your mouse to shoot it — the score goes up and the duck teleports to a new random location at a new speed.<br><br>You only need <strong>one sprite</strong> — the duck itself. The on-screen Score counter is created automatically the first time you call <code>set_variable("Score", 0)</code>.',
+          text: 'A Duck Hunt clone! The duck moves around the stage bouncing off every edge using two velocity variables. Click the duck with your mouse to shoot it — the score goes up and the duck teleports to a new random location at a new speed.<br><br>You only need <strong>one sprite</strong> — the duck itself. The Score variable is created by <code>set_variable("Score", 0)</code> and shown on screen by <code>display_variable("Score", True)</code>.',
           starter: null, target: null, newLines: [], requires: []
         },
         {
           title: 'Velocity variables and game loop',
           text: '<code>vx</code> controls left/right speed, <code>vy</code> controls up/down speed. Both are global so <code>when_clicked</code> can change them too. <code>go_to_xy(0, 50)</code> places the duck centre-screen at the start:',
           starter: '',
-          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
-          newLines: ['vx = 3', 'vy = 2', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    set_rotation_style("left-right")', '    go_to_xy(0, 50)', '    while True:'],
-          requires: ['vx = 3', 'vy = 2', 'def game_start():', 'global vx, vy', 'set_variable("Score"', 'while True:']
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
+          newLines: ['vx = 3', 'vy = 2', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_rotation_style("left-right")', '    go_to_xy(0, 50)', '    while True:'],
+          requires: ['vx = 3', 'vy = 2', 'def game_start():', 'global vx, vy', 'set_variable("Score"', 'display_variable("Score"', 'while True:']
         },
         {
           title: 'Make the duck fly',
           text: 'Each frame, move the duck by its current velocity. Add both lines inside the <code>while True:</code> loop:',
-          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
-          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
           newLines: ['        change_x(vx)', '        change_y(vy)'],
           requires: ['change_x(vx)', 'change_y(vy)']
         },
         {
           title: 'Bounce off the edges',
           text: 'When the duck reaches the left or right edge, flip <code>vx</code> — multiplying by <code>-1</code> reverses the sign so it bounces back. Do the same for top and bottom with <code>vy</code>:',
-          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
-          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
           newLines: ['        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1', '        if y_position() > 150 or y_position() < -130:', '            vy = vy * -1'],
           requires: ['x_position() > 220', 'x_position() < -220', 'vx = vx * -1', 'y_position() > 150', 'vy = vy * -1']
         },
         {
           title: 'Make the duck face where it\'s flying',
           text: 'After flipping <code>vx</code>, check its new sign to face the duck the right way. <code>set_rotation_style("left-right")</code> (already set) means the sprite only ever flips — it never tilts. Add these lines <strong>inside</strong> the <code>x_position</code> block, after <code>vx = vx * -1</code>:',
-          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
-          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
           newLines: ['            if vx > 0:', '                point_in_direction(90)', '            else:', '                point_in_direction(-90)'],
           requires: ['vx > 0', 'point_in_direction(90)', 'point_in_direction(-90)']
         },
         {
           title: 'Shoot the duck on click',
           text: '<code>def when_clicked():</code> runs every time the player clicks the sprite. Hide the duck (shot!), wait briefly, then send it to a random new location at a random new speed so every duck is different to track:',
-          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
+          starter: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1\n            if vx > 0:\n                point_in_direction(90)\n            else:\n                point_in_direction(-90)\n        if y_position() > 150 or y_position() < -130:\n            vy = vy * -1',
           target: 'def when_clicked():\n    global vx, vy\n    change_variable("Score", 1)\n    hide()\n    wait(0.8)\n    go_to_xy(pick_random(-180, 180), pick_random(0, 120))\n    vx = pick_random(3, 6)\n    vy = pick_random(2, 4)\n    show()',
           newLines: ['def when_clicked():', '    global vx, vy', '    change_variable("Score", 1)', '    hide()', '    wait(0.8)', '    go_to_xy(pick_random(-180, 180), pick_random(0, 120))', '    vx = pick_random(3, 6)', '    vy = pick_random(2, 4)', '    show()'],
           requires: ['def when_clicked():', 'change_variable("Score"', 'hide()', 'wait(0.8)', 'go_to_xy(pick_random(', 'vx = pick_random(', 'show()']
@@ -689,37 +852,37 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'An RPG survivor game using clones! Enemy clones spawn from the top of the screen and walk toward the player. Touching an enemy costs HP — attack back with <strong>space</strong> to kill them and earn score.<br><br>Before you start, make sure your sprite is named <strong>Player</strong> exactly — the enemy code looks for that name when it checks collisions.<br><br>The <code>HP</code> and <code>Score</code> displays on screen are created automatically by your code using <code>set_variable()</code> — no need to touch TurboWarp\'s menus.',
+          text: 'An RPG survivor game using clones! Enemy clones spawn from the top of the screen and walk toward the player. Touching an enemy costs HP — attack back with <strong>space</strong> to kill them and earn score.<br><br>Before you start, make sure your sprite is named <strong>Player</strong> exactly — the enemy code looks for that name when it checks collisions.<br><br>The <code>HP</code> and <code>Score</code> counters appear on screen because your code calls <code>set_variable()</code> to create them and <code>display_variable()</code> to make them visible — no TurboWarp menus needed.',
           starter: null, target: null, newLines: [], requires: []
         },
         {
           title: 'Player: HP variable and game loop',
-          text: 'On your <strong>Player</strong> sprite, type this. <code>hp = 3</code> is a Python variable that tracks health. <code>set_variable("HP", hp)</code> creates a <em>HP</em> counter on stage and keeps it in sync — calling it once is enough to make it appear. The same creates <em>Score</em>:',
+          text: 'On your <strong>Player</strong> sprite, type this. <code>hp = 3</code> is a Python variable that tracks health. <code>set_variable("HP", hp)</code> creates the variable and keeps it in sync. <code>display_variable("HP", True)</code> makes it appear as an on-screen counter — without it the variable exists but stays invisible. The same pattern creates <em>Score</em>:',
           starter: null,
-          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:',
-          newLines: ['hp = 3', '', 'def game_start():', '    global hp', '    set_variable("HP", hp)', '    set_variable("Score", 0)', '    set_rotation_style("left-right")', '    while True:'],
-          requires: ['hp = 3', 'def game_start():', 'global hp', 'set_variable("HP"', 'set_variable("Score"', 'while True:']
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:',
+          newLines: ['hp = 3', '', 'def game_start():', '    global hp', '    set_variable("HP", hp)', '    display_variable("HP", True)', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_rotation_style("left-right")', '    while True:'],
+          requires: ['hp = 3', 'def game_start():', 'global hp', 'set_variable("HP"', 'display_variable("HP"', 'set_variable("Score"', 'display_variable("Score"', 'while True:']
         },
         {
           title: 'Player: left and right movement',
           text: 'Add left and right movement inside the <code>while True:</code> loop. <code>point_in_direction</code> makes the sprite face the right way when it flips:',
-          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:',
-          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:',
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
           newLines: ['        if key_pressed("right"):', '            change_x(4)', '            point_in_direction(90)', '        if key_pressed("left"):', '            change_x(-4)', '            point_in_direction(-90)'],
           requires: ['key_pressed("right")', 'change_x(4)', 'key_pressed("left")', 'change_x(-4)']
         },
         {
           title: 'Player: up and down movement',
           text: 'Add up and down movement so the player can dodge in all four directions:',
-          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
-          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)',
+          target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
           newLines: ['        if key_pressed("up"):', '            change_y(4)', '        if key_pressed("down"):', '            change_y(-4)'],
           requires: ['key_pressed("up")', 'change_y(4)', 'key_pressed("down")', 'change_y(-4)']
         },
         {
           title: 'Player: take damage from enemies',
           text: 'When the player touches an enemy clone, reduce HP, update the display, then teleport to a random position. Add this after the movement checks inside the loop:',
-          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)',
           target: '        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))',
           newLines: ['        if touching("Enemy"):', '            hp = hp - 1', '            set_variable("HP", hp)', '            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))'],
           requires: ['touching("Enemy")', 'hp = hp - 1', 'set_variable("HP"', 'go_to_xy(pick_random(']
@@ -727,7 +890,7 @@
         {
           title: 'Player: game over at zero HP',
           text: 'Inside the <code>if touching("Enemy"):</code> block, after updating HP, check if the player has run out of health:',
-          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))',
           target: '        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))\n            if hp <= 0:\n                say("Game Over!")\n                stop()',
           newLines: ['            if hp <= 0:', '                say("Game Over!")', '                stop()'],
           requires: ['hp <= 0', 'say("Game Over!")', 'stop()']
@@ -735,7 +898,7 @@
         {
           title: 'Player: attack with space',
           text: 'Pressing <strong>space</strong> broadcasts <code>"attack"</code> — enemy clones will listen for this and delete themselves if they are touching the player. Add this at the very end of the <code>while True</code> loop:',
-          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    set_variable("Score", 0)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))\n            if hp <= 0:\n                say("Game Over!")\n                stop()',
+          starter: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(4)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-4)\n            point_in_direction(-90)\n        if key_pressed("up"):\n            change_y(4)\n        if key_pressed("down"):\n            change_y(-4)\n        if touching("Enemy"):\n            hp = hp - 1\n            set_variable("HP", hp)\n            go_to_xy(pick_random(-200, 200), pick_random(-140, 140))\n            if hp <= 0:\n                say("Game Over!")\n                stop()',
           target: '        if key_pressed("space"):\n            broadcast("attack")',
           newLines: ['        if key_pressed("space"):', '            broadcast("attack")'],
           requires: ['key_pressed("space")', 'broadcast("attack")']
@@ -795,15 +958,15 @@
           title: 'Catcher: position and variables',
           text: 'Write <code>game_start()</code> for the Catcher sprite. Place it at the bottom and create Score and Lives counters using <code>set_variable</code>:',
           starter: '',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:',
-          newLines: ['def game_start():', '    set_variable("Score", 0)', '    set_variable("Lives", 3)', '    go_to_xy(0, -140)', '    while True:'],
-          requires: ['def game_start():', 'set_variable("Score"', 'set_variable("Lives"', 'go_to_xy(0, -140)', '    while True:']
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_variable("Lives", 3)\n    display_variable("Lives", True)\n    go_to_xy(0, -140)\n    while True:',
+          newLines: ['def game_start():', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_variable("Lives", 3)', '    display_variable("Lives", True)', '    go_to_xy(0, -140)', '    while True:'],
+          requires: ['def game_start():', 'set_variable("Score"', 'display_variable("Score"', 'set_variable("Lives"', 'display_variable("Lives"', 'go_to_xy(0, -140)', '    while True:']
         },
         {
           title: 'Catcher: arrow key movement',
           text: 'Inside the loop, move the basket with the arrow keys. The <code>set_x</code> clamps stop it going off screen:',
-          starter: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    set_variable("Lives", 3)\n    go_to_xy(0, -140)\n    while True:\n        if key_pressed("right"):\n            change_x(8)\n        if key_pressed("left"):\n            change_x(-8)\n        if x_position() > 210:\n            set_x(210)\n        if x_position() < -210:\n            set_x(-210)',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_variable("Lives", 3)\n    display_variable("Lives", True)\n    go_to_xy(0, -140)\n    while True:',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_variable("Lives", 3)\n    display_variable("Lives", True)\n    go_to_xy(0, -140)\n    while True:\n        if key_pressed("right"):\n            change_x(8)\n        if key_pressed("left"):\n            change_x(-8)\n        if x_position() > 210:\n            set_x(210)\n        if x_position() < -210:\n            set_x(-210)',
           newLines: ['        if key_pressed("right"):', '            change_x(8)', '        if key_pressed("left"):', '            change_x(-8)', '        if x_position() > 210:', '            set_x(210)', '        if x_position() < -210:', '            set_x(-210)'],
           requires: ['key_pressed("right")', 'change_x(8)', 'key_pressed("left")', 'change_x(-8)', 'x_position() > 210', 'set_x(210)', 'x_position() < -210', 'set_x(-210)']
         },
@@ -852,33 +1015,33 @@
         },
         {
           title: 'Main loop: spawn clones',
-          text: 'The original sprite hides itself then spawns a new clone every 1.5 seconds. <code>set_variable</code> creates the on-screen Score counter:',
+          text: 'The original sprite hides itself then spawns a new clone every 1.5 seconds. <code>set_variable("Score", 0)</code> creates the Score variable; <code>display_variable("Score", True)</code> makes it visible on screen as a counter:',
           starter: '',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
-          newLines: ['def game_start():', '    set_variable("Score", 0)', '    hide()', '    while True:', '        create_clone()', '        wait(1.5)'],
-          requires: ['def game_start():', 'set_variable("Score"', 'hide()', 'create_clone()', 'wait(1.5)']
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
+          newLines: ['def game_start():', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    hide()', '    while True:', '        create_clone()', '        wait(1.5)'],
+          requires: ['def game_start():', 'set_variable("Score"', 'display_variable("Score"', 'hide()', 'create_clone()', 'wait(1.5)']
         },
         {
           title: 'Clone: appear at a random spot',
           text: 'Each clone starts its own script. Move it to a random position and show it:',
-          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
           newLines: ['def when_I_start_as_a_clone():', '    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))', '    show()'],
           requires: ['def when_I_start_as_a_clone():', 'go_to_xy(pick_random(-180, 180), pick_random(-100, 100))', 'show()']
         },
         {
           title: 'Clone: vanish after a random time',
           text: 'After showing, the clone waits a random amount of time (between 1 and 3 seconds), then hides and deletes itself:',
-          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
           newLines: ['    wait(pick_random(1, 3))', '    hide()', '    delete_clone()'],
           requires: ['wait(pick_random(1, 3))', '    delete_clone()']
         },
         {
           title: 'Click handler: whack it!',
           text: '<code>def when_clicked():</code> fires on the clone that was clicked. Add 1 to Score and immediately destroy the clone:',
-          starter: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
-          target: 'def game_start():\n    set_variable("Score", 0)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()\n\ndef when_clicked():\n    change_variable("Score", 1)\n    hide()\n    delete_clone()',
+          starter: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()',
+          target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    hide()\n    while True:\n        create_clone()\n        wait(1.5)\n\ndef when_I_start_as_a_clone():\n    go_to_xy(pick_random(-180, 180), pick_random(-100, 100))\n    show()\n    wait(pick_random(1, 3))\n    hide()\n    delete_clone()\n\ndef when_clicked():\n    change_variable("Score", 1)\n    hide()\n    delete_clone()',
           newLines: ['def when_clicked():', '    change_variable("Score", 1)', '    hide()', '    delete_clone()'],
           requires: ['def when_clicked():', 'change_variable("Score", 1)']
         },
@@ -935,11 +1098,11 @@
         },
         {
           title: 'Enemy: patrol left and right',
-          text: 'Click the <strong>Enemy</strong> sprite. Give it a velocity variable and a simple loop that bounces it off the edges of the screen. <code>set_variable("Score", 0)</code> creates the score counter:',
+          text: 'Click the <strong>Enemy</strong> sprite. Give it a velocity variable and a simple loop that bounces it off the edges of the screen. <code>set_variable("Score", 0)</code> creates the Score variable; <code>display_variable("Score", True)</code> makes it visible on screen:',
           starter: null,
-          target: 'vx = 3\n\ndef game_start():\n    global vx\n    set_variable("Score", 0)\n    go_to_xy(-200, 120)\n    while True:\n        change_x(vx)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
-          newLines: ['vx = 3', '', 'def game_start():', '    global vx', '    set_variable("Score", 0)', '    go_to_xy(-200, 120)', '    while True:', '        change_x(vx)', '        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
-          requires: ['vx = 3', 'def game_start():', 'global vx', 'set_variable("Score"', 'go_to_xy(-200, 120)', 'change_x(vx)', 'x_position() > 220', 'vx = vx * -1']
+          target: 'vx = 3\n\ndef game_start():\n    global vx\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(-200, 120)\n    while True:\n        change_x(vx)\n        if x_position() > 220 or x_position() < -220:\n            vx = vx * -1',
+          newLines: ['vx = 3', '', 'def game_start():', '    global vx', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    go_to_xy(-200, 120)', '    while True:', '        change_x(vx)', '        if x_position() > 220 or x_position() < -220:', '            vx = vx * -1'],
+          requires: ['vx = 3', 'def game_start():', 'global vx', 'set_variable("Score"', 'display_variable("Score"', 'go_to_xy(-200, 120)', 'change_x(vx)', 'x_position() > 220', 'vx = vx * -1']
         },
         {
           title: '✅ Try it!',
@@ -980,23 +1143,23 @@
           title: 'Ball: velocity variables',
           text: 'With <strong>Ball</strong> selected, set up two global velocity variables outside <code>game_start</code>. Then start the ball in the centre and set up the Score counter:',
           starter: null,
-          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)',
-          newLines: ['vx = 4', 'vy = 3', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    go_to_xy(0, 50)'],
-          requires: ['vx = 4', 'vy = 3', 'global vx, vy', 'set_variable("Score"', 'go_to_xy(0, 50)']
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, 50)',
+          newLines: ['vx = 4', 'vy = 3', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    go_to_xy(0, 50)'],
+          requires: ['vx = 4', 'vy = 3', 'global vx, vy', 'set_variable("Score"', 'display_variable("Score"', 'go_to_xy(0, 50)']
         },
         {
           title: 'Ball: movement and wall bouncing',
           text: 'Add the <code>while True:</code> loop. The ball moves by its velocity each frame and reverses direction when it hits the left/right walls or the top:',
-          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)',
-          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, 50)',
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
           newLines: ['    while True:', '        change_x(vx)', '        change_y(vy)', '        if x_position() > 225 or x_position() < -225:', '            vx = vx * -1', '        if y_position() > 165:', '            vy = vy * -1'],
           requires: ['    while True:', 'change_x(vx)', 'change_y(vy)', 'x_position() > 225', 'vx = vx * -1', 'y_position() > 165', 'vy = vy * -1']
         },
         {
           title: 'Ball: bounce off paddle and game over',
           text: 'Add two more checks: bounce upward when the ball touches the Paddle (only if already moving downward), and stop the game if it drops off the bottom:',
-          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
-          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
+          starter: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          target: 'vx = 4\nvy = 3\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, 50)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
           newLines: ['        if touching("Paddle") and vy < 0:', '            vy = vy * -1', '            change_variable("Score", 1)', '        if y_position() < -175:', '            say("Game Over!")', '            stop()'],
           requires: ['touching("Paddle") and vy < 0', '            vy = vy * -1', 'change_variable("Score", 1)', 'y_position() < -175', 'say("Game Over!")', 'stop()']
         },
@@ -1039,15 +1202,15 @@
           title: 'Ball: velocity and movement',
           text: 'With <strong>Ball</strong> selected, add velocity variables then write the movement loop with wall and ceiling bouncing:',
           starter: null,
-          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
-          newLines: ['vx = 4', 'vy = 4', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    go_to_xy(0, -30)', '    while True:', '        change_x(vx)', '        change_y(vy)', '        if x_position() > 225 or x_position() < -225:', '            vx = vx * -1', '        if y_position() > 165:', '            vy = vy * -1'],
-          requires: ['vx = 4', 'vy = 4', 'global vx, vy', 'set_variable("Score"', 'go_to_xy(0, -30)', 'change_x(vx)', 'change_y(vy)', 'x_position() > 225', 'vx = vx * -1', 'y_position() > 165', 'vy = vy * -1']
+          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          newLines: ['vx = 4', 'vy = 4', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    go_to_xy(0, -30)', '    while True:', '        change_x(vx)', '        change_y(vy)', '        if x_position() > 225 or x_position() < -225:', '            vx = vx * -1', '        if y_position() > 165:', '            vy = vy * -1'],
+          requires: ['vx = 4', 'vy = 4', 'global vx, vy', 'set_variable("Score"', 'display_variable("Score"', 'go_to_xy(0, -30)', 'change_x(vx)', 'change_y(vy)', 'x_position() > 225', 'vx = vx * -1', 'y_position() > 165', 'vy = vy * -1']
         },
         {
           title: 'Ball: paddle bounce, brick bounce, game over',
           text: 'Add three more checks: bounce off the Paddle, bounce off any Brick and score, and stop the game if the ball falls past the bottom:',
-          starter: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
-          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n        if touching("Brick"):\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
+          starter: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1',
+          target: 'vx = 4\nvy = 4\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    go_to_xy(0, -30)\n    while True:\n        change_x(vx)\n        change_y(vy)\n        if x_position() > 225 or x_position() < -225:\n            vx = vx * -1\n        if y_position() > 165:\n            vy = vy * -1\n        if touching("Paddle") and vy < 0:\n            vy = vy * -1\n        if touching("Brick"):\n            vy = vy * -1\n            change_variable("Score", 1)\n        if y_position() < -175:\n            say("Game Over!")\n            stop()',
           newLines: ['        if touching("Paddle") and vy < 0:', '            vy = vy * -1', '        if touching("Brick"):', '            vy = vy * -1', '            change_variable("Score", 1)', '        if y_position() < -175:', '            say("Game Over!")', '            stop()'],
           requires: ['touching("Paddle") and vy < 0', 'touching("Brick")', '            change_variable("Score", 1)', 'y_position() < -175', 'say("Game Over!")', 'stop()']
         },
@@ -2842,6 +3005,8 @@
       '.ps-tb-foot{display:flex;align-items:center;gap:5px;padding:4px 8px;border-top:1px solid var(--ps-border,#2a2a44);margin-top:2px;flex-shrink:0}',
       '.ps-tb-valid{flex:1;font-size:10px;color:var(--ps-muted,#888)}',
       '.ps-tb-valid.tb-ok{color:#4ade80}',
+      '.ps-tb-valid.tb-err{color:#f87171}',
+      '.ps-tb-valid.tb-testing{color:#fbbf24;font-style:italic}',
       '.ps-tb-btn{background:var(--ps-panel-3,#252537);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-text,#cdd6f4);cursor:pointer;padding:3px 10px;border-radius:4px;font-size:10px;font-family:inherit;flex-shrink:0}',
       '.ps-tb-btn:hover:not(:disabled){background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
       '.ps-tb-btn:disabled{opacity:.3;cursor:not-allowed}',
@@ -3936,6 +4101,155 @@
     });
   }
 
+  // ── Behavioural test runner ─────────────────────────────────────────────────
+  // Runs step.behaviorCheck by actually starting the student's code, simulating
+  // key/mouse inputs, reading the runtime state, and verifying the result.
+  //
+  // step.behaviorCheck shape:
+  //   {
+  //     hint:     string    — shown to student if any scenario fails
+  //     setupMs:  number    — wait after green-flag before snapshotting (default 400)
+  //     settleMs: number    — default wait after input before reading state (default 120)
+  //     scenarios: [
+  //       {
+  //         label:      string   — appended to hint on failure (optional)
+  //         holdKey:    string   — key name to hold, e.g. 'right', 'up', 'space' (optional)
+  //         durationMs: number   — how long to hold the key (default 400)
+  //         waitMs:     number   — override settleMs for this scenario (for auto-run code)
+  //         checks: [
+  //           { type:'xChanged',  dir: '+' | '-' }  — active sprite x increased / decreased
+  //           { type:'yChanged',  dir: '+' | '-' }  — active sprite y increased / decreased
+  //           { type:'moved' }                       — sprite moved at all (x or y)
+  //           { type:'costumeChanged' }              — costume index changed
+  //           { type:'xAbove',  value: N }           — final sprite x > N
+  //           { type:'xBelow',  value: N }           — final sprite x < N
+  //           { type:'yAbove',  value: N }           — final sprite y > N
+  //           { type:'yBelow',  value: N }           — final sprite y < N
+  //           { type:'variable', name:'n', op:'>', value: V }  — variable check
+  //         ]
+  //       }
+  //     ]
+  //   }
+  //
+  // Calls onPass() when all scenarios pass, or onFail(hint) on first failure.
+
+  function runBehaviorCheck(step, onPass, onFail) {
+    var bc = step.behaviorCheck;
+    if (!bc || !bc.scenarios || !bc.scenarios.length) { onPass(); return; }
+    var setupMs  = bc.setupMs  || 400;
+    var settleMs = bc.settleMs || 120;
+    _bcRunScenario(bc.scenarios, 0, setupMs, settleMs, bc.hint, onPass, onFail);
+  }
+
+  function _bcRunScenario(scenarios, idx, setupMs, settleMs, hint, onPass, onFail) {
+    if (idx >= scenarios.length) {
+      if (S.running) stopAll();
+      onPass();
+      return;
+    }
+
+    var sc = scenarios[idx];
+    var waitAfter = (sc.waitMs != null) ? sc.waitMs : settleMs;
+
+    // Fresh start each scenario so position is always predictable.
+    if (S.running) stopAll();
+    // Centre the active sprite so there's room to move in any direction.
+    try {
+      var sp = getSprites();
+      if (sp.length) sp[0].setXY(0, 0);
+    } catch(e) {}
+    startAll();
+
+    setTimeout(function () {
+      // Guard: code must still be running after setup time.
+      if (!S.running) {
+        stopAll();
+        onFail(hint || 'Your code didn\'t start — make sure it has a <code>def game_start():</code> function.');
+        return;
+      }
+
+      // Snapshot initial state after setup (before stimulus).
+      var sp0      = getSprites()[0] || null;
+      var initX    = sp0 ? sp0.x              : 0;
+      var initY    = sp0 ? sp0.y              : 0;
+      var initCos  = sp0 ? sp0.currentCostume : -1;
+
+      // Press key.
+      if (sc.holdKey) {
+        S.pressedKeys[sc.holdKey] = true;
+        if (S.running) fireEventHandlers(null, 'key', sc.holdKey);
+      }
+
+      setTimeout(function () {
+        // Release key.
+        if (sc.holdKey) S.pressedKeys[sc.holdKey] = false;
+
+        setTimeout(function () {
+          // Read final state.
+          var sp1     = getSprites()[0] || null;
+          var finalX  = sp1 ? sp1.x              : 0;
+          var finalY  = sp1 ? sp1.y              : 0;
+          var finalCos = sp1 ? sp1.currentCostume : -1;
+
+          // Run checks.
+          var passed = true;
+          (sc.checks || []).forEach(function (ck) {
+            if (!passed) return;
+            var ok = true;
+            if (ck.type === 'xChanged') {
+              if      (ck.dir === '+') ok = finalX > initX;
+              else if (ck.dir === '-') ok = finalX < initX;
+              else                     ok = finalX !== initX;
+            } else if (ck.type === 'yChanged') {
+              if      (ck.dir === '+') ok = finalY > initY;
+              else if (ck.dir === '-') ok = finalY < initY;
+              else                     ok = finalY !== initY;
+            } else if (ck.type === 'moved') {
+              ok = Math.abs(finalX - initX) > 0.5 || Math.abs(finalY - initY) > 0.5;
+            } else if (ck.type === 'costumeChanged') {
+              ok = finalCos !== initCos;
+            } else if (ck.type === 'xAbove') {
+              ok = finalX > ck.value;
+            } else if (ck.type === 'xBelow') {
+              ok = finalX < ck.value;
+            } else if (ck.type === 'yAbove') {
+              ok = finalY > ck.value;
+            } else if (ck.type === 'yBelow') {
+              ok = finalY < ck.value;
+            } else if (ck.type === 'variable') {
+              try {
+                var vVal = null;
+                (S.vm.runtime.targets || []).forEach(function (t) {
+                  Object.keys(t.variables || {}).forEach(function (k) {
+                    if (t.variables[k].name === ck.name && vVal === null) {
+                      vVal = t.variables[k].value;
+                    }
+                  });
+                });
+                if      (ck.op === '>')  ok = Number(vVal) >  Number(ck.value);
+                else if (ck.op === '<')  ok = Number(vVal) <  Number(ck.value);
+                else if (ck.op === '>=') ok = Number(vVal) >= Number(ck.value);
+                else if (ck.op === '=')  ok = String(vVal) === String(ck.value);
+                else if (ck.op === '!=') ok = String(vVal) !== String(ck.value);
+                else ok = vVal !== null;
+              } catch(e) { ok = false; }
+            }
+            if (!ok) passed = false;
+          });
+
+          if (!passed) {
+            stopAll();
+            var failHint = (hint || 'Your code didn\'t behave as expected.') +
+              (sc.label ? ' (' + sc.label + ')' : '');
+            onFail(failHint);
+          } else {
+            _bcRunScenario(scenarios, idx + 1, setupMs, settleMs, hint, onPass, onFail);
+          }
+        }, waitAfter);
+      }, sc.holdKey ? (sc.durationMs || 400) : 0);
+    }, setupMs);
+  }
+
   function initTutorialBar() {
     var bar = document.getElementById('ps-tut-bar');
     if (!bar) return;
@@ -3959,13 +4273,44 @@
     });
     bar.querySelector('[data-tb="next"]').addEventListener('click', function () {
       if (!S.activeTut) return;
-      var tut = TUTORIALS[S.activeTut.tutIdx];
-      if (S.activeTut.stepIdx >= tut.steps.length - 1) {
-        exitTutorial(true); // finished — clears progress after dialog
+      var tut    = TUTORIALS[S.activeTut.tutIdx];
+      var step   = tut.steps[S.activeTut.stepIdx];
+      var isLast = S.activeTut.stepIdx >= tut.steps.length - 1;
+
+      var doAdvance = function () {
+        if (isLast) {
+          exitTutorial(true);
+        } else {
+          S.activeTut.stepIdx++;
+          saveTutProgress();
+          applyTutBar(true);
+        }
+      };
+
+      if (step.behaviorCheck) {
+        var nextBtn2 = bar.querySelector('[data-tb="next"]');
+        var prevBtn2 = bar.querySelector('[data-tb="prev"]');
+        var validEl2 = bar.querySelector('.ps-tb-valid');
+        nextBtn2.disabled = true;
+        prevBtn2.disabled = true;
+        validEl2.textContent = '⏳ Testing your code…';
+        validEl2.className   = 'ps-tb-valid tb-testing';
+
+        runBehaviorCheck(step,
+          function () {             // pass
+            nextBtn2.disabled = false;
+            prevBtn2.disabled = false;
+            doAdvance();
+          },
+          function (hint) {         // fail
+            nextBtn2.disabled = false;
+            prevBtn2.disabled = false;
+            validEl2.textContent = '⚠ ' + hint;
+            validEl2.className   = 'ps-tb-valid tb-err';
+          }
+        );
       } else {
-        S.activeTut.stepIdx++;
-        saveTutProgress();
-        applyTutBar(true);
+        doAdvance();
       }
     });
   }
@@ -4051,7 +4396,7 @@
         { code:'days_since_2000()', desc:'Floating-point number of days elapsed since 1 January 2000.' },
       ]},
       { cat:'vars', title:'Variables', items:[
-        { code:'set_variable("Score", 0)', desc:'Set a Scratch stage variable by name. If the variable does not exist yet it is created automatically and an on-screen counter appears — no TurboWarp menus needed.' },
+        { code:'set_variable("Score", 0)', desc:'Set a Scratch variable by name — creates it automatically if it does not exist. Use display_variable("Score", True) to make the on-screen counter visible.' },
         { code:'get_variable("Score")', desc:'Read the current value of a Scratch stage variable. Returns 0 if the variable does not exist.' },
         { code:'change_variable("Score", 1)', desc:'Add a number to a Scratch stage variable — shortcut for get then set. Creates the variable if needed. Use negative numbers to subtract.' },
         { code:'display_variable("Score", True)', desc:'Creates the variable if it does not exist, then shows (True) or hides (False) its on-screen counter — exactly the same as ticking or unticking the checkbox next to a variable in the Scratch Variables panel. Useful for hiding internal variables like HP that you only want shown at certain times.' },
