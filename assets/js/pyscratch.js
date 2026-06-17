@@ -736,8 +736,8 @@
           text: 'Platforms are their own game object: they need a <strong>separate sprite</strong> with their own position and code. Click the highlighted button to add a new sprite, give it a <strong>flat wide rectangular costume</strong>, and name it <strong>Platform</strong>.',
           highlight: 'add-sprite-btn',
           highlightLabel: 'Add a sprite here',
-          requiresSpriteCount: 2,
-          requiresSpriteHint: 'Add a new sprite for the platform',
+          requiredSpriteNames: ['Platform'],
+          requiredSpriteHints: { 'Platform': 'Add a sprite and name it "Platform"' },
           starter: null, target: null, newLines: [], requires: []
         },
         {
@@ -769,8 +769,8 @@
           text: 'Add one more sprite as the death zone. Click the highlighted button, give it a <strong>wide flat costume</strong> that spans the full width of the stage, and name it <strong>Death</strong>. Position it at the very bottom of the stage.',
           highlight: 'add-sprite-btn',
           highlightLabel: 'Add a sprite here',
-          requiresSpriteCount: 3,
-          requiresSpriteHint: 'Add a new sprite for the death barrier',
+          requiredSpriteNames: ['Platform', 'Death'],
+          requiredSpriteHints: { 'Death': 'Add a sprite and name it "Death"' },
           starter: null, target: null, newLines: [], requires: []
         },
         {
@@ -852,8 +852,10 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'An RPG survivor game using clones! Enemy clones spawn from the top of the screen and walk toward the player. Touching an enemy costs HP — attack back with <strong>space</strong> to kill them and earn score.<br><br>Before you start, make sure your sprite is named <strong>Player</strong> exactly — the enemy code looks for that name when it checks collisions.<br><br>The <code>HP</code> and <code>Score</code> counters appear on screen because your code calls <code>set_variable()</code> to create them and <code>display_variable()</code> to make them visible — no TurboWarp menus needed.',
-          starter: null, target: null, newLines: [], requires: []
+          text: 'An RPG survivor game using clones! Enemy clones spawn from the top of the screen and walk toward the player. Touching an enemy costs HP — attack back with <strong>space</strong> to kill them and earn score.<br><br>Before you start, <strong>rename your sprite to <code>Player</code></strong> using the name box below the stage — the enemy code looks for that name when it checks collisions.<br><br>The <code>HP</code> and <code>Score</code> counters appear on screen because your code calls <code>set_variable()</code> to create them and <code>display_variable()</code> to make them visible — no TurboWarp menus needed.',
+          starter: null, target: null, newLines: [], requires: [],
+          requiredSpriteNames: ['Player'],
+          requiredSpriteHints: { 'Player': 'Rename your sprite to "Player"' }
         },
         {
           title: 'Player: HP variable and game loop',
@@ -908,7 +910,8 @@
           text: 'Click the <strong>+</strong> button to add a new sprite. <strong>Name it exactly <code>Enemy</code></strong> — the player code uses <code>touching("Enemy")</code> to detect collisions, so spelling must match.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add sprite here',
-          requiresSpriteCount: 2, requiresSpriteHint: 'Add a new sprite and name it "Enemy"'
+          requiredSpriteNames: ['Player', 'Enemy'],
+          requiredSpriteHints: { 'Enemy': 'Add a sprite named "Enemy"' }
         },
         {
           title: 'Enemy: spawn clones every 2 seconds',
@@ -952,7 +955,9 @@
         {
           title: 'What are we building?',
           text: 'An Apple Catcher game! Apples fall from the top and you move a basket to catch them.<br><br>Before you start: <strong>rename your sprite to <code>Catcher</code></strong> using the name box below the stage. The Apple sprite will use <code>touching("Catcher")</code> to detect a catch.',
-          starter: null, target: null, newLines: [], requires: []
+          starter: null, target: null, newLines: [], requires: [],
+          requiredSpriteNames: ['Catcher'],
+          requiredSpriteHints: { 'Catcher': 'Rename your sprite to "Catcher"' }
         },
         {
           title: 'Catcher: position and variables',
@@ -975,7 +980,8 @@
           text: 'Click the <strong>+</strong> sprite button and add a second sprite. <strong>Name it exactly <code>Apple</code></strong>. Then click the Apple sprite in the panel to switch to its code.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add Apple sprite here',
-          requiresSpriteCount: 2, requiresSpriteHint: 'Add a sprite and name it "Apple"'
+          requiredSpriteNames: ['Catcher', 'Apple'],
+          requiredSpriteHints: { 'Apple': 'Add a sprite named "Apple"' }
         },
         {
           title: 'Apple: fall from the top',
@@ -1062,8 +1068,10 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'A Space Shooter! Move your ship left and right. Press <strong>space</strong> to fire bullets upward at an enemy that patrols the top of the screen.<br><br>You need <strong>three sprites</strong>: <code>Player</code> (the ship), <code>Bullet</code> (a small projectile), and <code>Enemy</code>. <strong>Rename your default sprite to <code>Player</code></strong>.',
-          starter: null, target: null, newLines: [], requires: []
+          text: 'A Space Shooter! Move your ship left and right. Press <strong>space</strong> to fire bullets upward at an enemy that patrols the top of the screen.<br><br>You need <strong>three sprites</strong>: <code>Player</code> (the ship), <code>Bullet</code> (a small projectile), and <code>Enemy</code>. <strong>Rename your default sprite to <code>Player</code></strong> using the name box below the stage.',
+          starter: null, target: null, newLines: [], requires: [],
+          requiredSpriteNames: ['Player'],
+          requiredSpriteHints: { 'Player': 'Rename your sprite to "Player"' }
         },
         {
           title: 'Player: movement and boundary',
@@ -1086,7 +1094,8 @@
           text: 'Click <strong>+</strong> twice to add two more sprites. Name them exactly <strong><code>Bullet</code></strong> and <strong><code>Enemy</code></strong>. Then click the <strong>Bullet</strong> sprite to switch to its code.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add sprites here',
-          requiresSpriteCount: 3, requiresSpriteHint: 'Add "Bullet" and "Enemy" sprites'
+          requiredSpriteNames: ['Player', 'Bullet', 'Enemy'],
+          requiredSpriteHints: { 'Bullet': 'Add a sprite named "Bullet"', 'Enemy': 'Add a sprite named "Enemy"' }
         },
         {
           title: 'Bullet: listen for "fire" and launch a clone',
@@ -1121,8 +1130,10 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'A one-player Pong game! A ball bounces off the left, right, and top walls. Move the paddle to bounce it back up. If the ball gets past the paddle it\'s game over.<br><br>You need <strong>two sprites</strong>: <code>Paddle</code> and <code>Ball</code>. <strong>Rename your default sprite to <code>Paddle</code></strong>.',
-          starter: null, target: null, newLines: [], requires: []
+          text: 'A one-player Pong game! A ball bounces off the left, right, and top walls. Move the paddle to bounce it back up. If the ball gets past the paddle it\'s game over.<br><br>You need <strong>two sprites</strong>: <code>Paddle</code> and <code>Ball</code>. <strong>Rename your default sprite to <code>Paddle</code></strong> using the name box below the stage.',
+          starter: null, target: null, newLines: [], requires: [],
+          requiredSpriteNames: ['Paddle'],
+          requiredSpriteHints: { 'Paddle': 'Rename your sprite to "Paddle"' }
         },
         {
           title: 'Paddle: movement and boundary',
@@ -1137,7 +1148,8 @@
           text: 'Click <strong>+</strong> to add a second sprite. Name it <strong><code>Ball</code></strong>. Then click the Ball in the sprite panel to switch to its code.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add Ball sprite here',
-          requiresSpriteCount: 2, requiresSpriteHint: 'Add a sprite and name it "Ball"'
+          requiredSpriteNames: ['Paddle', 'Ball'],
+          requiredSpriteHints: { 'Ball': 'Add a sprite named "Ball"' }
         },
         {
           title: 'Ball: velocity variables',
@@ -1180,8 +1192,10 @@
       steps: [
         {
           title: 'What are we building?',
-          text: 'Breakout! A ball bounces around the screen. Use the paddle to keep it alive — when the ball hits a Brick clone it destroys it and you score a point.<br><br>You need <strong>three sprites</strong>: <code>Paddle</code>, <code>Ball</code>, and <code>Brick</code>. <strong>Rename your sprite to <code>Paddle</code></strong>.',
-          starter: null, target: null, newLines: [], requires: []
+          text: 'Breakout! A ball bounces around the screen. Use the paddle to keep it alive — when the ball hits a Brick clone it destroys it and you score a point.<br><br>You need <strong>three sprites</strong>: <code>Paddle</code>, <code>Ball</code>, and <code>Brick</code>. <strong>Rename your sprite to <code>Paddle</code></strong> using the name box below the stage.',
+          starter: null, target: null, newLines: [], requires: [],
+          requiredSpriteNames: ['Paddle'],
+          requiredSpriteHints: { 'Paddle': 'Rename your sprite to "Paddle"' }
         },
         {
           title: 'Paddle: movement and boundary',
@@ -1196,7 +1210,8 @@
           text: 'Click <strong>+</strong> twice. Name the sprites <strong><code>Ball</code></strong> and <strong><code>Brick</code></strong>. Then click <strong>Ball</strong> to switch to its code.',
           starter: null, target: null, newLines: [], requires: [],
           highlight: 'add-sprite-btn', highlightLabel: 'Add sprites here',
-          requiresSpriteCount: 3, requiresSpriteHint: 'Add "Ball" and "Brick" sprites'
+          requiredSpriteNames: ['Paddle', 'Ball', 'Brick'],
+          requiredSpriteHints: { 'Ball': 'Add a sprite named "Ball"', 'Brick': 'Add a sprite named "Brick"' }
         },
         {
           title: 'Ball: velocity and movement',
@@ -4276,8 +4291,8 @@
       clearHighlight();
     }
 
-    // Poll sprite count for steps that wait for the student to add a sprite
-    if (step.requiresSpriteCount !== undefined) {
+    // Poll sprite count / sprite names for steps that wait for the student to add/rename a sprite
+    if (step.requiresSpriteCount !== undefined || (step.requiredSpriteNames || []).length > 0) {
       _tutPollTid = setInterval(checkTutBar, 600);
     }
 
@@ -4400,10 +4415,46 @@
       if (spriteOk && step.highlight) clearHighlight();
     }
 
+    // ── Required sprite names check ───────────────────────────────
+    // Each entry in step.requiredSpriteNames must match a live (non-stage) sprite name.
+    // step.requiredSpriteHints is an optional { Name: 'label text' } map.
+    var spriteNamesReq = step.requiredSpriteNames || [];
+    if (spriteNamesReq.length > 0) {
+      var liveNames = [];
+      try {
+        liveNames = vm.runtime.targets
+          .filter(function (t) { return !t.isStage; })
+          .map(function (t) { return t.sprite.name; });
+      } catch(e) {}
+      var hintMap = step.requiredSpriteHints || {};
+      var namesChecksEl = bar.querySelector('.ps-tb-checks');
+      namesChecksEl.classList.remove('ps-tb-no-checks');
+      spriteNamesReq.forEach(function (name) {
+        var key = '__sprite_' + name + '__';
+        var ok  = liveNames.indexOf(name) !== -1;
+        if (!ok) allOk = false;
+        var row = bar.querySelector('.ps-tb-ck[data-req="' + key + '"]');
+        if (!row) {
+          row = document.createElement('div');
+          row.className   = 'ps-tb-ck ck-wait';
+          row.dataset.req = key;
+          var hint = hintMap[name] || ('Sprite named "' + name + '"');
+          row.innerHTML = '<i class="ps-tb-ck-icon">⏳</i><span>' + hint + '</span>';
+          namesChecksEl.appendChild(row);
+        }
+        row.className = 'ps-tb-ck ' + (ok ? 'ck-ok' : 'ck-wait');
+        row.querySelector('.ps-tb-ck-icon').textContent = ok ? '✓' : '⏳';
+      });
+      if (step.highlight) {
+        var allNamesOk = spriteNamesReq.every(function (n) { return liveNames.indexOf(n) !== -1; });
+        if (allNamesOk) clearHighlight();
+      }
+    }
+
     // ── Footer status ─────────────────────────────────────────────
     var nextBtn = bar.querySelector('[data-tb="next"]');
     var validEl = bar.querySelector('.ps-tb-valid');
-    var hasAnyReq = reqs.length > 0 || step.requiresSpriteCount !== undefined;
+    var hasAnyReq = reqs.length > 0 || step.requiresSpriteCount !== undefined || (step.requiredSpriteNames || []).length > 0;
     nextBtn.disabled = hasAnyReq && !allOk;
     if (!hasAnyReq) {
       validEl.textContent = '';
@@ -4418,12 +4469,15 @@
         var sc   = _searchCode(ckEl);
         return n.count > 1 ? tutReqCount(sc, n.reqStr) >= n.count : tutReqMatches(sc, n.reqStr);
       }).length;
-      var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0);
+      var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0) + (step.requiredSpriteNames || []).length;
       var spriteDone = 0;
       if (step.requiresSpriteCount !== undefined) {
         try { spriteDone = vm.runtime.targets.filter(function(t){return !t.isStage;}).length >= step.requiresSpriteCount ? 1 : 0; } catch(e){}
       }
-      var done  = codeReqsDone + spriteDone;
+      var spriteNamesDone = (step.requiredSpriteNames || []).filter(function (name) {
+        try { return vm.runtime.targets.some(function (t) { return !t.isStage && t.sprite.name === name; }); } catch(e) { return false; }
+      }).length;
+      var done  = codeReqsDone + spriteDone + spriteNamesDone;
       validEl.textContent = done + ' / ' + total + ' tasks complete';
       validEl.className   = 'ps-tb-valid';
     }
