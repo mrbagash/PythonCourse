@@ -215,8 +215,8 @@
       steps: [
         {
           title: 'Your first for loop',
-          text: 'A <strong>for loop</strong> repeats its code a fixed number of times — no <code>while True:</code> needed. <code>range(5)</code> means "do this 5 times". Type the full function:',
-          starter: '',
+          text: 'A <strong>for loop</strong> repeats its code a fixed number of times — no <code>while True:</code> needed. <code>range(5)</code> means "do this 5 times". The <code>def game_start():</code> has been provided — add the for loop inside it:',
+          starter: 'def game_start():',
           target: 'def game_start():\n    for i in range(5):\n        change_x(30)\n        wait(0.3)',
           newLines: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
           requires: ['    for i in range(5):', '        change_x(30)', '        wait(0.3)'],
@@ -4054,7 +4054,9 @@
       if (('\n' + code).indexOf('\n' + req) !== -1) return true;
       try {
         var escaped = m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        var flex    = escaped.replace(/ /g, '[ \\t]*');
+        // Allow flexible spacing between tokens AND before opening parentheses,
+        // so touching ("Paddle") matches touching("Paddle") and vice-versa.
+        var flex    = escaped.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
         return new RegExp('^' + indent + flex, 'm').test(code);
       } catch(e) { return false; }
     } else {
@@ -4064,7 +4066,7 @@
       if (code.indexOf(req) !== -1) return true;
       try {
         var escaped2 = req.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        var flex2    = escaped2.replace(/ /g, '[ \\t]*');
+        var flex2    = escaped2.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
         return new RegExp(flex2).test(code);
       } catch(e) { return false; }
     }
@@ -4082,7 +4084,7 @@
     try {
       var mm      = req.match(/^([ \t]*)([\s\S]*)$/);
       var escaped = mm[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      var flex    = escaped.replace(/ /g, '[ \\t]*');
+      var flex    = escaped.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
       var hits    = code.match(new RegExp('^' + mm[1] + flex, 'gm'));
       return hits ? hits.length : 0;
     } catch(e) { return 0; }
@@ -4285,8 +4287,12 @@
     if (missWarn && step.target) {
       var newLineSet = {};
       (step.newLines || []).forEach(function (l) { newLineSet[l] = true; });
+      var _haystack = '\n' + code;
       var missingOld = step.target.split('\n').some(function (line) {
-        return line.trim() !== '' && !newLineSet[line] && code.indexOf(line) === -1;
+        // Use newline-anchored search so a grey line at 8 spaces is NOT treated
+        // as present just because the student has the same text at 4 or 12 spaces.
+        return line.trim() !== '' && !newLineSet[line] &&
+               _haystack.indexOf('\n' + line) === -1;
       });
       missWarn.classList.toggle('ps-tb-miss-hidden', !missingOld);
     } else if (missWarn) {
