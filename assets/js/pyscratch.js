@@ -3242,7 +3242,7 @@
       '.ps-chal-overall.co-fail{background:rgba(243,139,168,.1);color:var(--ps-error,#f38ba8)}',
 
       // Editor + console
-      '#ps-editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}',
+      '#ps-editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}',
       '#ps-editor{flex:1;background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border:none;outline:none;resize:none;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.65;padding:12px;tab-size:4;overflow-y:auto;min-height:0}',
       '#ps-editor::selection{background:var(--ps-selection,#3b3b5a)}',
       '#ps-console{height:72px;background:var(--ps-console,#13131f);color:var(--ps-success,#a6e3a1);font-family:"Roboto Mono","Consolas",monospace;font-size:11px;padding:5px 10px;overflow-y:auto;border-top:1px solid var(--ps-border,#312d4b);flex-shrink:0;line-height:1.5}',
@@ -3422,7 +3422,19 @@
       '.ps-ics-kind.fn{background:#1a3a2a;color:#4ade80}',
       '.ps-ics-kind.sn{background:#3a1a3a;color:#c084fc}',
       '.ps-ics-label{color:#e2e8f0;flex:1;white-space:nowrap}',
-      '.ps-ics-detail{color:#4b5563;font-size:10px;font-family:"Segoe UI",sans-serif;white-space:nowrap;overflow:hidden;max-width:140px;text-overflow:ellipsis}'
+      '.ps-ics-detail{color:#4b5563;font-size:10px;font-family:"Segoe UI",sans-serif;white-space:nowrap;overflow:hidden;max-width:140px;text-overflow:ellipsis}',
+
+      // Indentation error gutter — thin coloured strip on the left edge of the editor
+      '#ps-indent-gutter{position:absolute;left:0;top:0;bottom:0;width:7px;pointer-events:none;z-index:6;overflow:hidden}',
+      '.ps-ig-mark{position:absolute;left:1px;width:5px;border-radius:2px;animation:ps-ig-pulse 1.3s ease-in-out infinite}',
+      '.ps-ig-mark.ig-tab{background:#f59e0b}',
+      '.ps-ig-mark.ig-bad{background:#ef4444}',
+      '@keyframes ps-ig-pulse{0%,100%{opacity:1}50%{opacity:.15}}',
+      // Indentation error tooltip — fixed to screen, appears near the bad line
+      '#ps-indent-tip{position:fixed;z-index:40000;background:#1c0a0a;border:1px solid #7f1d1d;border-radius:5px;padding:6px 10px 5px;font-size:10px;font-family:"Segoe UI",sans-serif;color:#fca5a5;line-height:1.5;max-width:320px;pointer-events:none;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6)}',
+      '#ps-indent-tip.ps-it-show{display:block}',
+      '#ps-indent-tip strong{color:#fbbf24;font-family:"Roboto Mono","Consolas",monospace}',
+      '#ps-indent-tip .ps-it-fix{font-size:9px;color:#9ca3af;margin-top:2px}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -3483,6 +3495,7 @@
                   '<button class="ps-tb-btn tb-primary" data-tb="next">Next →</button>',
                 '</div>',
               '</div>',
+              '<div id="ps-indent-gutter"></div>',
               '<textarea id="ps-editor" spellcheck="false"></textarea>',
               '<div id="ps-console"></div>',
             '</div>',
@@ -3576,6 +3589,11 @@
     icsEl.id = 'ps-icsense';
     icsEl.className = 'ps-ics-hidden';
     document.body.appendChild(icsEl);
+
+    // Indentation error tooltip (shared singleton, position:fixed)
+    var itEl = document.createElement('div');
+    itEl.id = 'ps-indent-tip';
+    document.body.appendChild(itEl);
 
     // Colour picker badge — appears when cursor is inside touching_colour(...)
     var cpEl = document.createElement('div');
@@ -3726,9 +3744,11 @@
       if (S.activeTut) checkTutBar();
       updateCompletions();
       updateColourPicker();
+      updateIndentGutter();
     });
-    ui.editor.addEventListener('click', function () { updateColourPicker(); });
-    ui.editor.addEventListener('keyup', function () { updateColourPicker(); });
+    ui.editor.addEventListener('click', function () { updateColourPicker(); updateIndentGutter(); });
+    ui.editor.addEventListener('keyup', function () { updateColourPicker(); updateIndentGutter(); });
+    ui.editor.addEventListener('scroll', function () { updateIndentGutter(); });
     ui.editor.addEventListener('blur', function () {
       // Small delay so mousedown on a dropdown item fires first
       setTimeout(hideICSense, 150);
@@ -3739,6 +3759,9 @@
           cpEl.style.display = 'none';
         }
       }, 200);
+      // Hide indent tooltip when editor loses focus
+      var itEl2 = document.getElementById('ps-indent-tip');
+      if (itEl2) itEl2.classList.remove('ps-it-show');
     });
 
     // Key tracking
@@ -4300,6 +4323,92 @@
     bar.scrollTop = 0;
 
     checkTutBar();
+  }
+
+  // ── Indentation error highlighting ────────────────────────────
+  // Detects lines whose leading whitespace is not a multiple of 4 spaces,
+  // or that contain literal tab characters.  Only flags non-blank lines.
+  var _INDENT_LINE_H  = 13 * 1.65; // must match #ps-editor line-height in CSS
+  var _INDENT_PAD_TOP = 12;         // must match #ps-editor padding in CSS
+
+  function _detectIndentErrors(code) {
+    var errors = [];
+    code.split('\n').forEach(function (line, i) {
+      if (line.trim() === '') return; // blank / whitespace-only lines are fine
+      if (/^\t/.test(line)) {
+        errors.push({ line: i, type: 'tab',
+          msg: 'Tab character detected — use spaces instead',
+          fix: 'Your Tab key already inserts 4 spaces in this editor. If you pasted this code, replace the tab with 4 spaces.' });
+        return;
+      }
+      var m = line.match(/^( +)/);
+      if (m) {
+        var n = m[1].length;
+        if (n % 4 !== 0) {
+          var nearest = Math.round(n / 4) * 4 || 4;
+          var level   = nearest / 4;
+          errors.push({ line: i, type: 'bad', spaces: n, nearest: nearest,
+            msg: '<strong>' + n + '</strong> space' + (n === 1 ? '' : 's') + ' — Python needs a multiple of 4&nbsp;&nbsp;(4, 8, 12…)',
+            fix: 'Expected <strong>' + nearest + '</strong> spaces here (indent level ' + level + '). Use Shift+Tab / Tab to adjust.' });
+        }
+      }
+    });
+    return errors;
+  }
+
+  function updateIndentGutter() {
+    var gutter = document.getElementById('ps-indent-gutter');
+    var tip    = document.getElementById('ps-indent-tip');
+    var editor = ui.editor;
+    if (!gutter || !editor) return;
+
+    var code   = editor.value;
+    var errors = _detectIndentErrors(code);
+
+    // ── Rebuild gutter marks ──────────────────────────────────
+    gutter.innerHTML = '';
+    var edTop   = editor.offsetTop;   // textarea's top within #ps-editor-wrap
+    var edH     = editor.offsetHeight;
+    var scrollY = editor.scrollTop;
+
+    errors.forEach(function (err) {
+      var lineTop  = edTop + _INDENT_PAD_TOP + err.line * _INDENT_LINE_H - scrollY;
+      var markTop  = lineTop + (_INDENT_LINE_H - 14) / 2;
+      if (markTop < edTop - 2 || markTop > edTop + edH - 6) return; // outside visible area
+      var mark = document.createElement('div');
+      mark.className = 'ps-ig-mark ig-' + err.type;
+      mark.style.top    = Math.round(markTop) + 'px';
+      mark.style.height = '14px';
+      gutter.appendChild(mark);
+    });
+
+    // ── Show / update cursor-line tooltip ─────────────────────
+    if (!tip) return;
+    if (errors.length === 0 || document.activeElement !== editor) {
+      tip.classList.remove('ps-it-show');
+      return;
+    }
+    var curLine = editor.value.substring(0, editor.selectionStart).split('\n').length - 1;
+    var lineErr = null;
+    for (var ei = 0; ei < errors.length; ei++) {
+      if (errors[ei].line === curLine) { lineErr = errors[ei]; break; }
+    }
+    if (!lineErr) { tip.classList.remove('ps-it-show'); return; }
+
+    // Position the tooltip: prefer above the bad line, flip below if too close to top
+    var editorRect = editor.getBoundingClientRect();
+    var lineScreenY = editorRect.top + _INDENT_PAD_TOP + lineErr.line * _INDENT_LINE_H - scrollY;
+    var tipH  = 56; // approximate tooltip height
+    var tipY  = lineScreenY - tipH - 6;
+    if (tipY < editorRect.top + 4) tipY = lineScreenY + _INDENT_LINE_H + 4;
+    // clamp to viewport bottom
+    tipY = Math.min(tipY, window.innerHeight - tipH - 8);
+
+    tip.style.top   = Math.round(tipY) + 'px';
+    tip.style.left  = Math.round(editorRect.left + 10) + 'px';
+    tip.style.width = Math.min(320, editorRect.width - 20) + 'px';
+    tip.innerHTML   = '<div>⚠ ' + lineErr.msg + '</div><div class="ps-it-fix">' + lineErr.fix + '</div>';
+    tip.classList.add('ps-it-show');
   }
 
   function checkTutBar() {
@@ -5503,6 +5612,7 @@
     var threads = loadThreads(S.activeSprite);
     var t = threads[S.activeThreadIdx];
     ui.editor.value = t ? t.code : '';
+    updateIndentGutter();
   }
 
   function saveCurrentCode() {
