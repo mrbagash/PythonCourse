@@ -3358,6 +3358,9 @@
       // Warning shown when grey lines have been deleted
       '.ps-tb-miss{margin:2px 8px 0;padding:4px 8px;background:#2a1a1a;border:1px solid #7f1d1d;border-radius:4px;font-size:10px;color:#fca5a5;display:flex;align-items:center;gap:6px;flex-shrink:0}',
       '.ps-tb-miss.ps-tb-miss-hidden{display:none}',
+      // Indentation structure error — shown when code has Python IndentationError-type problems
+      '.ps-tb-ierr{margin:2px 8px 0;padding:4px 8px;background:#1a0d0d;border:1px solid #7f1d1d;border-radius:4px;font-size:10px;color:#fca5a5;flex-shrink:0}',
+      '.ps-tb-ierr.ps-tb-ierr-hidden{display:none}',
       '.ps-tb-miss-restore{margin-left:auto;background:none;border:1px solid #f87171;color:#f87171;cursor:pointer;padding:2px 7px;border-radius:3px;font-size:9px;font-family:inherit;flex-shrink:0}',
       '.ps-tb-miss-restore:hover{background:#7f1d1d}',
       // Prevent selecting or copying the reference code — students must type it themselves
@@ -3495,6 +3498,7 @@
                   '↹ Press <strong>Tab</strong> to indent (on some keyboards the key shows two arrows ↹ instead of "Tab") · 4 spaces per indent level',
                 '</div>',
                 '<div class="ps-tb-checks ps-tb-no-checks"></div>',
+                '<div class="ps-tb-ierr ps-tb-ierr-hidden"></div>',
                 '<div class="ps-tb-foot">',
                   '<span class="ps-tb-valid"></span>',
                   '<button class="ps-tb-btn" data-tb="prev">← Back</button>',
@@ -4151,6 +4155,79 @@
   // Internal spaces are made flexible so minor variations like extra spaces
   // inside parentheses or around operators don't block validation.
   // e.g. 'change_x( 5 )' and 'vx=3' both satisfy the right requires string.
+  // ── Python indentation structure checker ─────────────────────
+  // Lightweight stack-based parser that detects Python IndentationError-type
+  // problems: unexpected indents and unmatched dedents.
+  //
+  // This catches the gap in tutReqMatches — requires without leading whitespace
+  // (the common case) match a line at ANY indent depth.  _pyIndentCheck validates
+  // the block structure independently and gates the Next button when the code
+  // would fail Python's own indentation rules.
+  //
+  // NOT handled: backslash continuations, multi-line strings (rare in PyScratch).
+  function _pyLineOpensBlock(content) {
+    // Returns true when a trimmed line should be followed by a deeper-indented block.
+    // Only fires for recognised block-introducing keywords — avoids false positives
+    // from dict literals (key: value), ternary expressions, etc.
+    if (!/^(def|class|if|elif|else|for|while|with|try|except|finally)\b/.test(content)) return false;
+    // Strip inline comment (conservative — enough for single-line comments after code)
+    var nc = content.replace(/#[^'"]*$/, '').trimRight();
+    // Strip simple single-line string literals so a colon inside a string doesn't fire
+    nc = nc.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+    return nc.trimRight().endsWith(':');
+  }
+
+  function _pyIndentCheck(code) {
+    var lines   = code.split('\n');
+    var stack   = [0];      // indent-level stack; bottom is always 0
+    var expectDeeper = false; // true after a block-opening colon
+
+    for (var i = 0; i < lines.length; i++) {
+      var raw     = lines[i].replace(/\t/g, '    ');   // expand tabs → 4 spaces
+      var stripped = raw.trimRight();
+      var content  = stripped.trim();
+      if (content === '' || content.charAt(0) === '#') continue; // blank / comment
+
+      var indent = stripped.length - content.length;
+
+      if (expectDeeper) {
+        if (indent <= stack[stack.length - 1]) {
+          return {
+            lineIdx: i,
+            msg: 'Line ' + (i + 1) + ': expected an indented block here — ' +
+                 'the line before ends with \':\' so this line needs more than ' +
+                 stack[stack.length - 1] + ' leading spaces'
+          };
+        }
+        stack.push(indent);
+        expectDeeper = false;
+      } else {
+        var top = stack[stack.length - 1];
+        if (indent > top) {
+          return {
+            lineIdx: i,
+            msg: 'Line ' + (i + 1) + ': unexpected indent — ' + indent + ' spaces, ' +
+                 'but this block uses ' + top + ' spaces'
+          };
+        } else if (indent < top) {
+          // Dedent: pop stack until we find a matching level
+          while (stack.length > 1 && stack[stack.length - 1] > indent) stack.pop();
+          if (stack[stack.length - 1] !== indent) {
+            return {
+              lineIdx: i,
+              msg: 'Line ' + (i + 1) + ': indentation of ' + indent + ' spaces doesn\'t match ' +
+                   'any outer block — valid levels here are ' + stack.join(', ') + ' spaces'
+            };
+          }
+        }
+        // indent === top → same level, fine
+      }
+
+      if (_pyLineOpensBlock(content)) expectDeeper = true;
+    }
+    return null; // no structural indentation errors found
+  }
+
   function tutReqMatches(code, req) {
     if (!req) return true;
     var m      = req.match(/^([ \t]*)([\s\S]*)$/);
@@ -4564,6 +4641,26 @@
       if (step.highlight) {
         var allNamesOk = spriteNamesReq.every(function (n) { return liveNames.indexOf(n) !== -1; });
         if (allNamesOk) clearHighlight();
+      }
+    }
+
+    // ── Python indentation structure check ────────────────────────
+    // Runs only when all other checks already pass AND a target exists.
+    // Catches structural IndentationError conditions that tutReqMatches misses
+    // (requires without leading whitespace match at any depth).
+    var ierrEl = bar.querySelector('.ps-tb-ierr');
+    if (ierrEl) {
+      if (allOk && step.target && code.trim()) {
+        var _indErr = _pyIndentCheck(code);
+        if (_indErr) {
+          allOk = false;
+          ierrEl.textContent = '⚠ ' + _indErr.msg;
+          ierrEl.classList.remove('ps-tb-ierr-hidden');
+        } else {
+          ierrEl.classList.add('ps-tb-ierr-hidden');
+        }
+      } else {
+        ierrEl.classList.add('ps-tb-ierr-hidden');
       }
     }
 
