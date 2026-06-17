@@ -405,7 +405,7 @@
           starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        moved = False\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            moved = True\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            moved = True\n        if moved:\n            next_costume()\n        else:\n            set_costume(1)\n        if_on_edge_bounce()',
           newLines: ['        moved = False', '            moved = True', '        if moved:', '            next_costume()', '        else:', '            set_costume(1)'],
-          requires: ['moved = False', { req: '            moved = True', count: 2, label: 'moved = True in both if blocks' }, 'set_costume(1)'],
+          requires: ['moved = False', { req: '            moved = True', count: 2, label: 'moved = True in both if blocks' }, '        if moved:', '            next_costume()', 'set_costume(1)'],
           behaviorCheck: {
             hint: 'Hold the right arrow key — the sprite should move right. Check <code>moved = True</code> is in both if blocks.',
             setupMs: 400,
@@ -4294,6 +4294,7 @@
         return line.trim() !== '' && !newLineSet[line] &&
                _haystack.indexOf('\n' + line) === -1;
       });
+      if (missingOld) allOk = false;
       missWarn.classList.toggle('ps-tb-miss-hidden', !missingOld);
     } else if (missWarn) {
       missWarn.classList.add('ps-tb-miss-hidden');
@@ -5110,12 +5111,14 @@
       btn.onclick = (function (s) {
         return function () {
           if (!confirm('Restore "' + s.label + '"?\nCurrent code will be replaced.')) return;
+          var scrollY = el.scrollTop; // save position before re-render
           S.spriteCode[spriteName] = JSON.parse(JSON.stringify(s.threads));
           saveThreads(spriteName);
           S.activeThreadIdx = 0;
           renderThreadList();
           loadCodeToEditor();
-          switchPanelTab('threads'); // jump back to threads view after restore
+          renderSnapList();          // refresh labels/times in place
+          el.scrollTop = scrollY;   // restore scroll position
         };
       })(snap);
 
