@@ -4228,6 +4228,81 @@
     return null; // no structural indentation errors found
   }
 
+  // ── Block-context validation helpers ─────────────────────────
+  // Count leading spaces (tabs expanded to 4 spaces).
+  function _lineIndent(line) {
+    var exp = line.replace(/\t/g, '    ');
+    var m   = exp.match(/^( *)/);
+    return m ? m[1].length : 0;
+  }
+
+  // True if a single trimmed code line matches a requires pattern (flex spacing).
+  function _lineMatchesReq(codeLine, reqStr) {
+    var tl = codeLine.trim(), tr = reqStr.trim();
+    if (!tl || !tr) return false;
+    if (tl === tr) return true;
+    try {
+      var esc  = tr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var flex = esc.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
+      return new RegExp('^' + flex + '$').test(tl);
+    } catch(e) { return false; }
+  }
+
+  // Core positional check:
+  //   1. Find reqStr in step.target to get its expected location.
+  //   2. Walk up the target to find the nearest enclosing block header
+  //      (def/if/while/for/else/…  that opens a new indented block).
+  //   3. In the student's code, search for any block with that header
+  //      and check if reqStr appears inside it.
+  //
+  // Returns true (= no constraint) when:
+  //   • reqStr isn't found in the target
+  //   • the line is at module level (no parent block in target)
+  //
+  // Returns false when reqStr IS in the target but not inside the
+  // expected block in the student's code.
+  function _reqWithinTargetBlock(code, reqStr, target) {
+    var tLines = target.split('\n');
+    var trimReq = reqStr.trim();
+    if (!trimReq) return true;
+
+    // Find the FIRST target line that matches reqStr
+    var tIdx = -1;
+    for (var i = 0; i < tLines.length; i++) {
+      if (_lineMatchesReq(tLines[i], trimReq)) { tIdx = i; break; }
+    }
+    if (tIdx === -1) return true; // not in target → no positional constraint
+
+    // Walk backwards to find the nearest enclosing block header
+    var reqIndent = _lineIndent(tLines[tIdx]);
+    var parentHeader = null;
+    for (var j = tIdx - 1; j >= 0; j--) {
+      if (tLines[j].trim() === '') continue;
+      var pInd = _lineIndent(tLines[j]);
+      if (pInd < reqIndent && _pyLineOpensBlock(tLines[j].trim())) {
+        parentHeader = tLines[j].trim();
+        break;
+      }
+    }
+    if (!parentHeader) return true; // module-level line → no block constraint
+
+    // In the student's code, find any block whose header matches parentHeader,
+    // then check if reqStr appears anywhere inside that block's body.
+    var cLines = code.split('\n');
+    for (var k = 0; k < cLines.length; k++) {
+      if (!_lineMatchesReq(cLines[k], parentHeader)) continue;
+      var blockInd = _lineIndent(cLines[k]);
+      var body = [];
+      for (var l = k + 1; l < cLines.length; l++) {
+        if (cLines[l].trim() === '') continue;
+        if (_lineIndent(cLines[l]) <= blockInd) break;
+        body.push(cLines[l]);
+      }
+      if (tutReqMatches(body.join('\n'), reqStr)) return true;
+    }
+    return false; // found in target but not in the correct block in student code
+  }
+
   function tutReqMatches(code, req) {
     if (!req) return true;
     var m      = req.match(/^([ \t]*)([\s\S]*)$/);
@@ -4522,6 +4597,20 @@
       var found = n.count > 1
         ? tutReqCount(sc, n.reqStr) >= n.count
         : tutReqMatches(sc, n.reqStr);
+
+      // ── Block-context check ───────────────────────────────────────
+      // If content was found and the requires item has NO leading whitespace
+      // (the common case — most requires omit indent to be flexible), verify
+      // the line actually lives inside the CORRECT BLOCK as shown in step.target.
+      // This catches "line exists but in the wrong if/while/def block" cases
+      // that content-only matching cannot see.
+      // Skipped for: indented requires (already enforce exact indent), count-based
+      // items (multiple occurrences, harder to pin to one block), and steps without
+      // a target (no oracle to compare against).
+      if (found && !n.count && step.target && !/^[ \t]/.test(n.reqStr)) {
+        found = _reqWithinTargetBlock(code, n.reqStr, step.target);
+      }
+
       if (!found) allOk = false;
       if (ckEl) {
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
