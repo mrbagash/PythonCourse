@@ -1239,6 +1239,133 @@
     }
   ];
 
+  // ── Challenge data ────────────────────────────────────────────
+  // Each challenge is a standalone game for students to build from scratch.
+  // No starter code is given — only a goal, hints, and auto-tests.
+  //
+  // test shape (extends behaviorCheck scenario):
+  //   label       string   — shown in results list
+  //   holdKey     string   — hold a key for durationMs (optional)
+  //   durationMs  number   — how long to hold the key (default 400)
+  //   clickSprite string   — '__active__' or a sprite name to fire a click event (optional)
+  //   broadcast   string   — message to fire a broadcast event (optional)
+  //   waitMs      number   — wait after input before reading state (default 250)
+  //   keepRunning bool     — skip startAll(); continue from previous test (default false)
+  //   allowStop   bool     — don't fail if the program stopped naturally (default false)
+  //   checks      array    — same check types as behaviorCheck scenarios
+  var CHALLENGES = [
+    {
+      id: 'arrow-mover',
+      emoji: '🕹️',
+      title: 'Arrow Key Mover',
+      difficulty: 1,
+      goal: 'Control the sprite with all four arrow keys. Right moves the sprite right, left moves it left, up moves it up and down moves it down. The sprite should keep moving as long as the key is held.',
+      hints: [
+        'Put a <code>while True:</code> loop inside <code>def game_start():</code> — this keeps checking every frame.',
+        'Use <code>if key_pressed("right"):</code> to check if the right arrow is held down.',
+        '<code>change_x(5)</code> moves right, <code>change_x(-5)</code> moves left.',
+        '<code>change_y(5)</code> moves up, <code>change_y(-5)</code> moves down.',
+        'You need four separate <code>if</code> blocks — one for each direction.'
+      ],
+      setupMs: 500,
+      settleMs: 100,
+      tests: [
+        { label: 'Right arrow moves sprite right',
+          holdKey: 'right', durationMs: 400,
+          checks: [{ type: 'xChanged', dir: '+' }] },
+        { label: 'Left arrow moves sprite left',
+          holdKey: 'left', durationMs: 400,
+          checks: [{ type: 'xChanged', dir: '-' }] },
+        { label: 'Up arrow moves sprite up',
+          holdKey: 'up', durationMs: 400,
+          checks: [{ type: 'yChanged', dir: '+' }] },
+        { label: 'Down arrow moves sprite down',
+          holdKey: 'down', durationMs: 400,
+          checks: [{ type: 'yChanged', dir: '-' }] }
+      ]
+    },
+    {
+      id: 'click-counter',
+      emoji: '🖱️',
+      title: 'Click Counter',
+      difficulty: 2,
+      goal: 'When the green flag is pressed, set a variable called <strong>Score</strong> to 0 and display it on screen. Each time the sprite is clicked, Score goes up by 1.',
+      hints: [
+        'In <code>def game_start():</code>, use <code>set_variable("Score", 0)</code> to reset the score.',
+        'Use <code>display_variable("Score", True)</code> to show it on the stage.',
+        'Define <code>def when_clicked():</code> — this runs every time the sprite is clicked.',
+        'Inside <code>when_clicked()</code>, use <code>change_variable("Score", 1)</code> to add 1.'
+      ],
+      setupMs: 700,
+      settleMs: 400,
+      tests: [
+        { label: 'Score starts at 0 when the flag is pressed',
+          checks: [{ type: 'variable', name: 'Score', op: '=', value: 0 }] },
+        { label: 'Clicking the sprite increases Score to 1',
+          keepRunning: true, clickSprite: '__active__',
+          checks: [{ type: 'variable', name: 'Score', op: '=', value: 1 }] },
+        { label: 'Clicking again increases Score to 2',
+          keepRunning: true, clickSprite: '__active__',
+          checks: [{ type: 'variable', name: 'Score', op: '=', value: 2 }] }
+      ]
+    },
+    {
+      id: 'wall-bouncer',
+      emoji: '🏓',
+      title: 'Wall Bouncer',
+      difficulty: 3,
+      goal: 'The sprite moves automatically using a speed variable <code>vx</code>. When it reaches the right wall (x > 220) or left wall (x &lt; −220), it reverses direction by flipping <code>vx</code>. The sprite bounces back and forth forever without any key presses.',
+      hints: [
+        'Create <code>vx = 5</code> at the top of your code — outside any function.',
+        'In <code>def game_start():</code>, write <code>global vx</code> first so Python can change it.',
+        'Inside a <code>while True:</code> loop, use <code>change_x(vx)</code> to move each frame.',
+        'Check <code>if x_position() > 220 or x_position() &lt; -220:</code> to detect the walls.',
+        'To bounce: <code>vx = vx * -1</code> — this flips the direction.'
+      ],
+      setupMs: 300,
+      settleMs: 100,
+      tests: [
+        { label: 'Sprite moves automatically without any key press',
+          waitMs: 500,
+          checks: [{ type: 'moved' }] },
+        { label: 'Sprite travels at a reasonable speed (reaches x > 80 within 600 ms)',
+          waitMs: 600,
+          checks: [{ type: 'xAbove', value: 80 }] },
+        { label: 'Sprite bounces back from the right wall (not stuck at edge after 3 s)',
+          waitMs: 3000,
+          checks: [{ type: 'xBelow', value: 200 }] }
+      ]
+    },
+    {
+      id: 'gravity-jumper',
+      emoji: '🚀',
+      title: 'Gravity Jumper',
+      difficulty: 4,
+      goal: 'Build a physics game. A variable <code>vy</code> controls the sprite\'s vertical speed. Every frame, <code>vy</code> decreases by 0.5 (gravity pulls it down). Pressing space sets <code>vy</code> to 8 (a jump). If the sprite falls below y = −160, say <em>"Game Over!"</em> and <code>stop()</code>.',
+      hints: [
+        'Create <code>vy = 0</code> at the top of your code.',
+        'In <code>game_start()</code>, write <code>global vy</code> so the loop can change it.',
+        'Each frame: <code>vy = vy - 0.5</code> (gravity), then <code>change_y(vy)</code>.',
+        'Add <code>if key_pressed("space"): vy = 8</code> to jump.',
+        'Add <code>if y_position() &lt; -160: say("Game Over!"); stop()</code> for the game-over check.',
+        'Try adding a Score variable that goes up by 1 each frame — how long can you survive?'
+      ],
+      setupMs: 150,
+      settleMs: 100,
+      tests: [
+        { label: 'Sprite falls down automatically (gravity works)',
+          allowStop: true, waitMs: 900,
+          checks: [{ type: 'yChanged', dir: '-' }] },
+        { label: 'Space bar makes the sprite jump upwards',
+          allowStop: true, holdKey: 'space', durationMs: 50, waitMs: 400,
+          checks: [{ type: 'yChanged', dir: '+' }] },
+        { label: 'Sprite eventually hits the bottom and game stops',
+          allowStop: true, waitMs: 4000,
+          checks: [{ type: 'stoppedOrBelow', value: -100 }] }
+      ]
+    }
+  ];
+
   // ── Intellisense completions ──────────────────────────────────
   // t: trigger word   ins: text to insert   back: cursor back N chars after insert
   // kind: 'kw'=keyword  'fn'=function  'sn'=snippet
@@ -3081,6 +3208,24 @@
       '.ps-snap-restore{background:var(--ps-panel,#1e1e2e);border:1px solid var(--ps-border-strong,#45456a);color:var(--ps-muted,#cdd6f4);cursor:pointer;padding:2px 7px;border-radius:3px;font-size:9px;font-family:inherit;width:100%;transition:background .1s}',
       '.ps-snap-restore:hover{background:var(--ps-accent,#7c5fcf);border-color:var(--ps-accent,#7c5fcf);color:#fff}',
 
+      // Challenge cards inside the tutorial modal
+      '.ps-tcard-chal .ps-tcard-top{align-items:baseline}',
+      '.ps-tchal-stars{margin-left:auto;font-size:11px;color:var(--ps-accent-bright,#a87fff);flex-shrink:0;letter-spacing:1px}',
+      '.ps-tchal-hints{margin:0 0 8px;font-size:11px;color:var(--ps-muted,#9090b0)}',
+      '.ps-tchal-hints summary{cursor:pointer;user-select:none;padding:1px 0}',
+      '.ps-tchal-hints summary:hover{color:var(--ps-text,#cdd6f4)}',
+      '.ps-tchal-hints ol{margin:6px 0 0;padding-left:18px;line-height:1.7;color:var(--ps-muted,#8888aa)}',
+      '.ps-tchal-results{margin-top:8px}',
+      // Challenge test result rows (used by runChallenge — shared between modal and any future panel)
+      '.ps-chal-result-row{display:flex;align-items:flex-start;gap:5px;font-size:11px;padding:2px 0;line-height:1.4}',
+      '.ps-cr-icon{flex-shrink:0;width:14px;text-align:center;margin-top:1px}',
+      '.ps-cr-label{color:var(--ps-muted,#9ca3af);flex:1}',
+      '.ps-cr-label.cr-pass{color:var(--ps-success,#a6e3a1)}',
+      '.ps-cr-label.cr-fail{color:var(--ps-error,#f38ba8)}',
+      '.ps-chal-overall{font-size:11px;font-weight:700;margin-top:6px;padding:4px 8px;border-radius:4px;text-align:center}',
+      '.ps-chal-overall.co-pass{background:rgba(166,227,161,.15);color:var(--ps-success,#a6e3a1)}',
+      '.ps-chal-overall.co-fail{background:rgba(243,139,168,.1);color:var(--ps-error,#f38ba8)}',
+
       // Editor + console
       '#ps-editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}',
       '#ps-editor{flex:1;background:var(--ps-panel,#1e1e2e);color:var(--ps-text,#cdd6f4);border:none;outline:none;resize:none;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:13px;line-height:1.65;padding:12px;tab-size:4;overflow-y:auto;min-height:0}',
@@ -3593,7 +3738,7 @@
   };
 
   function buildTutorialHTML() {
-    var cards = TUTORIALS.map(function (t, i) {
+    var tutCards = TUTORIALS.map(function (t, i) {
       var cat = (_GAME_TITLES[t.title] || t.cat === 'game') ? 'game' : 'concept';
       return '<div class="ps-tcard" data-idx="' + i + '" data-cat="' + cat + '">' +
         '<div class="ps-tcard-top">' +
@@ -3607,13 +3752,33 @@
         '</div>' +
       '</div>';
     }).join('');
+
+    var chalCards = CHALLENGES.map(function (ch, i) {
+      var stars = '★'.repeat(ch.difficulty) + '☆'.repeat(4 - ch.difficulty);
+      var hintsHTML = ch.hints.map(function (h) { return '<li>' + h + '</li>'; }).join('');
+      return '<div class="ps-tcard ps-tcard-chal" data-chal-idx="' + i + '" data-cat="challenge">' +
+        '<div class="ps-tcard-top">' +
+          '<span class="ps-tcard-emoji">' + ch.emoji + '</span>' +
+          '<span class="ps-tcard-title">' + ch.title + '</span>' +
+          '<span class="ps-tchal-stars">' + stars + '</span>' +
+        '</div>' +
+        '<div class="ps-tcard-desc">' + ch.goal + '</div>' +
+        '<details class="ps-tchal-hints"><summary>Show hints</summary><ol>' + hintsHTML + '</ol></details>' +
+        '<div class="ps-tcard-foot">' +
+          '<button class="ps-tcard-start ps-tchal-run" data-chal-idx="' + i + '">▶ Run Tests</button>' +
+        '</div>' +
+        '<div class="ps-tchal-results"></div>' +
+      '</div>';
+    }).join('');
+
     return '<div class="ps-tbox">' +
       '<div class="ps-thead"><span>📚 Tutorials</span><button title="Close">&times;</button></div>' +
       '<div class="ps-ttabs">' +
         '<div class="ps-ttab ps-ttab-active" data-cat="concept">📐 Concepts</div>' +
         '<div class="ps-ttab" data-cat="game">🎮 Games</div>' +
+        '<div class="ps-ttab" data-cat="challenge">🎯 Challenges</div>' +
       '</div>' +
-      '<div class="ps-tgrid">' + cards + '</div>' +
+      '<div class="ps-tgrid">' + tutCards + chalCards + '</div>' +
     '</div>';
   }
 
@@ -3641,8 +3806,10 @@
 
     function refreshTutorialCards() {
       tm.querySelectorAll('.ps-tcard').forEach(function (card) {
+        if (card.dataset.cat === 'challenge') return; // skip challenge cards
         var idx      = parseInt(card.dataset.idx, 10);
         var tut      = TUTORIALS[idx];
+        if (!tut) return;
         var prog     = loadTutProgress(idx);
         var startBtn = card.querySelector('.ps-tcard-start');
         var resetBtn = card.querySelector('.ps-tcard-reset');
@@ -3656,7 +3823,7 @@
       });
     }
 
-    tm.querySelectorAll('.ps-tcard-start').forEach(function (btn) {
+    tm.querySelectorAll('.ps-tcard-start:not(.ps-tchal-run)').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var idx = parseInt(btn.dataset.idx, 10);
         tm.classList.add('hidden');
@@ -3671,6 +3838,16 @@
         clearTutProgress(idx);
         clearTutSnapshot(idx);
         refreshTutorialCards();
+      });
+    });
+
+    // Challenge Run Tests buttons
+    tm.querySelectorAll('.ps-tchal-run').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var idx       = parseInt(btn.dataset.chalIdx, 10);
+        var resultsEl = btn.closest('.ps-tcard').querySelector('.ps-tchal-results');
+        runChallenge(idx, btn, resultsEl);
       });
     });
 
@@ -4439,20 +4616,24 @@
     }
 
     var sc = scenarios[idx];
-    var waitAfter = (sc.waitMs != null) ? sc.waitMs : settleMs;
+    var waitAfter  = (sc.waitMs    != null) ? sc.waitMs    : settleMs;
+    var keepRun    = sc.keepRunning === true;
+    var allowStop  = sc.allowStop   === true;
 
-    // Fresh start each scenario so position is always predictable.
-    if (S.running) stopAll();
-    // Centre the active sprite so there's room to move in any direction.
-    try {
-      var sp = getSprites();
-      if (sp.length) sp[0].setXY(0, 0);
-    } catch(e) {}
-    startAll();
+    if (!keepRun) {
+      // Fresh start each scenario so position is always predictable.
+      if (S.running) stopAll();
+      // Centre the active sprite so there's room to move in any direction.
+      try {
+        var sp = getSprites();
+        if (sp.length) sp[0].setXY(0, 0);
+      } catch(e) {}
+      startAll();
+    }
 
     setTimeout(function () {
-      // Guard: code must still be running after setup time.
-      if (!S.running) {
+      // Guard: code must still be running after setup time (unless allowStop).
+      if (!S.running && !allowStop) {
         stopAll();
         onFail(hint || 'Your code didn\'t start — make sure it has a <code>def game_start():</code> function.');
         return;
@@ -4469,6 +4650,15 @@
         S.pressedKeys[sc.holdKey] = true;
         if (S.running) fireEventHandlers(null, 'key', sc.holdKey);
       }
+      // Click a sprite by name (or '__active__' for the currently selected sprite).
+      if (sc.clickSprite && S.running) {
+        var clickKey2 = sc.clickSprite === '__active__' ? S.activeSprite : sc.clickSprite;
+        if (clickKey2) fireEventHandlers(clickKey2, 'clicked', null);
+      }
+      // Fire a broadcast.
+      if (sc.broadcast && S.running) {
+        fireEventHandlers(null, 'message', sc.broadcast);
+      }
 
       setTimeout(function () {
         // Release key.
@@ -4476,10 +4666,11 @@
 
         setTimeout(function () {
           // Read final state.
-          var sp1     = getSprites()[0] || null;
-          var finalX  = sp1 ? sp1.x              : 0;
-          var finalY  = sp1 ? sp1.y              : 0;
+          var sp1      = getSprites()[0] || null;
+          var finalX   = sp1 ? sp1.x              : 0;
+          var finalY   = sp1 ? sp1.y              : 0;
           var finalCos = sp1 ? sp1.currentCostume : -1;
+          var didStop  = !S.running;
 
           // Run checks.
           var passed = true;
@@ -4506,6 +4697,12 @@
               ok = finalY > ck.value;
             } else if (ck.type === 'yBelow') {
               ok = finalY < ck.value;
+            } else if (ck.type === 'stopped') {
+              // Passes if the program stopped naturally (e.g. called stop()).
+              ok = didStop;
+            } else if (ck.type === 'stoppedOrBelow') {
+              // Passes if program stopped OR sprite y is below the threshold.
+              ok = didStop || finalY < ck.value;
             } else if (ck.type === 'variable') {
               try {
                 var vVal = null;
@@ -4537,7 +4734,7 @@
           }
         }, waitAfter);
       }, sc.holdKey ? (sc.durationMs || 400) : 0);
-    }, setupMs);
+    }, keepRun ? 80 : setupMs);
   }
 
   function initTutorialBar() {
@@ -4923,19 +5120,179 @@
     });
   }
 
+  // ── Challenge runner (used by the Challenges tab in the tutorial modal) ──────
+
+  function runChallenge(chalIdx, runBtn, resultsEl) {
+    var ch = CHALLENGES[chalIdx];
+    if (!ch) return;
+
+    runBtn.disabled = true;
+    runBtn.textContent = '⏳ Testing…';
+    resultsEl.innerHTML = '';
+
+    // Build placeholder rows for each test
+    var rows = ch.tests.map(function (t) {
+      var row = document.createElement('div');
+      row.className = 'ps-chal-result-row';
+      var icon = document.createElement('span');
+      icon.className = 'ps-cr-icon';
+      icon.textContent = '…';
+      var lbl = document.createElement('span');
+      lbl.className = 'ps-cr-label';
+      lbl.textContent = t.label;
+      row.appendChild(icon);
+      row.appendChild(lbl);
+      resultsEl.appendChild(row);
+      return { icon: icon, lbl: lbl };
+    });
+
+    var setupMs  = ch.setupMs  || 500;
+    var settleMs = ch.settleMs || 250;
+
+    // Run all tests sequentially, collecting individual pass/fail without stopping on failure.
+    // keepRunning tests skip the fresh startAll() so state carries over from the previous test.
+    _chalRunScenario(ch.tests, 0, setupMs, settleMs, rows, function () {
+      // All tests complete
+      var allPassed = rows.every(function (r) { return r.icon.textContent === '✓'; });
+      var overall = document.createElement('div');
+      overall.className = 'ps-chal-overall ' + (allPassed ? 'co-pass' : 'co-fail');
+      overall.textContent = allPassed
+        ? '🎉 All tests passed!'
+        : '✗ Some tests failed — check your code and try again.';
+      resultsEl.appendChild(overall);
+      runBtn.disabled = false;
+      runBtn.textContent = '▶ Run Tests Again';
+      if (S.running) stopAll();
+    });
+  }
+
+  // Like _bcRunScenario but:
+  //   • never stops early on failure — runs every test and records pass/fail
+  //   • supports keepRunning: true to skip the fresh-start between tests
+  function _chalRunScenario(tests, idx, setupMs, settleMs, rows, onDone) {
+    if (idx >= tests.length) {
+      if (S.running) stopAll();
+      onDone();
+      return;
+    }
+
+    var sc        = tests[idx];
+    var r         = rows[idx];
+    var waitAfter = (sc.waitMs != null) ? sc.waitMs : settleMs;
+    var keepRun   = sc.keepRunning === true;
+    var allowStop = sc.allowStop   === true;
+
+    r.icon.textContent = '⏳';
+
+    if (!keepRun) {
+      if (S.running) stopAll();
+      try {
+        var sp = getSprites();
+        if (sp.length) sp[0].setXY(0, 0);
+      } catch(e) {}
+      startAll();
+    }
+
+    setTimeout(function () {
+      if (!S.running && !allowStop) {
+        r.icon.textContent = '✗';
+        r.lbl.className    = 'ps-cr-label cr-fail';
+        r.lbl.title        = 'Code did not start. Make sure def game_start(): exists.';
+        if (S.running) stopAll();
+        _chalRunScenario(tests, idx + 1, setupMs, settleMs, rows, onDone);
+        return;
+      }
+
+      // Snapshot before input
+      var sp0     = getSprites()[0] || null;
+      var initX   = sp0 ? sp0.x              : 0;
+      var initY   = sp0 ? sp0.y              : 0;
+      var initCos = sp0 ? sp0.currentCostume : -1;
+
+      // Fire inputs
+      if (sc.holdKey) {
+        S.pressedKeys[sc.holdKey] = true;
+        if (S.running) fireEventHandlers(null, 'key', sc.holdKey);
+      }
+      if (sc.clickSprite && S.running) {
+        var ck2 = sc.clickSprite === '__active__' ? S.activeSprite : sc.clickSprite;
+        if (ck2) fireEventHandlers(ck2, 'clicked', null);
+      }
+      if (sc.broadcast && S.running) {
+        fireEventHandlers(null, 'message', sc.broadcast);
+      }
+
+      setTimeout(function () {
+        if (sc.holdKey) S.pressedKeys[sc.holdKey] = false;
+
+        setTimeout(function () {
+          var sp1      = getSprites()[0] || null;
+          var finalX   = sp1 ? sp1.x              : 0;
+          var finalY   = sp1 ? sp1.y              : 0;
+          var finalCos = sp1 ? sp1.currentCostume : -1;
+          var didStop  = !S.running;
+
+          var passed = true;
+          (sc.checks || []).forEach(function (ck) {
+            if (!passed) return;
+            var ok = true;
+            if      (ck.type === 'xChanged')      { ok = ck.dir === '+' ? finalX > initX : ck.dir === '-' ? finalX < initX : finalX !== initX; }
+            else if (ck.type === 'yChanged')      { ok = ck.dir === '+' ? finalY > initY : ck.dir === '-' ? finalY < initY : finalY !== initY; }
+            else if (ck.type === 'moved')         { ok = Math.abs(finalX - initX) > 0.5 || Math.abs(finalY - initY) > 0.5; }
+            else if (ck.type === 'costumeChanged'){ ok = finalCos !== initCos; }
+            else if (ck.type === 'xAbove')        { ok = finalX > ck.value; }
+            else if (ck.type === 'xBelow')        { ok = finalX < ck.value; }
+            else if (ck.type === 'yAbove')        { ok = finalY > ck.value; }
+            else if (ck.type === 'yBelow')        { ok = finalY < ck.value; }
+            else if (ck.type === 'stopped')       { ok = didStop; }
+            else if (ck.type === 'stoppedOrBelow'){ ok = didStop || finalY < ck.value; }
+            else if (ck.type === 'variable') {
+              try {
+                var vVal = null;
+                (S.vm.runtime.targets || []).forEach(function (t) {
+                  Object.keys(t.variables || {}).forEach(function (k) {
+                    if (t.variables[k].name === ck.name && vVal === null) vVal = t.variables[k].value;
+                  });
+                });
+                if      (ck.op === '>')  ok = Number(vVal) >  Number(ck.value);
+                else if (ck.op === '<')  ok = Number(vVal) <  Number(ck.value);
+                else if (ck.op === '>=') ok = Number(vVal) >= Number(ck.value);
+                else if (ck.op === '=')  ok = String(vVal) === String(ck.value);
+                else if (ck.op === '!=') ok = String(vVal) !== String(ck.value);
+                else ok = vVal !== null;
+              } catch(e) { ok = false; }
+            }
+            if (!ok) passed = false;
+          });
+
+          r.icon.textContent = passed ? '✓' : '✗';
+          r.lbl.className    = 'ps-cr-label ' + (passed ? 'cr-pass' : 'cr-fail');
+
+          // For keepRunning chain: only stop between tests when the next test is NOT keepRunning
+          var nextSc = tests[idx + 1];
+          if (!passed || (nextSc && !nextSc.keepRunning)) {
+            if (S.running) stopAll();
+          }
+          _chalRunScenario(tests, idx + 1, setupMs, settleMs, rows, onDone);
+        }, waitAfter);
+      }, sc.holdKey ? (sc.durationMs || 400) : 0);
+    }, keepRun ? 80 : setupMs);
+  }
+
   function switchPanelTab(name) {
     document.querySelectorAll('.ps-ptab').forEach(function (t) {
       t.classList.toggle('ps-ptab-active', t.dataset.panel === name);
     });
-    var inThreads = name === 'threads';
-    var headEl    = document.getElementById('ps-thread-head');
-    var listEl    = document.getElementById('ps-thread-list');
-    var snapEl    = document.getElementById('ps-snap-list');
+    var inThreads   = name === 'threads';
+    var inSnapshots = name === 'snapshots';
+    var headEl = document.getElementById('ps-thread-head');
+    var listEl = document.getElementById('ps-thread-list');
+    var snapEl = document.getElementById('ps-snap-list');
     if (headEl) headEl.style.display = inThreads ? '' : 'none';
     if (listEl) listEl.style.display = inThreads ? '' : 'none';
     if (snapEl) {
-      snapEl.style.display = inThreads ? 'none' : '';
-      if (!inThreads) renderSnapList();
+      snapEl.style.display = inSnapshots ? 'block' : 'none';
+      if (inSnapshots) renderSnapList();
     }
   }
 
