@@ -4250,17 +4250,53 @@
 
   // Core positional check:
   //   1. Find reqStr in step.target to get its expected location.
-  //   2. Walk up the target to find the nearest enclosing block header
-  //      (def/if/while/for/else/…  that opens a new indented block).
-  //   3. In the student's code, search for any block with that header
-  //      and check if reqStr appears inside it.
+  //   2. Build the FULL ancestor chain from the target (every enclosing block
+  //      from outermost to innermost: e.g. ['def game_start():', 'while True:',
+  //      'if key_pressed("right"):'] for a deeply nested line).
+  //   3. Verify each ancestor is correctly nested inside the previous one in the
+  //      student's code, then confirm reqStr is in the innermost block's body.
   //
-  // Returns true (= no constraint) when:
-  //   • reqStr isn't found in the target
-  //   • the line is at module level (no parent block in target)
+  // This catches "code at the wrong level" bugs:
+  //   • everything at module level (no def game_start)
+  //   • while True: at module level instead of inside game_start
+  //   • change_x(5) in the wrong if block
   //
-  // Returns false when reqStr IS in the target but not inside the
-  // expected block in the student's code.
+  // Returns true (pass) when reqStr isn't found in the target.
+  // Returns false when reqStr IS in the target but not in the correct
+  // nested structure in the student's code.
+
+  // Walk the chain from the outermost ancestor inward, drilling into each
+  // matching block.  Returns true if reqStr exists inside the innermost block.
+  function _walkChain(cLines, chain, chainIdx, searchFrom, parentIndent, finalReq) {
+    var header = chain[chainIdx];
+    var isLast = (chainIdx === chain.length - 1);
+
+    for (var k = searchFrom; k < cLines.length; k++) {
+      if (cLines[k].trim() === '') continue;
+      var lineInd = _lineIndent(cLines[k]);
+      // Stop if we've left the parent block
+      if (parentIndent >= 0 && lineInd <= parentIndent) break;
+      if (!_lineMatchesReq(cLines[k], header)) continue;
+
+      // Found a matching block header
+      var blockInd = lineInd;
+      if (isLast) {
+        // Collect this block's body and check for finalReq
+        var body = [];
+        for (var l = k + 1; l < cLines.length; l++) {
+          if (cLines[l].trim() === '') continue;
+          if (_lineIndent(cLines[l]) <= blockInd) break;
+          body.push(cLines[l]);
+        }
+        if (tutReqMatches(body.join('\n'), finalReq)) return true;
+      } else {
+        // Recurse into the next level of the chain
+        if (_walkChain(cLines, chain, chainIdx + 1, k + 1, blockInd, finalReq)) return true;
+      }
+    }
+    return false;
+  }
+
   function _reqWithinTargetBlock(code, reqStr, target) {
     var tLines = target.split('\n');
     var trimReq = reqStr.trim();
@@ -4273,34 +4309,82 @@
     }
     if (tIdx === -1) return true; // not in target → no positional constraint
 
-    // Walk backwards to find the nearest enclosing block header
-    var reqIndent = _lineIndent(tLines[tIdx]);
-    var parentHeader = null;
+    // Build the full ancestor chain (outermost → innermost)
+    var chain = [];
+    var curInd = _lineIndent(tLines[tIdx]);
     for (var j = tIdx - 1; j >= 0; j--) {
       if (tLines[j].trim() === '') continue;
       var pInd = _lineIndent(tLines[j]);
-      if (pInd < reqIndent && _pyLineOpensBlock(tLines[j].trim())) {
-        parentHeader = tLines[j].trim();
-        break;
+      if (pInd < curInd && _pyLineOpensBlock(tLines[j].trim())) {
+        chain.unshift(tLines[j].trim()); // prepend so [0] = outermost
+        curInd = pInd;
+        if (pInd === 0) break; // reached module level
       }
     }
-    if (!parentHeader) return true; // module-level line → no block constraint
 
-    // In the student's code, find any block whose header matches parentHeader,
-    // then check if reqStr appears anywhere inside that block's body.
     var cLines = code.split('\n');
-    for (var k = 0; k < cLines.length; k++) {
-      if (!_lineMatchesReq(cLines[k], parentHeader)) continue;
-      var blockInd = _lineIndent(cLines[k]);
-      var body = [];
-      for (var l = k + 1; l < cLines.length; l++) {
-        if (cLines[l].trim() === '') continue;
-        if (_lineIndent(cLines[l]) <= blockInd) break;
-        body.push(cLines[l]);
+
+    if (chain.length === 0) {
+      // Module-level line — must appear at indent 0, not inside any block
+      for (var ki = 0; ki < cLines.length; ki++) {
+        if (cLines[ki].trim() === '' || cLines[ki].charAt(0) === '#') continue;
+        if (_lineIndent(cLines[ki]) === 0 && _lineMatchesReq(cLines[ki], trimReq)) return true;
       }
-      if (tutReqMatches(body.join('\n'), reqStr)) return true;
+      return false;
     }
-    return false; // found in target but not in the correct block in student code
+
+    // Walk the full ancestor chain starting at the top of the student's code.
+    // Each level must be correctly nested inside the previous one.
+    return _walkChain(cLines, chain, 0, 0, -1, reqStr);
+  }
+
+  // ── Full-line context check ───────────────────────────────────
+  // Catches "partial condition" bugs:
+  //   requires 'x > 5' but student writes `if x > 5:` when target is `if x > 5 and x < 10:`
+  //   requires 'x > 5 and < 10' (missing x)
+  //
+  // Algorithm:
+  //   1. Skip truncated requires (unbalanced parens — e.g. set_variable("Score" ).
+  //   2. Find the FIRST target line that contains reqStr as a substring.
+  //   3. If reqStr IS the whole target line, the content check is already sufficient → skip.
+  //   4. Otherwise reqStr is a FRAGMENT of a larger expression.
+  //      The student must have a line that flex-matches the full target line.
+  //
+  // Returns true (pass) when:
+  //   • reqStr has unbalanced parens (intentional truncation)
+  //   • reqStr not found as substring in any target line
+  //   • reqStr equals the full target line (content check is enough)
+  //   • student has a line matching the full target line
+  function _reqLineMatchesTarget(code, reqStr, target) {
+    var trimReq = reqStr.trim();
+    if (!trimReq) return true;
+
+    // Detect intentionally truncated requires (e.g. 'set_variable("Score"')
+    var pd = 0;
+    for (var pi = 0; pi < trimReq.length; pi++) {
+      var pc = trimReq[pi];
+      if (pc === '(' || pc === '[') pd++;
+      else if (pc === ')' || pc === ']') pd--;
+    }
+    if (pd !== 0) return true; // unbalanced → intentional fragment → no constraint
+
+    // Find FIRST target line whose TRIMMED content contains reqStr as a substring
+    var tLines = target.split('\n');
+    var targetLine = null;
+    for (var ti = 0; ti < tLines.length; ti++) {
+      var tl = tLines[ti].trim();
+      if (tl && tl.indexOf(trimReq) !== -1) { targetLine = tl; break; }
+    }
+    if (!targetLine) return true;         // not in target → no constraint
+    if (targetLine === trimReq) return true; // reqStr IS the full line → content check sufficient
+
+    // reqStr is a fragment of a larger target line.
+    // The student must have a line that flex-matches the FULL target line.
+    var cLines = code.split('\n');
+    for (var ci = 0; ci < cLines.length; ci++) {
+      if (_lineMatchesReq(cLines[ci], targetLine)) return true;
+    }
+    return false; // fragment found but full line not present → partial condition
   }
 
   function tutReqMatches(code, req) {
@@ -4608,7 +4692,11 @@
       // items (multiple occurrences, harder to pin to one block), and steps without
       // a target (no oracle to compare against).
       if (found && !n.count && step.target && !/^[ \t]/.test(n.reqStr)) {
+        // Block-context check: line must be in the correct nested block
         found = _reqWithinTargetBlock(code, n.reqStr, step.target);
+        // Full-line check: when reqStr is a fragment (e.g. 'x > 5' in 'if x > 5 and x < 10:')
+        // the student must have written the COMPLETE target line, not just the fragment.
+        if (found) found = _reqLineMatchesTarget(code, n.reqStr, step.target);
       }
 
       if (!found) allOk = false;
