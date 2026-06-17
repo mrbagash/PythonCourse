@@ -1604,7 +1604,11 @@
     return [
       '__ps_sprite__ = ' + n,
       '__ps_tgen__   = ' + g,        // this thread's immutable generation token
-      'def _psc(f,a0=None,a1=None,a2=None): return __ps_call(f,__ps_sprite__,__ps_tgen__,a0,a1,a2)',
+      // _psc captures __ps_sprite__ and __ps_tgen__ as DEFAULT ARGUMENTS so their
+      // values are baked in at definition time (when this module first runs).
+      // This prevents any shared-globals interference when the handler is later
+      // invoked from callHandlerFn — each thread's _psc always uses its own sprite.
+      'def _psc(f,a0=None,a1=None,a2=None,_sp=__ps_sprite__,_tg=__ps_tgen__): return __ps_call(f,_sp,_tg,a0,a1,a2)',
       // Movement
       'def move_steps(s): return _psc("move_steps",s)',
       'def turn_right(d): return _psc("turn_right",d)',
@@ -1721,7 +1725,8 @@
       'def e_to(n): return _psc("e_to",n)',
       'def ten_to(n): return _psc("ten_to",n)',
       // Control — backed by __ps_wait / __ps_stop in Sk.builtins
-      'def wait(s=0): __ps_wait(s,__ps_tgen__)',
+      // wait also captures __ps_tgen__ at definition time for the same reason.
+      'def wait(s=0,_tg=__ps_tgen__): __ps_wait(s,_tg)',
       'def stop(): __ps_stop()',
     ].join('\n') + '\n';
   }
@@ -2867,6 +2872,7 @@
   function stopAll() {
     S.running    = false;
     S.gen++;              // sleeping threads see gen mismatch → throw __pyscratch_stopped__
+    S.handlers   = {};    // discard all event registrations — threads re-register on startAll()
     S.deadClones = new Set(); // clear per-clone tombstones for a fresh run
     stopTrackedVarPoll(); // cancel Python-variable→monitor polling
     updateRunState(false);
@@ -3823,7 +3829,8 @@
             // __ps_sprite__ in the prologue). The original sprite registers under
             // tgt.sprite.name. Dispatch to whichever key matches the clicked target
             // so clicking a clone runs the handler in that clone's Python context.
-            var clickKey = tgt.isClone ? tgt.id : tgt.sprite.name;
+            // TurboWarp may expose clone status as either isClone or !isOriginal.
+            var clickKey = (tgt.isClone || tgt.isOriginal === false) ? tgt.id : tgt.sprite.name;
             fireEventHandlers(clickKey, 'clicked', null);
           }
         }
