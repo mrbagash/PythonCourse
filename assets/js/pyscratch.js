@@ -3341,6 +3341,21 @@
       '.ps-tb-miss-restore:hover{background:#7f1d1d}',
       // Prevent selecting or copying the reference code — students must type it themselves
       '.ps-tb-code-block{user-select:none;-webkit-user-select:none;-moz-user-select:none}',
+      // Expand button — pops code out into a draggable floating window
+      '.ps-tb-expand-btn{position:absolute;top:3px;right:3px;background:#161b22;border:1px solid #30363d;border-radius:3px;color:#6e7681;cursor:pointer;font-size:10px;padding:1px 5px;line-height:1.4;z-index:1;font-family:"Segoe UI",sans-serif}',
+      '.ps-tb-expand-btn:hover{color:#e2e8f0;border-color:#7c5fcf}',
+      // Draggable code pop-out modal
+      '#ps-code-modal{position:fixed;top:100px;left:50%;transform:translateX(-50%);width:520px;max-width:90vw;background:#0d1117;border:1px solid #30363d;border-radius:6px;z-index:30001;box-shadow:0 8px 32px rgba(0,0,0,.75);display:none;flex-direction:column;max-height:80vh;min-height:80px}',
+      '#ps-code-modal.ps-cm-open{display:flex}',
+      '#ps-cm-head{display:flex;align-items:center;gap:7px;padding:6px 10px;background:#161b22;border-bottom:1px solid #30363d;border-radius:6px 6px 0 0;cursor:grab;user-select:none;flex-shrink:0}',
+      '#ps-cm-head:active{cursor:grabbing}',
+      '#ps-cm-icon{font-size:13px}',
+      '#ps-cm-title{flex:1;font-size:11px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Segoe UI",sans-serif}',
+      '#ps-cm-close{background:none;border:none;color:#6e7681;cursor:pointer;font-size:15px;padding:0 2px;line-height:1;flex-shrink:0}',
+      '#ps-cm-close:hover{color:#fff}',
+      '#ps-cm-body{overflow:auto;padding:8px 10px;flex:1}',
+      '#ps-cm-code{font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:11px;line-height:1.65;white-space:pre;user-select:none;-webkit-user-select:none}',
+      '#ps-cm-leg{display:flex;gap:10px;padding:5px 10px;border-top:1px solid #30363d;flex-wrap:wrap;flex-shrink:0}',
       // Checklist
       '.ps-tb-checks{padding:3px 8px 1px;flex-shrink:0}',
       '.ps-tb-checks.ps-tb-no-checks{display:none}',
@@ -3431,6 +3446,7 @@
                   '<div class="ps-tb-text"></div>',
                 '</div>',
                 '<div class="ps-tb-code-wrap ps-tb-no-target">',
+                  '<button class="ps-tb-expand-btn" title="Pop out code view">⤢</button>',
                   '<div class="ps-tb-code-block"></div>',
                   '<div class="ps-tb-code-leg">',
                     '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-old"></span>Already in your editor — keep it</span>',
@@ -3477,6 +3493,53 @@
     document.body.appendChild(tm);
     initTutorialModal(tm);
     initTutorialBar();
+
+    // Floating code pop-out modal (opened via ⤢ button in tutorial bar)
+    var cmEl = document.createElement('div');
+    cmEl.id = 'ps-code-modal';
+    cmEl.innerHTML = [
+      '<div id="ps-cm-head">',
+        '<span id="ps-cm-icon">📋</span>',
+        '<span id="ps-cm-title">Code reference</span>',
+        '<button id="ps-cm-close" title="Close">✕</button>',
+      '</div>',
+      '<div id="ps-cm-body"><div id="ps-cm-code"></div></div>',
+      '<div id="ps-cm-leg">',
+        '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-old"></span>Keep it</span>',
+        '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-new"></span>Type this</span>',
+        '<span class="ps-tb-leg-item"><span class="ps-tb-leg-dot ld-done"></span>Done ✓</span>',
+      '</div>',
+    ].join('');
+    document.body.appendChild(cmEl);
+    (function () {
+      var modal    = cmEl;
+      var head     = document.getElementById('ps-cm-head');
+      var dragging = false, ox = 0, oy = 0, sx = 0, sy = 0;
+      head.addEventListener('mousedown', function (e) {
+        if (e.target.id === 'ps-cm-close') return;
+        dragging = true;
+        var r = modal.getBoundingClientRect();
+        ox = r.left; oy = r.top;
+        sx = e.clientX; sy = e.clientY;
+        // Lock position so transform no longer affects it
+        modal.style.transform = 'none';
+        modal.style.left = ox + 'px';
+        modal.style.top  = oy + 'px';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        modal.style.left = (ox + e.clientX - sx) + 'px';
+        modal.style.top  = (oy + e.clientY - sy) + 'px';
+      });
+      document.addEventListener('mouseup', function () { dragging = false; });
+      document.getElementById('ps-cm-close').addEventListener('click', function () {
+        modal.classList.remove('ps-cm-open');
+      });
+      document.querySelector('.ps-tb-expand-btn').addEventListener('click', function () {
+        modal.classList.toggle('ps-cm-open');
+      });
+    })();
 
     // Panel tab switching (Threads ↔ Snapshots)
     document.querySelectorAll('.ps-ptab').forEach(function (tab) {
@@ -4127,6 +4190,9 @@
     // Body
     bar.querySelector('.ps-tb-title').textContent = step.title;
     bar.querySelector('.ps-tb-text').innerHTML    = step.text;
+    // Keep pop-out modal title in sync with the current step
+    var _cmTitle = document.getElementById('ps-cm-title');
+    if (_cmTitle) _cmTitle.textContent = step.title || 'Code reference';
 
     // Code block — highlight new lines in amber, dim context lines
     var codeWrap  = bar.querySelector('.ps-tb-code-wrap');
@@ -4280,6 +4346,13 @@
       sp.classList.toggle('typed', lineInCode || covByReq);
     });
 
+    // Mirror updated typed/green state into the pop-out modal (if open)
+    var _cmCode = document.getElementById('ps-cm-code');
+    if (_cmCode) {
+      var _cbEl = bar.querySelector('.ps-tb-code-block');
+      if (_cbEl) _cmCode.innerHTML = _cbEl.innerHTML;
+    }
+
     // ── Missing grey-line detection ──────────────────────────────
     // Check if any "old" (grey, context) lines have been deleted from the editor.
     // Old lines = non-empty lines that appear in target but are NOT in newLines.
@@ -4363,6 +4436,9 @@
     clearHighlight();
     var bar = document.getElementById('ps-tut-bar');
     if (bar) bar.classList.add('ps-tb-hidden');
+    // Close pop-out code modal when tutorial exits
+    var cmEl2 = document.getElementById('ps-code-modal');
+    if (cmEl2) cmEl2.classList.remove('ps-cm-open');
     var hb = document.getElementById('ps-help-btn');
     var tb = document.getElementById('ps-tut-btn');
     if (hb) hb.style.display = '';
