@@ -3438,12 +3438,17 @@
       '.ps-ig-mark{position:absolute;left:1px;width:5px;border-radius:2px;animation:ps-ig-pulse 1.3s ease-in-out infinite}',
       '.ps-ig-mark.ig-tab{background:#f59e0b}',
       '.ps-ig-mark.ig-bad{background:#ef4444}',
+      '.ps-ig-mark.ig-struct{background:#a855f7}',
+      '.ps-ig-mark.ig-pass{background:#f97316}',
       '@keyframes ps-ig-pulse{0%,100%{opacity:1}50%{opacity:.15}}',
       // Indentation error tooltip — fixed to screen, appears near the bad line
-      '#ps-indent-tip{position:fixed;z-index:40000;background:#1c0a0a;border:1px solid #7f1d1d;border-radius:5px;padding:6px 10px 5px;font-size:10px;font-family:"Segoe UI",sans-serif;color:#fca5a5;line-height:1.5;max-width:320px;pointer-events:none;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6)}',
+      '#ps-indent-tip{position:fixed;z-index:40000;background:#1c0a0a;border:1px solid #7f1d1d;border-radius:5px;padding:6px 10px 5px;font-size:10px;font-family:"Segoe UI",sans-serif;color:#fca5a5;line-height:1.5;max-width:320px;pointer-events:auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6);transition:opacity 0.15s}',
       '#ps-indent-tip.ps-it-show{display:block}',
+      '#ps-indent-tip:hover{opacity:0.35}',
       '#ps-indent-tip strong{color:#fbbf24;font-family:"Roboto Mono","Consolas",monospace}',
-      '#ps-indent-tip .ps-it-fix{font-size:9px;color:#9ca3af;margin-top:2px}'
+      '#ps-indent-tip .ps-it-fix{font-size:9px;color:#9ca3af;margin-top:2px}',
+      '#ps-indent-tip .ps-it-close{position:absolute;top:3px;right:5px;cursor:pointer;font-size:12px;color:#6b7280;line-height:1;padding:1px 3px;border-radius:2px}',
+      '#ps-indent-tip .ps-it-close:hover{color:#fca5a5}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -4180,7 +4185,8 @@
   function _pyIndentCheck(code) {
     var lines   = code.split('\n');
     var stack   = [0];      // indent-level stack; bottom is always 0
-    var expectDeeper = false; // true after a block-opening colon
+    var expectDeeper  = false; // true after a block-opening colon
+    var lastOpenerIdx = -1;   // line index of the most recent block opener
 
     for (var i = 0; i < lines.length; i++) {
       var raw     = lines[i].replace(/\t/g, '    ');   // expand tabs → 4 spaces
@@ -4223,8 +4229,18 @@
         // indent === top → same level, fine
       }
 
-      if (_pyLineOpensBlock(content)) expectDeeper = true;
+      if (_pyLineOpensBlock(content)) { expectDeeper = true; lastOpenerIdx = i; }
     }
+
+    // If we reached end-of-file still expecting a deeper block, the last opener has
+    // no body at all — flag the opener line itself.
+    if (expectDeeper && lastOpenerIdx !== -1) {
+      return {
+        lineIdx: lastOpenerIdx,
+        msg: 'Line ' + (lastOpenerIdx + 1) + ': empty block — nothing indented after the colon'
+      };
+    }
+
     return null; // no structural indentation errors found
   }
 
@@ -4395,13 +4411,29 @@
       // ── Indented requires: line-anchored ──────────────────────────
       // Leading whitespace must match exactly at the start of a line so that
       // over-indented code (e.g. 12 spaces when 8 are expected) is rejected.
-      if (('\n' + code).indexOf('\n' + req) !== -1) return true;
+      //
+      // Some requires are INTENTIONALLY PARTIAL — e.g. '        if key_pressed("up")'
+      // where the full target line is 'if key_pressed("up") and y_position() <= -149:'.
+      // Those must remain prefix-match so the student's longer line still satisfies them.
+      //
+      // Requires that END WITH ':' are always COMPLETE compound statements.
+      // For those we apply an end-of-line check to reject extra tokens on the same
+      // line (e.g. 'if x > 5:' must not match 'if x > 5::').
+      var _rTrim = req.replace(/[ \t]+$/, '');
+      var _endsColon = _rTrim.charAt(_rTrim.length - 1) === ':';
+      var _s2 = '\n' + code, _n2 = '\n' + req, _p2 = _s2.indexOf(_n2);
+      if (_p2 !== -1) {
+        if (!_endsColon) return true;   // partial requires → prefix match is fine
+        var _a2 = _s2[_p2 + _n2.length];
+        if (!_a2 || _a2 === '\n' || _a2 === '\r') return true;
+      }
       try {
         var escaped = m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         // Allow flexible spacing between tokens AND before opening parentheses,
         // so touching ("Paddle") matches touching("Paddle") and vice-versa.
+        // For ':'-ending requires add [ \t]*$ to reject 'if x > 5::'.
         var flex    = escaped.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
-        return new RegExp('^' + indent + flex, 'm').test(code);
+        return new RegExp('^' + indent + flex + (_endsColon ? '[ \\t]*$' : ''), 'm').test(code);
       } catch(e) { return false; }
     } else {
       // ── Unindented requires: match anywhere (indent-agnostic) ─────
@@ -4418,18 +4450,28 @@
 
   // Count how many times a line-anchored req appears in code (for count-based checks).
   function tutReqCount(code, req) {
+    // Same ':'-ending rule as tutReqMatches: only strict EOL for complete statements.
+    var _rcTrim = req.replace(/[ \t]+$/, '');
+    var _rcEndsColon = _rcTrim.charAt(_rcTrim.length - 1) === ':';
     var count  = 0;
     var search = '\n' + code;
     var needle = '\n' + req;
     var pos    = 0;
-    while ((pos = search.indexOf(needle, pos)) !== -1) { count++; pos += needle.length; }
+    while ((pos = search.indexOf(needle, pos)) !== -1) {
+      var _ac = search[pos + needle.length];
+      // For ':'-ending requires: next char must be newline/CR/end.
+      // For partial requires: prefix match is acceptable.
+      if (!_rcEndsColon || !_ac || _ac === '\n' || _ac === '\r') count++;
+      pos += needle.length;
+    }
     if (count > 0) return count;
-    // Flex-spacing fallback
+    // Flex-spacing fallback.
     try {
       var mm      = req.match(/^([ \t]*)([\s\S]*)$/);
       var escaped = mm[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var flex    = escaped.replace(/ /g, '[ \\t]*').replace(/\\\(/g, '[ \\t]*\\(');
-      var hits    = code.match(new RegExp('^' + mm[1] + flex, 'gm'));
+      // For ':'-ending requires add [ \t]*$ to reject 'if x > 5::'.
+      var hits    = code.match(new RegExp('^' + mm[1] + flex + (_rcEndsColon ? '[ \\t]*$' : ''), 'gm'));
       return hits ? hits.length : 0;
     } catch(e) { return 0; }
   }
@@ -4440,11 +4482,35 @@
   //   { req, count, label }             → object form (context=null → auto-derived)
   //   { req, context: 'when_clicked' }  → explicit function context (overrides auto-derive)
   function _normReq(r) {
+    var o;
     if (typeof r === 'object' && r !== null) {
-      return { reqStr: r.req, count: r.count || 1,
-               label: r.label || r.req, context: r.context || null };
+      o = { reqStr: r.req, count: r.count || 1,
+            label: r.label || r.req, context: r.context || null,
+            hidden: r.hidden || false };
+    } else {
+      o = { reqStr: r, count: 1, label: r, context: null, hidden: false };
     }
-    return { reqStr: r, count: 1, label: r, context: null };
+    // Auto-hide boilerplate items that students tend to copy literally rather than
+    // understanding as structural code:
+    //   • Function definitions  (def game_start():, def when_clicked():, …)
+    //   • global declarations   (global vx, vy)
+    //   • Module-level simple numeric initialisations (vx = 3, vy = 0, hp = 3, …)
+    // These are validated silently — they get an invisible DOM row so span-colouring
+    // (covByReq) still works — but they don't appear in the checklist or progress count.
+    if (!o.hidden) {
+      var _tr = o.reqStr.trim();
+      if (/^def \w+\s*\(/.test(_tr)) o.hidden = true;
+      else if (/^global /.test(_tr)) o.hidden = true;
+      else if (/^\w+ = -?[\d.]+$/.test(_tr)) {
+        // Hide simple numeric initialisations at module level (0 spaces) or
+        // first level inside a function body (4 spaces) — these are boilerplate setup.
+        // Keep visible at 8+ spaces: inside loops/ifs they ARE the actual task
+        // (e.g. '            vy = 8' inside 'if key_pressed("up"):').
+        var _ri = (o.reqStr.match(/^( *)/) || ['', ''])[1].length;
+        if (_ri < 8) o.hidden = true;
+      }
+    }
+    return o;
   }
 
   function applyTutBar(isNewStep) {
@@ -4508,8 +4574,12 @@
     // Checklist — one row per requires item
     var checksEl = bar.querySelector('.ps-tb-checks');
     var reqs     = step.requires || [];
-    if (reqs.length > 0) {
-      checksEl.classList.remove('ps-tb-no-checks');
+    var _visReqsForRender = reqs.filter(function (r) { return !_normReq(r).hidden; });
+    if (_visReqsForRender.length > 0 || reqs.length > 0) {
+      // Always render all rows (hidden included for state tracking), but only
+      // show the checks container when there are visible rows.
+      if (_visReqsForRender.length > 0) checksEl.classList.remove('ps-tb-no-checks');
+      else checksEl.classList.add('ps-tb-no-checks');
       checksEl.innerHTML = reqs.map(function (r) {
         var n    = _normReq(r);
         var dReq = n.reqStr.replace(/"/g, '&quot;');
@@ -4521,6 +4591,12 @@
         // Explicit context wins; otherwise auto-derive from target.
         var ctx = n.context || reqContextInTarget(step.target, n.reqStr);
         var ctxAttr = ctx ? ' data-ctx="' + ctx + '"' : '';
+        // Hidden items get an invisible row so covByReq span-colouring can still
+        // query their ck-ok state — but students never see them in the checklist.
+        if (n.hidden) {
+          return '<div class="ps-tb-ck ck-wait" data-req="' + dReq + '"' + ctxAttr +
+                 ' style="display:none" aria-hidden="true"></div>';
+        }
         return '<div class="ps-tb-ck ck-wait" data-req="' + dReq + '"' + ctxAttr + '>' +
                '<i class="ps-tb-ck-icon">⏳</i><span>' + lbl + '</span>' +
                '</div>';
@@ -4576,6 +4652,9 @@
 
   function _detectIndentErrors(code) {
     var errors = [];
+
+    // ── Phase 1: character-level issues ───────────────────────────
+    // Tabs and non-multiple-of-4 spaces are flagged regardless of structure.
     code.split('\n').forEach(function (line, i) {
       if (line.trim() === '') return; // blank / whitespace-only lines are fine
       if (/^\t/.test(line)) {
@@ -4596,8 +4675,86 @@
         }
       }
     });
+
+    // ── Phase 2: structural issues ────────────────────────────────
+    // Only checked when there are no character-level errors (tabs/bad-spaces already
+    // explain the problem; mixing messages would be confusing).
+    // _pyIndentCheck detects things like "missing indent after :" and "unexpected indent"
+    // that are valid Python-level IndentationErrors even when every space count is OK.
+    if (errors.length === 0) {
+      var _se = _pyIndentCheck(code);
+      if (_se) {
+        var _seLines = code.split('\n');
+        var _isExpected   = _se.msg.indexOf('expected')   !== -1 || _se.msg.indexOf('Expected')   !== -1;
+        var _isUnexpected = _se.msg.indexOf('unexpected') !== -1 || _se.msg.indexOf('Unexpected') !== -1;
+        var _isEmpty      = _se.msg.indexOf('empty block') !== -1;
+        var _errLine = _se.lineIdx; // default: flag the symptom line
+        var _smsg, _sfix;
+
+        if (_isEmpty) {
+          // Block opener at end of file with no body at all
+          var _opLine = (_seLines[_se.lineIdx] || '').trim();
+          _smsg = 'Empty block — this line needs an indented body';
+          _sfix = '<code>' + _opLine.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code> ends with <strong>:</strong> but has nothing inside it. Add at least one indented line below.';
+        } else if (_isUnexpected) {
+          // "Unexpected indent" often means the PREVIOUS line is missing its colon.
+          // Find the previous non-blank line and check: if it starts with a block-opening
+          // keyword but doesn't end with ':', that line is the real culprit.
+          var _pi = _se.lineIdx - 1;
+          while (_pi >= 0 && _seLines[_pi].trim() === '') _pi--;
+          if (_pi >= 0) {
+            var _pc = _seLines[_pi].trim();
+            var _isMissingColon = /^(def|class|if|elif|else|for|while|with|try|except|finally)\b/.test(_pc)
+                                  && !_pc.replace(/[ \t]*$/, '').endsWith(':');
+            if (_isMissingColon) {
+              _errLine = _pi;
+              _smsg = 'Missing <strong>:</strong> at the end of this line';
+              _sfix = 'Python needs a colon at the end of <code>' + _pc.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code>';
+            }
+          }
+          if (_errLine === _se.lineIdx) {
+            // Couldn't identify a missing-colon cause — show generic message on symptom line
+            _smsg = 'Unexpected indent';
+            _sfix = 'This line is indented more than expected. Check the line above — it may be missing a <strong>:</strong>, or this line has too many spaces.';
+          }
+        } else if (_isExpected) {
+          _smsg = 'Expected an indented block here';
+          _sfix = 'The line above ends with <strong>:</strong> — this line should be indented by 4 more spaces.';
+        } else {
+          _smsg = 'Indentation level doesn\'t match any outer block';
+          _sfix = 'Align this line with the block it belongs to (a multiple of 4 spaces).';
+        }
+        errors.push({ line: _errLine, type: 'struct', msg: _smsg, fix: _sfix });
+      }
+    }
+
+    // ── Phase 3: leftover pass placeholders ──────────────────────
+    // A 'pass' line followed by real code at the same indentation level is always
+    // a forgotten starter placeholder.  Comments on the same line are ignored.
+    // Runs regardless of other errors so it shows even alongside structural issues.
+    var _passLines = code.split('\n');
+    _passLines.forEach(function (line, i) {
+      var stripped = line.replace(/#.*$/, '').trim(); // strip inline comment
+      if (stripped !== 'pass') return;
+      var passIndent = (line.match(/^( *)/) || ['',''])[1].length;
+      // Find the next non-blank line and check if it's at the same indent level
+      for (var j = i + 1; j < _passLines.length; j++) {
+        if (_passLines[j].trim() === '') continue;
+        var nextIndent = (_passLines[j].match(/^( *)/) || ['',''])[1].length;
+        if (nextIndent === passIndent) {
+          errors.push({ line: i, type: 'pass',
+            msg: 'Leftover <code>pass</code> — this placeholder can be deleted',
+            fix: 'You\'ve added real code after this line. Delete the <code>pass</code> line — it was only needed as a temporary placeholder.' });
+        }
+        break; // only check the immediate next non-blank line
+      }
+    });
+
     return errors;
   }
+
+  // Key of the last dismissed tooltip (line:msg) — cleared when a different error appears.
+  var _itDismissedKey = null;
 
   function updateIndentGutter() {
     var gutter = document.getElementById('ps-indent-gutter');
@@ -4636,22 +4793,47 @@
     for (var ei = 0; ei < errors.length; ei++) {
       if (errors[ei].line === curLine) { lineErr = errors[ei]; break; }
     }
+    // Structural errors (purple): show when cursor is within 4 lines of the flagged line.
+    if (!lineErr) {
+      for (var ei = 0; ei < errors.length; ei++) {
+        if (errors[ei].type === 'struct' && Math.abs(curLine - errors[ei].line) <= 4) {
+          lineErr = errors[ei]; break;
+        }
+      }
+    }
     if (!lineErr) { tip.classList.remove('ps-it-show'); return; }
+
+    // If this exact error was dismissed by the user, keep it hidden.
+    // A different error (different line or message) clears the dismissed state.
+    var _tipKey = lineErr.line + ':' + lineErr.msg;
+    if (_tipKey !== _itDismissedKey) _itDismissedKey = null; // new error → allow showing
+    if (_itDismissedKey) { tip.classList.remove('ps-it-show'); return; }
 
     // Position the tooltip: prefer above the bad line, flip below if too close to top
     var editorRect = editor.getBoundingClientRect();
     var lineScreenY = editorRect.top + _INDENT_PAD_TOP + lineErr.line * _INDENT_LINE_H - scrollY;
-    var tipH  = 56; // approximate tooltip height
+    var tipH  = 68; // approximate tooltip height (slightly taller with close button)
     var tipY  = lineScreenY - tipH - 6;
     if (tipY < editorRect.top + 4) tipY = lineScreenY + _INDENT_LINE_H + 4;
-    // clamp to viewport bottom
     tipY = Math.min(tipY, window.innerHeight - tipH - 8);
 
     tip.style.top   = Math.round(tipY) + 'px';
     tip.style.left  = Math.round(editorRect.left + 10) + 'px';
     tip.style.width = Math.min(320, editorRect.width - 20) + 'px';
-    tip.innerHTML   = '<div>⚠ ' + lineErr.msg + '</div><div class="ps-it-fix">' + lineErr.fix + '</div>';
+    tip.innerHTML = '<span class="ps-it-close" title="Dismiss">✕</span>'
+                  + '<div>⚠ ' + lineErr.msg + '</div>'
+                  + '<div class="ps-it-fix">' + lineErr.fix + '</div>';
     tip.classList.add('ps-it-show');
+
+    // Wire up the dismiss button (re-attach each render since innerHTML replaced it)
+    var _closeBtn = tip.querySelector('.ps-it-close');
+    if (_closeBtn) {
+      _closeBtn.onclick = function (e) {
+        e.stopPropagation();
+        _itDismissedKey = _tipKey;
+        tip.classList.remove('ps-it-show');
+      };
+    }
   }
 
   function checkTutBar() {
@@ -4699,10 +4881,13 @@
         if (found) found = _reqLineMatchesTarget(code, n.reqStr, step.target);
       }
 
-      if (!found) allOk = false;
+      // Hidden items are silently validated — they update their invisible DOM row
+      // (so covByReq span-colouring sees ck-ok) but don't affect allOk or the UI.
+      if (!found && !n.hidden) allOk = false;
       if (ckEl) {
         ckEl.className = 'ps-tb-ck ' + (found ? 'ck-ok' : 'ck-wait');
-        ckEl.querySelector('.ps-tb-ck-icon').textContent = found ? '✓' : '⏳';
+        var _icon = ckEl.querySelector('.ps-tb-ck-icon');
+        if (_icon) _icon.textContent = found ? '✓' : '⏳';
       }
     });
 
@@ -4714,17 +4899,29 @@
     //   (b) a satisfied requires item whose text is a substring of this span's line,
     //       and the req's context matches this span's context.
     // Separate pass so no unsatisfied req can undo a green already set.
+    // Track per-line occurrence counts so duplicate target lines (e.g. two
+    // next_costume() spans) only go green for as many instances as the student
+    // actually typed.  Without this a single occurrence would light up every
+    // span sharing the same text.
+    var _spanUsed = {};
     bar.querySelectorAll('.ps-tb-cl.new').forEach(function (sp) {
       var lineText = sp.textContent;
       var ctx  = sp.dataset && sp.dataset.ctx;
       var sc   = ctx ? getCodeInContext(code, ctx) : code;
-      // (a) direct match within context
-      var lineInCode = tutReqMatches(sc, lineText);
-      // (b) a satisfied req whose text is a substring of this span's line,
-      //     searched in the same context as this span
+      // (a) Count-limited direct match: each student-code occurrence can only
+      // satisfy one target span.  Prevents one next_costume() from lighting up
+      // both identical next_costume() spans.
+      var _key = (ctx || '') + '\x00' + lineText;
+      if (!(_key in _spanUsed)) _spanUsed[_key] = tutReqCount(sc, lineText);
+      var lineInCode = _spanUsed[_key] > 0;
+      if (lineInCode) _spanUsed[_key]--;
+      // (b) A satisfied req whose text is a substring of this span's line.
+      // Only fires when the checklist item is ck-ok (count requirement met),
+      // so a count:2 req with only 1 instance cannot cover an extra span.
       var covByReq = !lineInCode && reqs.some(function (r) {
         var n    = _normReq(r);
         var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
+        if (!ckEl || !ckEl.classList.contains('ck-ok')) return false;
         var rsc  = _searchCode(ckEl);
         return tutReqMatches(rsc, n.reqStr) && tutReqMatches(lineText, n.reqStr);
       });
@@ -4844,7 +5041,9 @@
     // ── Footer status ─────────────────────────────────────────────
     var nextBtn = bar.querySelector('[data-tb="next"]');
     var validEl = bar.querySelector('.ps-tb-valid');
-    var hasAnyReq = reqs.length > 0 || step.requiresSpriteCount !== undefined || (step.requiredSpriteNames || []).length > 0;
+    // Visible reqs = non-hidden only.  hasAnyReq and the progress counter use these.
+    var _visReqs = reqs.filter(function (r) { return !_normReq(r).hidden; });
+    var hasAnyReq = _visReqs.length > 0 || step.requiresSpriteCount !== undefined || (step.requiredSpriteNames || []).length > 0;
     nextBtn.disabled = hasAnyReq && !allOk;
     if (!hasAnyReq) {
       validEl.textContent = '';
@@ -4853,13 +5052,13 @@
       validEl.textContent = '✓ All done — click Next';
       validEl.className   = 'ps-tb-valid tb-ok';
     } else {
-      var codeReqsDone = reqs.filter(function (r) {
+      var codeReqsDone = _visReqs.filter(function (r) {
         var n    = _normReq(r);
         var ckEl = bar.querySelector('.ps-tb-ck[data-req="' + n.reqStr.replace(/"/g, '&quot;') + '"]');
         var sc   = _searchCode(ckEl);
         return n.count > 1 ? tutReqCount(sc, n.reqStr) >= n.count : tutReqMatches(sc, n.reqStr);
       }).length;
-      var total = reqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0) + (step.requiredSpriteNames || []).length;
+      var total = _visReqs.length + (step.requiresSpriteCount !== undefined ? 1 : 0) + (step.requiredSpriteNames || []).length;
       var spriteDone = 0;
       if (step.requiresSpriteCount !== undefined) {
         try { spriteDone = vm.runtime.targets.filter(function(t){return !t.isStage;}).length >= step.requiresSpriteCount ? 1 : 0; } catch(e){}
