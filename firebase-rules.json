@@ -113,6 +113,62 @@
       }
     },
 
+    "buildBattles": {
+      ".read": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+      ".write": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+      "$code": {
+        ".read": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists() || root.child('studentSessions').child(auth.uid).exists())",
+        ".write": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+        "players": {
+          "$studentCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $studentCode"
+          }
+        },
+        "submissions": {
+          "$studentCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $studentCode",
+            "model": { ".validate": "newData.isString() && newData.val().length < 800000" }
+          }
+        },
+        "votes": {
+          "$voterCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $voterCode",
+            "$targetCode": {
+              ".validate": "$voterCode !== $targetCode && newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+            }
+          }
+        }
+      }
+    },
+
+    "buildBattlesSandbox": {
+      ".read": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+      ".write": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+      "$code": {
+        ".read": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists() || root.child('studentSessions').child(auth.uid).exists())",
+        ".write": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
+        "players": {
+          "$studentCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $studentCode"
+          }
+        },
+        "submissions": {
+          "$studentCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $studentCode",
+            "model": { ".validate": "newData.isString() && newData.val().length < 800000" }
+          }
+        },
+        "votes": {
+          "$voterCode": {
+            ".write": "auth != null && root.child('studentSessions').child(auth.uid).child('code').val() === $voterCode",
+            "$targetCode": {
+              ".validate": "$voterCode !== $targetCode && newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+            }
+          }
+        }
+      }
+    },
+
     "accessLog": {
       ".indexOn": ["lastSeen"],
       ".read": "auth != null && ((auth.token.firebase.sign_in_provider === 'google.com' && root.child('admins').child(auth.uid).val() === true) || root.child('teacherSessions').child(auth.uid).exists())",
