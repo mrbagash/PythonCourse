@@ -5026,7 +5026,13 @@
     if (ierrEl) {
       if (allOk && step.target && code.trim()) {
         var _indErr = _pyIndentCheck(code);
-        if (_indErr) {
+        // "empty block" errors occur at end-of-file — in tutorials this is intentional:
+        // many steps ask for a block header (def/while/if) and the body comes in the
+        // next step.  The purple gutter mark already signals this in the editor.
+        // All other structural errors (unexpected indent, expected-but-missing indent)
+        // are genuine mid-code Python syntax errors and still block Next.
+        var _isEmptyBlock = _indErr && _indErr.msg.indexOf('empty block') !== -1;
+        if (_indErr && !_isEmptyBlock) {
           allOk = false;
           ierrEl.textContent = '⚠ ' + _indErr.msg;
           ierrEl.classList.remove('ps-tb-ierr-hidden');
