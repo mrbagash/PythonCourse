@@ -164,7 +164,8 @@
           starter: '',
           target: 'def game_start():\n    while True:',
           newLines: ['def game_start():', '    while True:'],
-          requires: ['def game_start():', '    while True:']
+          requires: ['def game_start():', '    while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Your first if statement',
@@ -328,7 +329,8 @@
           starter: '',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:',
           newLines: ['def game_start():', '    set_rotation_style("left-right")', '    while True:'],
-          requires: ['def game_start():', '    set_rotation_style("left-right")', '    while True:']
+          requires: ['def game_start():', '    set_rotation_style("left-right")', '    while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Move right',
@@ -450,7 +452,8 @@
           starter: '',
           target: 'vy = 0\n\ndef game_start():',
           newLines: ['vy = 0', '', 'def game_start():'],
-          requires: ['vy = 0', 'def game_start():']
+          requires: ['vy = 0', 'def game_start():'],
+          suppressErrors: ['struct']
         },
         {
           title: 'The game loop with global',
@@ -458,7 +461,8 @@
           starter: 'vy = 0\n\ndef game_start():',
           target: 'vy = 0\n\ndef game_start():\n    global vy\n    while True:',
           newLines: ['    global vy', '    while True:'],
-          requires: ['    global vy', '    while True:']
+          requires: ['    global vy', '    while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Apply gravity',
@@ -525,7 +529,8 @@
           starter: '',
           target: 'vx = 3\nvy = 3\n\ndef game_start():',
           newLines: ['vx = 3', 'vy = 3', '', 'def game_start():'],
-          requires: ['vx = 3', 'vy = 3', 'def game_start():']
+          requires: ['vx = 3', 'vy = 3', 'def game_start():'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Move every frame',
@@ -594,7 +599,8 @@
           starter: '',
           target: 'vy = 0\n\ndef game_start():',
           newLines: ['vy = 0', '', 'def game_start():'],
-          requires: ['vy = 0', 'def game_start():']
+          requires: ['vy = 0', 'def game_start():'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Apply gravity',
@@ -697,7 +703,8 @@
           starter: '',
           target: 'vy = 8\n\ndef game_start():',
           newLines: ['vy = 8', '', 'def game_start():'],
-          requires: ['vy = 8', 'def game_start():']
+          requires: ['vy = 8', 'def game_start():'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Gravity',
@@ -804,7 +811,8 @@
           starter: '',
           target: 'vx = 3\nvy = 2\n\ndef game_start():\n    global vx, vy\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    go_to_xy(0, 50)\n    while True:',
           newLines: ['vx = 3', 'vy = 2', '', 'def game_start():', '    global vx, vy', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_rotation_style("left-right")', '    go_to_xy(0, 50)', '    while True:'],
-          requires: ['vx = 3', 'vy = 2', 'def game_start():', 'global vx, vy', 'set_variable("Score"', 'display_variable("Score"', 'while True:']
+          requires: ['vx = 3', 'vy = 2', 'def game_start():', 'global vx, vy', 'set_variable("Score"', 'display_variable("Score"', 'while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Make the duck fly',
@@ -863,7 +871,8 @@
           starter: null,
           target: 'hp = 3\n\ndef game_start():\n    global hp\n    set_variable("HP", hp)\n    display_variable("HP", True)\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_rotation_style("left-right")\n    while True:',
           newLines: ['hp = 3', '', 'def game_start():', '    global hp', '    set_variable("HP", hp)', '    display_variable("HP", True)', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_rotation_style("left-right")', '    while True:'],
-          requires: ['hp = 3', 'def game_start():', 'global hp', 'set_variable("HP"', 'display_variable("HP"', 'set_variable("Score"', 'display_variable("Score"', 'while True:']
+          requires: ['hp = 3', 'def game_start():', 'global hp', 'set_variable("HP"', 'display_variable("HP"', 'set_variable("Score"', 'display_variable("Score"', 'while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Player: left and right movement',
@@ -965,7 +974,8 @@
           starter: '',
           target: 'def game_start():\n    set_variable("Score", 0)\n    display_variable("Score", True)\n    set_variable("Lives", 3)\n    display_variable("Lives", True)\n    go_to_xy(0, -140)\n    while True:',
           newLines: ['def game_start():', '    set_variable("Score", 0)', '    display_variable("Score", True)', '    set_variable("Lives", 3)', '    display_variable("Lives", True)', '    go_to_xy(0, -140)', '    while True:'],
-          requires: ['def game_start():', 'set_variable("Score"', 'display_variable("Score"', 'set_variable("Lives"', 'display_variable("Lives"', 'go_to_xy(0, -140)', '    while True:']
+          requires: ['def game_start():', 'set_variable("Score"', 'display_variable("Score"', 'set_variable("Lives"', 'display_variable("Lives"', 'go_to_xy(0, -140)', '    while True:'],
+          suppressErrors: ['struct']
         },
         {
           title: 'Catcher: arrow key movement',
@@ -4750,6 +4760,24 @@
       }
     });
 
+    // ── Step-level error suppression ─────────────────────────────
+    // Tutorial steps can set suppressErrors: ['struct', 'pass', 'tab', 'bad']
+    // to prevent specific gutter marks and tooltips for steps that intentionally
+    // contain incomplete or unusual code.
+    // 'struct' — structural IndentationErrors (empty block, unexpected/missing indent)
+    // 'pass'   — leftover pass placeholder warning
+    // 'tab'    — tab character warning
+    // 'bad'    — wrong-multiple-of-4 spaces warning
+    if (S.activeTut) {
+      try {
+        var _curStep = TUTORIALS[S.activeTut.tutIdx].steps[S.activeTut.stepIdx];
+        var _suppress = _curStep.suppressErrors || [];
+        if (_suppress.length > 0) {
+          errors = errors.filter(function (e) { return _suppress.indexOf(e.type) === -1; });
+        }
+      } catch(e) {}
+    }
+
     return errors;
   }
 
@@ -4793,14 +4821,7 @@
     for (var ei = 0; ei < errors.length; ei++) {
       if (errors[ei].line === curLine) { lineErr = errors[ei]; break; }
     }
-    // Structural errors (purple): show when cursor is within 4 lines of the flagged line.
-    if (!lineErr) {
-      for (var ei = 0; ei < errors.length; ei++) {
-        if (errors[ei].type === 'struct' && Math.abs(curLine - errors[ei].line) <= 4) {
-          lineErr = errors[ei]; break;
-        }
-      }
-    }
+    // All error types — tooltip only shows when caret is on the exact flagged line.
     if (!lineErr) { tip.classList.remove('ps-it-show'); return; }
 
     // If this exact error was dismissed by the user, keep it hidden.
@@ -5032,7 +5053,8 @@
         // All other structural errors (unexpected indent, expected-but-missing indent)
         // are genuine mid-code Python syntax errors and still block Next.
         var _isEmptyBlock = _indErr && _indErr.msg.indexOf('empty block') !== -1;
-        if (_indErr && !_isEmptyBlock) {
+        var _structSuppressed = ((step.suppressErrors || []).indexOf('struct') !== -1);
+        if (_indErr && !_isEmptyBlock && !_structSuppressed) {
           allOk = false;
           ierrEl.textContent = '⚠ ' + _indErr.msg;
           ierrEl.classList.remove('ps-tb-ierr-hidden');
