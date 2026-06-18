@@ -3828,6 +3828,27 @@
     window.addEventListener('mousedown', function (e) { if (e.button === 0) S.mouse.down = true; });
     window.addEventListener('mouseup',   function (e) { if (e.button === 0) S.mouse.down = false; });
 
+    // ── Auto-stop on sprite-panel interaction ─────────────────────
+    // Renaming a sprite or switching to a different sprite while Python threads
+    // are running causes the threads to keep mutating the wrong sprite and the
+    // name input to fight with live code.  Intercept these clicks in the capture
+    // phase — stop the game first, then let the click through unchanged.
+    document.addEventListener('mousedown', function (e) {
+      if (!S.running) return;
+      var el = e.target;
+      // 1. Sprite info panel — any click (name input, direction wheel, size field…)
+      //    TurboWarp uses CSS-module names like sprite-info_sprite-name__xxx
+      if (el.closest('[class*="sprite-info"],[class*="spriteInfo"]')) {
+        if (S.vm) { try { S.vm.stopAll(); } catch(_) { stopAll(); } } else { stopAll(); }
+        return; // don't consume the event — TurboWarp still processes it
+      }
+      // 2. Sprite selector items — clicking a sprite card to switch active sprite
+      if (el.closest('[class*="sprite-selector_sprite-item"],[class*="spriteItem_"],[class*="SpriteItem"]')) {
+        if (S.vm) { try { S.vm.stopAll(); } catch(_) { stopAll(); } } else { stopAll(); }
+      }
+    }, true /* capture — fires before TurboWarp's own React handlers */);
+
+
     // Sprite click — fire when_clicked handlers using the renderer's pick()
     window.addEventListener('mousedown', function (e) {
       if (!S.running) return;
