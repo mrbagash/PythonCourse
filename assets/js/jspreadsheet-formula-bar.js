@@ -363,6 +363,23 @@
     if (!holder || !sheet || sheet._jhnccFormulaFixes) return;
     sheet._jhnccFormulaFixes = true;
     var originalGet = sheet.getValueFromCoords.bind(sheet);
+
+    // jspreadsheet v4 expands range tokens (e.g. B2:B6 → individual values) before
+    // calling formula functions, so SUMIF/COUNTIF receive the wrong number of
+    // arguments and return 0 for text criteria.  We intercept parseValue — the
+    // method that sets the cell's display content — and substitute our own
+    // evaluator so the cell shows the right answer.
+    if (typeof sheet.parseValue === 'function') {
+      var origParseValue = sheet.parseValue.bind(sheet);
+      sheet.parseValue = function(col, row, value, cell) {
+        if (typeof value === 'string' && value.charAt(0) === '=') {
+          var fixed = evaluateSupportedFormula(sheet, value);
+          if (fixed !== null) return origParseValue(col, row, fixed, cell);
+        }
+        return origParseValue(col, row, value, cell);
+      };
+    }
+
     sheet.getValueFromCoords = function(x, y, processed) {
       if (processed !== false) {
         var raw = originalGet(x, y, false);
