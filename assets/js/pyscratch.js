@@ -3355,14 +3355,14 @@
       '.ps-tb-code-wrap.ps-tb-no-target{display:none}',
       '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:5px 8px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:10px;line-height:1.55}',
       '.ps-tb-cl{white-space:pre;display:block}',
-      '.ps-tb-cl.old{color:#6b7a99;font-style:italic}',
+      '.ps-tb-cl.old{color:#8faabe;font-style:italic}',
       '.ps-tb-cl.new{color:#fbbf24;font-weight:600}',
       '.ps-tb-cl.new.typed{color:#4ade80}',
       // Color legend below the code block
       '.ps-tb-code-leg{display:flex;gap:10px;padding:4px 8px 2px;flex-shrink:0;flex-wrap:wrap}',
       '.ps-tb-leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--ps-muted,#6a6a8a);white-space:nowrap}',
       '.ps-tb-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}',
-      '.ps-tb-leg-dot.ld-old{background:#6b7a99}',
+      '.ps-tb-leg-dot.ld-old{background:#8faabe}',
       '.ps-tb-leg-dot.ld-new{background:#fbbf24}',
       '.ps-tb-leg-dot.ld-done{background:#4ade80}',
       // Warning shown when grey lines have been deleted
