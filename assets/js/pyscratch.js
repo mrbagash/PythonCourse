@@ -381,14 +381,14 @@
       steps: [
         {
           title: 'Starting point',
-          text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, then two if blocks.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, two if blocks, and <code>if_on_edge_bounce()</code> to keep the sprite on screen.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
           target: null, newLines: [], requires: []
         },
         {
           title: 'Animate while moving',
           text: 'Add <code>next_costume()</code> inside <strong>both</strong> if blocks, after each <code>point_in_direction</code> line. Each frame the key is held, the sprite advances one costume.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           newLines: ['            next_costume()', '            next_costume()'],
           requires: [{ req: '            next_costume()', count: 2, label: 'next_costume() in both if blocks' }],
