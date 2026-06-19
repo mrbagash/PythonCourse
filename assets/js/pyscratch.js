@@ -381,14 +381,14 @@
       steps: [
         {
           title: 'Starting point',
-          text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, then two if blocks.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          text: 'The movement code has been loaded for you — read through it before continuing. Notice the structure: rotation style, loop, two if blocks, and <code>if_on_edge_bounce()</code> to keep the sprite on screen.<br><br>⚠️ Make sure your sprite has <strong>at least 2 costumes</strong>.',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
           target: null, newLines: [], requires: []
         },
         {
           title: 'Animate while moving',
           text: 'Add <code>next_costume()</code> inside <strong>both</strong> if blocks, after each <code>point_in_direction</code> line. Each frame the key is held, the sprite advances one costume.',
-          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)',
+          starter: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n        if_on_edge_bounce()',
           target: 'def game_start():\n    set_rotation_style("left-right")\n    while True:\n        if key_pressed("right"):\n            change_x(5)\n            point_in_direction(90)\n            next_costume()\n        if key_pressed("left"):\n            change_x(-5)\n            point_in_direction(-90)\n            next_costume()\n        if_on_edge_bounce()',
           newLines: ['            next_costume()', '            next_costume()'],
           requires: [{ req: '            next_costume()', count: 2, label: 'next_costume() in both if blocks' }],
@@ -3355,14 +3355,14 @@
       '.ps-tb-code-wrap.ps-tb-no-target{display:none}',
       '.ps-tb-code-block{background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:5px 8px;overflow-x:auto;font-family:"Roboto Mono","Consolas","Courier New",monospace;font-size:10px;line-height:1.55}',
       '.ps-tb-cl{white-space:pre;display:block}',
-      '.ps-tb-cl.old{color:#6b7a99;font-style:italic}',
+      '.ps-tb-cl.old{color:#8faabe;font-style:italic}',
       '.ps-tb-cl.new{color:#fbbf24;font-weight:600}',
       '.ps-tb-cl.new.typed{color:#4ade80}',
       // Color legend below the code block
       '.ps-tb-code-leg{display:flex;gap:10px;padding:4px 8px 2px;flex-shrink:0;flex-wrap:wrap}',
       '.ps-tb-leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--ps-muted,#6a6a8a);white-space:nowrap}',
       '.ps-tb-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}',
-      '.ps-tb-leg-dot.ld-old{background:#6b7a99}',
+      '.ps-tb-leg-dot.ld-old{background:#8faabe}',
       '.ps-tb-leg-dot.ld-new{background:#fbbf24}',
       '.ps-tb-leg-dot.ld-done{background:#4ade80}',
       // Warning shown when grey lines have been deleted
@@ -3827,6 +3827,9 @@
     // Mouse button tracking (for mouse_down())
     window.addEventListener('mousedown', function (e) { if (e.button === 0) S.mouse.down = true; });
     window.addEventListener('mouseup',   function (e) { if (e.button === 0) S.mouse.down = false; });
+
+
+
 
     // Sprite click — fire when_clicked handlers using the renderer's pick()
     window.addEventListener('mousedown', function (e) {
@@ -6071,6 +6074,7 @@
       renBtn.textContent = '✎'; renBtn.title = 'Rename';
       renBtn.onclick = function (e) {
         e.stopPropagation();
+        if (S.running) stopAll();
         var n = prompt('Rename thread:', thread.name);
         if (n && n.trim()) { thread.name = n.trim(); saveThreads(S.activeSprite); renderThreadList(); }
       };
@@ -6093,6 +6097,7 @@
 
       div.appendChild(acts);
       div.onclick = function () {
+        if (S.running) stopAll();
         saveCurrentCode();
         S.activeThreadIdx = idx;
         renderThreadList();
@@ -6106,6 +6111,7 @@
 
   function addThread() {
     if (!S.activeSprite) return;
+    if (S.running) stopAll();
     var threads = loadThreads(S.activeSprite);
     threads.push({ id: 't_' + Date.now(), name: 'Thread ' + (threads.length + 1),
       code: 'def game_start():\n    pass\n' });

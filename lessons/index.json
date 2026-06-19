@@ -259,6 +259,12 @@
               "title": "L6: Building Dashboard Charts",
               "file": "lessons/btec-dit-spreadsheets-lesson-6.json",
               "order": 6
+            },
+            {
+              "id": "btec-dit-spreadsheets-lesson-7",
+              "title": "L7: Absolute Cell Referencing",
+              "file": "lessons/btec-dit-spreadsheets-lesson-7.json",
+              "order": 7
             }
           ]
         }

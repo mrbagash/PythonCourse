@@ -1,0 +1,170 @@
+{
+  "id": "btec-dit-spreadsheets-lesson-7",
+  "title": "L7: Absolute Cell Referencing",
+  "description": "Use the $ symbol to lock cell references when copying formulas, and access data stored in other worksheets for BTEC DIT Component 2.",
+  "steps": [
+    {
+      "id": "do-now",
+      "title": "Do Now: Cell References",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Do now</h2><p class='text-gray-700 mb-3'>These questions check the formula and referencing skills you need before learning about absolute cell referencing.</p><div id='l7-dn'></div>",
+      "js": "createMCQSet('l7-dn',[{q:'A formula in D3 is =B3*C3. It is copied one row down to D4. What does D4 now contain?',options:['=B3*C3','=B4*C4','=B4*C3','=B3*C4'],answer:1,right:'Correct. Both references are relative, so both row numbers increase by 1 when copied down.'},{q:'Which formula adds all values in the range B2 to B8?',options:['=COUNT(B2:B8)','=TOTAL(B2:B8)','=SUM(B2:B8)','=ADD(B2:B8)'],answer:2,right:'Correct. SUM adds every value in the range. COUNT counts how many there are, not the total.'},{q:'Which formula counts how many cells in B2:B10 contain the word Shop?',options:['=COUNTIF(B2:B10,\"Shop\")','=SUMIF(B2:B10,\"Shop\",B2:B10)','=COUNT(B2:B10,\"Shop\")','=IF(B2:B10,\"Shop\",1)'],answer:0,right:'Correct. COUNTIF counts cells matching a condition. SUMIF would add values, not count them.'},{q:'In a spreadsheet cell reference like C5, what do the letter and number represent?',options:['The row letter and the column number','The sheet name and the position in that sheet','The formula identifier and result','The column letter and the row number'],answer:3,right:'Correct. Letters identify columns (A, B, C...) and numbers identify rows (1, 2, 3...).'},{q:'What does the formula bar show when you click a cell that contains a formula?',options:['The formatted display value only','The formula (e.g. =A2*B2), not the calculated result','The cell address only','The name of the worksheet'],answer:1,right:'Correct. The formula bar always shows the raw formula, not the number you see displayed in the cell.'}]);"
+    },
+    {
+      "id": "relative-recap",
+      "title": "Relative Referencing",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Relative cell referencing</h2><p class='text-gray-700 mb-3'>The cell references you have used so far are called <strong>relative</strong> references. When you copy a formula, relative references update automatically to reflect the new row or column position.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Cell</th><th>Formula</th><th>What happened</th></tr></thead><tbody><tr><td>C2</td><td>=A2*B2</td><td>Original formula</td></tr><tr><td>C3</td><td>=A3*B3</td><td>Copied down &mdash; row numbers increased by 1</td></tr><tr><td>C4</td><td>=A4*B4</td><td>Copied down again &mdash; row numbers increased again</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>This is useful when every row should use the values from its own row. But there is a problem: what if every row needs to reference the <strong>same fixed cell</strong>?</p><p class='text-gray-700 mb-3'>Imagine a tax rate is stored in cell B1. You write <code>=B3*B1</code> in C3. When copied to C4 it becomes <code>=B4*B2</code> &mdash; it no longer references the tax rate in B1. The formula is broken.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Cell</th><th>Intended formula</th><th>What copying actually produces</th></tr></thead><tbody><tr><td>C3</td><td>=B3*B1 &check;</td><td>Correct &mdash; B1 is the tax rate</td></tr><tr><td>C4</td><td>=B4*B1 (intended)</td><td><strong>=B4*B2 (wrong)</strong> &mdash; relative copy moved B1 to B2</td></tr><tr><td>C5</td><td>=B5*B1 (intended)</td><td><strong>=B5*B3 (wrong)</strong> &mdash; now pointing to a price, not the tax rate</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>The solution is to use an <strong>absolute</strong> cell reference so that B1 never changes when copied.</p><div id='l7-rel'></div>",
+      "js": "createMCQSet('l7-rel',[{q:'A formula =A2+B2 is copied one row down. What is the new formula?',options:['=A3+B3','=A2+B3','=A3+B2','=A2+B2'],answer:0,right:'Correct. Both references are relative so both row numbers increase by 1.'},{q:'A formula =B3*C3 is copied three rows down. What does the copied cell contain?',options:['=B3*C3','=B6*C3','=B6*C6','=B3*C6'],answer:2,right:'Correct. Each relative reference shifts down by 3 rows, so row 3 becomes row 6.'},{q:'The tax rate is in D1. A formula =B3*D1 is copied from row 3 to row 4. What is the problem?',options:['D1 is automatically locked so no problem occurs','The formula is deleted when copied','The copy produces =B4*D2, so D1 (the tax rate) is no longer referenced','The formula is copied as =B3*D1 in both cells'],answer:2,right:'Correct. The relative copy moves D1 to D2, which is not the tax rate cell.'},{q:'When is relative referencing useful?',options:['When every row must always reference one single fixed cell','When copying would cause an error','When you want to reference a different worksheet only','When each row should calculate using its own values in the same columns'],answer:3,right:'Correct. Relative referencing is ideal when each row needs its own calculation using corresponding values.'}]);"
+    },
+    {
+      "id": "absolute-intro",
+      "title": "Absolute Cell Referencing",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Absolute cell referencing</h2><p class='text-gray-700 mb-3'>An <strong>absolute</strong> reference uses a <strong>dollar sign $</strong> to lock the column, the row, or both. A locked part never changes when the formula is copied.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Reference</th><th>Meaning</th><th>When copied in any direction</th></tr></thead><tbody><tr><td><code>$A$4</code></td><td>Column A fixed, row 4 fixed</td><td>Always refers to cell A4</td></tr><tr><td><code>$A4</code></td><td>Column A fixed, row relative</td><td>Column stays A; row number updates</td></tr><tr><td><code>A$4</code></td><td>Column relative, row 4 fixed</td><td>Column letter updates; row stays 4</td></tr><tr><td><code>A4</code></td><td>Both relative</td><td>Both column and row update (normal)</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>The most common form for a fixed constant (such as a tax rate, a price per unit, or PI) is <strong>$A$4</strong> &mdash; locking both the column and the row.</p><div class='ex-box mb-4'><p class='font-semibold text-gray-800 mb-2'>Fixing the tax rate problem with $B$1:</p><table class='bb-table'><thead><tr><th>Cell</th><th>Formula</th><th>Result</th></tr></thead><tbody><tr><td>C3</td><td>=B3*$B$1</td><td>B3 is relative (price), $B$1 is fixed (tax rate)</td></tr><tr><td>C4</td><td>=B4*$B$1</td><td>B4 updated to row 4; $B$1 stayed fixed &check;</td></tr><tr><td>C5</td><td>=B5*$B$1</td><td>B5 updated to row 5; $B$1 stayed fixed &check;</td></tr></tbody></table></div><p class='text-gray-500 text-sm mb-3'>Tip: in Excel, press <strong>F4</strong> while your cursor is inside a cell reference to cycle through $A$1, A$1, $A1, and A1 automatically.</p><div id='l7-abs'></div>",
+      "js": "createMCQSet('l7-abs',[{q:'What does $B$1 mean in a formula?',options:['Only row 1 is fixed; column B can change','Only column B is fixed; row 1 can change','Both column B and row 1 are fixed','The formula references a different worksheet'],answer:2,right:'Correct. A $ before the letter locks the column; a $ before the number locks the row. Both here means neither ever changes.'},{q:'A formula must always reference cell D1, no matter where it is copied. Which reference is correct?',options:['$D$1','D1','D$1','$D1'],answer:0,right:'Correct. $D$1 locks both column D and row 1, so the reference cannot shift in any direction.'},{q:'A formula =B3*D$1 is copied one row down. What does the copied formula become?',options:['=B4*D$2','=B4*D$1','=B3*D$1','=B3*D1'],answer:1,right:'Correct. B3 is relative so becomes B4. D$1 has the row fixed at 1 so the row stays as $1.'},{q:'Which reference keeps column B fixed but allows the row number to change when copied down?',options:['B$4','$B$4','B4','$B4'],answer:3,right:'Correct. $B4 locks column B with a $ but the row number 4 has no $ so it will change when copied.'},{q:'How can you quickly cycle through absolute reference options while editing a formula in Excel?',options:['Press Ctrl+D','Press F2','Press Tab','Press F4'],answer:3,right:'Correct. F4 cycles through $A$1, A$1, $A1, and A1 while the cursor is inside a reference.'}]);"
+    },
+    {
+      "id": "absolute-practice",
+      "title": "Practice: Apply Absolute Referencing",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Practice: apply absolute referencing</h2><p class='text-gray-700 mb-3'>The tax rate (20%) is stored once in cell <strong>B1</strong>. Write formulas in column C that calculate the tax on each item. Every formula must reference B1 <strong>absolutely</strong> using <code>$B$1</code>.</p><div class='ex-box mb-3'><table class='bb-table'><thead><tr><th>Cell</th><th>Task</th></tr></thead><tbody><tr><td>C4</td><td>Tax on Pen &mdash; multiply the price in B4 by the tax rate in <code>$B$1</code></td></tr><tr><td>C5</td><td>Tax on Notebook &mdash; multiply the price in B5 by the tax rate in <code>$B$1</code></td></tr><tr><td>C6</td><td>Tax on Folder &mdash; multiply the price in B6 by the tax rate in <code>$B$1</code></td></tr></tbody></table></div><p class='text-gray-500 text-sm mb-3'>Pattern: =B4*$B$1 &nbsp; Each row&apos;s price reference changes; the absolute $B$1 stays fixed.</p><div id='l7-abs-sheet' class='mb-3 overflow-x-auto'></div><button id='l7-abs-check' class='ex-btn'>Check</button><div id='l7-abs-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=22',function(){var data=[['Tax rate (20%)',0.2,''],['','',''],['Item','Price (£)','Tax (£)'],['Pen',2.50,''],['Notebook',5.00,''],['Folder',3.75,'']];var el=document.getElementById('l7-abs-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:140},{width:110},{width:120}],minDimensions:[3,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);document.getElementById('l7-abs-check').onclick=function(){var fb=document.getElementById('l7-abs-fb');var rows=[{row:3,label:'C4',exp:0.50},{row:4,label:'C5',exp:1.00},{row:5,label:'C6',exp:0.75}];var errors=[];rows.forEach(function(c){var raw=String(sheet.getValueFromCoords(2,c.row,false)||'');var val=parseFloat(sheet.getValueFromCoords(2,c.row,true));if(raw.charAt(0)!=='='){errors.push(c.label+' needs a formula starting with =');return;}if(raw.toUpperCase().indexOf('$B$1')===-1){errors.push(c.label+': use $B$1 to reference the tax rate absolutely');}else if(Math.abs(val-c.exp)>0.01){errors.push(c.label+' should equal '+c.exp.toFixed(2)+' (price x 0.2)');}});if(errors.length){fb.className='ex-feedback err';fb.textContent=errors[0];return;}fb.className='ex-feedback ok';fb.textContent='Correct. Each formula uses $B$1 so the tax rate never changes when copied. The price reference (B4, B5, B6) updates automatically for each row.';__markStepComplete();};});});});})();"
+    },
+    {
+      "id": "multiple-sheets",
+      "title": "Multiple Worksheets",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Multiple worksheets</h2><p class='text-gray-700 mb-3'>A spreadsheet <strong>workbook</strong> is the whole file. Inside the workbook you can have several <strong>worksheets</strong> (the tabs at the bottom). Each worksheet stores its own data.</p><div class='ex-box mb-4'><table class='bb-table'><thead><tr><th>Term</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><strong>Workbook</strong></td><td>The file itself</td><td>SalesData.xlsx</td></tr><tr><td><strong>Worksheet</strong></td><td>A tab within the file</td><td>Sheet1, RawData, Dashboard</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>You can reference a cell in a <em>different</em> worksheet using the sheet name followed by an exclamation mark, then the cell reference:</p><div class='ex-box mb-4'><p class='font-semibold text-gray-800 mb-1'>Syntax: <code>SheetName!CellRef</code></p><table class='bb-table'><thead><tr><th>Formula</th><th>What it does</th></tr></thead><tbody><tr><td><code>=Constants!B1</code></td><td>Reads cell B1 from the sheet called Constants</td></tr><tr><td><code>=RawData!C5</code></td><td>Reads cell C5 from the sheet called RawData</td></tr><tr><td><code>=2*$B$1*Constants!A4</code></td><td>Multiplies a local $B$1 by A4 from Constants</td></tr></tbody></table></div><p class='text-gray-700 mb-3'>A common pattern is to store constants (like PI, VAT rate, or a price list) in a sheet called <strong>Constants</strong>, then reference them from your calculation sheet. If the constant ever needs updating, you change it in one place and all formulas update automatically.</p><div id='l7-sheets'></div>",
+      "js": "createMCQSet('l7-sheets',[{q:'What is the difference between a workbook and a worksheet?',options:['They are the same thing, just different names','A worksheet is the whole .xlsx file; a workbook is one of its tabs','A workbook is the whole .xlsx file; worksheets are the individual tabs inside it','A workbook stores only formulas; a worksheet stores only data'],answer:2,right:'Correct. The workbook is the .xlsx file itself. Each named tab you click at the bottom is a worksheet.'},{q:'PI is stored in cell B1 of a sheet called Constants. Which formula reads it from another sheet?',options:['=Constants.B1','=Constants!B1','=B1(Constants)','=B1!Constants'],answer:1,right:'Correct. SheetName followed by ! then the cell reference is the correct syntax.'},{q:'Why store a constant like a VAT rate on a separate Constants worksheet?',options:['It prevents the value from ever being changed','It automatically formats all cells as currency','Spreadsheets cannot store constants on the main sheet','All formulas reference one place, so one change updates everything'],answer:3,right:'Correct. Centralising constants means you only update a value in one cell and every formula that uses it recalculates.'},{q:'Cell A4 needs an absolute column reference but a relative row. How should it be written?',options:['A$4','$A$4','A4','$A4'],answer:3,right:'Correct. $A4 locks the column A but the row number 4 is relative and will change when the formula is copied down.'}]);"
+    },
+    {
+      "id": "full-practice",
+      "title": "Full Practice: Circle Measurements",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Full practice: circle measurements</h2><p class='text-gray-700 mb-3'>The value of PI is stored once in cell <strong>B1</strong>. Use it with an absolute reference to calculate the circumference of each circle in column C.</p><p class='text-gray-700 mb-3'>Circumference formula: <code>2 &times; PI &times; radius</code></p><div class='ex-box mb-3'><table class='bb-table'><thead><tr><th>Cell</th><th>Task</th></tr></thead><tbody><tr><td>C4</td><td>Circumference of Circle A &mdash; 2 &times; <code>$B$1</code> &times; B4</td></tr><tr><td>C5</td><td>Circumference of Circle B &mdash; 2 &times; <code>$B$1</code> &times; B5</td></tr><tr><td>C6</td><td>Circumference of Circle C &mdash; 2 &times; <code>$B$1</code> &times; B6</td></tr></tbody></table></div><p class='text-gray-500 text-sm mb-3'>Pattern: =2*$B$1*B4 &nbsp; PI is locked; the radius reference updates for each row.</p><div id='l7-full-sheet' class='mb-3 overflow-x-auto'></div><button id='l7-full-check' class='ex-btn'>Check</button><div id='l7-full-fb' class='ex-feedback'></div>",
+      "js": "(function(){function lcss(u){if(!document.querySelector('link[href=\"'+u+'\"]')){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l);}}function ljs(u,cb){var ex=document.querySelector('script[data-jhncc-src=\"'+u+'\"]');if(ex){if(ex.getAttribute('data-loaded')==='1'){cb();}else{ex.addEventListener('load',function(){cb();});}return;}var s=document.createElement('script');s.setAttribute('data-jhncc-src',u);s.src=u;s.onload=function(){s.setAttribute('data-loaded','1');cb();};s.onerror=function(){alert('The spreadsheet tool could not load. Please refresh the page.');};document.head.appendChild(s);}lcss('assets/css/jsuites.css');lcss('assets/css/jspreadsheet.css');ljs('assets/js/jsuites.js',function(){ljs('assets/js/jspreadsheet.js',function(){ljs('assets/js/jspreadsheet-formula-bar.js?v=22',function(){var data=[['PI',3.14159,''],['','',''],['Shape','Radius (cm)','Circumference (cm)'],['Circle A',5,''],['Circle B',8,''],['Circle C',10,'']];var el=document.getElementById('l7-full-sheet');var sheet=jspreadsheet(el,{data:data,columns:[{width:110},{width:130},{width:170}],minDimensions:[3,6],tableOverflow:true,tableWidth:'100%',toolbar:false,about:false});JHNCCAddFormulaBar(el,sheet);JHNCCAddFormatToolbar(el,sheet);JHNCCAddSheetTabs(el,sheet);document.getElementById('l7-full-check').onclick=function(){var fb=document.getElementById('l7-full-fb');var rows=[{row:3,label:'C4',rRef:'B4',exp:31.416},{row:4,label:'C5',rRef:'B5',exp:50.265},{row:5,label:'C6',rRef:'B6',exp:62.832}];var errors=[];rows.forEach(function(c){var raw=String(sheet.getValueFromCoords(2,c.row,false)||'');var rawUp=raw.toUpperCase();var val=parseFloat(sheet.getValueFromCoords(2,c.row,true));if(raw.charAt(0)!=='='){errors.push(c.label+' needs a formula starting with =');return;}if(rawUp.indexOf('$B$1')===-1){errors.push(c.label+': reference PI using $B$1 (absolute reference)');}else if(rawUp.indexOf(c.rRef.toUpperCase())===-1){errors.push(c.label+': include the radius cell '+c.rRef+' in your formula');}else if(Math.abs(val-c.exp)>0.2){errors.push(c.label+' should be approximately '+c.exp.toFixed(2)+' cm');}});if(errors.length){fb.className='ex-feedback err';fb.textContent=errors[0];return;}fb.className='ex-feedback ok';fb.textContent='Correct. PI is locked as $B$1 in every formula. If PI were updated in B1, all three circumferences would recalculate automatically.';__markStepComplete();};});});});})();"
+    },
+    {
+      "id": "exam",
+      "title": "Check What You Have Learned",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Check what you have learned</h2><p class='text-gray-700 mb-4'>These questions cover relative and absolute cell referencing and multiple worksheets.</p><div id='l7-exam'></div>",
+      "js": "createMCQSet('l7-exam',[{q:'A formula =C5*D5 is copied one row down. What is in the new cell?',options:['=C5*D5','=C6*D5','=C6*D6','=C5*D6'],answer:2,right:'Correct. Both references are relative so both row numbers increase from 5 to 6.'},{q:'A discount rate is in cell C1. Which reference ensures C1 is always used even when the formula is copied down ten rows?',options:['C1','C$1','$C1','$C$1'],answer:3,right:'Correct. $C$1 locks both column C and row 1, so neither part of the reference can shift.'},{q:'A formula =$D$2*B5 is copied one row down. What does the copied formula contain?',options:['=$D$3*B6','=$D$2*B6','=$D$3*B5','=$D$2*B5'],answer:1,right:'Correct. $D$2 is fully absolute so both parts stay fixed. B5 is relative so the row increases to B6.'},{q:'What is the difference between a workbook and a worksheet?',options:['A workbook is a single tab; a worksheet is the whole file','They mean the same thing in modern Excel','A workbook is the whole file; worksheets are the named tabs inside it','A worksheet contains formulas only; a workbook contains data only'],answer:2,right:'Correct. The workbook is the .xlsx file; each named tab at the bottom of the screen is a worksheet.'},{q:'A sheet called Constants holds the VAT rate in cell B2. Which formula reads it from another sheet?',options:['=B2(Constants)','=Constants.B2','=B2!Constants','=Constants!B2'],answer:3,right:'Correct. The correct syntax is SheetName followed by an exclamation mark then the cell reference.'},{q:'Which reference allows the row to change when copied down, but keeps the column fixed at B?',options:['$B$5','B5','B$5','$B5'],answer:3,right:'Correct. $B5 locks column B with a $. The row number 5 has no $, so it updates when copied down.'}]);"
+    },
+    {
+      "id": "endless",
+      "title": "Endless Practice",
+      "autoComplete": false,
+      "content": "<h2 class='text-xl font-bold mb-3 text-gray-800'>Endless practice</h2><p class='text-gray-700 mb-4'>Answer 5 in a row correctly to finish.</p><div id='l7-endless' class='ex-box'></div>",
+      "js": "(function(){var bank=[{q:'Which symbol locks a cell reference in a formula?',o:['# (hash)','$ (dollar sign)','@ (at sign)','& (ampersand)'],a:1},{q:'What does $C$3 mean in a formula?',o:['Both column C and row 3 are fixed','Only row 3 is fixed; the column can change','Only column C is fixed; the row can change','Neither is fixed; it is the same as C3'],a:0},{q:'A formula =B4*$C$1 is copied one row down. What is the new formula?',o:['=B5*$C$1','=B4*$C$1','=B5*$C$2','=B4*$C$2'],a:0},{q:'When should you use an absolute reference?',o:['When every row should use its own values from the same columns','When you want the formula to produce an error','When a cell holds a constant that every row in the formula must share','When copying will always produce the right result anyway'],a:2},{q:'What is a workbook?',o:['A single tab within a spreadsheet file','The formula bar at the top of the screen','A type of chart used in dashboards','The entire spreadsheet file, such as SalesData.xlsx'],a:3},{q:'Which syntax reads cell A1 from a sheet called Data?',o:['=Data.A1','=A1/Data','=A1!Data','=Data!A1'],a:3},{q:'A tax rate in B1 must not change when the formula is copied down column C. What reference is used?',o:['B1','$B1','B$1','$B$1'],a:3},{q:'A formula =A$5*B3 is copied one column to the right. What is the new formula?',o:['=A$5*C3','=B$5*C3','=B$5*B3','=A$5*B3'],a:1},{q:'Cell A4 must have its column fixed but its row remain relative. Which is correct?',o:['A$4','$A$4','A4','$A4'],a:3},{q:'Why store a constant in a separate Constants worksheet?',o:['It prevents any formula from reading it accidentally','It makes the file smaller','Changing it in one cell updates all formulas that reference it','It formats the cell as currency automatically'],a:2}];var solved=0,c=document.getElementById('l7-endless');function pick(){return bank[Math.floor(Math.random()*bank.length)];}function render(){var q=pick();var opts=q.o.map(function(x,i){return{x:x,i:i};}).sort(function(){return Math.random()-0.5;});c.innerHTML='<p class=\"ex-score\">Correct in a row: '+solved+' / 5</p><p class=\"ex-prompt mb-3\">'+q.q+'</p>'+opts.map(function(o){return '<button class=\"ex-mcq-btn\" data-i=\"'+o.i+'\">'+o.x+'</button>';}).join('')+'<div class=\"ex-feedback\"></div>';c.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){var fb=c.querySelector('.ex-feedback');if(parseInt(btn.dataset.i)===q.a){solved++;fb.className='ex-feedback ok';fb.textContent=solved>=5?'Practice complete.':'Correct. Next question.';if(solved>=5)__markStepComplete();else setTimeout(render,700);}else{solved=0;fb.className='ex-feedback err';fb.textContent='Not quite — streak reset.';setTimeout(render,1000);}};});}render();})();"
+    }
+  ],
+  "quizQuestions": [
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A formula in E4 is =C4*D4. It is copied to E5. What does E5 contain?",
+      "options": ["=C4*D4", "=C5*D4", "=C4*D5", "=C5*D5"],
+      "answer": 3
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A VAT rate is stored in B1 and must not move when the formula is copied down. Which reference is correct?",
+      "options": ["B$1", "$B$1", "$B1", "B1"],
+      "answer": 1
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 180,
+      "q": "The tax rate (20%) is in B1. In C4, write a formula to calculate the tax on the Pen using an absolute reference to B1. In C5, do the same for the Notebook. Do not type the tax rate as a number — reference B1 absolutely.",
+      "sheetData": [
+        ["Tax rate (20%)", 0.2, ""],
+        ["", "", ""],
+        ["Item", "Price (£)", "Tax (£)"],
+        ["Pen", 2.50, ""],
+        ["Notebook", 5.00, ""]
+      ],
+      "columns": [{"width": 140}, {"width": 110}, {"width": 120}],
+      "checks": [
+        {
+          "cell": "C4",
+          "expected": 0.50,
+          "tolerance": 0.01,
+          "formulaContains": ["$B$1", "B4"]
+        },
+        {
+          "cell": "C5",
+          "expected": 1.00,
+          "tolerance": 0.01,
+          "formulaContains": ["$B$1", "B5"]
+        }
+      ],
+      "sampleAnswer": "C4: =B4*$B$1\nC5: =B5*$B$1"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A formula =$E$1*B3 is copied one row down. What does the copied formula become?",
+      "options": ["=$E$1*B4", "=$E$2*B4", "=$E$1*B3", "=$E$2*B3"],
+      "answer": 0
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "A sheet called Rates holds a currency exchange rate in cell C3. Which formula reads it from a different sheet?",
+      "options": ["=C3.Rates", "=C3!Rates", "=Rates!C3", "=Rates.C3"],
+      "answer": 2
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "What is a worksheet?",
+      "options": ["The entire spreadsheet file saved on disk", "A named tab within a workbook", "A formula that spans multiple cells", "A type of chart used in dashboards"],
+      "answer": 1
+    },
+    {
+      "type": "spreadsheet_task",
+      "duration": 180,
+      "q": "PI (3.14159) is in B1. In C4 and C5, write formulas for the circumference of each circle (2 × PI × radius). Reference PI absolutely — do not type 3.14159 directly.",
+      "sheetData": [
+        ["PI", 3.14159, ""],
+        ["", "", ""],
+        ["Shape", "Radius (cm)", "Circumference (cm)"],
+        ["Circle A", 5, ""],
+        ["Circle B", 8, ""]
+      ],
+      "columns": [{"width": 110}, {"width": 130}, {"width": 180}],
+      "checks": [
+        {
+          "cell": "C4",
+          "expected": 31.416,
+          "tolerance": 0.2,
+          "formulaContains": ["$B$1", "B4"]
+        },
+        {
+          "cell": "C5",
+          "expected": 50.265,
+          "tolerance": 0.2,
+          "formulaContains": ["$B$1", "B5"]
+        }
+      ],
+      "sampleAnswer": "C4: =2*$B$1*B4\nC5: =2*$B$1*B5"
+    },
+    {
+      "type": "mcq",
+      "duration": 45,
+      "q": "Which reference locks only the row at row 2, leaving the column relative?",
+      "options": ["$C$2", "$C2", "C$2", "C2"],
+      "answer": 2
+    },
+    {
+      "type": "mcq",
+      "duration": 50,
+      "q": "A constant is stored in a separate worksheet and referenced absolutely. What is the benefit if the constant needs to change?",
+      "options": ["Every formula that uses it must be updated individually", "The formula automatically deletes the old value", "Changing the one cell updates every formula that references it", "The spreadsheet creates a backup copy before changing"],
+      "answer": 2
+    }
+  ]
+}
