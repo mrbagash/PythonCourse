@@ -137,6 +137,12 @@
               ".validate": "$voterCode !== $targetCode && newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
             }
           }
+        },
+        "reactions": {
+          ".write": "auth != null && root.child('studentSessions').child(auth.uid).exists()",
+          "$reactionId": {
+            ".validate": "newData.hasChild('e') && newData.child('e').isString() && newData.child('e').val().length <= 8"
+          }
         }
       }
     },
@@ -164,6 +170,12 @@
             "$targetCode": {
               ".validate": "$voterCode !== $targetCode && newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
             }
+          }
+        },
+        "reactions": {
+          ".write": "auth != null && root.child('studentSessions').child(auth.uid).exists()",
+          "$reactionId": {
+            ".validate": "newData.hasChild('e') && newData.child('e').isString() && newData.child('e').val().length <= 8"
           }
         }
       }
