@@ -203,40 +203,61 @@
     } catch (e) { return 0; }
   }
 
-  // Robust model load with success/failure callback. The project codec
-  // needs a parsed object that has `.meta`; after load we nudge the
-  // preview to resize/redraw so it renders at the iframe's real size.
-  //
-  // The project codec opens the model in a NEW project tab each time, so
-  // we close the previous tab(s) afterwards to stop them piling up and
-  // overflowing the tab bar.
-  function pruneProjectTabs(cw) {
+  // The project codec opens each model in a NEW project tab (setupProject
+  // always creates one), so after loading we close every other project to
+  // stop tabs piling up and overflowing the tab bar. `keep` is the project
+  // we just loaded and must survive.
+  function pruneOtherTabs(cw, keep) {
     try {
       if (!cw.ModelProject || !cw.ModelProject.all) return;
       cw.ModelProject.all.slice().forEach(function (p) {
-        if (p === cw.Project) return; // keep the just-loaded model
-        try { p.saved = true; p.close(true); }
+        if (!p || p === keep) return;
+        try { p.locked = false; p.saved = true; p.close(true); }
         catch (e) { try { p.saved = true; p.close(); } catch (e2) {} }
       });
     } catch (e) {}
   }
 
-  // Canvas.updateAll() only refreshes selection — meshes/cubes can land
-  // in the outliner without being drawn until geometry + faces are
-  // explicitly rebuilt. Hit every refresh path so the model actually
-  // shows up in the viewport.
-  function refreshViewerGeometry(cw) {
+  // Rebuild geometry/faces and re-attach the project's 3D group to the
+  // scene. The programmatic project switch doesn't reliably leave the
+  // loaded model's `model_3d` in the rendered scene, which is why the
+  // model showed in the outliner but not the viewport — an explicit
+  // unselect()/select() forces scene.add(model_3d) again.
+  function refreshViewer(cw, project) {
     try {
+      if (project && project.select) {
+        try { if (project.unselect) project.unselect(); } catch (e) {}
+        try { project.select(); } catch (e) {}
+      }
       var C = cw.Canvas;
       if (C) {
-        if (C.updateAll) C.updateAll();
-        if (C.updateAllPositions) C.updateAllPositions();
+        if (C.updateAllPositions) C.updateAllPositions(); // re-parents elements into model_3d
         if (C.updateAllFaces) C.updateAllFaces();
         if (C.updateVisibility) C.updateVisibility();
         if (C.updateAllBones) C.updateAllBones();
+        if (C.updateAll) C.updateAll();
       }
       if (cw.Preview && cw.Preview.selected && cw.Preview.selected.resize) cw.Preview.selected.resize();
       if (typeof cw.Event !== 'undefined') cw.dispatchEvent(new cw.Event('resize'));
+    } catch (e) {}
+  }
+
+  // Point the camera at the whole model so it isn't framed out of view.
+  function focusViewerCamera(cw) {
+    try {
+      var els = (cw.Outliner && cw.Outliner.elements) ? cw.Outliner.elements.slice() : [];
+      if (!els.length) return;
+      if (Array.isArray(cw.selected)) { cw.selected.length = 0; }
+      els.forEach(function (el) {
+        try { el.selected = true; if (Array.isArray(cw.selected)) cw.selected.push(el); } catch (e) {}
+      });
+      if (cw.updateSelection) cw.updateSelection();
+      var act = cw.BarItems && cw.BarItems.focus_on_selection;
+      if (act && act.click) { try { act.click(); } catch (e) {} }
+      // Deselect again so the viewer isn't cluttered with gizmos/outlines.
+      els.forEach(function (el) { try { el.selected = false; } catch (e) {} });
+      if (Array.isArray(cw.selected)) cw.selected.length = 0;
+      if (cw.updateSelection) cw.updateSelection();
     } catch (e) {}
   }
 
@@ -246,12 +267,14 @@
         var obj = (typeof modelStr === 'string') ? JSON.parse(modelStr) : modelStr;
         if (!obj || !obj.meta) { if (done) done(false); return; }
         cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
-        pruneProjectTabs(cw);
-        // Rebuild now and again shortly after, since geometry can lag the
-        // synchronous parse by a frame or two.
-        refreshViewerGeometry(cw);
-        setTimeout(function () { refreshViewerGeometry(cw); }, 150);
-        setTimeout(function () { refreshViewerGeometry(cw); }, 500);
+        var loaded = cw.Project;
+        pruneOtherTabs(cw, loaded);
+        refreshViewer(cw, loaded);
+        focusViewerCamera(cw);
+        // Geometry/scene setup can lag the synchronous parse by a frame or
+        // two; repeat while this load is still the active one.
+        setTimeout(function () { if (cw.Project === loaded) { refreshViewer(cw, loaded); focusViewerCamera(cw); } }, 200);
+        setTimeout(function () { if (cw.Project === loaded) { refreshViewer(cw, loaded); focusViewerCamera(cw); } }, 650);
         if (done) done(true);
       } catch (e) { if (done) done(false); }
     }, 0, function () { if (done) done(false); });
