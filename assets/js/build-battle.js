@@ -206,19 +206,52 @@
   // Robust model load with success/failure callback. The project codec
   // needs a parsed object that has `.meta`; after load we nudge the
   // preview to resize/redraw so it renders at the iframe's real size.
+  //
+  // The project codec opens the model in a NEW project tab each time, so
+  // we close the previous tab(s) afterwards to stop them piling up and
+  // overflowing the tab bar.
+  function pruneProjectTabs(cw) {
+    try {
+      if (!cw.ModelProject || !cw.ModelProject.all) return;
+      cw.ModelProject.all.slice().forEach(function (p) {
+        if (p === cw.Project) return; // keep the just-loaded model
+        try { p.saved = true; p.close(true); }
+        catch (e) { try { p.saved = true; p.close(); } catch (e2) {} }
+      });
+    } catch (e) {}
+  }
+
+  // Canvas.updateAll() only refreshes selection — meshes/cubes can land
+  // in the outliner without being drawn until geometry + faces are
+  // explicitly rebuilt. Hit every refresh path so the model actually
+  // shows up in the viewport.
+  function refreshViewerGeometry(cw) {
+    try {
+      var C = cw.Canvas;
+      if (C) {
+        if (C.updateAll) C.updateAll();
+        if (C.updateAllPositions) C.updateAllPositions();
+        if (C.updateAllFaces) C.updateAllFaces();
+        if (C.updateVisibility) C.updateVisibility();
+        if (C.updateAllBones) C.updateAllBones();
+      }
+      if (cw.Preview && cw.Preview.selected && cw.Preview.selected.resize) cw.Preview.selected.resize();
+      if (typeof cw.Event !== 'undefined') cw.dispatchEvent(new cw.Event('resize'));
+    } catch (e) {}
+  }
+
   function loadModelInto(frame, modelStr, done) {
     whenBlockbenchReady(frame, function (cw) {
       try {
         var obj = (typeof modelStr === 'string') ? JSON.parse(modelStr) : modelStr;
         if (!obj || !obj.meta) { if (done) done(false); return; }
         cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
-        setTimeout(function () {
-          try {
-            if (cw.Canvas && cw.Canvas.updateAll) cw.Canvas.updateAll();
-            if (cw.Preview && cw.Preview.selected && cw.Preview.selected.resize) cw.Preview.selected.resize();
-            if (typeof cw.Event !== 'undefined') cw.dispatchEvent(new cw.Event('resize'));
-          } catch (e) {}
-        }, 80);
+        pruneProjectTabs(cw);
+        // Rebuild now and again shortly after, since geometry can lag the
+        // synchronous parse by a frame or two.
+        refreshViewerGeometry(cw);
+        setTimeout(function () { refreshViewerGeometry(cw); }, 150);
+        setTimeout(function () { refreshViewerGeometry(cw); }, 500);
         if (done) done(true);
       } catch (e) { if (done) done(false); }
     }, 0, function () { if (done) done(false); });
@@ -583,8 +616,9 @@
       state: 'voting',
       review: { order: order, currentIndex: 0, currentCode: order[0] || null }
     });
-    // Fire-and-forget Drive archive; never blocks voting.
-    archiveToDrive(d).catch(function () {});
+    // Drive archive is started by the host clicking "Archive to Drive" —
+    // Google's OAuth popup needs a real user gesture, so we don't kick it
+    // off automatically here (that left it stuck on "Connecting…").
   }
 
   // ── Host voting screen (Prev/Next drive the shared review) ──
@@ -1094,15 +1128,24 @@
     try { await BB.ref.child('drive').update({ manifestFileId: file.id }); } catch (e) {}
   }
 
-  async function archiveToDrive(d) {
-    if (BB.archiveRunning) return;
+  function withTimeout(promise, ms, msg) {
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error(msg || 'Timed out')); }, ms);
+      promise.then(function (v) { clearTimeout(t); resolve(v); },
+        function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  async function archiveToDrive() {
+    if (BB.archiveRunning || !BB.ref) return;
     BB.archiveRunning = true;
-    setArchiveStatus('Connecting to Google Drive…');
+    setArchiveStatus('Connecting to Google Drive… (approve the Google popup)');
     try {
-      var token = await getDriveToken();
+      // Request the token first so the click's user-gesture is still active.
+      var token = await withTimeout(getDriveToken(), 120000, 'Google sign-in timed out — click Archive to Drive to try again.');
       var snap = await BB.ref.get();
       if (!snap.exists()) { BB.archiveRunning = false; return; }
-      d = snap.val();
+      var d = snap.val();
       var subs = d.submissions || {};
       var parent = bbDriveFolderId();
       var driveMeta = d.drive || {};
@@ -1172,7 +1215,7 @@
     if (d.drive && d.drive.sessionFolderName) {
       return 'Folder: ' + d.drive.sessionFolderName + ' · ' + done + '/' + codes.length + ' uploaded' + (err ? (' · ' + err + ' failed') : '');
     }
-    return 'Not archived yet — uploads start automatically when voting begins.';
+    return 'Not archived yet — click "Archive to Drive" to upload the submitted models.';
   }
 
   function drivePanelHtml(d) {
@@ -1185,9 +1228,9 @@
 
   function wireDrivePanel() {
     var b = document.getElementById('bb-drive-go');
-    if (b) b.onclick = function () {
-      BB.ref.get().then(function (s) { if (s.exists()) archiveToDrive(s.val()); });
-    };
+    // Call archiveToDrive() directly (no awaits first) so the OAuth popup
+    // still counts as a user gesture and isn't blocked.
+    if (b) b.onclick = function () { archiveToDrive(); };
   }
 
   function setArchiveStatus(txt) {
