@@ -78,7 +78,17 @@
     _manifestId: null,
     // viewer load latest-wins guard
     _loadToken: 0,
+    // board extras
+    spinOn: true,      // auto-rotate the model on the board
+    spinTimer: null,
+    reactRef: null,
+    reactListener: null,
+    reactSince: 0,
+    _lastReact: 0,
   };
+
+  // Emoji students can fling onto the board while voting.
+  var REACTIONS = ['🔥', '👏', '😮', '😂', '❤️', '🤯'];
 
   // Preset objects the teacher can pick for students to build.
   var BUILD_PRESETS = [
@@ -149,6 +159,15 @@
       '.bb-wait{text-align:center;font-weight:700;color:#86efac;margin:8px 0;min-height:22px}' +
       '.bb-vote-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px}' +
       '.bb-stars-big{gap:14px}.bb-stars-big .bb-star{font-size:4rem}.bb-stars-big .bb-star:hover{transform:scale(1.2)}' +
+      '.bb-react-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}' +
+      '.bb-react{font-size:1.8rem;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px 12px;cursor:pointer;transition:transform .08s}' +
+      '.bb-react:hover{background:#334155}.bb-react:active{transform:scale(1.3)}' +
+      '.bb-float{position:absolute;bottom:8px;font-size:2.2rem;pointer-events:none;z-index:4;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
+      '@keyframes bb-rise{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(-58vh) scale(1.35)}}' +
+      '.bb-view-spin{position:absolute;top:10px;left:10px;z-index:3;opacity:.85}' +
+      '.bb-awards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:6px 0 14px}' +
+      '.bb-award{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 16px;text-align:center;min-width:150px}' +
+      '.bb-award strong{display:block;margin:2px 0;color:#fbbf24}' +
       '.bb-drive-btn{width:42px;height:42px;border-radius:10px;background:#1e293b;color:#cbd5e1;border:2px solid #ef4444;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
       '.bb-drive-btn:hover{background:#334155}' +
       '.bb-drive-btn.ok{border-color:#22c55e;color:#86efac}' +
@@ -159,9 +178,10 @@
       '.bb-rank .pos{font-weight:800;width:34px;color:#94a3b8}' +
       '.bb-rank .nm{flex:1}.bb-rank .sc{font-weight:700;color:#fbbf24}' +
       '.bb-podium{display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:18px 0}' +
-      '.bb-pod{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center;min-width:150px}' +
+      '.bb-pod{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center;min-width:150px;opacity:0;transform:translateY(26px) scale(.9);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.9,.3,1.2)}' +
+      '.bb-pod.show{opacity:1;transform:translateY(0) scale(1)}' +
       '.bb-pod .medal{font-size:2.4rem}.bb-pod .who{font-weight:700;margin-top:6px}.bb-pod .avg{color:#fbbf24;font-weight:800;font-size:1.3rem}' +
-      '.bb-pod.first{transform:scale(1.08);border-color:#fbbf24}' +
+      '.bb-pod.first{border-color:#fbbf24}.bb-pod.first.show{transform:translateY(0) scale(1.08)}' +
       '#bb-modal-setup{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}' +
       '#bb-modal-setup .box{background:#fff;color:#1e293b;border-radius:14px;padding:22px;max-width:440px;width:92%}' +
       '#bb-modal-setup label{display:block;font-weight:600;margin:12px 0 4px;font-size:.9rem}' +
@@ -581,6 +601,9 @@
       else dbtn.classList.add('hidden');
     }
 
+    // Spin + reactions only run on the voting board.
+    if (phase !== 'voting') { stopSpin(); stopReactionsListener(); }
+
     // Leaving finalising → cancel the grace timer.
     if (phase !== 'finalising' && BB.finaliseTimer) { clearTimeout(BB.finaliseTimer); BB.finaliseTimer = null; }
 
@@ -654,7 +677,9 @@
       var tallyR = computeResults(subs, d.votes || {}, d.results);
       body.innerHTML =
         podiumHtml(tallyR) +
+        awardsHtml(subs, d.votes || {}) +
         '<div class="bb-card"><strong>Full ranking</strong>' + rankingHtml(tallyR, null) + '</div>';
+      revealPodium(changed); // animate only when results first appear
       return;
     }
   }
@@ -717,6 +742,7 @@
         '<div id="bb-view-wrap" class="bb-view-wrap">' +
         '<iframe id="bb-view-frame" class="bb-view" src="./blockbench/index.html"></iframe>' +
         '<div id="bb-view-status" class="bb-view-status"></div>' +
+        '<button id="bb-view-spin" class="bb-btn bb-btn-ghost bb-view-spin">⟳ Spin: On</button>' +
         '<button id="bb-view-full" class="bb-btn bb-btn-ghost bb-view-full">⛶ Fullscreen</button>' +
         '<div id="bb-view-debug" class="bb-view-debug"></div></div>' +
         '<div class="bb-navrow">' +
@@ -730,6 +756,12 @@
       document.getElementById('bb-host-prev').onclick = function () { hostStep(-1); };
       document.getElementById('bb-host-next').onclick = function () { hostStep(1); };
       document.getElementById('bb-view-full').onclick = toggleViewerFullscreen;
+      var spinBtn = document.getElementById('bb-view-spin');
+      spinBtn.textContent = '⟳ Spin: ' + (BB.spinOn ? 'On' : 'Off');
+      spinBtn.onclick = function () {
+        BB.spinOn = !BB.spinOn;
+        spinBtn.textContent = '⟳ Spin: ' + (BB.spinOn ? 'On' : 'Off');
+      };
       document.getElementById('bb-end-vote').onclick = function () {
         BB.ref.get().then(function (s) {
           if (!s.exists()) return;
@@ -740,6 +772,8 @@
           BB.ref.update({ state: 'results', results: resultsMap });
         });
       };
+      startSpin();
+      startReactionsListener();
     }
 
     // Position + nav state
@@ -761,6 +795,47 @@
 
     // Load the model only when the pointer actually changes
     if (cur !== BB.lastReviewCode) { BB.lastReviewCode = cur; loadCurrentModel(cur); }
+  }
+
+  // ── Board extras: auto-rotate + floating reactions ──
+  function startSpin() {
+    if (BB.spinTimer) return;
+    BB.spinTimer = setInterval(function () {
+      if (!BB.spinOn) return;
+      try {
+        var cw = BB.viewFrame && BB.viewFrame.contentWindow;
+        if (cw && cw.Project && cw.Project.model_3d) cw.Project.model_3d.rotation.y += 0.012;
+      } catch (e) {}
+    }, 30);
+  }
+  function stopSpin() { if (BB.spinTimer) { clearInterval(BB.spinTimer); BB.spinTimer = null; } }
+
+  function startReactionsListener() {
+    stopReactionsListener();
+    if (!BB.ref) return;
+    BB.reactSince = Date.now();
+    BB.reactRef = BB.ref.child('reactions');
+    BB.reactListener = BB.reactRef.on('child_added', function (snap) {
+      var v = snap.val() || {};
+      if (!v.e) return;
+      if (v.at && v.at < BB.reactSince - 1500) return; // ignore backlog on attach
+      floatReaction(v.e);
+    });
+  }
+  function stopReactionsListener() {
+    if (BB.reactRef && BB.reactListener) { try { BB.reactRef.off('child_added', BB.reactListener); } catch (e) {} }
+    BB.reactRef = null; BB.reactListener = null;
+  }
+  function floatReaction(emoji) {
+    var wrap = document.getElementById('bb-view-wrap');
+    if (!wrap) return;
+    var span = document.createElement('span');
+    span.className = 'bb-float';
+    span.textContent = emoji;
+    span.style.left = (6 + Math.random() * 86) + '%';
+    span.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+    wrap.appendChild(span);
+    setTimeout(function () { try { wrap.removeChild(span); } catch (e) {} }, 4200);
   }
 
   function toggleViewerFullscreen() {
@@ -914,8 +989,13 @@
       stopTimer();
       var tally = computeResults(d.submissions || {}, d.votes || {}, d.results);
       BB.resultsCache = tally;
+      var aw = computeAwards(d.submissions || {}, d.votes || {});
+      var myBadges = '';
+      if (aw.creative === BB.myCode) myBadges += '<div class="bb-award">🎨 <strong>Most Creative!</strong>That\'s you</div>';
+      if (aw.crowd === BB.myCode) myBadges += '<div class="bb-award">💖 <strong>Crowd Favourite!</strong>' + aw.crowdCount + ' × ★5</div>';
       body.innerHTML =
         '<div class="bb-big">' + myResultLine(tally) + '</div>' +
+        (myBadges ? '<div class="bb-awards">' + myBadges + '</div>' : '') +
         '<div class="bb-card"><strong>Top builders</strong>' + rankingHtml(tally, BB.myCode, 5) + '</div>';
       return;
     }
@@ -1023,7 +1103,21 @@
     body.innerHTML =
       '<div class="bb-vote-screen">' +
       '<div id="bb-stars" class="bb-stars bb-stars-big"></div>' +
-      '<div id="bb-vote-msg" class="bb-wait"></div></div>';
+      '<div id="bb-vote-msg" class="bb-wait"></div>' +
+      '<div class="bb-react-row">' +
+      REACTIONS.map(function (e) { return '<button class="bb-react" data-e="' + e + '">' + e + '</button>'; }).join('') +
+      '</div></div>';
+    body.querySelectorAll('.bb-react').forEach(function (btn) {
+      btn.onclick = function () { sendReaction(btn.dataset.e); };
+    });
+  }
+
+  function sendReaction(emoji) {
+    if (!BB.ref || !emoji) return;
+    var now = Date.now();
+    if (now - BB._lastReact < 150) return; // light anti-spam throttle
+    BB._lastReact = now;
+    try { BB.ref.child('reactions').push({ e: emoji, at: now }); } catch (e) {}
   }
 
   function updateVotingTarget(d) {
@@ -1365,13 +1459,53 @@
     var order = top.length === 3 ? [1, 0, 2] : (top.length === 2 ? [1, 0] : [0]);
     var pods = order.map(function (idx) {
       var r = top[idx];
-      return '<div class="bb-pod' + (idx === 0 ? ' first' : '') + '">' +
+      return '<div class="bb-pod' + (idx === 0 ? ' first' : '') + '" data-rank="' + idx + '">' +
         '<div class="medal">' + medals[idx] + '</div>' +
         '<div class="who">' + esc(nameFor(r.code)) + '</div>' +
         '<div class="avg">★ ' + r.avg.toFixed(2) + '</div>' +
         '<div class="bb-muted">' + r.count + ' votes</div></div>';
     }).join('');
     return '<div class="bb-podium">' + pods + '</div>';
+  }
+
+  // Reveal the podium 3rd → 2nd → 1st for a bit of suspense.
+  function revealPodium(animate) {
+    var pods = document.querySelectorAll('#bb-host-body .bb-pod');
+    if (!animate) { pods.forEach(function (p) { p.classList.add('show'); }); return; }
+    [2, 1, 0].forEach(function (rank, i) {
+      setTimeout(function () {
+        document.querySelectorAll('#bb-host-body .bb-pod[data-rank="' + rank + '"]').forEach(function (p) { p.classList.add('show'); });
+      }, 350 + i * 850);
+    });
+  }
+
+  // Fun bonus awards beyond the top 3.
+  function computeAwards(subs, votes) {
+    var fives = {}, best = {};
+    Object.keys(subs || {}).forEach(function (c) { fives[c] = 0; best[c] = 0; });
+    Object.keys(votes || {}).forEach(function (voter) {
+      var row = votes[voter] || {};
+      Object.keys(row).forEach(function (t) {
+        if (voter === t) return;
+        var v = Number(row[t]);
+        if (!(v >= 1 && v <= 5)) return;
+        if (!(t in fives)) { fives[t] = 0; best[t] = 0; }
+        if (v === 5) fives[t]++;
+        if (v > best[t]) best[t] = v;
+      });
+    });
+    var crowd = null, creative = null;
+    Object.keys(fives).forEach(function (c) { if (fives[c] > 0 && (crowd === null || fives[c] > fives[crowd])) crowd = c; });
+    Object.keys(best).forEach(function (c) { if (best[c] > 0 && (creative === null || best[c] > best[creative])) creative = c; });
+    return { crowd: crowd, crowdCount: crowd ? fives[crowd] : 0, creative: creative, creativeScore: creative ? best[creative] : 0 };
+  }
+
+  function awardsHtml(subs, votes) {
+    var a = computeAwards(subs, votes);
+    var items = [];
+    if (a.creative) items.push('<div class="bb-award">🎨 <strong>Most Creative</strong>' + esc(nameFor(a.creative)) + '</div>');
+    if (a.crowd) items.push('<div class="bb-award">💖 <strong>Crowd Favourite</strong>' + esc(nameFor(a.crowd)) + ' · ' + a.crowdCount + ' × ★5</div>');
+    return items.length ? '<div class="bb-awards">' + items.join('') + '</div>' : '';
   }
 
   function myResultLine(list) {
@@ -1395,6 +1529,8 @@
 
   function leaveBattle() {
     stopTimer();
+    stopSpin();
+    stopReactionsListener();
     if (BB.finaliseTimer) { clearTimeout(BB.finaliseTimer); BB.finaliseTimer = null; }
     if (BB.ref && BB.listener) { try { BB.ref.off('value', BB.listener); } catch (e) {} }
     BB.ref = null; BB.listener = null; BB.role = null; BB.code = null;
