@@ -9,5 +9,6 @@ window.PYLEARN_CONFIG = {
     "appId": "1:116392131413:web:749085e191446e9e744ddc"
   },
   "googleClientId": "116392131413-3v6js8lrm2fj84tmnp1fog0ubefohf0o.apps.googleusercontent.com",
-  "driveFolderId": "1s6H7gBz7DKWVrY0D41GrlGOZUOK12OX-"
+  "driveFolderId": "1s6H7gBz7DKWVrY0D41GrlGOZUOK12OX-",
+  "buildBattleDriveFolderId": "1Cs3fibUY49M-icJPeGaLaioCc0Ew5Uha"
 };
