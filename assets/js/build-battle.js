@@ -84,7 +84,10 @@
     reactRef: null,
     reactListener: null,
     reactSince: 0,
+    reactionsOn: true, // shared toggle (teacher can mute)
     _lastReact: 0,
+    _reactCount: 0,    // per-build reaction count for this student
+    _reactBuild: null,
   };
 
   // Emoji students can fling onto the board while voting.
@@ -159,19 +162,27 @@
       '.bb-wait{text-align:center;font-weight:700;color:#86efac;margin:8px 0;min-height:22px}' +
       '.bb-vote-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px}' +
       '.bb-stars-big{gap:14px}.bb-stars-big .bb-star{font-size:4rem}.bb-stars-big .bb-star:hover{transform:scale(1.2)}' +
-      '.bb-react-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}' +
-      '.bb-react{font-size:1.8rem;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px 12px;cursor:pointer;transition:transform .08s}' +
-      '.bb-react:hover{background:#334155}.bb-react:active{transform:scale(1.3)}' +
-      '.bb-float{position:absolute;bottom:8px;font-size:2.2rem;pointer-events:none;z-index:4;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
+      '.bb-react-area{margin-top:8px;text-align:center;transition:opacity .2s}' +
+      '.bb-react-label{font-size:.8rem;color:#64748b;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}' +
+      '.bb-react-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}' +
+      '.bb-react{font-size:1.8rem;background:#1e293b;border:1px solid #334155;border-radius:14px;padding:8px 13px;cursor:pointer;transition:transform .08s,background .15s}' +
+      '.bb-react:hover{background:#334155}.bb-react:active{transform:scale(1.35)}' +
+      '.bb-react-area.maxed{opacity:.4;pointer-events:none}' +
+      '.bb-float{position:absolute;bottom:8px;font-size:2.2rem;pointer-events:none;z-index:5;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
       '@keyframes bb-rise{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(-58vh) scale(1.35)}}' +
       '.bb-view-spin{position:absolute;top:10px;left:10px;z-index:3;opacity:.85}' +
-      '.bb-awards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:6px 0 14px}' +
-      '.bb-award{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 16px;text-align:center;min-width:150px}' +
+      '.bb-results{max-width:760px;margin:0 auto;text-align:center}' +
+      '.bb-results-title{font-size:1.6rem;font-weight:800;margin:18px 0 6px}' +
+      '.bb-awards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 22px}' +
+      '.bb-award{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 16px;text-align:center;min-width:160px}' +
       '.bb-award strong{display:block;margin:2px 0;color:#fbbf24}' +
-      '.bb-drive-btn{width:42px;height:42px;border-radius:10px;background:#1e293b;color:#cbd5e1;border:2px solid #ef4444;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
-      '.bb-drive-btn:hover{background:#334155}' +
-      '.bb-drive-btn.ok{border-color:#22c55e;color:#86efac}' +
-      '.bb-drive-btn.busy{border-color:#f59e0b;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
+      '.bb-icon-btn{width:42px;height:42px;border-radius:10px;background:#1e293b;color:#cbd5e1;border:2px solid #475569;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
+      '.bb-icon-btn:hover{background:#334155}' +
+      '.bb-icon-btn.ok{border-color:#22c55e;color:#86efac}' +
+      '.bb-icon-btn.off{border-color:#ef4444;color:#fca5a5}' +
+      '.bb-icon-btn.drive{border-color:#ef4444;color:#fca5a5}' +
+      '.bb-icon-btn.drive.ok{border-color:#22c55e;color:#86efac}' +
+      '.bb-icon-btn.busy{border-color:#f59e0b;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
       '@keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.5}}' +
       '.bb-navrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px}' +
       '.bb-rank{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #1e293b}' +
@@ -546,12 +557,17 @@
       '<div class="bb-wrap">' +
       '<div class="bb-top"><div class="bb-title">🏗️ Build Battle <span id="bb-host-phase" class="bb-muted"></span></div>' +
       '<div style="display:flex;align-items:center;gap:8px">' +
-      '<button id="bb-drive-btn" class="bb-drive-btn hidden" title="Archive models to Google Drive">☁</button>' +
+      '<button id="bb-react-btn" class="bb-icon-btn ok hidden" title="Reactions on — click to mute">😀</button>' +
+      '<button id="bb-drive-btn" class="bb-icon-btn drive hidden" title="Archive models to Google Drive">☁</button>' +
       '<button id="bb-host-exit" class="bb-btn bb-btn-danger">End battle &amp; wipe</button></div></div>' +
       '<div id="bb-host-body"></div></div>';
     document.body.appendChild(s);
     document.getElementById('bb-host-exit').onclick = endBattleHost;
     document.getElementById('bb-drive-btn').onclick = function () { archiveToDrive(); };
+    document.getElementById('bb-react-btn').onclick = function () {
+      var on = !(BB.reactionsOn === false); // currently on?
+      BB.ref.update({ reactionsOn: !on });   // toggle for everyone
+    };
   }
 
   function enterAsHost(code, root) {
@@ -594,11 +610,26 @@
     // Recover the forced-class link after a rejoin so "End battle" can clear it.
     if (!BB.hostClassName && d.forced && d.className) BB.hostClassName = d.className;
 
+    // Track the shared reactions toggle (used by floatReaction + buttons).
+    BB.reactionsOn = d.reactionsOn !== false;
+
     // Drive button only matters once there are submissions to archive.
     var dbtn = document.getElementById('bb-drive-btn');
     if (dbtn) {
       if (phase === 'voting' || phase === 'results') updateDriveBtn(d);
       else dbtn.classList.add('hidden');
+    }
+
+    // Reactions mute toggle — only on the voting board.
+    var rbtn = document.getElementById('bb-react-btn');
+    if (rbtn) {
+      if (phase === 'voting') {
+        rbtn.classList.remove('hidden');
+        rbtn.classList.toggle('ok', BB.reactionsOn);
+        rbtn.classList.toggle('off', !BB.reactionsOn);
+        rbtn.textContent = BB.reactionsOn ? '😀' : '🔇';
+        rbtn.title = BB.reactionsOn ? 'Reactions on — click to mute' : 'Reactions muted — click to allow';
+      } else { rbtn.classList.add('hidden'); }
     }
 
     // Spin + reactions only run on the voting board.
@@ -676,9 +707,12 @@
       stopTimer();
       var tallyR = computeResults(subs, d.votes || {}, d.results);
       body.innerHTML =
+        '<div class="bb-results">' +
+        '<div class="bb-results-title">🏆 Results</div>' +
         podiumHtml(tallyR) +
         awardsHtml(subs, d.votes || {}) +
-        '<div class="bb-card"><strong>Full ranking</strong>' + rankingHtml(tallyR, null) + '</div>';
+        '<div class="bb-card" style="text-align:left"><strong>Full ranking</strong>' + rankingHtml(tallyR, null) + '</div>' +
+        '</div>';
       revealPodium(changed); // animate only when results first appear
       return;
     }
@@ -813,29 +847,39 @@
   function startReactionsListener() {
     stopReactionsListener();
     if (!BB.ref) return;
-    BB.reactSince = Date.now();
     BB.reactRef = BB.ref.child('reactions');
-    BB.reactListener = BB.reactRef.on('child_added', function (snap) {
-      var v = snap.val() || {};
-      if (!v.e) return;
-      if (v.at && v.at < BB.reactSince - 1500) return; // ignore backlog on attach
-      floatReaction(v.e);
-    });
+    // Snapshot existing keys first so attaching doesn't replay the whole
+    // backlog, and so we don't depend on synced clocks between devices.
+    BB.reactRef.once('value').then(function (snap) {
+      var seen = {};
+      snap.forEach(function (c) { seen[c.key] = true; });
+      BB.reactListener = BB.reactRef.on('child_added', function (cs) {
+        if (seen[cs.key]) return;
+        seen[cs.key] = true;
+        var v = cs.val() || {};
+        if (v.e) floatReaction(v.e);
+      });
+    }).catch(function () {});
   }
   function stopReactionsListener() {
     if (BB.reactRef && BB.reactListener) { try { BB.reactRef.off('child_added', BB.reactListener); } catch (e) {} }
     BB.reactRef = null; BB.reactListener = null;
   }
+  // Floats rise along the left/right edges (never over the centred model) and
+  // live inside #bb-view-wrap so they also show while fullscreen.
   function floatReaction(emoji) {
+    if (BB.reactionsOn === false) return;
     var wrap = document.getElementById('bb-view-wrap');
     if (!wrap) return;
+    if (wrap.querySelectorAll('.bb-float').length > 20) return; // cap on screen
     var span = document.createElement('span');
     span.className = 'bb-float';
     span.textContent = emoji;
-    span.style.left = (6 + Math.random() * 86) + '%';
-    span.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+    if (Math.random() < 0.5) span.style.left = (1 + Math.random() * 8) + '%';
+    else span.style.right = (1 + Math.random() * 8) + '%';
+    span.style.animationDuration = (2.6 + Math.random() * 1.6) + 's';
     wrap.appendChild(span);
-    setTimeout(function () { try { wrap.removeChild(span); } catch (e) {} }, 4200);
+    setTimeout(function () { try { wrap.removeChild(span); } catch (e) {} }, 4400);
   }
 
   function toggleViewerFullscreen() {
@@ -862,6 +906,8 @@
       var idx = (typeof review.currentIndex === 'number') ? review.currentIndex : 0;
       idx = Math.max(0, Math.min(order.length - 1, idx + dir));
       BB.ref.child('review').update({ currentIndex: idx, currentCode: order[idx] });
+      // Fresh reactions for the next build (keeps the node small too).
+      try { BB.ref.child('reactions').remove(); } catch (e) {}
     });
   }
 
@@ -1095,58 +1141,76 @@
 
   // ── Student voting UI (teacher-driven; no 3D viewer, no navigation) ──
   // The model is shown by the teacher on the board. Students just get the
-  // stars — minimal text, large tap targets.
+  // stars + a small reactions strip (hidden when the teacher mutes).
+  var MAX_REACTS_PER_BUILD = 10;
   function renderVotingUI(d) {
     BB.myVotes = (d.votes && d.votes[BB.myCode]) || {};
     BB.lastReviewCode = null;
+    BB._reactBuild = null;
+    BB._reactCount = 0;
     var body = document.getElementById('bb-stu-body');
     body.innerHTML =
       '<div class="bb-vote-screen">' +
-      '<div id="bb-stars" class="bb-stars bb-stars-big"></div>' +
       '<div id="bb-vote-msg" class="bb-wait"></div>' +
+      '<div id="bb-stars" class="bb-stars bb-stars-big"></div>' +
+      '<div id="bb-react-area" class="bb-react-area">' +
+      '<div class="bb-react-label">Send a reaction</div>' +
       '<div class="bb-react-row">' +
       REACTIONS.map(function (e) { return '<button class="bb-react" data-e="' + e + '">' + e + '</button>'; }).join('') +
-      '</div></div>';
+      '</div></div></div>';
     body.querySelectorAll('.bb-react').forEach(function (btn) {
       btn.onclick = function () { sendReaction(btn.dataset.e); };
     });
   }
 
   function sendReaction(emoji) {
-    if (!BB.ref || !emoji) return;
+    if (!BB.ref || !emoji || BB.reactionsOn === false) return;
     var now = Date.now();
-    if (now - BB._lastReact < 150) return; // light anti-spam throttle
+    if (now - BB._lastReact < 350) return;                 // throttle bursts
+    if (BB._reactCount >= MAX_REACTS_PER_BUILD) return;    // per-build cap
     BB._lastReact = now;
+    BB._reactCount++;
     try { BB.ref.child('reactions').push({ e: emoji, at: now }); } catch (e) {}
+    if (BB._reactCount >= MAX_REACTS_PER_BUILD) {
+      var area = document.getElementById('bb-react-area');
+      if (area) area.classList.add('maxed');
+    }
   }
 
   function updateVotingTarget(d) {
     var review = d.review || {};
     var cur = review.currentCode || null;
     BB.myVotes = (d.votes && d.votes[BB.myCode]) || BB.myVotes || {};
+    BB.reactionsOn = d.reactionsOn !== false;
     var stars = document.getElementById('bb-stars');
     var msg = document.getElementById('bb-vote-msg');
     if (!stars || !msg) return;
     BB.lastReviewCode = cur;
 
+    // Reset the per-build reaction budget when the teacher moves on, and
+    // show/hide the reaction strip according to the teacher's mute toggle.
+    var area = document.getElementById('bb-react-area');
+    if (cur !== BB._reactBuild) { BB._reactBuild = cur; BB._reactCount = 0; if (area) area.classList.remove('maxed'); }
+    if (area) area.style.display = (BB.reactionsOn === false || !cur) ? 'none' : 'block';
+
     if (!cur) {
       stars.innerHTML = '';
-      msg.textContent = 'Waiting…';
+      msg.textContent = 'Waiting for the next build…';
       return;
     }
 
     if (cur === BB.myCode) {
       stars.innerHTML = '';
-      msg.textContent = '⭐ Your build — others are voting';
+      msg.textContent = '⭐ Your build is up — others are voting';
       return;
     }
 
     if (BB.myVotes[cur]) {
       renderStars(cur, true);
-      msg.textContent = '✓ Voted';
+      msg.textContent = '✓ Voted — nice!';
     } else {
       renderStars(cur, false);
-      msg.textContent = '';
+      msg.textContent = 'Tap to rate';
     }
   }
 
