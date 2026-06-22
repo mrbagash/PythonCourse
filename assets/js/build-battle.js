@@ -147,6 +147,13 @@
       '.bb-star.on{color:#fbbf24}' +
       '.bb-star:disabled{cursor:default;transform:none}' +
       '.bb-wait{text-align:center;font-weight:700;color:#86efac;margin:8px 0;min-height:22px}' +
+      '.bb-vote-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px}' +
+      '.bb-stars-big{gap:14px}.bb-stars-big .bb-star{font-size:4rem}.bb-stars-big .bb-star:hover{transform:scale(1.2)}' +
+      '.bb-drive-btn{width:42px;height:42px;border-radius:10px;background:#1e293b;color:#cbd5e1;border:2px solid #ef4444;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
+      '.bb-drive-btn:hover{background:#334155}' +
+      '.bb-drive-btn.ok{border-color:#22c55e;color:#86efac}' +
+      '.bb-drive-btn.busy{border-color:#f59e0b;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
+      '@keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.5}}' +
       '.bb-navrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px}' +
       '.bb-rank{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #1e293b}' +
       '.bb-rank .pos{font-weight:800;width:34px;color:#94a3b8}' +
@@ -518,10 +525,13 @@
     s.innerHTML =
       '<div class="bb-wrap">' +
       '<div class="bb-top"><div class="bb-title">🏗️ Build Battle <span id="bb-host-phase" class="bb-muted"></span></div>' +
-      '<button id="bb-host-exit" class="bb-btn bb-btn-danger">End battle &amp; wipe</button></div>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<button id="bb-drive-btn" class="bb-drive-btn hidden" title="Archive models to Google Drive">☁</button>' +
+      '<button id="bb-host-exit" class="bb-btn bb-btn-danger">End battle &amp; wipe</button></div></div>' +
       '<div id="bb-host-body"></div></div>';
     document.body.appendChild(s);
     document.getElementById('bb-host-exit').onclick = endBattleHost;
+    document.getElementById('bb-drive-btn').onclick = function () { archiveToDrive(); };
   }
 
   function enterAsHost(code, root) {
@@ -563,6 +573,13 @@
 
     // Recover the forced-class link after a rejoin so "End battle" can clear it.
     if (!BB.hostClassName && d.forced && d.className) BB.hostClassName = d.className;
+
+    // Drive button only matters once there are submissions to archive.
+    var dbtn = document.getElementById('bb-drive-btn');
+    if (dbtn) {
+      if (phase === 'voting' || phase === 'results') updateDriveBtn(d);
+      else dbtn.classList.add('hidden');
+    }
 
     // Leaving finalising → cancel the grace timer.
     if (phase !== 'finalising' && BB.finaliseTimer) { clearTimeout(BB.finaliseTimer); BB.finaliseTimer = null; }
@@ -637,10 +654,7 @@
       var tallyR = computeResults(subs, d.votes || {}, d.results);
       body.innerHTML =
         podiumHtml(tallyR) +
-        '<div class="bb-card"><strong>Full ranking</strong>' + rankingHtml(tallyR, null) + '</div>' +
-        drivePanelHtml(d) +
-        '<p class="bb-muted">When you end the battle, all submitted models are wiped from the database (the Drive archive is kept).</p>';
-      wireDrivePanel();
+        '<div class="bb-card"><strong>Full ranking</strong>' + rankingHtml(tallyR, null) + '</div>';
       return;
     }
   }
@@ -710,7 +724,6 @@
         '<span id="bb-host-pos" class="bb-muted"></span>' +
         '<button id="bb-host-next" class="bb-btn bb-btn-primary">Next ▶</button></div>' +
         '<div class="bb-card" style="margin-top:14px"><strong>Live standings</strong><div id="bb-host-standings"></div></div>' +
-        drivePanelHtml(d) +
         '<button id="bb-end-vote" class="bb-btn bb-btn-primary">End voting &amp; show results →</button>';
       BB.viewFrame = document.getElementById('bb-view-frame');
       BB.lastReviewCode = null;
@@ -727,7 +740,6 @@
           BB.ref.update({ state: 'results', results: resultsMap });
         });
       };
-      wireDrivePanel();
     }
 
     // Position + nav state
@@ -744,8 +756,8 @@
     var stEl = document.getElementById('bb-host-standings');
     if (stEl) stEl.innerHTML = rankingHtml(computeResults(subs, d.votes || {}), null);
 
-    // Drive status (don't stomp a live archive run)
-    if (!BB.archiveRunning) setArchiveStatus(driveStatusText(d));
+    // Drive button colour (don't stomp a live archive run)
+    if (!BB.archiveRunning) updateDriveBtn(d);
 
     // Load the model only when the pointer actually changes
     if (cur !== BB.lastReviewCode) { BB.lastReviewCode = cur; loadCurrentModel(cur); }
@@ -1002,48 +1014,42 @@
   }
 
   // ── Student voting UI (teacher-driven; no 3D viewer, no navigation) ──
-  // The model is shown by the teacher on the board. Students only see the
-  // current builder's name and the star rating for the current build.
+  // The model is shown by the teacher on the board. Students just get the
+  // stars — minimal text, large tap targets.
   function renderVotingUI(d) {
     BB.myVotes = (d.votes && d.votes[BB.myCode]) || {};
     BB.lastReviewCode = null;
     var body = document.getElementById('bb-stu-body');
     body.innerHTML =
-      '<div class="bb-card" style="text-align:center">' +
-      '<div class="bb-muted">👀 Look at the board</div>' +
-      '<div id="bb-vote-info" style="font-weight:700;font-size:1.25rem;margin-top:6px">Waiting for the teacher…</div></div>' +
-      '<div id="bb-stars" class="bb-stars"></div>' +
-      '<div id="bb-vote-msg" class="bb-wait"></div>';
+      '<div class="bb-vote-screen">' +
+      '<div id="bb-stars" class="bb-stars bb-stars-big"></div>' +
+      '<div id="bb-vote-msg" class="bb-wait"></div></div>';
   }
 
   function updateVotingTarget(d) {
     var review = d.review || {};
     var cur = review.currentCode || null;
     BB.myVotes = (d.votes && d.votes[BB.myCode]) || BB.myVotes || {};
-    var info = document.getElementById('bb-vote-info');
     var stars = document.getElementById('bb-stars');
     var msg = document.getElementById('bb-vote-msg');
-    if (!info || !stars || !msg) return;
+    if (!stars || !msg) return;
     BB.lastReviewCode = cur;
 
     if (!cur) {
-      info.textContent = 'Waiting for the teacher to choose a build…';
       stars.innerHTML = '';
-      msg.textContent = '';
+      msg.textContent = 'Waiting…';
       return;
     }
 
     if (cur === BB.myCode) {
-      info.textContent = 'This is your build';
       stars.innerHTML = '';
-      msg.textContent = '⭐ This is your build — sit tight while everyone else votes.';
+      msg.textContent = '⭐ Your build — others are voting';
       return;
     }
 
-    info.textContent = 'Rate this build (shown on the board)';
     if (BB.myVotes[cur]) {
       renderStars(cur, true);
-      msg.textContent = '✅ Vote recorded — waiting for the teacher to show the next build.';
+      msg.textContent = '✓ Voted';
     } else {
       renderStars(cur, false);
       msg.textContent = '';
@@ -1282,36 +1288,29 @@
     BB.archiveRunning = false;
   }
 
-  // ── Host Drive panel helpers ──
-  function driveStatusText(d) {
+  // ── Host Drive button (small square in the top bar) ──
+  // Red outline = not archived yet; green outline = all models archived.
+  function updateDriveBtn(d) {
+    var b = document.getElementById('bb-drive-btn');
+    if (!b) return;
     var subs = d.submissions || {};
     var codes = Object.keys(subs);
     var done = codes.filter(function (c) { return subs[c].uploadStatus === 'done'; }).length;
     var err = codes.filter(function (c) { return subs[c].uploadStatus === 'error'; }).length;
-    if (d.drive && d.drive.sessionFolderName) {
-      return 'Folder: ' + d.drive.sessionFolderName + ' · ' + done + '/' + codes.length + ' uploaded' + (err ? (' · ' + err + ' failed') : '');
-    }
-    return 'Not archived yet — click "Archive to Drive" to upload the submitted models.';
+    var archived = d.drive && d.drive.sessionFolderName && codes.length > 0 && done === codes.length;
+    b.classList.remove('hidden');
+    b.classList.toggle('ok', !!archived);
+    b.classList.toggle('busy', !!BB.archiveRunning);
+    b.title = archived
+      ? ('✅ Archived to Drive (' + done + '/' + codes.length + ')')
+      : (BB.archiveRunning ? 'Archiving to Google Drive…'
+        : ('☁ Click to archive ' + codes.length + ' model' + (codes.length === 1 ? '' : 's') + ' to Drive' + (err ? (' · ' + err + ' failed') : '')));
   }
 
-  function drivePanelHtml(d) {
-    return '<div class="bb-card" id="bb-drive-panel">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
-      '<div><strong>☁️ Drive archive</strong>' +
-      '<div id="bb-drive-status" class="bb-muted">' + esc(driveStatusText(d)) + '</div></div>' +
-      '<button id="bb-drive-go" class="bb-btn bb-btn-ghost">Archive to Drive</button></div></div>';
-  }
-
-  function wireDrivePanel() {
-    var b = document.getElementById('bb-drive-go');
-    // Call archiveToDrive() directly (no awaits first) so the OAuth popup
-    // still counts as a user gesture and isn't blocked.
-    if (b) b.onclick = function () { archiveToDrive(); };
-  }
-
+  // Called during an archive run to reflect progress on the button tooltip.
   function setArchiveStatus(txt) {
-    var el = document.getElementById('bb-drive-status');
-    if (el) el.textContent = txt;
+    var b = document.getElementById('bb-drive-btn');
+    if (b) { b.title = txt; b.classList.toggle('busy', !!BB.archiveRunning); }
   }
 
   // ════════════════════════════════════════════════════════════
