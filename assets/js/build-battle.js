@@ -131,6 +131,11 @@
       '.bb-view-status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;' +
       'background:rgba(15,23,42,.78);color:#e2e8f0;border-radius:10px;font-weight:600;padding:16px;gap:10px}' +
       '.bb-view-status .bb-btn{margin-left:10px}' +
+      '.bb-view-full{position:absolute;top:10px;right:10px;z-index:3;opacity:.85}' +
+      '.bb-view-debug{position:absolute;bottom:8px;left:10px;font-size:.72rem;color:#64748b;z-index:2;pointer-events:none}' +
+      '#bb-view-wrap:fullscreen{background:#000;display:flex;flex-direction:column}' +
+      '#bb-view-wrap:fullscreen .bb-view{height:100%;width:100%;border:0;border-radius:0}' +
+      '#bb-view-wrap:-webkit-full-screen .bb-view{height:100%;width:100%;border:0;border-radius:0}' +
       '.bb-timer{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums}' +
       '.bb-timer.low{color:#f87171}' +
       '.bb-players{display:flex;flex-wrap:wrap;gap:8px}' +
@@ -203,50 +208,131 @@
     } catch (e) { return 0; }
   }
 
-  // Robust model load with success/failure callback. The project codec
-  // needs a parsed object that has `.meta`; after load we nudge the
-  // preview to resize/redraw so it renders at the iframe's real size.
-  function loadModelInto(frame, modelStr, done) {
-    whenBlockbenchReady(frame, function (cw) {
-      try {
-        var obj = (typeof modelStr === 'string') ? JSON.parse(modelStr) : modelStr;
-        if (!obj || !obj.meta) { if (done) done(false); return; }
-        cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
-        setTimeout(function () {
-          try {
-            if (cw.Canvas && cw.Canvas.updateAll) cw.Canvas.updateAll();
-            if (cw.Preview && cw.Preview.selected && cw.Preview.selected.resize) cw.Preview.selected.resize();
-            if (typeof cw.Event !== 'undefined') cw.dispatchEvent(new cw.Event('resize'));
-          } catch (e) {}
-        }, 80);
-        if (done) done(true);
-      } catch (e) { if (done) done(false); }
-    }, 0, function () { if (done) done(false); });
+  // Rebuild geometry/faces and re-attach the project's 3D group to the
+  // scene. The programmatic project switch doesn't reliably leave the
+  // loaded model's `model_3d` in the rendered scene, which is why the
+  // model showed in the outliner but not the viewport — an explicit
+  // unselect()/select() forces scene.add(model_3d) again.
+  function refreshViewer(cw, project) {
+    try {
+      if (project && project.select) {
+        try { if (project.unselect) project.unselect(); } catch (e) {}
+        try { project.select(); } catch (e) {}
+      }
+      var C = cw.Canvas;
+      if (C) {
+        if (C.updateAllPositions) C.updateAllPositions(); // re-parents elements into model_3d
+        if (C.updateAllFaces) C.updateAllFaces();
+        if (C.updateVisibility) C.updateVisibility();
+        if (C.updateAllBones) C.updateAllBones();
+        if (C.updateAll) C.updateAll();
+      }
+      if (cw.Preview && cw.Preview.selected && cw.Preview.selected.resize) cw.Preview.selected.resize();
+      if (typeof cw.Event !== 'undefined') cw.dispatchEvent(new cw.Event('resize'));
+    } catch (e) {}
   }
 
-  // ── Shared viewer status overlay + latest-wins model loading ──
+  // Point the camera at the whole model so it isn't framed out of view.
+  function focusViewerCamera(cw) {
+    try {
+      var els = (cw.Outliner && cw.Outliner.elements) ? cw.Outliner.elements.slice() : [];
+      if (!els.length) return;
+      if (Array.isArray(cw.selected)) { cw.selected.length = 0; }
+      els.forEach(function (el) {
+        try { el.selected = true; if (Array.isArray(cw.selected)) cw.selected.push(el); } catch (e) {}
+      });
+      if (cw.updateSelection) cw.updateSelection();
+      var act = cw.BarItems && cw.BarItems.focus_on_selection;
+      if (act && act.click) { try { act.click(); } catch (e) {} }
+      // Deselect again so the viewer isn't cluttered with gizmos/outlines.
+      els.forEach(function (el) { try { el.selected = false; } catch (e) {} });
+      if (Array.isArray(cw.selected)) cw.selected.length = 0;
+      if (cw.updateSelection) cw.updateSelection();
+    } catch (e) {}
+  }
+
+  // ── Shared viewer status overlay ──
   function setViewerStatus(txt) {
     var el = document.getElementById('bb-view-status');
     if (!el) return;
     if (txt) { el.innerHTML = txt; el.style.display = 'flex'; }
     else { el.innerHTML = ''; el.style.display = 'none'; }
   }
+  function setViewerDebug(txt) {
+    var el = document.getElementById('bb-view-debug');
+    if (el) el.textContent = txt || '';
+  }
 
+  // Fetch a submission's model JSON. Prefer the archived Google Drive copy
+  // (the host already has a Drive token after archiving); fall back to the
+  // live Firebase copy so the board always has something to show.
+  async function fetchBoardJson(code) {
+    if (BB.driveToken && BB.driveTokenExp > Date.now() + 10000) {
+      try {
+        var sub = await BB.ref.child('submissions/' + code).get();
+        var fileId = sub.child('driveFileId').val();
+        if (fileId) {
+          var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media&supportsAllDrives=true',
+            { headers: { Authorization: 'Bearer ' + BB.driveToken } });
+          if (resp.ok) return await resp.text();
+        }
+      } catch (e) { /* fall back to Firebase */ }
+    }
+    var snap = await BB.ref.child('submissions/' + code + '/model').get();
+    return snap.val();
+  }
+
+  // Load a model by booting a FRESH Blockbench instance in the viewer
+  // iframe (reload its src) and loading exactly one model into it. A clean
+  // boot avoids the project/tab/scene-switch problems that left reused
+  // instances showing the model in the outliner but not the viewport.
+  function bootViewerWithModel(json, token) {
+    var frame = BB.viewFrame;
+    if (!frame) return;
+    frame.onload = function () {
+      if (token !== BB._loadToken) return;
+      whenBlockbenchReady(frame, function (cw) {
+        if (token !== BB._loadToken) return;
+        try {
+          var obj = (typeof json === 'string') ? JSON.parse(json) : json;
+          if (!obj || !obj.meta) { setViewerStatus('⚠️ This submission isn\'t a valid model.'); return; }
+          if (typeof cw.loadModelFile === 'function') {
+            cw.loadModelFile({ content: (typeof json === 'string') ? json : JSON.stringify(json), path: 'battle.bbmodel', name: 'battle' });
+          } else {
+            cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
+          }
+          var loaded = cw.Project;
+          var apply = function () {
+            if (token !== BB._loadToken) return;
+            refreshViewer(cw, loaded);
+            focusViewerCamera(cw);
+            try {
+              var n = (cw.Outliner && cw.Outliner.elements) ? cw.Outliner.elements.length : 0;
+              setViewerDebug('loaded ' + n + ' element' + (n === 1 ? '' : 's'));
+              if (!n) setViewerStatus('This model has no shapes in it.');
+            } catch (e) {}
+          };
+          apply();
+          setTimeout(apply, 300);
+          setTimeout(apply, 900);
+          setViewerStatus('');
+        } catch (e) { setViewerStatus('⚠️ Could not display this model.'); }
+      }, 0, function () { if (token === BB._loadToken) setViewerStatus('⚠️ The 3D editor failed to load.'); });
+    };
+    frame.src = './blockbench/index.html?bb=' + Date.now();
+  }
+
+  // Host board: show the current build. Latest-wins via _loadToken.
   function loadCurrentModel(code) {
     if (!BB.viewFrame) return;
     var token = ++BB._loadToken;
-    if (!code) { setViewerStatus('Waiting for the teacher to choose a build…'); return; }
+    if (!code) { setViewerStatus('Waiting to choose a build…'); setViewerDebug(''); return; }
     setViewerStatus('⏳ Loading model…');
-    BB.ref.child('submissions/' + code + '/model').get().then(function (snap) {
-      if (token !== BB._loadToken) return; // a newer load superseded us
-      var model = snap.val();
-      if (!model) { setViewerStatus('No model was submitted for this build.'); return; }
-      loadModelInto(BB.viewFrame, model, function (ok) {
-        if (token !== BB._loadToken) return;
-        if (ok) setViewerStatus('');
-        else setViewerStatus('⚠️ Could not display this model.' +
-          '<button class="bb-btn bb-btn-ghost" onclick="window.BBretryModel&&window.BBretryModel()">Retry</button>');
-      });
+    setViewerDebug('');
+    fetchBoardJson(code).then(function (json) {
+      if (token !== BB._loadToken) return;
+      if (!json) { setViewerStatus('No model was submitted for this build.'); return; }
+      bootViewerWithModel(json, token);
     }).catch(function () {
       if (token === BB._loadToken) setViewerStatus('⚠️ Could not load this model.' +
         '<button class="bb-btn bb-btn-ghost" onclick="window.BBretryModel&&window.BBretryModel()">Retry</button>');
@@ -439,15 +525,19 @@
   }
 
   function enterAsHost(code, root) {
+    root = root || ROOT_LIVE;
     BB.role = 'host';
     BB.code = code;
-    BB.ref = state.db.ref((root || ROOT_LIVE) + '/' + code);
+    BB.rootPath = root;
+    BB.ref = state.db.ref(root + '/' + code);
     BB.lastState = null;
     BB.lastHostState = null;
     BB.lastReviewCode = null;
     BB._finalising = false;
     BB._startedVoting = false;
     BB._manifestId = null;
+    // Remember the hosted battle so the teacher can rejoin after a refresh.
+    try { localStorage.setItem('bb_host', JSON.stringify({ code: code, root: root })); } catch (e) {}
     buildHostScreen();
     document.getElementById('bb-host-screen').classList.remove('bb-hidden');
     BB.listener = BB.ref.on('value', function (snap) {
@@ -470,6 +560,9 @@
     var playerCodes = Object.keys(players);
     var changed = (phase !== BB.lastHostState);
     BB.lastHostState = phase;
+
+    // Recover the forced-class link after a rejoin so "End battle" can clear it.
+    if (!BB.hostClassName && d.forced && d.className) BB.hostClassName = d.className;
 
     // Leaving finalising → cancel the grace timer.
     if (phase !== 'finalising' && BB.finaliseTimer) { clearTimeout(BB.finaliseTimer); BB.finaliseTimer = null; }
@@ -524,6 +617,9 @@
         }).join('') + '</div></div>' +
         '<button id="bb-force-vote" class="bb-btn bb-btn-primary">Start voting now →</button>';
       document.getElementById('bb-force-vote').onclick = function () {
+        // Use this click's gesture to archive to Drive first (so the board
+        // can load each model from Drive), then start voting.
+        archiveToDrive();
         BB.ref.get().then(function (s) { if (s.exists()) startVoting(s.val()); });
       };
       maybeStartVoting(d);
@@ -583,8 +679,9 @@
       state: 'voting',
       review: { order: order, currentIndex: 0, currentCode: order[0] || null }
     });
-    // Fire-and-forget Drive archive; never blocks voting.
-    archiveToDrive(d).catch(function () {});
+    // Drive archive is started by the host clicking "Archive to Drive" —
+    // Google's OAuth popup needs a real user gesture, so we don't kick it
+    // off automatically here (that left it stuck on "Connecting…").
   }
 
   // ── Host voting screen (Prev/Next drive the shared review) ──
@@ -601,10 +698,13 @@
     if (changed || !document.getElementById('bb-view-frame')) {
       body.innerHTML =
         '<div class="bb-card" style="text-align:center">' +
-        '<div class="bb-muted">You are showing the class</div>' +
+        '<div class="bb-muted">You are showing the class (students vote on their own screens)</div>' +
         '<div id="bb-host-now" style="font-weight:700;font-size:1.1rem"></div></div>' +
-        '<div class="bb-view-wrap"><iframe id="bb-view-frame" class="bb-view" src="./blockbench/index.html"></iframe>' +
-        '<div id="bb-view-status" class="bb-view-status"></div></div>' +
+        '<div id="bb-view-wrap" class="bb-view-wrap">' +
+        '<iframe id="bb-view-frame" class="bb-view" src="./blockbench/index.html"></iframe>' +
+        '<div id="bb-view-status" class="bb-view-status"></div>' +
+        '<button id="bb-view-full" class="bb-btn bb-btn-ghost bb-view-full">⛶ Fullscreen</button>' +
+        '<div id="bb-view-debug" class="bb-view-debug"></div></div>' +
         '<div class="bb-navrow">' +
         '<button id="bb-host-prev" class="bb-btn bb-btn-ghost">◀ Prev</button>' +
         '<span id="bb-host-pos" class="bb-muted"></span>' +
@@ -616,6 +716,7 @@
       BB.lastReviewCode = null;
       document.getElementById('bb-host-prev').onclick = function () { hostStep(-1); };
       document.getElementById('bb-host-next').onclick = function () { hostStep(1); };
+      document.getElementById('bb-view-full').onclick = toggleViewerFullscreen;
       document.getElementById('bb-end-vote').onclick = function () {
         BB.ref.get().then(function (s) {
           if (!s.exists()) return;
@@ -648,6 +749,20 @@
 
     // Load the model only when the pointer actually changes
     if (cur !== BB.lastReviewCode) { BB.lastReviewCode = cur; loadCurrentModel(cur); }
+  }
+
+  function toggleViewerFullscreen() {
+    var wrap = document.getElementById('bb-view-wrap');
+    if (!wrap) return;
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (wrap.requestFullscreen) {
+        wrap.requestFullscreen();
+      } else if (wrap.webkitRequestFullscreen) {
+        wrap.webkitRequestFullscreen();
+      }
+    } catch (e) {}
   }
 
   function hostStep(dir) {
@@ -691,6 +806,8 @@
       }
     } catch (e) {}
     try { if (BB.ref) await BB.ref.remove(); } catch (e) {}
+    try { localStorage.removeItem('bb_host'); } catch (e) {}
+    refreshRejoinButton();
     leaveBattle();
   }
 
@@ -702,16 +819,12 @@
     var s = document.createElement('div');
     s.id = 'bb-student-screen';
     s.className = 'bb-hidden';
+    // No "Leave" button — students stay in the battle until the teacher ends it.
     s.innerHTML =
       '<div class="bb-wrap">' +
-      '<div class="bb-top"><div class="bb-title">🏗️ Build Battle <span id="bb-stu-phase" class="bb-muted"></span></div>' +
-      '<button id="bb-stu-exit" class="bb-btn bb-btn-ghost">Leave</button></div>' +
+      '<div class="bb-top"><div class="bb-title">🏗️ Build Battle <span id="bb-stu-phase" class="bb-muted"></span></div></div>' +
       '<div id="bb-stu-body"></div></div>';
     document.body.appendChild(s);
-    document.getElementById('bb-stu-exit').onclick = function () {
-      if (BB.ref && BB.myCode) { try { BB.ref.child('players/' + BB.myCode).remove(); } catch (e) {} }
-      leaveBattle();
-    };
   }
 
   async function joinBuildBattle(code, root, data) {
@@ -780,7 +893,7 @@
 
     if (phase === 'voting') {
       stopTimer();
-      if (changedPhase || !document.getElementById('bb-view-frame')) renderVotingUI(d);
+      if (changedPhase || !document.getElementById('bb-stars')) renderVotingUI(d);
       updateVotingTarget(d);
       return;
     }
@@ -888,19 +1001,19 @@
     if (fb) fb.textContent = (auto ? 'Time up — your build was submitted automatically. ' : 'Submitted! ') + 'You can keep editing and update until voting starts.';
   }
 
-  // ── Student voting UI (teacher-driven; no navigation) ──
+  // ── Student voting UI (teacher-driven; no 3D viewer, no navigation) ──
+  // The model is shown by the teacher on the board. Students only see the
+  // current builder's name and the star rating for the current build.
   function renderVotingUI(d) {
     BB.myVotes = (d.votes && d.votes[BB.myCode]) || {};
     BB.lastReviewCode = null;
     var body = document.getElementById('bb-stu-body');
     body.innerHTML =
       '<div class="bb-card" style="text-align:center">' +
-      '<div id="bb-vote-info" class="bb-muted">Waiting for the teacher…</div></div>' +
-      '<div class="bb-view-wrap"><iframe id="bb-view-frame" class="bb-view" src="./blockbench/index.html"></iframe>' +
-      '<div id="bb-view-status" class="bb-view-status"></div></div>' +
+      '<div class="bb-muted">👀 Look at the board</div>' +
+      '<div id="bb-vote-info" style="font-weight:700;font-size:1.25rem;margin-top:6px">Waiting for the teacher…</div></div>' +
       '<div id="bb-stars" class="bb-stars"></div>' +
       '<div id="bb-vote-msg" class="bb-wait"></div>';
-    BB.viewFrame = document.getElementById('bb-view-frame');
   }
 
   function updateVotingTarget(d) {
@@ -911,17 +1024,14 @@
     var stars = document.getElementById('bb-stars');
     var msg = document.getElementById('bb-vote-msg');
     if (!info || !stars || !msg) return;
+    BB.lastReviewCode = cur;
 
     if (!cur) {
       info.textContent = 'Waiting for the teacher to choose a build…';
       stars.innerHTML = '';
       msg.textContent = '';
-      if (BB.lastReviewCode !== null) { BB.lastReviewCode = null; loadCurrentModel(null); }
       return;
     }
-
-    var changed = (cur !== BB.lastReviewCode);
-    if (changed) { BB.lastReviewCode = cur; loadCurrentModel(cur); }
 
     if (cur === BB.myCode) {
       info.textContent = 'This is your build';
@@ -930,7 +1040,7 @@
       return;
     }
 
-    info.textContent = 'Rate this build out of 5 stars';
+    info.textContent = 'Rate this build (shown on the board)';
     if (BB.myVotes[cur]) {
       renderStars(cur, true);
       msg.textContent = '✅ Vote recorded — waiting for the teacher to show the next build.';
@@ -1094,15 +1204,24 @@
     try { await BB.ref.child('drive').update({ manifestFileId: file.id }); } catch (e) {}
   }
 
-  async function archiveToDrive(d) {
-    if (BB.archiveRunning) return;
+  function withTimeout(promise, ms, msg) {
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error(msg || 'Timed out')); }, ms);
+      promise.then(function (v) { clearTimeout(t); resolve(v); },
+        function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  async function archiveToDrive() {
+    if (BB.archiveRunning || !BB.ref) return;
     BB.archiveRunning = true;
-    setArchiveStatus('Connecting to Google Drive…');
+    setArchiveStatus('Connecting to Google Drive… (approve the Google popup)');
     try {
-      var token = await getDriveToken();
+      // Request the token first so the click's user-gesture is still active.
+      var token = await withTimeout(getDriveToken(), 120000, 'Google sign-in timed out — click Archive to Drive to try again.');
       var snap = await BB.ref.get();
       if (!snap.exists()) { BB.archiveRunning = false; return; }
-      d = snap.val();
+      var d = snap.val();
       var subs = d.submissions || {};
       var parent = bbDriveFolderId();
       var driveMeta = d.drive || {};
@@ -1172,7 +1291,7 @@
     if (d.drive && d.drive.sessionFolderName) {
       return 'Folder: ' + d.drive.sessionFolderName + ' · ' + done + '/' + codes.length + ' uploaded' + (err ? (' · ' + err + ' failed') : '');
     }
-    return 'Not archived yet — uploads start automatically when voting begins.';
+    return 'Not archived yet — click "Archive to Drive" to upload the submitted models.';
   }
 
   function drivePanelHtml(d) {
@@ -1185,9 +1304,9 @@
 
   function wireDrivePanel() {
     var b = document.getElementById('bb-drive-go');
-    if (b) b.onclick = function () {
-      BB.ref.get().then(function (s) { if (s.exists()) archiveToDrive(s.val()); });
-    };
+    // Call archiveToDrive() directly (no awaits first) so the OAuth popup
+    // still counts as a user gesture and isn't blocked.
+    if (b) b.onclick = function () { archiveToDrive(); };
   }
 
   function setArchiveStatus(txt) {
@@ -1304,11 +1423,66 @@
     btn.innerHTML = '🏗️ Build Battle';
     btn.onclick = openSetup;
     anchor.parentNode.insertBefore(btn, anchor.nextSibling);
-    function sync() { btn.classList.toggle('hidden', anchor.classList.contains('hidden')); }
+
+    // Rejoin button — appears after a refresh if this teacher still has a
+    // live hosted battle (so they don't lose control of an in-progress one).
+    var rj = document.createElement('button');
+    rj.id = 'btn-admin-build-battle-rejoin';
+    rj.className = anchor.className + ' hidden';
+    rj.innerHTML = '↩️ Rejoin Build Battle';
+    rj.onclick = function () {
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem('bb_host') || 'null'); } catch (e) {}
+      if (!saved || !saved.code) return;
+      var adm = document.getElementById('modal-admin');
+      if (adm) adm.classList.add('hidden');
+      enterAsHost(saved.code, saved.root || ROOT_LIVE);
+    };
+    btn.parentNode.insertBefore(rj, btn.nextSibling);
+
+    function sync() {
+      var hidden = anchor.classList.contains('hidden');
+      btn.classList.toggle('hidden', hidden);
+      if (hidden) rj.classList.add('hidden');
+    }
     sync();
     try {
       new MutationObserver(sync).observe(anchor, { attributes: true, attributeFilter: ['class'] });
     } catch (e) {}
+
+    // Re-check the rejoin button whenever the admin panel is opened.
+    var adm = document.getElementById('modal-admin');
+    if (adm) {
+      try {
+        new MutationObserver(function () {
+          if (!adm.classList.contains('hidden')) refreshRejoinButton();
+        }).observe(adm, { attributes: true, attributeFilter: ['class'] });
+      } catch (e) {}
+    }
+    refreshRejoinButton();
+  }
+
+  // Show the Rejoin button only if a hosted battle is still live and owned
+  // by the signed-in teacher; otherwise hide it and clear stale state.
+  function refreshRejoinButton() {
+    var rj = document.getElementById('btn-admin-build-battle-rejoin');
+    if (!rj) return;
+    var anchor = document.getElementById('btn-admin-host-quiz');
+    if (anchor && anchor.classList.contains('hidden')) { rj.classList.add('hidden'); return; }
+    if (BB.role === 'host') { rj.classList.add('hidden'); return; } // already hosting
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('bb_host') || 'null'); } catch (e) {}
+    if (!saved || !saved.code || !ready()) { rj.classList.add('hidden'); return; }
+    var uid = state.auth.currentUser && state.auth.currentUser.uid;
+    state.db.ref((saved.root || ROOT_LIVE) + '/' + saved.code).get().then(function (snap) {
+      if (snap.exists() && snap.child('hostUid').val() === uid) {
+        rj.innerHTML = '↩️ Rejoin Build Battle (' + saved.code + ')';
+        rj.classList.remove('hidden');
+      } else {
+        rj.classList.add('hidden');
+        try { localStorage.removeItem('bb_host'); } catch (e) {}
+      }
+    }).catch(function () { rj.classList.add('hidden'); });
   }
 
   // (b) Student join — wrap the global joinQuizByCode so the shared
