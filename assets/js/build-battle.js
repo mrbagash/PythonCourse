@@ -127,23 +127,23 @@
   function injectStyles() {
     if (document.getElementById('bb-battle-styles')) return;
     var css =
-      '#bb-host-screen,#bb-student-screen{position:fixed;inset:0;z-index:60;background:#0f172a;color:#e2e8f0;overflow:auto;font-family:inherit}' +
+      '#bb-host-screen,#bb-student-screen{position:fixed;inset:0;z-index:60;background:#000;color:#e2e8f0;overflow:auto;font-family:inherit}' +
       '.bb-wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}' +
       '.bb-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}' +
       '.bb-title{font-size:1.25rem;font-weight:700}' +
       '.bb-code{font-family:monospace;font-size:2rem;font-weight:800;letter-spacing:.25em;color:#38bdf8}' +
       '.bb-btn{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-weight:600;font-size:.95rem}' +
       '.bb-btn-primary{background:#0ea5e9;color:#fff}.bb-btn-primary:hover{background:#0284c7}' +
-      '.bb-btn-ghost{background:#1e293b;color:#cbd5e1;border:1px solid #334155}.bb-btn-ghost:hover{background:#334155}' +
+      '.bb-btn-ghost{background:#111;color:#cbd5e1;border:1px solid #262626}.bb-btn-ghost:hover{background:#1c1c1c}' +
       '.bb-btn-danger{background:#7f1d1d;color:#fecaca}.bb-btn-danger:hover{background:#991b1b}' +
       '.bb-btn:disabled{opacity:.45;cursor:not-allowed}' +
-      '.bb-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:14px}' +
+      '.bb-card{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:16px;margin-bottom:14px}' +
       '.bb-muted{color:#94a3b8;font-size:.85rem}' +
-      '.bb-frame{width:100%;height:68vh;min-height:420px;border:1px solid #334155;border-radius:10px;background:#000}' +
+      '.bb-frame{width:100%;height:68vh;min-height:420px;border:1px solid #1c1c1c;border-radius:10px;background:#000}' +
       '.bb-view-wrap{position:relative;margin-top:4px}' +
-      '.bb-view{width:100%;height:46vh;min-height:300px;border:1px solid #334155;border-radius:10px;background:#000;display:block}' +
+      '.bb-view{width:100%;height:46vh;min-height:300px;border:1px solid #1c1c1c;border-radius:10px;background:#000;display:block}' +
       '.bb-view-status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;' +
-      'background:rgba(15,23,42,.78);color:#e2e8f0;border-radius:10px;font-weight:600;padding:16px;gap:10px}' +
+      'background:rgba(0,0,0,.82);color:#e2e8f0;border-radius:10px;font-weight:600;padding:16px;gap:10px}' +
       '.bb-view-status .bb-btn{margin-left:10px}' +
       '.bb-view-full{position:absolute;top:10px;right:10px;z-index:3;opacity:.85}' +
       '.bb-view-debug{position:absolute;bottom:8px;left:10px;font-size:.72rem;color:#64748b;z-index:2;pointer-events:none}' +
@@ -153,7 +153,7 @@
       '.bb-timer{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums}' +
       '.bb-timer.low{color:#f87171}' +
       '.bb-players{display:flex;flex-wrap:wrap;gap:8px}' +
-      '.bb-chip{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:4px 12px;font-size:.85rem}' +
+      '.bb-chip{background:#000;border:1px solid #262626;border-radius:999px;padding:4px 12px;font-size:.85rem}' +
       '.bb-chip.done{border-color:#16a34a;color:#86efac}' +
       '.bb-stars{display:flex;gap:6px;justify-content:center;margin:10px 0;min-height:34px}' +
       '.bb-star{cursor:pointer;font-size:2.1rem;line-height:1;color:#475569;background:none;border:none;transition:transform .08s}' +
@@ -166,8 +166,8 @@
       '.bb-react-area{margin-top:8px;text-align:center;transition:opacity .2s}' +
       '.bb-react-label{font-size:.8rem;color:#64748b;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}' +
       '.bb-react-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}' +
-      '.bb-react{font-size:1.8rem;background:#1e293b;border:1px solid #334155;border-radius:14px;padding:8px 13px;cursor:pointer;transition:transform .08s,background .15s}' +
-      '.bb-react:hover{background:#334155}.bb-react:active{transform:scale(1.35)}' +
+      '.bb-react{font-size:1.8rem;background:#0d0d0d;border:1px solid #262626;border-radius:14px;padding:8px 13px;cursor:pointer;transition:transform .08s,background .15s}' +
+      '.bb-react:hover{background:#1c1c1c}.bb-react:active{transform:scale(1.35)}' +
       '.bb-react-area.maxed{opacity:.4;pointer-events:none}' +
       '.bb-float{position:absolute;bottom:8px;font-size:2.2rem;pointer-events:none;z-index:5;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
       '@keyframes bb-rise{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(-58vh) scale(1.35)}}' +
@@ -175,22 +175,22 @@
       '.bb-results{max-width:760px;margin:0 auto;text-align:center}' +
       '.bb-results-title{font-size:1.6rem;font-weight:800;margin:18px 0 6px}' +
       '.bb-awards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 22px}' +
-      '.bb-award{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 16px;text-align:center;min-width:160px}' +
+      '.bb-award{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:10px 16px;text-align:center;min-width:160px}' +
       '.bb-award strong{display:block;margin:2px 0;color:#fbbf24}' +
-      '.bb-icon-btn{width:42px;height:42px;border-radius:10px;background:#1e293b;color:#cbd5e1;border:2px solid #475569;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
-      '.bb-icon-btn:hover{background:#334155}' +
-      '.bb-icon-btn.ok{border-color:#22c55e;color:#86efac}' +
-      '.bb-icon-btn.off{border-color:#ef4444;color:#fca5a5}' +
-      '.bb-icon-btn.drive{border-color:#ef4444;color:#fca5a5}' +
-      '.bb-icon-btn.drive.ok{border-color:#22c55e;color:#86efac}' +
-      '.bb-icon-btn.busy{border-color:#f59e0b;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
+      '.bb-icon-btn{width:42px;height:42px;border-radius:10px;background:#0d0d0d;color:#cbd5e1;border:1px solid #2a2a2a;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
+      '.bb-icon-btn:hover{background:#1c1c1c}' +
+      '.bb-icon-btn.ok{border-color:#16a34a;color:#86efac}' +
+      '.bb-icon-btn.off{border-color:#b91c1c;color:#fca5a5}' +
+      '.bb-icon-btn.drive{border-color:#b91c1c;color:#fca5a5}' +
+      '.bb-icon-btn.drive.ok{border-color:#16a34a;color:#86efac}' +
+      '.bb-icon-btn.busy{border-color:#d97706;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
       '@keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.5}}' +
       '.bb-navrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px}' +
-      '.bb-rank{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #1e293b}' +
+      '.bb-rank{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #161616}' +
       '.bb-rank .pos{font-weight:800;width:34px;color:#94a3b8}' +
       '.bb-rank .nm{flex:1}.bb-rank .sc{font-weight:700;color:#fbbf24}' +
       '.bb-podium{display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:18px 0}' +
-      '.bb-pod{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center;min-width:150px;opacity:0;transform:translateY(26px) scale(.9);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.9,.3,1.2)}' +
+      '.bb-pod{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:16px;text-align:center;min-width:150px;opacity:0;transform:translateY(26px) scale(.9);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.9,.3,1.2)}' +
       '.bb-pod.show{opacity:1;transform:translateY(0) scale(1)}' +
       '.bb-pod .medal{font-size:2.4rem}.bb-pod .who{font-weight:700;margin-top:6px}.bb-pod .avg{color:#fbbf24;font-weight:800;font-size:1.3rem}' +
       '.bb-pod.first{border-color:#fbbf24}.bb-pod.first.show{transform:translateY(0) scale(1.08)}' +
@@ -303,22 +303,30 @@
   }
 
   // Fetch a submission's model JSON. Prefer the archived Google Drive copy
-  // (the host already has a Drive token after archiving); fall back to the
-  // live Firebase copy so the board always has something to show.
+  // (smaller Firebase footprint); fall back to the live Firebase copy only
+  // if it hasn't been freed yet. Logs which source was used.
   async function fetchBoardJson(code) {
-    if (BB.driveToken && BB.driveTokenExp > Date.now() + 10000) {
-      try {
-        var sub = await BB.ref.child('submissions/' + code).get();
-        var fileId = sub.child('driveFileId').val();
-        if (fileId) {
+    var sub = await BB.ref.child('submissions/' + code).get();
+    var fileId = sub.child('driveFileId').val();
+    var fbModel = sub.child('model').val();
+
+    if (fileId) {
+      var token = (BB.driveToken && BB.driveTokenExp > Date.now() + 10000) ? BB.driveToken : null;
+      // If the Firebase copy was already freed, we MUST use Drive — get a token.
+      if (!token && !fbModel) { try { token = await getDriveToken(); } catch (e) { token = null; } }
+      if (token) {
+        try {
           var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media&supportsAllDrives=true',
-            { headers: { Authorization: 'Bearer ' + BB.driveToken } });
-          if (resp.ok) return await resp.text();
-        }
-      } catch (e) { /* fall back to Firebase */ }
+            { headers: { Authorization: 'Bearer ' + token } });
+          if (resp.ok) { console.log('[BuildBattle] model ' + code + ' loaded from GOOGLE DRIVE'); return await resp.text(); }
+          console.warn('[BuildBattle] Drive fetch failed (' + resp.status + ') for ' + code + ' — falling back');
+        } catch (e) { console.warn('[BuildBattle] Drive fetch error for ' + code, e); }
+      }
     }
-    var snap = await BB.ref.child('submissions/' + code + '/model').get();
-    return snap.val();
+
+    if (fbModel) { console.log('[BuildBattle] model ' + code + ' loaded from FIREBASE' + (fileId ? ' (Drive fallback)' : '')); return fbModel; }
+    console.warn('[BuildBattle] no model available for ' + code);
+    return null;
   }
 
   // Load a model by booting a FRESH Blockbench instance in the viewer
@@ -1485,6 +1493,13 @@
             driveWebViewLink: file.webViewLink || null,
             uploadStatus: 'done'
           });
+          // Storage saver: once the model is safely on Drive, drop the big
+          // JSON from Firebase. The board reloads it from Drive; metadata
+          // (driveFileId etc.) stays so we always know where it lives.
+          try {
+            await BB.ref.child('submissions/' + c + '/model').remove();
+            console.log('[BuildBattle] archived ' + c + ' to Drive (' + file.id + ') and freed Firebase copy');
+          } catch (e3) {}
         } catch (e) {
           anyError = true;
           try { await BB.ref.child('submissions/' + c).update({ uploadStatus: 'error' }); } catch (e2) {}
