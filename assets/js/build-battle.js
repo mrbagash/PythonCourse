@@ -88,6 +88,7 @@
     _lastReact: 0,
     _reactCount: 0,    // per-build reaction count for this student
     _reactBuild: null,
+    draftTimer: null,  // student build autosave (survives refresh)
   };
 
   // Emoji students can fling onto the board while voting.
@@ -469,7 +470,9 @@
     var canForce = (typeof canDo === 'function') ? canDo('forceQuiz') : false;
     var row = document.getElementById('bb-setup-force-row');
     var forceBox = document.getElementById('bb-setup-force');
-    if (forceBox) forceBox.checked = false;
+    // Default ON when possible — forcing pulls in late joiners and lets
+    // students who refresh auto-rejoin the battle.
+    if (forceBox) forceBox.checked = !!(canForce && cls);
     var sandboxBox = document.getElementById('bb-setup-sandbox');
     if (sandboxBox) sandboxBox.checked = false;
     if (row) {
@@ -515,6 +518,17 @@
         createdAt: Date.now()
       });
       BB.hostClassName = forceClass ? cls : null;
+      // Lightweight index entry so the battle shows up in the admin
+      // "Active sessions" list (Rejoin / Force End), like quizzes/AP.
+      try {
+        await state.db.ref('activeSessions/' + code).set({
+          className: cls || null,
+          lessonId: 'build-battle',
+          hostUid: hostUid || null,
+          root: root,
+          startedAt: Date.now()
+        });
+      } catch (e) {}
       if (forceClass) {
         try {
           await state.db.ref('classes/' + cls + '/forcedQuiz').set({
@@ -582,8 +596,6 @@
     BB._finalising = false;
     BB._startedVoting = false;
     BB._manifestId = null;
-    // Remember the hosted battle so the teacher can rejoin after a refresh.
-    try { localStorage.setItem('bb_host', JSON.stringify({ code: code, root: root })); } catch (e) {}
     buildHostScreen();
     document.getElementById('bb-host-screen').classList.remove('bb-hidden');
     BB.listener = BB.ref.on('value', function (snap) {
@@ -938,10 +950,24 @@
         }
       }
     } catch (e) {}
+    try { await state.db.ref('activeSessions/' + BB.code).remove(); } catch (e) {}
     try { if (BB.ref) await BB.ref.remove(); } catch (e) {}
-    try { localStorage.removeItem('bb_host'); } catch (e) {}
-    refreshRejoinButton();
     leaveBattle();
+  }
+
+  // End any battle by code (used by the admin "Active sessions" list).
+  async function forceEndBattle(code, root, d) {
+    root = root || ROOT_LIVE;
+    try {
+      if (d && d.forced && d.className) {
+        var fr = state.db.ref('classes/' + d.className + '/forcedQuiz');
+        var fs = await fr.get();
+        if (fs.child('lobbyCode').val() === code) await fr.update({ active: false, endedAt: Date.now() });
+      }
+    } catch (e) {}
+    try { await state.db.ref('activeSessions/' + code).remove(); } catch (e) {}
+    try { await state.db.ref(root + '/' + code).remove(); } catch (e) {}
+    if (BB.code === code) leaveBattle();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -991,6 +1017,8 @@
       body.innerHTML = '<div class="bb-big"><div class="num">🏁</div><p>The battle has ended.</p>' + line + '</div>';
     }
     stopTimer();
+    stopDraftAutosave();
+    clearDraft();
   }
 
   function renderStudent(d) {
@@ -1018,6 +1046,8 @@
 
     if (phase === 'finalising') {
       stopTimer();
+      saveDraft();          // capture latest work before submitting
+      stopDraftAutosave();
       // Keep the build iframe; auto-submit the current project if needed.
       ensureFinalisingBanner(d);
       if (!BB.submitted) autoSubmitLoop(0);
@@ -1026,6 +1056,7 @@
 
     if (phase === 'voting') {
       stopTimer();
+      stopDraftAutosave();
       if (changedPhase || !document.getElementById('bb-stars')) renderVotingUI(d);
       updateVotingTarget(d);
       return;
@@ -1033,6 +1064,8 @@
 
     if (phase === 'results') {
       stopTimer();
+      stopDraftAutosave();
+      clearDraft();
       var tally = computeResults(d.submissions || {}, d.votes || {}, d.results);
       BB.resultsCache = tally;
       var aw = computeAwards(d.submissions || {}, d.votes || {});
@@ -1060,9 +1093,36 @@
       '<button id="bb-submit" class="bb-btn bb-btn-primary">Submit my build</button>' +
       '<span id="bb-submit-fb" class="bb-muted"></span></div>';
     BB.buildFrame = document.getElementById('bb-build-frame');
-    whenBlockbenchReady(BB.buildFrame, function (cw) { ensureBlankProject(cw); });
+    whenBlockbenchReady(BB.buildFrame, function (cw) {
+      // Restore work-in-progress after an accidental refresh: prefer the
+      // locally autosaved draft, else the last submitted model from Firebase.
+      var saved = null;
+      try { saved = localStorage.getItem(buildDraftKey()); } catch (e) {}
+      if (!saved && d.submissions && d.submissions[BB.myCode]) saved = d.submissions[BB.myCode].model;
+      if (saved) {
+        try {
+          var obj = JSON.parse(saved);
+          if (obj && obj.meta) { cw.Codecs.project.load(obj, { path: 'battle.bbmodel' }); return; }
+        } catch (e) {}
+      }
+      ensureBlankProject(cw);
+    });
+    startDraftAutosave();
     document.getElementById('bb-submit').onclick = function () { submitBuild(false); };
   }
+
+  // ── Student build autosave (so a refresh doesn't lose their work) ──
+  function buildDraftKey() { return 'bb_draft_' + BB.code + '_' + BB.myCode; }
+  function saveDraft() {
+    try {
+      if (!BB.buildFrame) return;
+      var m = compileModel(BB.buildFrame);
+      if (m && m.length < 800000) localStorage.setItem(buildDraftKey(), m);
+    } catch (e) {}
+  }
+  function clearDraft() { try { localStorage.removeItem(buildDraftKey()); } catch (e) {} }
+  function startDraftAutosave() { stopDraftAutosave(); BB.draftTimer = setInterval(saveDraft, 8000); }
+  function stopDraftAutosave() { if (BB.draftTimer) { clearInterval(BB.draftTimer); BB.draftTimer = null; } }
 
   function ensureFinalisingBanner(d) {
     // If the student still has their build iframe, overlay a banner above it
@@ -1595,6 +1655,7 @@
     stopTimer();
     stopSpin();
     stopReactionsListener();
+    stopDraftAutosave();
     if (BB.finaliseTimer) { clearTimeout(BB.finaliseTimer); BB.finaliseTimer = null; }
     if (BB.ref && BB.listener) { try { BB.ref.off('value', BB.listener); } catch (e) {} }
     BB.ref = null; BB.listener = null; BB.role = null; BB.code = null;
@@ -1622,66 +1683,93 @@
     btn.innerHTML = '🏗️ Build Battle';
     btn.onclick = openSetup;
     anchor.parentNode.insertBefore(btn, anchor.nextSibling);
-
-    // Rejoin button — appears after a refresh if this teacher still has a
-    // live hosted battle (so they don't lose control of an in-progress one).
-    var rj = document.createElement('button');
-    rj.id = 'btn-admin-build-battle-rejoin';
-    rj.className = anchor.className + ' hidden';
-    rj.innerHTML = '↩️ Rejoin Build Battle';
-    rj.onclick = function () {
-      var saved = null;
-      try { saved = JSON.parse(localStorage.getItem('bb_host') || 'null'); } catch (e) {}
-      if (!saved || !saved.code) return;
-      var adm = document.getElementById('modal-admin');
-      if (adm) adm.classList.add('hidden');
-      enterAsHost(saved.code, saved.root || ROOT_LIVE);
-    };
-    btn.parentNode.insertBefore(rj, btn.nextSibling);
-
-    function sync() {
-      var hidden = anchor.classList.contains('hidden');
-      btn.classList.toggle('hidden', hidden);
-      if (hidden) rj.classList.add('hidden');
-    }
+    function sync() { btn.classList.toggle('hidden', anchor.classList.contains('hidden')); }
     sync();
     try {
       new MutationObserver(sync).observe(anchor, { attributes: true, attributeFilter: ['class'] });
     } catch (e) {}
-
-    // Re-check the rejoin button whenever the admin panel is opened.
-    var adm = document.getElementById('modal-admin');
-    if (adm) {
-      try {
-        new MutationObserver(function () {
-          if (!adm.classList.contains('hidden')) refreshRejoinButton();
-        }).observe(adm, { attributes: true, attributeFilter: ['class'] });
-      } catch (e) {}
-    }
-    refreshRejoinButton();
   }
 
-  // Show the Rejoin button only if a hosted battle is still live and owned
-  // by the signed-in teacher; otherwise hide it and clear stale state.
-  function refreshRejoinButton() {
-    var rj = document.getElementById('btn-admin-build-battle-rejoin');
-    if (!rj) return;
-    var anchor = document.getElementById('btn-admin-host-quiz');
-    if (anchor && anchor.classList.contains('hidden')) { rj.classList.add('hidden'); return; }
-    if (BB.role === 'host') { rj.classList.add('hidden'); return; } // already hosting
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem('bb_host') || 'null'); } catch (e) {}
-    if (!saved || !saved.code || !ready()) { rj.classList.add('hidden'); return; }
+  // (a2) Active sessions — add Build Battle rows (Rejoin / Force End) to the
+  //      admin list, the same way quizzes/AP appear. We wrap the host app's
+  //      loadActiveSessions so our rows are appended after it renders; if this
+  //      file is removed, the admin list behaves exactly as before.
+  function hookActiveSessions() {
+    if (typeof window.loadActiveSessions !== 'function' || window.loadActiveSessions.__bbWrapped) return;
+    var orig = window.loadActiveSessions;
+    var wrapped = function () {
+      var r;
+      try { r = orig.apply(this, arguments); } catch (e) { r = null; }
+      Promise.resolve(r).then(injectBattleSessions, injectBattleSessions);
+      return r;
+    };
+    wrapped.__bbWrapped = true;
+    window.loadActiveSessions = wrapped;
+  }
+
+  async function injectBattleSessions() {
+    if (!ready()) return;
+    var list = document.getElementById('admin-sessions-list');
+    var panel = document.getElementById('admin-sessions-panel');
+    if (!list || !panel) return;
     var uid = state.auth.currentUser && state.auth.currentUser.uid;
-    state.db.ref((saved.root || ROOT_LIVE) + '/' + saved.code).get().then(function (snap) {
-      if (snap.exists() && snap.child('hostUid').val() === uid) {
-        rj.innerHTML = '↩️ Rejoin Build Battle (' + saved.code + ')';
-        rj.classList.remove('hidden');
-      } else {
-        rj.classList.add('hidden');
-        try { localStorage.removeItem('bb_host'); } catch (e) {}
-      }
-    }).catch(function () { rj.classList.add('hidden'); });
+    if (!uid) return;
+    // Clear any rows we added on a previous pass.
+    list.querySelectorAll('.bb-sess-row').forEach(function (n) { n.remove(); });
+    try {
+      var idx = await state.db.ref('activeSessions').get();
+      var entries = [];
+      if (idx.exists()) idx.forEach(function (ch) {
+        var s = ch.val() || {};
+        if (s.lessonId === 'build-battle' && s.hostUid === uid) {
+          entries.push({ code: ch.key, root: s.root || ROOT_LIVE, className: s.className || '—' });
+        }
+      });
+      if (!entries.length) return;
+      // Read just the small fields per battle (never the model JSON).
+      var rows = await Promise.all(entries.map(async function (e) {
+        var base = state.db.ref(e.root + '/' + e.code);
+        try {
+          var parts = await Promise.all([
+            base.child('state').get(), base.child('players').get(),
+            base.child('sandbox').get(), base.child('forced').get(), base.child('className').get()
+          ]);
+          if (!parts[0].exists()) { try { await state.db.ref('activeSessions/' + e.code).remove(); } catch (x) {} return null; }
+          var players = parts[1].exists() ? Object.keys(parts[1].val() || {}).length : 0;
+          return { code: e.code, root: e.root, state: parts[0].val(), players: players,
+            sandbox: parts[2].val() === true, forced: parts[3].val() === true,
+            className: parts[4].val() || e.className };
+        } catch (x) { return null; }
+      }));
+      rows = rows.filter(Boolean);
+      if (!rows.length) return;
+      panel.classList.remove('hidden');
+      rows.forEach(function (s) {
+        var stateLabel = ({ lobby: 'Lobby', building: 'Building', finalising: 'Finalising', voting: 'Voting', results: 'Results' })[s.state] || s.state;
+        var row = document.createElement('div');
+        row.className = 'flex flex-wrap items-center gap-2 px-4 py-2 text-sm border-t border-gray-100 bb-sess-row';
+        row.innerHTML =
+          '<span class="font-semibold text-gray-700 w-10">Build</span>' +
+          '<span class="font-mono text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-0.5 text-xs">' + esc(s.code) + '</span>' +
+          '<span class="text-gray-600">Class: <strong>' + esc(s.className) + '</strong></span>' +
+          '<span class="text-gray-400 text-xs">' + esc(stateLabel) + ' &middot; ' + s.players + ' players' + (s.sandbox ? ' &middot; 🧪' : '') + '</span>' +
+          '<div class="ml-auto flex gap-2">' +
+          '<button class="bb-sess-rejoin px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Rejoin</button>' +
+          '<button class="bb-sess-end px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Force End</button>' +
+          '</div>';
+        row.querySelector('.bb-sess-rejoin').onclick = function () {
+          var adm = document.getElementById('modal-admin');
+          if (adm) adm.classList.add('hidden');
+          enterAsHost(s.code, s.root);
+        };
+        row.querySelector('.bb-sess-end').onclick = async function () {
+          if (!confirm('Force-end this Build Battle for class ' + s.className + '? Students will be released.')) return;
+          await forceEndBattle(s.code, s.root, { forced: s.forced, className: s.className });
+          if (typeof window.loadActiveSessions === 'function') window.loadActiveSessions();
+        };
+        list.appendChild(row);
+      });
+    } catch (e) {}
   }
 
   // (b) Student join — wrap the global joinQuizByCode so the shared
@@ -1711,10 +1799,12 @@
     injectStyles();
     injectAdminButton();
     hookStudentJoin();
+    hookActiveSessions();
     var tries = 0;
     var iv = setInterval(function () {
       injectAdminButton();
       hookStudentJoin();
+      hookActiveSessions();
       if (++tries > 20) clearInterval(iv);
     }, 500);
   }
