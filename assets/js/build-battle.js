@@ -127,79 +127,82 @@
   function injectStyles() {
     if (document.getElementById('bb-battle-styles')) return;
     var css =
-      '#bb-host-screen,#bb-student-screen{position:fixed;inset:0;z-index:60;background:#000;color:#e2e8f0;overflow:auto;font-family:inherit}' +
-      '.bb-wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}' +
-      '.bb-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}' +
-      '.bb-title{font-size:1.25rem;font-weight:700}' +
-      '.bb-code{font-family:monospace;font-size:2rem;font-weight:800;letter-spacing:.25em;color:#38bdf8}' +
-      '.bb-btn{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-weight:600;font-size:.95rem}' +
-      '.bb-btn-primary{background:#0ea5e9;color:#fff}.bb-btn-primary:hover{background:#0284c7}' +
-      '.bb-btn-ghost{background:#111;color:#cbd5e1;border:1px solid #262626}.bb-btn-ghost:hover{background:#1c1c1c}' +
-      '.bb-btn-danger{background:#7f1d1d;color:#fecaca}.bb-btn-danger:hover{background:#991b1b}' +
+      // Light, high-contrast, classroom-projection theme (readable from afar).
+      '#bb-host-screen,#bb-student-screen{position:fixed;inset:0;z-index:60;background:#f1f5f9;color:#0f172a;overflow:auto;font-family:inherit}' +
+      '.bb-wrap{max-width:1100px;margin:0 auto;padding:24px 18px 60px}' +
+      '.bb-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}' +
+      '.bb-title{font-size:1.5rem;font-weight:800}' +
+      '.bb-code{font-family:monospace;font-size:2.8rem;font-weight:800;letter-spacing:.25em;color:#2563eb}' +
+      '.bb-btn{cursor:pointer;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:1rem}' +
+      '.bb-btn-primary{background:#2563eb;color:#fff}.bb-btn-primary:hover{background:#1d4ed8}' +
+      '.bb-btn-ghost{background:#fff;color:#334155;border:1px solid #cbd5e1}.bb-btn-ghost:hover{background:#f1f5f9}' +
+      '.bb-btn-danger{background:#dc2626;color:#fff}.bb-btn-danger:hover{background:#b91c1c}' +
       '.bb-btn:disabled{opacity:.45;cursor:not-allowed}' +
-      '.bb-card{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:16px;margin-bottom:14px}' +
-      '.bb-muted{color:#94a3b8;font-size:.85rem}' +
-      '.bb-frame{width:100%;height:68vh;min-height:420px;border:1px solid #1c1c1c;border-radius:10px;background:#000}' +
+      '.bb-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}' +
+      '.bb-muted{color:#64748b;font-size:.95rem}' +
+      '.bb-banner{text-align:center;font-weight:700;font-size:1.3rem;padding:16px;margin-bottom:14px}' +
+      '.bb-frame{width:100%;height:70vh;min-height:440px;border:1px solid #cbd5e1;border-radius:12px;background:#1e1e2e}' +
       '.bb-view-wrap{position:relative;margin-top:4px}' +
-      '.bb-view{width:100%;height:46vh;min-height:300px;border:1px solid #1c1c1c;border-radius:10px;background:#000;display:block}' +
+      '.bb-view{width:100%;height:52vh;min-height:340px;border:1px solid #cbd5e1;border-radius:12px;background:#1e1e2e;display:block}' +
       '.bb-view-status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;' +
-      'background:rgba(0,0,0,.82);color:#e2e8f0;border-radius:10px;font-weight:600;padding:16px;gap:10px}' +
+      'background:rgba(241,245,249,.92);color:#0f172a;border-radius:12px;font-weight:700;font-size:1.15rem;padding:16px;gap:10px}' +
       '.bb-view-status .bb-btn{margin-left:10px}' +
-      '.bb-view-full{position:absolute;top:10px;right:10px;z-index:3;opacity:.85}' +
-      '.bb-view-debug{position:absolute;bottom:8px;left:10px;font-size:.72rem;color:#64748b;z-index:2;pointer-events:none}' +
-      '#bb-view-wrap:fullscreen{background:#000;display:flex;flex-direction:column}' +
-      '#bb-view-wrap:fullscreen .bb-view{height:100%;width:100%;border:0;border-radius:0}' +
-      '#bb-view-wrap:-webkit-full-screen .bb-view{height:100%;width:100%;border:0;border-radius:0}' +
-      '.bb-timer{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums}' +
-      '.bb-timer.low{color:#f87171}' +
+      '.bb-view-full{position:absolute;top:10px;right:10px;z-index:3}' +
+      '.bb-view-spin{position:absolute;top:10px;left:10px;z-index:3}' +
+      '.bb-view-debug{position:absolute;bottom:8px;left:10px;font-size:.72rem;color:#cbd5e1;z-index:2;pointer-events:none}' +
+      '#bb-view-wrap:fullscreen,#bb-build-wrap:fullscreen{background:#000;display:flex;flex-direction:column}' +
+      '#bb-view-wrap:fullscreen .bb-view,#bb-build-wrap:fullscreen .bb-frame{height:100%;width:100%;border:0;border-radius:0}' +
+      '#bb-view-wrap:-webkit-full-screen .bb-view,#bb-build-wrap:-webkit-full-screen .bb-frame{height:100%;width:100%;border:0;border-radius:0}' +
+      '.bb-timer{font-size:3.4rem;font-weight:800;font-variant-numeric:tabular-nums;color:#0f172a}' +
+      '.bb-timer.low{color:#dc2626}' +
       '.bb-players{display:flex;flex-wrap:wrap;gap:8px}' +
-      '.bb-chip{background:#000;border:1px solid #262626;border-radius:999px;padding:4px 12px;font-size:.85rem}' +
-      '.bb-chip.done{border-color:#16a34a;color:#86efac}' +
-      '.bb-stars{display:flex;gap:6px;justify-content:center;margin:10px 0;min-height:34px}' +
-      '.bb-star{cursor:pointer;font-size:2.1rem;line-height:1;color:#475569;background:none;border:none;transition:transform .08s}' +
+      '.bb-chip{background:#f8fafc;border:1px solid #cbd5e1;border-radius:999px;padding:6px 14px;font-size:1rem;font-weight:600}' +
+      '.bb-chip.done{border-color:#16a34a;background:#dcfce7;color:#166534}' +
+      '.bb-stars{display:flex;gap:8px;justify-content:center;margin:10px 0;min-height:34px}' +
+      '.bb-star{cursor:pointer;font-size:2.4rem;line-height:1;color:#cbd5e1;background:none;border:none;transition:transform .08s}' +
       '.bb-star:hover{transform:scale(1.15)}' +
-      '.bb-star.on{color:#fbbf24}' +
+      '.bb-star.on{color:#f59e0b}' +
       '.bb-star:disabled{cursor:default;transform:none}' +
-      '.bb-wait{text-align:center;font-weight:700;color:#86efac;margin:8px 0;min-height:22px}' +
-      '.bb-vote-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px}' +
-      '.bb-stars-big{gap:14px}.bb-stars-big .bb-star{font-size:4rem}.bb-stars-big .bb-star:hover{transform:scale(1.2)}' +
+      '.bb-wait{text-align:center;font-weight:700;color:#0f172a;margin:8px 0;min-height:22px;font-size:1.2rem}' +
+      '.bb-vote-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72vh;gap:18px}' +
+      '.bb-vote-prompt{font-size:1.7rem;font-weight:800;text-align:center}' +
+      '.bb-stars-big{gap:18px}.bb-stars-big .bb-star{font-size:5rem}.bb-stars-big .bb-star:hover{transform:scale(1.2)}' +
       '.bb-react-area{margin-top:8px;text-align:center;transition:opacity .2s}' +
-      '.bb-react-label{font-size:.8rem;color:#64748b;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}' +
+      '.bb-react-label{font-size:.85rem;color:#64748b;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}' +
       '.bb-react-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}' +
-      '.bb-react{font-size:1.8rem;background:#0d0d0d;border:1px solid #262626;border-radius:14px;padding:8px 13px;cursor:pointer;transition:transform .08s,background .15s}' +
-      '.bb-react:hover{background:#1c1c1c}.bb-react:active{transform:scale(1.35)}' +
+      '.bb-react{font-size:2rem;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:8px 14px;cursor:pointer;transition:transform .08s,background .15s}' +
+      '.bb-react:hover{background:#f1f5f9}.bb-react:active{transform:scale(1.35)}' +
       '.bb-react-area.maxed{opacity:.4;pointer-events:none}' +
-      '.bb-float{position:absolute;bottom:8px;font-size:2.2rem;pointer-events:none;z-index:5;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
+      '.bb-float{position:absolute;bottom:8px;font-size:2.6rem;pointer-events:none;z-index:5;will-change:transform,opacity;animation:bb-rise 3s ease-out forwards}' +
       '@keyframes bb-rise{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(-58vh) scale(1.35)}}' +
-      '.bb-view-spin{position:absolute;top:10px;left:10px;z-index:3;opacity:.85}' +
-      '.bb-results{max-width:760px;margin:0 auto;text-align:center}' +
-      '.bb-results-title{font-size:1.6rem;font-weight:800;margin:18px 0 6px}' +
-      '.bb-awards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 22px}' +
-      '.bb-award{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:10px 16px;text-align:center;min-width:160px}' +
-      '.bb-award strong{display:block;margin:2px 0;color:#fbbf24}' +
-      '.bb-icon-btn{width:42px;height:42px;border-radius:10px;background:#0d0d0d;color:#cbd5e1;border:1px solid #2a2a2a;font-size:1.2rem;cursor:pointer;line-height:1;padding:0}' +
-      '.bb-icon-btn:hover{background:#1c1c1c}' +
-      '.bb-icon-btn.ok{border-color:#16a34a;color:#86efac}' +
-      '.bb-icon-btn.off{border-color:#b91c1c;color:#fca5a5}' +
-      '.bb-icon-btn.drive{border-color:#b91c1c;color:#fca5a5}' +
-      '.bb-icon-btn.drive.ok{border-color:#16a34a;color:#86efac}' +
-      '.bb-icon-btn.busy{border-color:#d97706;color:#fcd34d;animation:bb-pulse 1s ease-in-out infinite}' +
-      '@keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.5}}' +
-      '.bb-navrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px}' +
-      '.bb-rank{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #161616}' +
-      '.bb-rank .pos{font-weight:800;width:34px;color:#94a3b8}' +
-      '.bb-rank .nm{flex:1}.bb-rank .sc{font-weight:700;color:#fbbf24}' +
-      '.bb-podium{display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:18px 0}' +
-      '.bb-pod{background:#000;border:1px solid #1c1c1c;border-radius:12px;padding:16px;text-align:center;min-width:150px;opacity:0;transform:translateY(26px) scale(.9);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.9,.3,1.2)}' +
+      '.bb-results{max-width:820px;margin:0 auto;text-align:center}' +
+      '.bb-results-title{font-size:2rem;font-weight:800;margin:18px 0 6px}' +
+      '.bb-awards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:14px 0 22px}' +
+      '.bb-award{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 18px;text-align:center;min-width:170px;box-shadow:0 1px 3px rgba(0,0,0,.05)}' +
+      '.bb-award strong{display:block;margin:2px 0;color:#b45309}' +
+      '.bb-icon-btn{width:46px;height:46px;border-radius:12px;background:#fff;color:#334155;border:2px solid #cbd5e1;font-size:1.3rem;cursor:pointer;line-height:1;padding:0}' +
+      '.bb-icon-btn:hover{background:#f1f5f9}' +
+      '.bb-icon-btn.ok{border-color:#16a34a;background:#dcfce7}' +
+      '.bb-icon-btn.off{border-color:#dc2626;background:#fee2e2}' +
+      '.bb-icon-btn.drive{border-color:#dc2626;background:#fee2e2}' +
+      '.bb-icon-btn.drive.ok{border-color:#16a34a;background:#dcfce7}' +
+      '.bb-icon-btn.busy{border-color:#d97706;background:#fef3c7;animation:bb-pulse 1s ease-in-out infinite}' +
+      '@keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.55}}' +
+      '.bb-navrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:12px}' +
+      '.bb-rank{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:1.05rem}' +
+      '.bb-rank .pos{font-weight:800;width:38px;color:#64748b}' +
+      '.bb-rank .nm{flex:1}.bb-rank .sc{font-weight:700;color:#b45309}' +
+      '.bb-podium{display:flex;gap:14px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:18px 0}' +
+      '.bb-pod{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;text-align:center;min-width:160px;box-shadow:0 1px 3px rgba(0,0,0,.05);opacity:0;transform:translateY(26px) scale(.9);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.9,.3,1.2)}' +
       '.bb-pod.show{opacity:1;transform:translateY(0) scale(1)}' +
-      '.bb-pod .medal{font-size:2.4rem}.bb-pod .who{font-weight:700;margin-top:6px}.bb-pod .avg{color:#fbbf24;font-weight:800;font-size:1.3rem}' +
-      '.bb-pod.first{border-color:#fbbf24}.bb-pod.first.show{transform:translateY(0) scale(1.08)}' +
+      '.bb-pod .medal{font-size:2.8rem}.bb-pod .who{font-weight:800;margin-top:6px;font-size:1.15rem}.bb-pod .avg{color:#b45309;font-weight:800;font-size:1.5rem}' +
+      '.bb-pod.first{border-color:#f59e0b;border-width:2px}.bb-pod.first.show{transform:translateY(0) scale(1.08)}' +
       '#bb-modal-setup{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}' +
       '#bb-modal-setup .box{background:#fff;color:#1e293b;border-radius:14px;padding:22px;max-width:440px;width:92%}' +
       '#bb-modal-setup label{display:block;font-weight:600;margin:12px 0 4px;font-size:.9rem}' +
       '#bb-modal-setup input,#bb-modal-setup select{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:9px 11px;font-size:.95rem;background:#fff}' +
       '.bb-hidden{display:none!important}' +
-      '.bb-big{text-align:center;padding:40px 16px}.bb-big .num{font-size:3rem;font-weight:800;color:#38bdf8}';
+      '.bb-big{text-align:center;padding:48px 16px}.bb-big .num{font-size:3.4rem;font-weight:800;color:#2563eb}.bb-big p{font-size:1.25rem}';
     var st = document.createElement('style');
     st.id = 'bb-battle-styles';
     st.textContent = css;
@@ -329,44 +332,47 @@
     return null;
   }
 
-  // Load a model by booting a FRESH Blockbench instance in the viewer
-  // iframe (reload its src) and loading exactly one model into it. A clean
-  // boot avoids the project/tab/scene-switch problems that left reused
-  // instances showing the model in the outliner but not the viewport.
+  // Load a model by booting a FRESH Blockbench instance: we REPLACE the
+  // iframe element so there's never a stale Blockbench document to race
+  // with (that race was why the board sometimes stayed blank until you
+  // pressed Next/Prev). A clean boot also fixes the scene-switch issues.
   function bootViewerWithModel(json, token) {
-    var frame = BB.viewFrame;
-    if (!frame) return;
-    frame.onload = function () {
+    var wrap = document.getElementById('bb-view-wrap');
+    if (!wrap) return;
+    var old = document.getElementById('bb-view-frame');
+    var frame = document.createElement('iframe');
+    frame.id = 'bb-view-frame';
+    frame.className = 'bb-view';
+    frame.src = './blockbench/index.html?bb=' + token + '_' + Date.now();
+    if (old) old.replaceWith(frame); else wrap.insertBefore(frame, wrap.firstChild);
+    BB.viewFrame = frame;
+    whenBlockbenchReady(frame, function (cw) {
       if (token !== BB._loadToken) return;
-      whenBlockbenchReady(frame, function (cw) {
-        if (token !== BB._loadToken) return;
-        try {
-          var obj = (typeof json === 'string') ? JSON.parse(json) : json;
-          if (!obj || !obj.meta) { setViewerStatus('⚠️ This submission isn\'t a valid model.'); return; }
-          if (typeof cw.loadModelFile === 'function') {
-            cw.loadModelFile({ content: (typeof json === 'string') ? json : JSON.stringify(json), path: 'battle.bbmodel', name: 'battle' });
-          } else {
-            cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
-          }
-          var loaded = cw.Project;
-          var apply = function () {
-            if (token !== BB._loadToken) return;
-            refreshViewer(cw, loaded);
-            focusViewerCamera(cw);
-            try {
-              var n = (cw.Outliner && cw.Outliner.elements) ? cw.Outliner.elements.length : 0;
-              setViewerDebug('loaded ' + n + ' element' + (n === 1 ? '' : 's'));
-              if (!n) setViewerStatus('This model has no shapes in it.');
-            } catch (e) {}
-          };
-          apply();
-          setTimeout(apply, 300);
-          setTimeout(apply, 900);
-          setViewerStatus('');
-        } catch (e) { setViewerStatus('⚠️ Could not display this model.'); }
-      }, 0, function () { if (token === BB._loadToken) setViewerStatus('⚠️ The 3D editor failed to load.'); });
-    };
-    frame.src = './blockbench/index.html?bb=' + Date.now();
+      try {
+        var obj = (typeof json === 'string') ? JSON.parse(json) : json;
+        if (!obj || !obj.meta) { setViewerStatus('⚠️ This submission isn\'t a valid model.'); return; }
+        if (typeof cw.loadModelFile === 'function') {
+          cw.loadModelFile({ content: (typeof json === 'string') ? json : JSON.stringify(json), path: 'battle.bbmodel', name: 'battle' });
+        } else {
+          cw.Codecs.project.load(obj, { path: 'battle.bbmodel' });
+        }
+        var loaded = cw.Project;
+        var apply = function () {
+          if (token !== BB._loadToken) return;
+          refreshViewer(cw, loaded);
+          focusViewerCamera(cw);
+          try {
+            var n = (cw.Outliner && cw.Outliner.elements) ? cw.Outliner.elements.length : 0;
+            setViewerDebug('loaded ' + n + ' element' + (n === 1 ? '' : 's'));
+            if (!n) setViewerStatus('This model has no shapes in it.');
+          } catch (e) {}
+        };
+        apply();
+        setTimeout(apply, 300);
+        setTimeout(apply, 900);
+        setViewerStatus('');
+      } catch (e) { setViewerStatus('⚠️ Could not display this model.'); }
+    }, 0, function () { if (token === BB._loadToken) setViewerStatus('⚠️ The 3D editor failed to load.'); });
   }
 
   // Host board: show the current build. Latest-wins via _loadToken.
@@ -672,6 +678,9 @@
         '<button id="bb-start-build" class="bb-btn bb-btn-primary" ' + (playerCodes.length ? '' : 'disabled') + '>Start building →</button>';
       document.getElementById('bb-start-build').onclick = function () {
         BB._finalising = false; BB._startedVoting = false;
+        // Pre-authorise Google Drive now (this click is a user gesture) so
+        // models can be archived to Drive automatically once voting starts.
+        try { getDriveToken().catch(function () {}); } catch (e) {}
         BB.ref.update({ state: 'building', buildEndsAt: Date.now() + (d.buildSeconds || 600) * 1000 });
       };
       return;
@@ -772,9 +781,10 @@
       state: 'voting',
       review: { order: order, currentIndex: 0, currentCode: order[0] || null }
     });
-    // Drive archive is started by the host clicking "Archive to Drive" —
-    // Google's OAuth popup needs a real user gesture, so we don't kick it
-    // off automatically here (that left it stuck on "Connecting…").
+    // Drive-first: archive automatically. If the token was pre-authorised at
+    // "Start building" this runs with no popup; otherwise it falls back to
+    // the manual cloud button (and the board still works off Firebase).
+    archiveToDrive();
   }
 
   // ── Host voting screen (Prev/Next drive the shared review) ──
@@ -794,7 +804,7 @@
         '<div class="bb-muted">You are showing the class (students vote on their own screens)</div>' +
         '<div id="bb-host-now" style="font-weight:700;font-size:1.1rem"></div></div>' +
         '<div id="bb-view-wrap" class="bb-view-wrap">' +
-        '<iframe id="bb-view-frame" class="bb-view" src="./blockbench/index.html"></iframe>' +
+        '<iframe id="bb-view-frame" class="bb-view"></iframe>' +
         '<div id="bb-view-status" class="bb-view-status"></div>' +
         '<button id="bb-view-spin" class="bb-btn bb-btn-ghost bb-view-spin">⟳ Spin: On</button>' +
         '<button id="bb-view-full" class="bb-btn bb-btn-ghost bb-view-full">⛶ Fullscreen</button>' +
@@ -809,7 +819,7 @@
       BB.lastReviewCode = null;
       document.getElementById('bb-host-prev').onclick = function () { hostStep(-1); };
       document.getElementById('bb-host-next').onclick = function () { hostStep(1); };
-      document.getElementById('bb-view-full').onclick = toggleViewerFullscreen;
+      document.getElementById('bb-view-full').onclick = function () { toggleFullscreen('bb-view-wrap'); };
       var spinBtn = document.getElementById('bb-view-spin');
       spinBtn.textContent = '⟳ Spin: ' + (BB.spinOn ? 'On' : 'Off');
       spinBtn.onclick = function () {
@@ -902,18 +912,21 @@
     setTimeout(function () { try { wrap.removeChild(span); } catch (e) {} }, 4400);
   }
 
-  function toggleViewerFullscreen() {
-    var wrap = document.getElementById('bb-view-wrap');
-    if (!wrap) return;
+  function toggleFullscreen(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
     try {
       if (document.fullscreenElement) {
         document.exitFullscreen();
-      } else if (wrap.requestFullscreen) {
-        wrap.requestFullscreen();
-      } else if (wrap.webkitRequestFullscreen) {
-        wrap.webkitRequestFullscreen();
+      } else if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
       }
     } catch (e) {}
+  }
+  function exitFullscreenIfAny() {
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
   }
 
   function hostStep(dir) {
@@ -1022,11 +1035,15 @@
     if (body) {
       var line = '';
       if (BB.resultsCache) line = myResultLine(BB.resultsCache);
-      body.innerHTML = '<div class="bb-big"><div class="num">🏁</div><p>The battle has ended.</p>' + line + '</div>';
+      body.innerHTML = '<div class="bb-big"><div class="num">🏁</div><p>The battle has ended.</p>' + line +
+        '<div style="margin-top:18px"><button id="bb-stu-leave" class="bb-btn bb-btn-primary">Leave</button></div></div>';
+      var lv = document.getElementById('bb-stu-leave');
+      if (lv) lv.onclick = leaveBattle;
     }
     stopTimer();
     stopDraftAutosave();
     clearDraft();
+    exitFullscreenIfAny();
   }
 
   function renderStudent(d) {
@@ -1054,7 +1071,8 @@
 
     if (phase === 'finalising') {
       stopTimer();
-      saveDraft();          // capture latest work before submitting
+      exitFullscreenIfAny();   // building ended — drop out of fullscreen
+      saveDraft();             // capture latest work before submitting
       stopDraftAutosave();
       // Keep the build iframe; auto-submit the current project if needed.
       ensureFinalisingBanner(d);
@@ -1083,9 +1101,20 @@
       body.innerHTML =
         '<div class="bb-big">' + myResultLine(tally) + '</div>' +
         (myBadges ? '<div class="bb-awards">' + myBadges + '</div>' : '') +
-        '<div class="bb-card"><strong>Top builders</strong>' + rankingHtml(tally, BB.myCode, 5) + '</div>';
+        '<div class="bb-card"><strong>Top builders</strong>' + rankingHtml(tally, BB.myCode, 5) + '</div>' +
+        '<div style="text-align:center;margin-top:18px"><button id="bb-stu-leave" class="bb-btn bb-btn-ghost">Leave</button></div>';
+      var lv = document.getElementById('bb-stu-leave');
+      if (lv) lv.onclick = studentLeave;
       return;
     }
+  }
+
+  function studentLeave() {
+    if (BB.ref && BB.myCode) { try { BB.ref.child('players/' + BB.myCode).remove(); } catch (e) {} }
+    // Stop the forced-class watcher so a forced battle doesn't immediately
+    // pull the student back in after they choose to leave.
+    try { if (typeof stopForcedQuizWatcher === 'function') stopForcedQuizWatcher(); } catch (e) {}
+    leaveBattle();
   }
 
   // ── Student building UI ──
@@ -1093,14 +1122,17 @@
     var body = document.getElementById('bb-stu-body');
     body.innerHTML =
       '<div class="bb-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
-      '<div><div class="bb-muted">🎯 Build this</div><strong style="font-size:1.15rem">' + esc(d.brief) + '</strong></div>' +
+      '<div><div class="bb-muted">🎯 Build this</div><strong style="font-size:1.5rem">' + esc(d.brief) + '</strong></div>' +
       '<div style="text-align:right"><div class="bb-muted">Time left</div><div id="bb-stu-timer" class="bb-timer">--:--</div></div>' +
       '</div>' +
+      '<div id="bb-build-wrap" class="bb-view-wrap">' +
       '<iframe id="bb-build-frame" class="bb-frame" src="./blockbench/index.html" allow="fullscreen"></iframe>' +
+      '<button id="bb-build-full" class="bb-btn bb-btn-ghost bb-view-full">⛶ Fullscreen</button></div>' +
       '<div style="display:flex;align-items:center;gap:12px;margin-top:12px">' +
       '<button id="bb-submit" class="bb-btn bb-btn-primary">Submit my build</button>' +
       '<span id="bb-submit-fb" class="bb-muted"></span></div>';
     BB.buildFrame = document.getElementById('bb-build-frame');
+    document.getElementById('bb-build-full').onclick = function () { toggleFullscreen('bb-build-wrap'); };
     whenBlockbenchReady(BB.buildFrame, function (cw) {
       // Restore work-in-progress after an accidental refresh: prefer the
       // locally autosaved draft, else the last submitted model from Firebase.
@@ -1144,9 +1176,7 @@
       if (!banner) {
         banner = document.createElement('div');
         banner.id = 'bb-finalising-banner';
-        banner.className = 'bb-card';
-        banner.style.textAlign = 'center';
-        banner.style.fontWeight = '700';
+        banner.className = 'bb-banner';
         var body = document.getElementById('bb-stu-body');
         body.insertBefore(banner, body.firstChild);
       }
