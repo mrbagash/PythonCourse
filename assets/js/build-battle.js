@@ -199,14 +199,14 @@
       '.bb-rank .nm{flex:1;font-weight:700;color:#f3f4f6}' +
       '.bb-rank .sc{font-weight:900;color:#fbbf24;font-size:1.2rem}' +
       '.bb-podium{display:flex;gap:18px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:28px 0;min-height:240px}' +
-      '.bb-pod{background:#1f2937;border-radius:12px 12px 0 0;padding:22px 18px;text-align:center;min-width:170px;width:200px;border:1px solid #374151;border-bottom:4px solid #374151;opacity:0;transform:translateY(40px);transition:opacity .6s ease,transform .6s cubic-bezier(.34,1.56,.64,1)}' +
+      '.bb-pod{background:#1f2937;border-radius:12px 12px 0 0;padding:18px 18px 20px;text-align:center;min-width:170px;width:200px;border:1px solid #374151;border-bottom:4px solid #374151;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;opacity:0;transform:translateY(40px);transition:opacity .6s ease,transform .6s cubic-bezier(.34,1.56,.64,1)}' +
       '.bb-pod.show{opacity:1;transform:translateY(0)}' +
-      '.bb-pod .medal{font-size:3rem;margin-bottom:6px;display:block}' +
-      '.bb-pod .who{font-weight:800;margin-top:6px;font-size:1.2rem;color:#f9fafb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-      '.bb-pod .avg{color:#fbbf24;font-weight:900;font-size:1.5rem;margin-top:4px}' +
-      '.bb-pod.second{height:185px;border-bottom-color:#9ca3af}' +
-      '.bb-pod.first{height:225px;background:#27314a;border-color:#fbbf24;border-bottom-color:#fbbf24;z-index:2}' +
-      '.bb-pod.third{height:160px;border-bottom-color:#b45309}' +
+      '.bb-pod .medal{font-size:3rem;display:block}' +
+      '.bb-pod .who{font-weight:800;font-size:1.2rem;color:#f9fafb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.bb-pod .avg{color:#fbbf24;font-weight:900;font-size:1.5rem}' +
+      '.bb-pod.second{min-height:200px;border-bottom-color:#9ca3af}' +
+      '.bb-pod.first{min-height:240px;background:#27314a;border-color:#fbbf24;border-bottom-color:#fbbf24;z-index:2}' +
+      '.bb-pod.third{min-height:170px;border-bottom-color:#b45309}' +
       '#bb-modal-setup{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}' +
       '#bb-modal-setup .box{background:#fff;color:#111827;border-radius:12px;padding:28px;max-width:460px;width:92%}' +
       '#bb-modal-setup label{display:block;font-weight:700;margin:14px 0 6px;font-size:1rem;color:#374151}' +
